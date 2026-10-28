@@ -20,7 +20,7 @@ export default function TutorialBlogPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Tutorial
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -68,7 +68,7 @@ export default function TutorialBlogPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-1">&#10003;</span>
+                    <span className="text-accent mt-1">&#10003;</span>
                     {item}
                   </li>
                 ))}
@@ -79,7 +79,7 @@ export default function TutorialBlogPage() {
             {/* STEP 1 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 1
               </div>
               <div>
@@ -107,7 +107,7 @@ export default function TutorialBlogPage() {
             {/* STEP 2 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 2
               </div>
               <div>
@@ -127,7 +127,7 @@ export default function TutorialBlogPage() {
             {/* STEP 3 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 3
               </div>
               <div>
@@ -187,7 +187,7 @@ type Post struct {
             {/* STEP 4 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 4
               </div>
               <div>
@@ -228,7 +228,7 @@ type Category struct {
             {/* STEP 5 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 5
               </div>
               <div>
@@ -305,7 +305,7 @@ type Category struct {
             {/* STEP 6 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 6
               </div>
               <div>
@@ -377,7 +377,7 @@ func (s *PostService) GetByID(id uint) (*models.Post, error) {
             {/* STEP 7 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 7
               </div>
               <div>
@@ -443,7 +443,7 @@ public := router.Group("/api")
             {/* STEP 8 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 8
               </div>
               <div>
@@ -509,7 +509,7 @@ export default defineResource({
             {/* STEP 9 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 9
               </div>
               <div>
@@ -590,14 +590,14 @@ export default function BlogPage() {
             key={post.id}
             href={\`/blog/\${post.slug}\`}
             className="group rounded-xl border border-border/40 bg-card/50 p-6
-                       hover:border-primary/30 hover:bg-card/80 transition-all"
+                       hover:border-accent/30 hover:bg-card/80 transition-all"
           >
             {post.category && (
-              <span className="text-xs font-mono text-primary/70 mb-2 block">
+              <span className="text-xs font-mono text-accent/70 mb-2 block">
                 {post.category.name}
               </span>
             )}
-            <h2 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+            <h2 className="text-lg font-semibold mb-2 group-hover:text-accent transition-colors">
               {post.title}
             </h2>
             {post.excerpt && (
@@ -688,7 +688,7 @@ export default function BlogPostPage() {
       <div className="max-w-2xl mx-auto text-center py-20">
         <h1 className="text-2xl font-bold mb-2">Post not found</h1>
         <p className="text-muted-foreground mb-4">This post may have been unpublished or deleted.</p>
-        <Link href="/blog" className="text-primary hover:underline">Back to blog</Link>
+        <Link href="/blog" className="text-accent hover:underline">Back to blog</Link>
       </div>
     )
   }
@@ -702,7 +702,7 @@ export default function BlogPostPage() {
       </Link>
 
       {post.category && (
-        <span className="text-xs font-mono text-primary/70 mb-3 block">
+        <span className="text-xs font-mono text-accent/70 mb-3 block">
           {post.category.name}
         </span>
       )}
@@ -725,7 +725,7 @@ export default function BlogPostPage() {
             {/* STEP 10 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 10
               </div>
               <div>
@@ -767,7 +767,7 @@ export default function BlogPostPage() {
                       key={item.url}
                       className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70"
                     >
-                      <code className="text-primary/70 text-xs whitespace-nowrap">
+                      <code className="text-accent/70 text-xs whitespace-nowrap">
                         {item.url}
                       </code>
                       <span>&mdash; {item.desc}</span>
@@ -800,7 +800,7 @@ export default function BlogPostPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-0.5">&#10003;</span>
+                    <span className="text-accent mt-0.5">&#10003;</span>
                     {item}
                   </li>
                 ))}

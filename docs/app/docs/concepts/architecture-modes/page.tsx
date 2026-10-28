@@ -193,7 +193,7 @@ export default function ArchitectureModesPage() {
       <main className="lg:pl-64">
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Core Concepts
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -245,11 +245,11 @@ export default function ArchitectureModesPage() {
                   <p className="text-sm text-muted-foreground/70 mt-1">Ideal for: {arch.ideal}</p>
                   {arch.example && (
                     arch.example.startsWith('/') ? (
-                      <Link href={arch.example} className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                      <Link href={arch.example} className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors">
                         Read the multi-client guide &rarr;
                       </Link>
                     ) : (
-                      <a href={arch.example} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                      <a href={arch.example} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors">
                         View example project (Job Portal) &rarr;
                       </a>
                     )
@@ -266,7 +266,7 @@ export default function ArchitectureModesPage() {
                     <ul className="space-y-2">
                       {arch.features.map((f, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <span className="text-primary mt-0.5">-</span>
+                          <span className="text-accent mt-0.5">-</span>
                           {f}
                         </li>
                       ))}
@@ -297,10 +297,10 @@ export default function ArchitectureModesPage() {
                   <li>- Larger bundle, Node.js runtime</li>
                 </ul>
               </div>
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <h3 className="font-semibold text-foreground">TanStack Router</h3>
-                  <code className="text-[10px] font-mono text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">--vite</code>
+                  <code className="text-[10px] font-mono text-accent/70 bg-accent/10 px-1.5 py-0.5 rounded">--vite</code>
                 </div>
                 <ul className="space-y-1.5 text-sm text-muted-foreground">
                   <li>- Vite — instant HMR, fast builds</li>
@@ -329,14 +329,14 @@ export default function ArchitectureModesPage() {
                   { label: 'API Only', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-api-only' },
                   { label: 'Mobile + Expo', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-mobile-expo' },
                 ].map((ex) => (
-                  <a key={ex.label} href={ex.href} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-md border border-border/30 bg-background/50 px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
+                  <a key={ex.label} href={ex.href} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-md border border-border/30 bg-background/50 px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-accent/30 transition-colors">
                     {ex.label}
-                    <span className="text-primary text-xs">&rarr;</span>
+                    <span className="text-accent text-xs">&rarr;</span>
                   </a>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground/60 mt-4">
-                All examples: <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer" className="text-primary hover:underline">github.com/MUKE-coder/grit/tree/main/examples</a>
+                All examples: <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer" className="text-accent hover:underline">github.com/MUKE-coder/grit/tree/main/examples</a>
               </p>
             </div>
           </div>

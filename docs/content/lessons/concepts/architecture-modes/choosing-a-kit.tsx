@@ -55,7 +55,7 @@ export default function Lesson() {
       <h2>The Stack Selector tool</h2>
       <p>
         Don&apos;t want to memorize the tree? Use the{' '}
-        <Link href="/docs/stack-selector" className="text-primary hover:underline">
+        <Link href="/docs/stack-selector" className="text-accent hover:underline">
           Stack Selector
         </Link>{' '}
         on the docs site. Answer 4 questions, get the exact command. Same
@@ -200,19 +200,19 @@ export default function Lesson() {
       <p>
         Next, pick one of the specialist courses based on the kit you want
         to dive deeper into:{' '}
-        <Link href="/courses/go-api" className="text-primary hover:underline">
+        <Link href="/courses/go-api" className="text-accent hover:underline">
           Building a Go API
         </Link>
         ,{' '}
-        <Link href="/courses/web-nextjs" className="text-primary hover:underline">
+        <Link href="/courses/web-nextjs" className="text-accent hover:underline">
           Web with Next.js
         </Link>
         ,{' '}
-        <Link href="/courses/mobile" className="text-primary hover:underline">
+        <Link href="/courses/mobile" className="text-accent hover:underline">
           Mobile
         </Link>
         , or{' '}
-        <Link href="/courses/desktop" className="text-primary hover:underline">
+        <Link href="/courses/desktop" className="text-accent hover:underline">
           Desktop
         </Link>
         . All assume the foundation you just finished.

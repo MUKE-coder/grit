@@ -13,7 +13,7 @@ export default function Lesson() {
         data. Background jobs handle it asynchronously — your handler
         enqueues, returns instantly, a worker processes later. Grit
         ships{' '}
-        <a href="https://github.com/hibiken/asynq" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">asynq</a> as the job engine.
+        <a href="https://github.com/hibiken/asynq" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">asynq</a> as the job engine.
       </p>
 
       <h2>Why we need it</h2>

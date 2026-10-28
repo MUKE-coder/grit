@@ -157,15 +157,15 @@ export default function ShowcasePage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-primary/[0.06] blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-accent/[0.06] blur-[120px]" />
         </div>
         <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
         <span className="crosshair absolute top-20 left-[15%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
-        <span className="crosshair absolute top-32 right-[17%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute top-32 right-[17%] text-accent/30 hidden md:block" style={{ width: 14, height: 14 }} />
         <div className="max-w-6xl mx-auto py-20 md:py-32 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 rounded-full border border-border/60 bg-accent/40 px-4 py-1.5 mb-6 mx-auto w-fit">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
               <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
                 Built with Grit
               </span>
@@ -181,7 +181,7 @@ export default function ShowcasePage() {
             <div className="flex items-center justify-center gap-3">
               <Button
                 size="sm"
-                className="h-9 px-4 text-sm bg-primary/90 hover:bg-primary"
+                className="h-9 px-4 text-sm bg-accent/90 hover:bg-primary"
                 asChild
               >
                 <Link href="/docs/getting-started/quick-start">
@@ -227,7 +227,7 @@ export default function ShowcasePage() {
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground">
                       {project.name}
                     </h2>
-                    <span className="inline-flex items-center rounded-full bg-primary/20 border border-primary/30 px-2.5 py-0.5 text-[10px] font-mono font-medium text-primary uppercase tracking-wider">
+                    <span className="inline-flex items-center rounded-full bg-accent/20 border border-accent/30 px-2.5 py-0.5 text-[10px] font-mono font-medium text-accent uppercase tracking-wider">
                       Featured
                     </span>
                   </div>
@@ -237,7 +237,7 @@ export default function ShowcasePage() {
                 </div>
                 <Button
                   size="sm"
-                  className="hidden md:inline-flex h-8 px-3 text-xs bg-primary/90 hover:bg-primary shrink-0"
+                  className="hidden md:inline-flex h-8 px-3 text-xs bg-accent/90 hover:bg-primary shrink-0"
                   asChild
                 >
                   <Link href={project.url} target="_blank" rel="noreferrer">
@@ -276,7 +276,7 @@ export default function ShowcasePage() {
                           key={item}
                           className="flex items-center gap-2 text-sm text-muted-foreground"
                         >
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                          <div className="h-1.5 w-1.5 rounded-full bg-accent/60 shrink-0" />
                           {item}
                         </div>
                       ))}
@@ -285,7 +285,7 @@ export default function ShowcasePage() {
                   <div className="md:hidden">
                     <Button
                       size="sm"
-                      className="h-9 px-4 text-sm bg-primary/90 hover:bg-primary w-full"
+                      className="h-9 px-4 text-sm bg-accent/90 hover:bg-primary w-full"
                       asChild
                     >
                       <Link href={project.url} target="_blank" rel="noreferrer">
@@ -304,8 +304,8 @@ export default function ShowcasePage() {
                     </h3>
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                          <Database className="h-5 w-5 text-primary" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                          <Database className="h-5 w-5 text-accent" />
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-foreground">{project.stats.tables}</div>
@@ -314,8 +314,8 @@ export default function ShowcasePage() {
                       </div>
                       <div className="h-px bg-border/40" />
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                          <Box className="h-5 w-5 text-primary" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                          <Box className="h-5 w-5 text-accent" />
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-foreground">{project.stats.models}</div>
@@ -338,8 +338,8 @@ export default function ShowcasePage() {
                       )}
                       <div className="h-px bg-border/40" />
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                          <Layers className="h-5 w-5 text-primary" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                          <Layers className="h-5 w-5 text-accent" />
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-foreground">{project.stats.modules}</div>
@@ -354,7 +354,7 @@ export default function ShowcasePage() {
                         <div>
                           <div className="text-sm font-semibold text-foreground">Live in Production</div>
                           <div className="text-xs text-muted-foreground">
-                            <Link href={project.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                            <Link href={project.url} target="_blank" rel="noreferrer" className="text-accent hover:underline">
                               {project.url.replace("https://", "")}
                             </Link>
                           </div>
@@ -405,7 +405,7 @@ export default function ShowcasePage() {
           <div className="flex items-center justify-center gap-3">
             <Button
               size="sm"
-              className="h-9 px-4 text-sm bg-primary/90 hover:bg-primary"
+              className="h-9 px-4 text-sm bg-accent/90 hover:bg-primary"
               asChild
             >
               <Link

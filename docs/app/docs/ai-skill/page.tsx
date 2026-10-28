@@ -20,7 +20,7 @@ export default function AISkillPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">For AI Assistants</span>
+              <span className="tag-mono text-accent/80 mb-3 block">For AI Assistants</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 LLM Skill Guide
               </h1>
@@ -34,7 +34,7 @@ export default function AISkillPage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button size="sm" variant="outline" className="gap-1.5 border-primary/20 text-primary/80 hover:bg-primary/10 hover:text-primary">
+                <Button size="sm" variant="outline" className="gap-1.5 border-accent/20 text-accent/80 hover:bg-accent/10 hover:text-accent">
                   <Download className="h-3.5 w-3.5" />
                   Download Grit Handbook PDF
                 </Button>
@@ -58,9 +58,9 @@ export default function AISkillPage() {
                   instant expertise in Grit development. Instead of explaining your project setup in every
                   conversation, the AI reads the skill file and immediately understands the codebase.
                 </p>
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Why this matters:</strong> Grit&apos;s strict conventions
+                    <strong className="text-accent/90">Why this matters:</strong> Grit&apos;s strict conventions
                     and predictable structure make it uniquely suited for AI-assisted development. An AI
                     that understands Grit&apos;s patterns can generate complete, working code &mdash; not just
                     snippets that need manual wiring.
@@ -76,7 +76,7 @@ export default function AISkillPage() {
 
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       1
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -102,7 +102,7 @@ export default function AISkillPage() {
 
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       2
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -145,7 +145,7 @@ export default function AISkillPage() {
 
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       3
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -277,7 +277,7 @@ export default function AISkillPage() {
                     'Single framework — the AI does not need to guess which library you are using',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       {item}
                     </li>
                   ))}
@@ -336,7 +336,7 @@ export default function AISkillPage() {
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">grit new myapp</span>
                     </div>
                     <div className="text-muted-foreground/50 text-xs mt-2">
@@ -346,14 +346,14 @@ export default function AISkillPage() {
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   You can also find the latest version on the{' '}
-                  <Link href="https://github.com/MUKE-coder/grit" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://github.com/MUKE-coder/grit" target="_blank" className="text-accent hover:underline">
                     Grit GitHub repository
                   </Link>.
                   Copy it into any existing Grit project that does not have one.
                 </p>
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Remember:</strong> The skill file works best when it
+                    <strong className="text-accent/90">Remember:</strong> The skill file works best when it
                     reflects the current state of your project. After generating resources with{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>,
                     the CLI automatically updates the skill file with the new models and routes.

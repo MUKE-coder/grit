@@ -32,7 +32,7 @@ export default function RailwayPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Deployment</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Deployment</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Railway</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 <code>grit deploy --railway</code> links your project, adds Postgres and Redis,

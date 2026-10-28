@@ -48,10 +48,38 @@
   const els = [...document.querySelectorAll('body *')].filter(visible);
 
   // --- colour helpers -----------------------------------------------------
+  // Parse any colour the browser can produce, by making the browser do it.
+  //
+  // A regex over the numbers worked while every computed colour came back as
+  // rgb(0-255). It stopped the moment the tokens moved to color-mix() and
+  // relative colour syntax: those compute to `color(srgb 0.63 0.65 0.69)`,
+  // whose 0-1 floats read as near-black, and the audit reported 276 contrast
+  // failures at exactly 1:1 on text anybody could see was fine.
+  //
+  // A 1x1 canvas normalises every syntax there is, including ones that do not
+  // exist yet.
+  const _probe = document.createElement('canvas');
+  _probe.width = _probe.height = 1;
+  const _ctx = _probe.getContext('2d', { willReadFrequently: true });
+  const _rgbCache = new Map();
   const rgb = (c) => {
-    const m = (c || '').match(/-?\d+(\.\d+)?/g);
-    if (!m || m.length < 3) return null;
-    return { r: +m[0], g: +m[1], b: +m[2], a: m.length > 3 ? +m[3] : 1 };
+    if (!c || c === 'transparent' || c === 'none') return null;
+    if (_rgbCache.has(c)) return _rgbCache.get(c);
+    let out = null;
+    try {
+      _ctx.clearRect(0, 0, 1, 1);
+      _ctx.fillStyle = '#000';
+      _ctx.fillStyle = c;
+      // An unparseable value leaves fillStyle at the previous one, so a
+      // colour that silently failed is caught rather than measured as black.
+      _ctx.fillRect(0, 0, 1, 1);
+      const d = _ctx.getImageData(0, 0, 1, 1).data;
+      out = { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
+    } catch {
+      out = null;
+    }
+    _rgbCache.set(c, out);
+    return out;
   };
   const lum = (c) => {
     const f = (v) => {

@@ -238,7 +238,7 @@ export default function DesktopProjectIdeasPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop (Wails)
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -252,7 +252,7 @@ export default function DesktopProjectIdeasPage() {
             </div>
 
             {/* Quick Start */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 mb-10">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-5 mb-10">
               <h3 className="font-semibold text-foreground mb-2">
                 How to Start Any Project
               </h3>
@@ -269,7 +269,7 @@ export default function DesktopProjectIdeasPage() {
                     key={i}
                     className="flex items-start gap-3"
                   >
-                    <span className="text-sm font-mono text-primary/60 shrink-0 mt-0.5">
+                    <span className="text-sm font-mono text-accent/60 shrink-0 mt-0.5">
                       {i + 1}.
                     </span>
                     <span className="text-sm text-muted-foreground">
@@ -303,7 +303,7 @@ export default function DesktopProjectIdeasPage() {
                   <div className="px-5 py-4 border-b border-border/20">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent">
                           {project.id}
                         </span>
                         <h2 className="text-lg font-semibold tracking-tight">
@@ -349,7 +349,7 @@ export default function DesktopProjectIdeasPage() {
                       <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider">
                         Example command:
                       </span>
-                      <code className="block text-xs font-mono text-primary/70 mt-1 break-all">
+                      <code className="block text-xs font-mono text-accent/70 mt-1 break-all">
                         grit generate resource {project.fields.split(":")[0]}{" "}
                         --fields &quot;
                         {project.fields.split('"')[1]}&quot;
@@ -461,9 +461,9 @@ wails dev`}
                 <Link
                   key={card.href}
                   href={card.href}
-                  className="group rounded-lg border border-border/30 bg-card/30 px-4 py-3 hover:border-primary/30 transition-colors"
+                  className="group rounded-lg border border-border/30 bg-card/30 px-4 py-3 hover:border-accent/30 transition-colors"
                 >
-                  <span className="text-[15px] font-semibold block mb-1 text-foreground group-hover:text-primary transition-colors">
+                  <span className="text-[15px] font-semibold block mb-1 text-foreground group-hover:text-accent transition-colors">
                     {card.title}
                   </span>
                   <span className="text-sm text-muted-foreground/50">
@@ -479,9 +479,9 @@ wails dev`}
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

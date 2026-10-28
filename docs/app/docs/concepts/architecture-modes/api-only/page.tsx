@@ -20,7 +20,7 @@ export default function ApiOnlyArchitecturePage() {
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Architecture Modes
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -213,7 +213,7 @@ export default function ApiOnlyArchitecturePage() {
               <div className="space-y-6">
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">cmd/</code> -- Entry Points
+                    <code className="text-sm font-mono text-accent">cmd/</code> -- Entry Points
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     Three separate entry points for different operations.{' '}
@@ -228,7 +228,7 @@ export default function ApiOnlyArchitecturePage() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">internal/</code> -- Backend Code
+                    <code className="text-sm font-mono text-accent">internal/</code> -- Backend Code
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     Identical to every other Grit architecture. The handler-service-model pattern,
@@ -240,7 +240,7 @@ export default function ApiOnlyArchitecturePage() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">.claude/skills/grit/</code> -- AI Skill
+                    <code className="text-sm font-mono text-accent">.claude/skills/grit/</code> -- AI Skill
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     The AI skill file is tailored for the API-only architecture. It contains no
@@ -251,7 +251,7 @@ export default function ApiOnlyArchitecturePage() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">grit.json</code> -- Project Config
+                    <code className="text-sm font-mono text-accent">grit.json</code> -- Project Config
                   </h3>
                   <CodeBlock language="json" filename="grit.json" code={`{
   "architecture": "api",
@@ -513,27 +513,27 @@ volumes:
                 When to Choose API Only
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
                   <h4 className="text-sm font-semibold text-foreground mb-3">Good fit</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Mobile app backends (iOS/Android consume your API)
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Microservices in a larger system
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Headless CMS or content API
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Third-party integrations and webhooks
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Frontend built by a different team or in a different repo
                     </li>
                   </ul>
@@ -572,7 +572,7 @@ volumes:
                   href="https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-api-only"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
                 >
                   View Job Portal (API Only) on GitHub &rarr;
                 </a>

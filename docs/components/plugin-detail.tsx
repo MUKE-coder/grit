@@ -53,7 +53,7 @@ export function PluginSteps({
         {steps.map((step, i) => (
           <li key={step.title} className="relative pl-10">
             <span
-              className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 font-mono text-xs font-semibold text-primary"
+              className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 font-mono text-xs font-semibold text-accent"
               aria-hidden="true"
             >
               {i + 1}
@@ -87,9 +87,9 @@ export function RelatedPlugins({ items }: { items: RelatedPlugin[] }) {
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-start gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+            className="group flex items-start gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
           >
-            <Puzzle className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <Puzzle className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
             <span className="flex-1">
               <span className="block font-medium">{item.name}</span>
               <span className="text-sm text-muted-foreground">{item.why}</span>
@@ -100,11 +100,11 @@ export function RelatedPlugins({ items }: { items: RelatedPlugin[] }) {
       </div>
       <p className="text-sm text-muted-foreground">
         Everything else is on the{' '}
-        <Link href="/docs/plugins/marketplace" className="text-primary hover:underline">
+        <Link href="/docs/plugins/marketplace" className="text-accent hover:underline">
           marketplace
         </Link>
         , and{' '}
-        <Link href="/docs/extending" className="text-primary hover:underline">
+        <Link href="/docs/extending" className="text-accent hover:underline">
           four ways to extend
         </Link>{' '}
         says when a plugin is the wrong tool for the job.

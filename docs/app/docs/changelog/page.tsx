@@ -20,7 +20,7 @@ export default function ChangelogPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Release History</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Release History</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Changelog
               </h1>
@@ -51,7 +51,7 @@ export default function ChangelogPage() {
                     <ul className="space-y-1">
                       {week.entries.map((entry) => (
                         <li key={entry.version} className="text-sm leading-snug">
-                          <a href={`#v${entry.version}`} className="text-primary/80 hover:text-primary font-mono text-xs mr-2">
+                          <a href={`#v${entry.version}`} className="text-accent/80 hover:text-accent font-mono text-xs mr-2">
                             v{entry.version}
                           </a>
                           <span className="text-muted-foreground">{entry.title}</span>
@@ -69,7 +69,7 @@ export default function ChangelogPage() {
             {/* v3.415.0 */}
             <div className="mb-12" id="v3.415.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.415.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 28, 2026</span>
@@ -143,7 +143,7 @@ export default function ChangelogPage() {
             {/* v3.414.0 */}
             <div className="mb-12" id="v3.414.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.414.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 28, 2026</span>
@@ -236,7 +236,7 @@ export default function ChangelogPage() {
             {/* v3.413.0 */}
             <div className="mb-12" id="v3.413.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.413.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -324,7 +324,7 @@ export default function ChangelogPage() {
             {/* v3.412.1 */}
             <div className="mb-12" id="v3.412.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.412.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -378,7 +378,7 @@ export default function ChangelogPage() {
             {/* v3.412.0 */}
             <div className="mb-12" id="v3.412.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.412.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -457,7 +457,7 @@ export default function ChangelogPage() {
             {/* v3.411.27 */}
             <div className="mb-12" id="v3.411.27">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.27
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -503,7 +503,7 @@ export default function ChangelogPage() {
             {/* v3.411.26 */}
             <div className="mb-12" id="v3.411.26">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.26
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -559,7 +559,7 @@ export default function ChangelogPage() {
             {/* v3.411.25 */}
             <div className="mb-12" id="v3.411.25">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.25
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -602,7 +602,7 @@ export default function ChangelogPage() {
             {/* v3.411.24 */}
             <div className="mb-12" id="v3.411.24">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.24
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -648,7 +648,7 @@ export default function ChangelogPage() {
             {/* v3.411.23 */}
             <div className="mb-12" id="v3.411.23">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.23
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -699,7 +699,7 @@ export default function ChangelogPage() {
             {/* v3.411.22 */}
             <div className="mb-12" id="v3.411.22">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.22
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -725,7 +725,7 @@ export default function ChangelogPage() {
             {/* v3.411.21 */}
             <div className="mb-12" id="v3.411.21">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.21
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -800,7 +800,7 @@ export default function ChangelogPage() {
             {/* v3.411.20 */}
             <div className="mb-12" id="v3.411.20">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.20
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -854,7 +854,7 @@ export default function ChangelogPage() {
             {/* v3.411.19 */}
             <div className="mb-12" id="v3.411.19">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.19
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -925,7 +925,7 @@ export default function ChangelogPage() {
             {/* v3.411.18 */}
             <div className="mb-12" id="v3.411.18">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.18
                 </span>
                 <span className="text-sm text-muted-foreground">October 27, 2026</span>
@@ -993,7 +993,7 @@ export default function ChangelogPage() {
             {/* v3.411.17 */}
             <div className="mb-12" id="v3.411.17">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.17
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1058,7 +1058,7 @@ export default function ChangelogPage() {
             {/* v3.411.16 */}
             <div className="mb-12" id="v3.411.16">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.16
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1123,7 +1123,7 @@ export default function ChangelogPage() {
             {/* v3.411.15 */}
             <div className="mb-12" id="v3.411.15">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.15
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1182,7 +1182,7 @@ export default function ChangelogPage() {
             {/* v3.411.14 */}
             <div className="mb-12" id="v3.411.14">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.14
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1232,7 +1232,7 @@ export default function ChangelogPage() {
             {/* v3.411.13 */}
             <div className="mb-12" id="v3.411.13">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.13
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1283,7 +1283,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.12 */}
             <div className="mb-12" id="v3.411.12">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.12
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1320,7 +1320,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.11 */}
             <div className="mb-12" id="v3.411.11">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.11
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1379,7 +1379,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.10 */}
             <div className="mb-12" id="v3.411.10">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.10
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1428,7 +1428,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.9 */}
             <div className="mb-12" id="v3.411.9">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.9
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1490,7 +1490,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.8 */}
             <div className="mb-12" id="v3.411.8">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.8
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1532,7 +1532,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.7 */}
             <div className="mb-12" id="v3.411.7">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.7
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1577,7 +1577,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.6 */}
             <div className="mb-12" id="v3.411.6">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.6
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1633,7 +1633,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.5 */}
             <div className="mb-12" id="v3.411.5">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.5
                 </span>
                 <span className="text-sm text-muted-foreground">October 26, 2026</span>
@@ -1683,7 +1683,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.4 */}
             <div className="mb-12" id="v3.411.4">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.4
                 </span>
                 <span className="text-sm text-muted-foreground">October 24, 2026</span>
@@ -1732,7 +1732,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.3 */}
             <div className="mb-12" id="v3.411.3">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.3
                 </span>
                 <span className="text-sm text-muted-foreground">October 24, 2026</span>
@@ -1788,7 +1788,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.2 */}
             <div className="mb-12" id="v3.411.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.2
                 </span>
                 <span className="text-sm text-muted-foreground">October 24, 2026</span>
@@ -1849,7 +1849,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.1 */}
             <div className="mb-12" id="v3.411.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 24, 2026</span>
@@ -1895,7 +1895,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.411.0 */}
             <div className="mb-12" id="v3.411.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.411.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 24, 2026</span>
@@ -1928,9 +1928,9 @@ return tx.Create(&org).Error                  // also returns "record not found"
                 <p>
                   Both came out of a Scout scan of a generated app: 160 findings, grade D, of
                   which two were real. The other 158 are reported upstream as{' '}
-                  <a href="https://github.com/MUKE-coder/scout/issues/4" className="text-primary hover:underline">scout#4</a>,{' '}
-                  <a href="https://github.com/MUKE-coder/scout/issues/5" className="text-primary hover:underline">#5</a> and{' '}
-                  <a href="https://github.com/MUKE-coder/scout/issues/6" className="text-primary hover:underline">#6</a>.
+                  <a href="https://github.com/MUKE-coder/scout/issues/4" className="text-accent hover:underline">scout#4</a>,{' '}
+                  <a href="https://github.com/MUKE-coder/scout/issues/5" className="text-accent hover:underline">#5</a> and{' '}
+                  <a href="https://github.com/MUKE-coder/scout/issues/6" className="text-accent hover:underline">#6</a>.
                 </p>
               </div>
             </div>
@@ -1938,7 +1938,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.410.1 */}
             <div className="mb-12" id="v3.410.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.410.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -1980,7 +1980,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.410.0 */}
             <div className="mb-12" id="v3.410.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.410.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2025,7 +2025,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.409.1 */}
             <div className="mb-12" id="v3.409.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.409.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2063,7 +2063,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.409.0 */}
             <div className="mb-12" id="v3.409.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.409.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2136,7 +2136,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.408.2 */}
             <div className="mb-12" id="v3.408.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.408.2
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2170,7 +2170,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.408.1 */}
             <div className="mb-12" id="v3.408.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.408.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2199,7 +2199,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.408.0 */}
             <div className="mb-12" id="v3.408.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.408.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2256,7 +2256,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.407.2 */}
             <div className="mb-12" id="v3.407.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.407.2
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2298,7 +2298,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.407.1 */}
             <div className="mb-12" id="v3.407.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.407.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2337,7 +2337,7 @@ return tx.Create(&org).Error                  // also returns "record not found"
             {/* v3.407.0 */}
             <div className="mb-12" id="v3.407.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.407.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 23, 2026</span>
@@ -2410,7 +2410,7 @@ GET  /api/v1/admin/blogs    [AuthRequired, RequireRole(ADMIN),
             {/* v3.406.0 */}
             <div className="mb-12" id="v3.406.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.406.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 22, 2026</span>
@@ -2492,7 +2492,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.405.1 */}
             <div className="mb-12" id="v3.405.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.405.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 22, 2026</span>
@@ -2524,7 +2524,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.405.0 */}
             <div className="mb-12" id="v3.405.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.405.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 22, 2026</span>
@@ -2579,7 +2579,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.404.1 */}
             <div className="mb-12" id="v3.404.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.404.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 22, 2026</span>
@@ -2614,7 +2614,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.404.0 */}
             <div className="mb-12" id="v3.404.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.404.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 22, 2026</span>
@@ -2661,7 +2661,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.403.0 */}
             <div className="mb-12" id="v3.403.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.403.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 18, 2026</span>
@@ -2706,7 +2706,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.402.1 */}
             <div className="mb-12" id="v3.402.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.402.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 16, 2026</span>
@@ -2752,7 +2752,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.402.0 */}
             <div className="mb-12" id="v3.402.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.402.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 16, 2026</span>
@@ -2818,7 +2818,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.401.1 */}
             <div className="mb-12" id="v3.401.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.401.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 16, 2026</span>
@@ -2847,7 +2847,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.401.0 */}
             <div className="mb-12" id="v3.401.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.401.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 16, 2026</span>
@@ -2940,7 +2940,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.400.2 */}
             <div className="mb-12" id="v3.400.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.400.2
                 </span>
                 <span className="text-sm text-muted-foreground">October 15, 2026</span>
@@ -2991,7 +2991,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.400.1 */}
             <div className="mb-12" id="v3.400.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.400.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 15, 2026</span>
@@ -3049,7 +3049,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.400.0 */}
             <div className="mb-12" id="v3.400.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.400.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 15, 2026</span>
@@ -3143,7 +3143,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.399.0 */}
             <div className="mb-12" id="v3.399.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.399.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 15, 2026</span>
@@ -3208,7 +3208,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.398.0 */}
             <div className="mb-12" id="v3.398.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.398.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 12, 2026</span>
@@ -3277,7 +3277,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.397.0 */}
             <div className="mb-12" id="v3.397.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.397.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 12, 2026</span>
@@ -3349,7 +3349,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.396.0 */}
             <div className="mb-12" id="v3.396.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.396.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 12, 2026</span>
@@ -3429,7 +3429,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.395.0 */}
             <div className="mb-12" id="v3.395.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.395.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 9, 2026</span>
@@ -3520,7 +3520,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.394.5 */}
             <div className="mb-12" id="v3.394.5">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.394.5
                 </span>
                 <span className="text-sm text-muted-foreground">October 9, 2026</span>
@@ -3609,7 +3609,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.394.4 */}
             <div className="mb-12" id="v3.394.4">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.394.4
                 </span>
                 <span className="text-sm text-muted-foreground">October 9, 2026</span>
@@ -3701,7 +3701,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.394.3 */}
             <div className="mb-12" id="v3.394.3">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.394.3
                 </span>
                 <span className="text-sm text-muted-foreground">October 9, 2026</span>
@@ -3802,7 +3802,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.394.2 */}
             <div className="mb-12" id="v3.394.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.394.2
                 </span>
                 <span className="text-sm text-muted-foreground">October 9, 2026</span>
@@ -3865,7 +3865,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.394.1 */}
             <div className="mb-12" id="v3.394.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.394.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 9, 2026</span>
@@ -3893,7 +3893,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.394.0 */}
             <div className="mb-12" id="v3.394.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.394.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 9, 2026</span>
@@ -4064,7 +4064,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.393.0 */}
             <div className="mb-12" id="v3.393.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.393.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 8, 2026</span>
@@ -4157,7 +4157,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.392.0 */}
             <div className="mb-12" id="v3.392.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.392.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 8, 2026</span>
@@ -4248,7 +4248,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.391.0 */}
             <div className="mb-12" id="v3.391.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.391.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 8, 2026</span>
@@ -4354,7 +4354,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.390.0 */}
             <div className="mb-12" id="v3.390.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.390.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4400,7 +4400,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.389.0 */}
             <div className="mb-12" id="v3.389.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.389.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4447,7 +4447,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.388.0 */}
             <div className="mb-12" id="v3.388.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.388.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4501,7 +4501,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.387.0 */}
             <div className="mb-12" id="v3.387.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.387.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4543,7 +4543,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.386.0 */}
             <div className="mb-12" id="v3.386.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.386.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4619,7 +4619,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.385.0 */}
             <div className="mb-12" id="v3.385.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.385.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4698,7 +4698,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.384.0 */}
             <div className="mb-12" id="v3.384.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.384.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4791,7 +4791,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.383.1 */}
             <div className="mb-12" id="v3.383.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.383.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4816,7 +4816,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.383.0 */}
             <div className="mb-12" id="v3.383.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.383.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4875,7 +4875,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.382.0 */}
             <div className="mb-12" id="v3.382.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.382.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4917,7 +4917,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.381.1 */}
             <div className="mb-12" id="v3.381.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.381.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -4957,7 +4957,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.381.0 */}
             <div className="mb-12" id="v3.381.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.381.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 7, 2026</span>
@@ -5038,7 +5038,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.380.0 */}
             <div className="mb-12" id="v3.380.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.380.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5109,7 +5109,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.379.0 */}
             <div className="mb-12" id="v3.379.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.379.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5173,7 +5173,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.378.3 */}
             <div className="mb-12" id="v3.378.3">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.378.3
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5210,7 +5210,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.378.2 */}
             <div className="mb-12" id="v3.378.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.378.2
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5255,7 +5255,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.378.1 */}
             <div className="mb-12" id="v3.378.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.378.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5283,7 +5283,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.378.0 */}
             <div className="mb-12" id="v3.378.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.378.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5363,7 +5363,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.377.0 */}
             <div className="mb-12" id="v3.377.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.377.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5423,7 +5423,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.376.0 */}
             <div className="mb-12" id="v3.376.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.376.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5512,7 +5512,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.375.1 */}
             <div className="mb-12" id="v3.375.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.375.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5539,7 +5539,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.375.0 */}
             <div className="mb-12" id="v3.375.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.375.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5590,7 +5590,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.374.1 */}
             <div className="mb-12" id="v3.374.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.374.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5661,7 +5661,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.373.0 */}
             <div className="mb-12" id="v3.373.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.373.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5726,7 +5726,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.372.1 */}
             <div className="mb-12" id="v3.372.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.372.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5755,7 +5755,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.372.0 */}
             <div className="mb-12" id="v3.372.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.372.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 6, 2026</span>
@@ -5865,7 +5865,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.371.0 */}
             <div className="mb-12" id="v3.371.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.371.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -5933,7 +5933,7 @@ cycle:select[monthly, annually] if kind == recurring</code></pre>
             {/* v3.370.0 */}
             <div className="mb-12" id="v3.370.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.370.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6005,7 +6005,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.369.0 */}
             <div className="mb-12" id="v3.369.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.369.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6049,7 +6049,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.368.0 */}
             <div className="mb-12" id="v3.368.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.368.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6109,7 +6109,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.367.0 */}
             <div className="mb-12" id="v3.367.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.367.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6191,7 +6191,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.366.0 */}
             <div className="mb-12" id="v3.366.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.366.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6235,7 +6235,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.365.0 */}
             <div className="mb-12" id="v3.365.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.365.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6299,7 +6299,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.364.0 */}
             <div className="mb-12" id="v3.364.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.364.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6353,7 +6353,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.363.0 */}
             <div className="mb-12" id="v3.363.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.363.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 5, 2026</span>
@@ -6412,7 +6412,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.362.0 */}
             <div className="mb-12" id="v3.362.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.362.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 4, 2026</span>
@@ -6465,7 +6465,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.361.0 */}
             <div className="mb-12" id="v3.361.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.361.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 4, 2026</span>
@@ -6521,7 +6521,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.360.0 */}
             <div className="mb-12" id="v3.360.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.360.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 4, 2026</span>
@@ -6582,7 +6582,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.359.0 */}
             <div className="mb-12" id="v3.359.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.359.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 4, 2026</span>
@@ -6630,7 +6630,7 @@ minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
             {/* v3.358.0 */}
             <div className="mb-12" id="v3.358.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.358.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 4, 2026</span>
@@ -6689,7 +6689,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.357.0 */}
             <div className="mb-12" id="v3.357.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.357.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 4, 2026</span>
@@ -6750,7 +6750,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.356.0 */}
             <div className="mb-12" id="v3.356.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.356.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 3, 2026</span>
@@ -6791,7 +6791,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.355.0 */}
             <div className="mb-12" id="v3.355.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.355.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 3, 2026</span>
@@ -6830,7 +6830,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.354.0 */}
             <div className="mb-12" id="v3.354.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.354.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 3, 2026</span>
@@ -6885,7 +6885,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.353.0 */}
             <div className="mb-12" id="v3.353.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.353.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 3, 2026</span>
@@ -6920,7 +6920,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.352.0 */}
             <div className="mb-12" id="v3.352.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.352.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 3, 2026</span>
@@ -6968,7 +6968,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.351.0 */}
             <div className="mb-12" id="v3.351.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.351.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 3, 2026</span>
@@ -7010,7 +7010,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.350.0 */}
             <div className="mb-12" id="v3.350.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.350.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 3, 2026</span>
@@ -7065,7 +7065,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.349.0 */}
             <div className="mb-12" id="v3.349.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.349.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 2, 2026</span>
@@ -7104,7 +7104,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.348.0 */}
             <div className="mb-12" id="v3.348.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.348.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 2, 2026</span>
@@ -7146,7 +7146,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.347.0 */}
             <div className="mb-12" id="v3.347.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.347.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 2, 2026</span>
@@ -7187,7 +7187,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.346.0 */}
             <div className="mb-12" id="v3.346.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.346.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 2, 2026</span>
@@ -7232,7 +7232,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.345.0 */}
             <div className="mb-12" id="v3.345.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.345.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7286,7 +7286,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.344.0 */}
             <div className="mb-12" id="v3.344.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.344.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7333,7 +7333,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.343.0 */}
             <div className="mb-12" id="v3.343.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.343.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7374,7 +7374,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.342.0 */}
             <div className="mb-12" id="v3.342.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.342.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7418,7 +7418,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.341.0 */}
             <div className="mb-12" id="v3.341.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.341.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7476,7 +7476,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.340.0 */}
             <div className="mb-12" id="v3.340.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.340.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7533,7 +7533,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.339.0 */}
             <div className="mb-12" id="v3.339.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.339.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7597,7 +7597,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.338.1 */}
             <div className="mb-12" id="v3.338.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.338.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7636,7 +7636,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.338.0 */}
             <div className="mb-12" id="v3.338.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.338.0
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7699,7 +7699,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.337.1 */}
             <div className="mb-12" id="v3.337.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.337.1
                 </span>
                 <span className="text-sm text-muted-foreground">October 1, 2026</span>
@@ -7788,7 +7788,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.336.1 */}
             <div className="mb-12" id="v3.336.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.336.1
                 </span>
                 <span className="text-sm text-muted-foreground">September 28, 2026</span>
@@ -7819,7 +7819,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.336.0 */}
             <div className="mb-12" id="v3.336.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.336.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 28, 2026</span>
@@ -7876,7 +7876,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.335.0 */}
             <div className="mb-12" id="v3.335.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.335.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 28, 2026</span>
@@ -7981,7 +7981,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.334.0 */}
             <div className="mb-12" id="v3.334.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.334.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 28, 2026</span>
@@ -8059,7 +8059,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.333.0 */}
             <div className="mb-12" id="v3.333.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.333.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 26, 2026</span>
@@ -8121,7 +8121,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.332.0 */}
             <div className="mb-12" id="v3.332.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.332.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 25, 2026</span>
@@ -8179,7 +8179,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.331.0 */}
             <div className="mb-12" id="v3.331.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.331.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 25, 2026</span>
@@ -8224,7 +8224,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.330.0 */}
             <div className="mb-12" id="v3.330.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.330.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 25, 2026</span>
@@ -8272,7 +8272,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.329.0 */}
             <div className="mb-12" id="v3.329.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.329.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 25, 2026</span>
@@ -8308,7 +8308,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.328.0 */}
             <div className="mb-12" id="v3.328.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.328.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 25, 2026</span>
@@ -8334,7 +8334,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
                 <h3>Sixty-seven colour utilities that compiled to nothing</h3>
                 <p>
                   Tailwind v4 makes one utility per <code>--color-*</code> in the theme block, and
-                  the admin defines sixteen. <code>text-text-primary</code>, <code>bg-card</code>,{' '}
+                  the admin defines sixteen. <code>text-text-accent</code>, <code>bg-card</code>,{' '}
                   <code>text-muted-foreground</code>, <code>bg-bg-primary</code> and the rest name
                   nothing, so they produce no rule: no build error, no console warning, just an
                   element keeping whatever it inherited. A page looks almost right, which is worse
@@ -8411,7 +8411,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.327.0 */}
             <div className="mb-12" id="v3.327.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.327.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 25, 2026</span>
@@ -8453,7 +8453,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.326.0 */}
             <div className="mb-12" id="v3.326.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.326.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8509,7 +8509,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.325.0 */}
             <div className="mb-12" id="v3.325.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.325.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8533,7 +8533,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
                   Writing the test that holds the above turned up something older. Buttons are{' '}
                   <code>bg-accent text-accent-fg</code>, and neither Aurora nor Pulse ever set{' '}
                   <code>--accent-fg</code>. With that token undefined the label falls back to{' '}
-                  <code>--text-primary</code>: near-black text on Aurora&apos;s near-black button, which cannot be read
+                  <code>--text-accent</code>: near-black text on Aurora&apos;s near-black button, which cannot be read
                   at all, and near-black on Pulse&apos;s blue, which barely can.
                 </p>
                 <p>
@@ -8547,7 +8547,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.324.0 */}
             <div className="mb-12" id="v3.324.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.324.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8574,7 +8574,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.323.1 */}
             <div className="mb-12" id="v3.323.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.323.1
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8624,7 +8624,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.322.0 */}
             <div className="mb-12" id="v3.322.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.322.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8689,7 +8689,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.321.0 */}
             <div className="mb-12" id="v3.321.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.321.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8730,7 +8730,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.320.0 */}
             <div className="mb-12" id="v3.320.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.320.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8858,7 +8858,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.319.0 */}
             <div className="mb-12" id="v3.319.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.319.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8919,7 +8919,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.318.0 */}
             <div className="mb-12" id="v3.318.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.318.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
@@ -8972,7 +8972,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.317.0 */}
             <div className="mb-12" id="v3.317.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.317.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 23, 2026</span>
@@ -9011,7 +9011,7 @@ GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}<
             {/* v3.316.0 */}
             <div className="mb-12" id="v3.316.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.316.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 23, 2026</span>
@@ -9058,7 +9058,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.315.0 */}
             <div className="mb-12" id="v3.315.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.315.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 23, 2026</span>
@@ -9115,7 +9115,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.314.0 */}
             <div className="mb-12" id="v3.314.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.314.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 23, 2026</span>
@@ -9177,7 +9177,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.313.0 */}
             <div className="mb-12" id="v3.313.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.313.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 23, 2026</span>
@@ -9203,7 +9203,7 @@ git diff                                # and see exactly what that did`}
                 </p>
                 <p>
                   Return URLs are built from <code>SITE_URL</code> plus a path, never from a URL the browser sends. See{' '}
-                  <Link href="/docs/plugins/stripe" className="text-primary hover:underline">the plugin&apos;s page</Link>.
+                  <Link href="/docs/plugins/stripe" className="text-accent hover:underline">the plugin&apos;s page</Link>.
                   Ten shipped tests cover it, and it was driven against a running API: a created subscription grants
                   access, a redelivery is skipped, past_due keeps it, canceled ends it, and a subscription for nobody is
                   recorded against nobody.
@@ -9214,7 +9214,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.312.0 */}
             <div className="mb-12" id="v3.312.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.312.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9240,7 +9240,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.311.0 */}
             <div className="mb-12" id="v3.311.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.311.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9268,7 +9268,7 @@ git diff                                # and see exactly what that did`}
                 <p>
                   No stripe-go: four REST calls with the API version pinned, because its webhook parser refuses any
                   event whose API version differs from the library&apos;s. See{' '}
-                  <Link href="/docs/plugins/stripe" className="text-primary hover:underline">the plugin&apos;s page</Link>.
+                  <Link href="/docs/plugins/stripe" className="text-accent hover:underline">the plugin&apos;s page</Link>.
                   Found missing building the storefront blueprint.
                 </p>
                 <h3>The CSP has a list plugins add origins to</h3>
@@ -9311,7 +9311,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.310.0 */}
             <div className="mb-12" id="v3.310.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.310.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9333,7 +9333,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.309.0 */}
             <div className="mb-12" id="v3.309.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.309.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9365,7 +9365,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.308.0 */}
             <div className="mb-12" id="v3.308.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.308.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9389,7 +9389,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.307.0 */}
             <div className="mb-12" id="v3.307.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.307.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9405,7 +9405,7 @@ git diff                                # and see exactly what that did`}
                   key of an upload you own and answers <code>202</code>; <code>GET /videos/:id</code> reports
                   pending, processing, ready or failed. <code>VideoPlayer</code> and <code>useVideo</code> come for
                   the web app and, with <code>expo-video</code>, for the Expo app. See{' '}
-                  <Link href="/docs/plugins/video" className="text-primary hover:underline">the plugin&apos;s page</Link>.
+                  <Link href="/docs/plugins/video" className="text-accent hover:underline">the plugin&apos;s page</Link>.
                 </p>
                 <p>
                   <strong>The table is the queue.</strong> A worker claims a pending video with a conditional update,
@@ -9437,7 +9437,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.306.0 */}
             <div className="mb-12" id="v3.306.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.306.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9468,7 +9468,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.305.0 */}
             <div className="mb-12" id="v3.305.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.305.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9498,7 +9498,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.304.0 */}
             <div className="mb-12" id="v3.304.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.304.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9518,7 +9518,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.303.0 */}
             <div className="mb-12" id="v3.303.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.303.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 22, 2026</span>
@@ -9569,7 +9569,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.302.0 */}
             <div className="mb-12" id="v3.302.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.302.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9601,7 +9601,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.301.0 */}
             <div className="mb-12" id="v3.301.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.301.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9642,7 +9642,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.300.0 */}
             <div className="mb-12" id="v3.300.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.300.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9677,7 +9677,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.299.0 */}
             <div className="mb-12" id="v3.299.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.299.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9713,7 +9713,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.298.0 */}
             <div className="mb-12" id="v3.298.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.298.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9761,7 +9761,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.297.0 */}
             <div className="mb-12" id="v3.297.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.297.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9792,7 +9792,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.296.0 */}
             <div className="mb-12" id="v3.296.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.296.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9821,7 +9821,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.295.0 */}
             <div className="mb-12" id="v3.295.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.295.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9866,7 +9866,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.294.0 */}
             <div className="mb-12" id="v3.294.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.294.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9918,7 +9918,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.293.0 */}
             <div className="mb-12" id="v3.293.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.293.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 21, 2026</span>
@@ -9962,7 +9962,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.292.0 */}
             <div className="mb-12" id="v3.292.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.292.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 18, 2026</span>
@@ -10002,7 +10002,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.291.0 */}
             <div className="mb-12" id="v3.291.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.291.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 18, 2026</span>
@@ -10052,7 +10052,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.290.0 */}
             <div className="mb-12" id="v3.290.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.290.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 18, 2026</span>
@@ -10094,7 +10094,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.289.0 */}
             <div className="mb-12" id="v3.289.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.289.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 17, 2026</span>
@@ -10145,7 +10145,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.288.0 */}
             <div className="mb-12" id="v3.288.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.288.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 17, 2026</span>
@@ -10202,7 +10202,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.287.0 */}
             <div className="mb-12" id="v3.287.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.287.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 17, 2026</span>
@@ -10263,7 +10263,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.286.0 */}
             <div className="mb-12" id="v3.286.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.286.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 16, 2026</span>
@@ -10324,7 +10324,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.285.0 */}
             <div className="mb-12" id="v3.285.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.285.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 16, 2026</span>
@@ -10389,7 +10389,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.284.0 */}
             <div className="mb-12" id="v3.284.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.284.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 16, 2026</span>
@@ -10460,7 +10460,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.283.0 */}
             <div className="mb-12" id="v3.283.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.283.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 16, 2026</span>
@@ -10525,7 +10525,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.282.0 */}
             <div className="mb-12" id="v3.282.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.282.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 16, 2026</span>
@@ -10599,7 +10599,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.281.0 */}
             <div className="mb-12" id="v3.281.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.281.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 16, 2026</span>
@@ -10657,7 +10657,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.280.0 */}
             <div className="mb-12" id="v3.280.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.280.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -10724,7 +10724,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.279.0 */}
             <div className="mb-12" id="v3.279.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.279.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -10770,7 +10770,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.278.0 */}
             <div className="mb-12" id="v3.278.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.278.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -10817,7 +10817,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.277.0 */}
             <div className="mb-12" id="v3.277.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.277.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -10854,7 +10854,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.276.0 */}
             <div className="mb-12" id="v3.276.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.276.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -10895,7 +10895,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.275.0 */}
             <div className="mb-12" id="v3.275.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.275.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -10945,7 +10945,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.274.0 */}
             <div className="mb-12" id="v3.274.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.274.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -10989,7 +10989,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.273.0 */}
             <div className="mb-12" id="v3.273.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.273.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -11035,7 +11035,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.272.0 */}
             <div className="mb-12" id="v3.272.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.272.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -11106,7 +11106,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.271.0 */}
             <div className="mb-12" id="v3.271.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.271.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 15, 2026</span>
@@ -11175,7 +11175,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.270.0 */}
             <div className="mb-12" id="v3.270.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.270.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11232,7 +11232,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.269.0 */}
             <div className="mb-12" id="v3.269.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.269.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11294,7 +11294,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.268.0 */}
             <div className="mb-12" id="v3.268.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.268.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11349,7 +11349,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.267.1 */}
             <div className="mb-12" id="v3.267.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.267.1
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11371,7 +11371,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.267.0 */}
             <div className="mb-12" id="v3.267.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.267.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11408,7 +11408,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.266.0 */}
             <div className="mb-12" id="v3.266.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.266.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11458,7 +11458,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.265.0 */}
             <div className="mb-12" id="v3.265.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.265.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11502,7 +11502,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.264.0 */}
             <div className="mb-12" id="v3.264.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.264.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11540,7 +11540,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.263.0 */}
             <div className="mb-12" id="v3.263.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.263.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11579,7 +11579,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.262.0 */}
             <div className="mb-12" id="v3.262.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.262.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11614,7 +11614,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.261.0 */}
             <div className="mb-12" id="v3.261.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.261.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11648,7 +11648,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.260.0 */}
             <div className="mb-12" id="v3.260.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.260.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11698,7 +11698,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.259.0 */}
             <div className="mb-12" id="v3.259.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.259.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11750,7 +11750,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.258.0 */}
             <div className="mb-12" id="v3.258.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.258.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11798,7 +11798,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.257.0 */}
             <div className="mb-12" id="v3.257.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.257.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11848,7 +11848,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.256.0 */}
             <div className="mb-12" id="v3.256.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.256.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 14, 2026</span>
@@ -11896,7 +11896,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.255.0 */}
             <div className="mb-12" id="v3.255.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.255.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -11937,7 +11937,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.254.0 */}
             <div className="mb-12" id="v3.254.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.254.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -11981,7 +11981,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.253.0 */}
             <div className="mb-12" id="v3.253.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.253.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12019,7 +12019,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.252.0 */}
             <div className="mb-12" id="v3.252.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.252.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12062,7 +12062,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.251.0 */}
             <div className="mb-12" id="v3.251.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.251.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12118,7 +12118,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.250.0 */}
             <div className="mb-12" id="v3.250.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.250.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12158,7 +12158,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.249.0 */}
             <div className="mb-12" id="v3.249.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.249.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12197,7 +12197,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.248.0 */}
             <div className="mb-12" id="v3.248.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.248.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12244,7 +12244,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.247.0 */}
             <div className="mb-12" id="v3.247.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.247.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12291,7 +12291,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.246.0 */}
             <div className="mb-12" id="v3.246.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.246.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12339,7 +12339,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.245.0 */}
             <div className="mb-12" id="v3.245.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.245.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12399,7 +12399,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.244.0 */}
             <div className="mb-12" id="v3.244.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.244.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12462,7 +12462,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.243.0 */}
             <div className="mb-12" id="v3.243.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.243.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12534,7 +12534,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.242.0 */}
             <div className="mb-12" id="v3.242.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.242.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12587,7 +12587,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.241.0 */}
             <div className="mb-12" id="v3.241.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.241.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12695,7 +12695,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.240.1 */}
             <div className="mb-12" id="v3.240.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.240.1
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12735,7 +12735,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.240.0 */}
             <div className="mb-12" id="v3.240.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.240.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12795,7 +12795,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.239.0 */}
             <div className="mb-12" id="v3.239.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.239.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 13, 2026</span>
@@ -12856,7 +12856,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.238.0 */}
             <div className="mb-12" id="v3.238.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.238.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -12906,7 +12906,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.237.0 */}
             <div className="mb-12" id="v3.237.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.237.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -12965,7 +12965,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.236.0 */}
             <div className="mb-12" id="v3.236.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.236.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13043,7 +13043,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.235.0 */}
             <div className="mb-12" id="v3.235.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.235.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13112,7 +13112,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.234.0 */}
             <div className="mb-12" id="v3.234.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.234.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13178,7 +13178,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.233.0 */}
             <div className="mb-12" id="v3.233.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.233.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13248,7 +13248,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.232.0 */}
             <div className="mb-12" id="v3.232.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.232.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13309,7 +13309,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.231.0 */}
             <div className="mb-12" id="v3.231.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.231.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13363,7 +13363,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.230.0 */}
             <div className="mb-12" id="v3.230.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.230.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13422,7 +13422,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.229.0 */}
             <div className="mb-12" id="v3.229.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.229.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13476,7 +13476,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.228.0 */}
             <div className="mb-12" id="v3.228.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.228.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13537,7 +13537,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.227.0 */}
             <div className="mb-12" id="v3.227.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.227.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13588,7 +13588,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.226.0 */}
             <div className="mb-12" id="v3.226.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.226.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13635,7 +13635,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.225.0 */}
             <div className="mb-12" id="v3.225.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.225.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 12, 2026</span>
@@ -13685,7 +13685,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.224.0 */}
             <div className="mb-12" id="v3.224.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.224.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -13741,7 +13741,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.223.0 */}
             <div className="mb-12" id="v3.223.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.223.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -13781,7 +13781,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.222.1 */}
             <div className="mb-12" id="v3.222.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.222.1
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -13811,7 +13811,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.222.0 */}
             <div className="mb-12" id="v3.222.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.222.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -13874,7 +13874,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.221.0 */}
             <div className="mb-12" id="v3.221.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.221.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -13920,7 +13920,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.220.0 */}
             <div className="mb-12" id="v3.220.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.220.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -13954,7 +13954,7 @@ git diff                                # and see exactly what that did`}
                   gate; a custom role granted <code>products.delete</code> deletes a product and still
                   cannot list users. <code>grit upgrade</code> does not restructure an existing{' '}
                   <code>routes.go</code>; it says so, and the{' '}
-                  <a href="/docs/security/authorization#staff-routes" className="text-primary hover:underline">Roles &amp; permissions</a>{' '}
+                  <a href="/docs/security/authorization#staff-routes" className="text-accent hover:underline">Roles &amp; permissions</a>{' '}
                   page shows the change. Until then generated deletes on such a project stay ADMIN-only,
                   as before.
                 </p>
@@ -13964,7 +13964,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.219.0 */}
             <div className="mb-12" id="v3.219.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.219.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -14000,7 +14000,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.218.0 */}
             <div className="mb-12" id="v3.218.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.218.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -14032,12 +14032,12 @@ git diff                                # and see exactly what that did`}
 
                 <h3>Running more than one instance</h3>
                 <p>
-                  A new page, <Link href="/docs/deployment/multiple-instances" className="text-primary hover:underline">Running more than one instance</Link>,
+                  A new page, <Link href="/docs/deployment/multiple-instances" className="text-accent hover:underline">Running more than one instance</Link>,
                   covers what the copies must share, what is already shared between them, and what is
                   still counted per copy. Realtime needed nothing: one event caused on one copy reached
                   1,000 sockets on another in 0.16 seconds, through the Redis backplane that was already
                   there. Sentinel&apos;s per-IP rate limits are still per copy, which is filed as{' '}
-                  <a href="https://github.com/MUKE-coder/sentinel/issues/18" className="text-primary hover:underline">Sentinel #18</a>.
+                  <a href="https://github.com/MUKE-coder/sentinel/issues/18" className="text-accent hover:underline">Sentinel #18</a>.
                 </p>
                 <p>
                   <code>grit upgrade</code> adds the cluster package, updates the permission cache and
@@ -14054,7 +14054,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.217.0 */}
             <div className="mb-12" id="v3.217.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.217.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -14132,7 +14132,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.216.0 */}
             <div className="mb-12" id="v3.216.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.216.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -14171,7 +14171,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.215.0 */}
             <div className="mb-12" id="v3.215.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.215.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -14222,7 +14222,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.214.0 */}
             <div className="mb-12" id="v3.214.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.214.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -14312,7 +14312,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.213.0 */}
             <div className="mb-12" id="v3.213.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.213.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 11, 2026</span>
@@ -14360,7 +14360,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.212.0 */}
             <div className="mb-12" id="v3.212.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.212.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 10, 2026</span>
@@ -14434,7 +14434,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.210.0 */}
             <div className="mb-12" id="v3.210.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.210.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 10, 2026</span>
@@ -14511,7 +14511,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.209.0 */}
             <div className="mb-12" id="v3.209.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.209.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 10, 2026</span>
@@ -14586,7 +14586,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.208.0 */}
             <div className="mb-12" id="v3.208.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.208.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 10, 2026</span>
@@ -14665,7 +14665,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.207.0 */}
             <div className="mb-12" id="v3.207.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.207.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 10, 2026</span>
@@ -14724,7 +14724,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.206.0 */}
             <div className="mb-12" id="v3.206.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.206.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -14816,7 +14816,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.205.1 */}
             <div className="mb-12" id="v3.205.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.205.1
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -14846,7 +14846,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.205.0 */}
             <div className="mb-12" id="v3.205.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.205.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -14951,7 +14951,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.204.0 */}
             <div className="mb-12" id="v3.204.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.204.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15012,7 +15012,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.203.0 */}
             <div className="mb-12" id="v3.203.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.203.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15091,7 +15091,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.202.0 */}
             <div className="mb-12" id="v3.202.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.202.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15138,7 +15138,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.201.0 */}
             <div className="mb-12" id="v3.201.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.201.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15181,7 +15181,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.200.0 */}
             <div className="mb-12" id="v3.200.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.200.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15245,7 +15245,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.199.0 */}
             <div className="mb-12" id="v3.199.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.199.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15280,7 +15280,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.198.0 */}
             <div className="mb-12" id="v3.198.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.198.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15315,7 +15315,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.197.0 */}
             <div className="mb-12" id="v3.197.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.197.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15418,7 +15418,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.196.0 */}
             <div className="mb-12" id="v3.196.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.196.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15483,7 +15483,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.195.0 */}
             <div className="mb-12" id="v3.195.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.195.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 9, 2026</span>
@@ -15570,7 +15570,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.194.0 */}
             <div className="mb-12" id="v3.194.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.194.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 8, 2026</span>
@@ -15688,7 +15688,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.193.0 */}
             <div className="mb-12" id="v3.193.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.193.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 8, 2026</span>
@@ -15791,7 +15791,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.192.0 */}
             <div className="mb-12" id="v3.192.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.192.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 6, 2026</span>
@@ -15853,7 +15853,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.191.0 */}
             <div className="mb-12" id="v3.191.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.191.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 5, 2026</span>
@@ -15900,7 +15900,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.190.0 */}
             <div className="mb-12" id="v3.190.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.190.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 5, 2026</span>
@@ -15964,7 +15964,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.189.0 */}
             <div className="mb-12" id="v3.189.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.189.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 3, 2026</span>
@@ -16011,7 +16011,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.188.0 */}
             <div className="mb-12" id="v3.188.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.188.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 3, 2026</span>
@@ -16040,7 +16040,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.187.0 */}
             <div className="mb-12" id="v3.187.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.187.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 2, 2026</span>
@@ -16118,7 +16118,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.186.0 */}
             <div className="mb-12" id="v3.186.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.186.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 2, 2026</span>
@@ -16230,7 +16230,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.185.0 */}
             <div className="mb-12" id="v3.185.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.185.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 2, 2026</span>
@@ -16310,7 +16310,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.184.0 */}
             <div className="mb-12" id="v3.184.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.184.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 2, 2026</span>
@@ -16379,7 +16379,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.183.0 */}
             <div className="mb-12" id="v3.183.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.183.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 2, 2026</span>
@@ -16440,7 +16440,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.182.0 */}
             <div className="mb-12" id="v3.182.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.182.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 1, 2026</span>
@@ -16494,7 +16494,7 @@ git diff                                # and see exactly what that did`}
             {/* v3.181.0 */}
             <div className="mb-12" id="v3.181.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.181.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 1, 2026</span>
@@ -16549,7 +16549,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             {/* v3.180.0 */}
             <div className="mb-12" id="v3.180.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.180.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 1, 2026</span>
@@ -16600,7 +16600,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             {/* v3.179.0 */}
             <div className="mb-12" id="v3.179.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.179.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 1, 2026</span>
@@ -16643,7 +16643,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             {/* v3.178.0 */}
             <div className="mb-12" id="v3.178.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.178.0
                 </span>
                 <span className="text-sm text-muted-foreground">September 1, 2026</span>
@@ -16707,7 +16707,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             {/* v3.177.0 */}
             <div className="mb-12" id="v3.177.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.177.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 26, 2026</span>
@@ -16775,7 +16775,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             {/* v3.176.0 */}
             <div className="mb-12" id="v3.176.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.176.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 25, 2026</span>
@@ -16829,7 +16829,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             {/* v3.175.0 */}
             <div className="mb-12" id="v3.175.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.175.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 25, 2026</span>
@@ -16879,7 +16879,7 @@ import "@gritframework/upload/styles.css"; // optional
             {/* v3.174.0 */}
             <div className="mb-12" id="v3.174.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.174.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 25, 2026</span>
@@ -16927,7 +16927,7 @@ import "@gritframework/upload/styles.css"; // optional
             {/* v3.173.0 */}
             <div className="mb-12" id="v3.173.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.173.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 25, 2026</span>
@@ -16996,7 +16996,7 @@ export const uploader = createUploader({
             {/* v3.172.0 */}
             <div className="mb-12" id="v3.172.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.172.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 25, 2026</span>
@@ -17054,7 +17054,7 @@ AVIF                downgrades to JPEG     79.9 KB            7544ms`} />
             {/* v3.171.0 */}
             <div className="mb-12" id="v3.171.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.171.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 25, 2026</span>
@@ -17146,7 +17146,7 @@ AVIF                downgrades to JPEG     79.9 KB            7544ms`} />
             {/* v3.170.0 */}
             <div className="mb-12" id="v3.170.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.170.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 20, 2026</span>
@@ -17227,7 +17227,7 @@ AVIF                downgrades to JPEG     79.9 KB            7544ms`} />
             {/* v3.169.1 */}
             <div className="mb-12" id="v3.169.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.169.1
                 </span>
                 <span className="text-sm text-muted-foreground">August 20, 2026</span>
@@ -17281,7 +17281,7 @@ explicitly to \`false\` to avoid hydration mismatches.
             {/* v3.169.0 */}
             <div className="mb-12" id="v3.169.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.169.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 20, 2026</span>
@@ -17346,7 +17346,7 @@ explicitly to \`false\` to avoid hydration mismatches.
             {/* v3.168.1 */}
             <div className="mb-12" id="v3.168.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.168.1
                 </span>
                 <span className="text-sm text-muted-foreground">August 20, 2026</span>
@@ -17390,7 +17390,7 @@ explicitly to \`false\` to avoid hydration mismatches.
             {/* v3.168.0 */}
             <div className="mb-12" id="v3.168.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.168.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 19, 2026</span>
@@ -17456,7 +17456,7 @@ apps/api/internal/models and internal/models)`} />
             {/* v3.167.0 */}
             <div className="mb-12" id="v3.167.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.167.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 19, 2026</span>
@@ -17567,7 +17567,7 @@ apps/api/internal/models and internal/models)`} />
             {/* v3.166.0 */}
             <div className="mb-12" id="v3.166.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.166.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 19, 2026</span>
@@ -17633,7 +17633,7 @@ npx shadcn@latest add https://ui.gritframework.dev/r/ecommerce-product-grids-gri
             {/* v3.165.0 */}
             <div className="mb-12" id="v3.165.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.165.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 19, 2026</span>
@@ -17692,7 +17692,7 @@ from type 'Product': stock, category_id, active, created_at, updated_at`} />
             {/* v3.164.0 */}
             <div className="mb-12" id="v3.164.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.164.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 19, 2026</span>
@@ -17767,7 +17767,7 @@ export interface Category { ... }`} />
             {/* v3.163.0 */}
             <div className="mb-12" id="v3.163.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.163.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 19, 2026</span>
@@ -17845,7 +17845,7 @@ export interface Category { ... }`} />
             {/* v3.162.0 */}
             <div className="mb-12" id="v3.162.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.162.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 19, 2026</span>
@@ -17931,7 +17931,7 @@ constraint "fk_categories_children" (SQLSTATE 23503)`} />
             {/* v3.161.0 */}
             <div className="mb-12" id="v3.161.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.161.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 18, 2026</span>
@@ -17993,7 +17993,7 @@ constraint "fk_categories_children" (SQLSTATE 23503)`} />
             {/* v3.160.0 */}
             <div className="mb-12" id="v3.160.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.160.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18082,7 +18082,7 @@ constraint "fk_categories_children" (SQLSTATE 23503)`} />
             {/* v3.159.0 */}
             <div className="mb-12" id="v3.159.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.159.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18201,7 +18201,7 @@ GET /public/categories/tree          -> the nested menu, one query`} />
             {/* v3.158.0 */}
             <div className="mb-12" id="v3.158.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.158.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18294,7 +18294,7 @@ GET /public/products?archived_at=x    -> all 24 rows`} />
             {/* v3.157.0 */}
             <div className="mb-12" id="v3.157.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.157.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18380,7 +18380,7 @@ productHandler := &handlers.ProductHandler{   // the generator wrote this second
             {/* v3.156.0 */}
             <div className="mb-12" id="v3.156.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.156.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18459,7 +18459,7 @@ productHandler := &handlers.ProductHandler{   // the generator wrote this second
             {/* v3.155.0 */}
             <div className="mb-12" id="v3.155.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.155.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18537,7 +18537,7 @@ curl -X PUT .../api/v1/settings -d '{"values":{"cors.origins":"https://myshop.co
             {/* v3.154.0 */}
             <div className="mb-12" id="v3.154.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.154.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18618,7 +18618,7 @@ curl -X PUT .../api/v1/settings -d '{"values":{"cors.origins":"https://myshop.co
             {/* v3.153.0 */}
             <div className="mb-12" id="v3.153.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.153.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 17, 2026</span>
@@ -18719,7 +18719,7 @@ curl -X PUT .../api/v1/settings -d '{"values":{"cors.origins":"https://myshop.co
             {/* v3.152.0 */}
             <div className="mb-12" id="v3.152.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.152.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 16, 2026</span>
@@ -18801,7 +18801,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.151.0 */}
             <div className="mb-12" id="v3.151.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.151.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 16, 2026</span>
@@ -18892,7 +18892,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.150.0 */}
             <div className="mb-12" id="v3.150.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.150.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 16, 2026</span>
@@ -18973,7 +18973,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.149.0 */}
             <div className="mb-12" id="v3.149.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.149.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 16, 2026</span>
@@ -19078,7 +19078,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.148.0 */}
             <div className="mb-12" id="v3.148.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.148.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 16, 2026</span>
@@ -19149,7 +19149,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.147.0 */}
             <div className="mb-12" id="v3.147.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.147.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 16, 2026</span>
@@ -19213,7 +19213,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.146.0 */}
             <div className="mb-12" id="v3.146.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.146.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 16, 2026</span>
@@ -19273,7 +19273,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.145.0 */}
             <div className="mb-12" id="v3.145.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.145.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 13, 2026</span>
@@ -19320,7 +19320,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             {/* v3.144.0 */}
             <div className="mb-12" id="v3.144.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.144.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 13, 2026</span>
@@ -19399,7 +19399,7 @@ paginate.Config{
             {/* v3.143.0 */}
             <div className="mb-12" id="v3.143.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.143.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 13, 2026</span>
@@ -19481,7 +19481,7 @@ paginate.Config{
             {/* v3.142.0 */}
             <div className="mb-12" id="v3.142.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.142.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 13, 2026</span>
@@ -19594,7 +19594,7 @@ bulkActions: [
             {/* v3.141.0 */}
             <div className="mb-12" id="v3.141.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.141.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 11, 2026</span>
@@ -19703,7 +19703,7 @@ bulkActions: [
             {/* v3.140.0 */}
             <div className="mb-12" id="v3.140.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.140.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 11, 2026</span>
@@ -19763,7 +19763,7 @@ export default custom;`}</code>
             {/* v3.139.0 */}
             <div className="mb-12" id="v3.139.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.139.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 11, 2026</span>
@@ -19833,7 +19833,7 @@ export default custom;`}</code>
             {/* v3.138.0 */}
             <div className="mb-12" id="v3.138.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.138.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 11, 2026</span>
@@ -19919,7 +19919,7 @@ export default function ProductsPage() {
             {/* v3.137.0 */}
             <div className="mb-12" id="v3.137.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.137.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 7, 2026</span>
@@ -19974,7 +19974,7 @@ export default function ProductsPage() {
             {/* v3.134.0 */}
             <div className="mb-12" id="v3.134.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.134.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 6, 2026</span>
@@ -20036,7 +20036,7 @@ commit`}</code>
             {/* v3.133.0 */}
             <div className="mb-12" id="v3.133.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.133.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20093,7 +20093,7 @@ commit`}</code>
             {/* v3.132.0 */}
             <div className="mb-12" id="v3.132.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.132.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20138,7 +20138,7 @@ commit`}</code>
             {/* v3.131.0 */}
             <div className="mb-12" id="v3.131.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.131.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20189,7 +20189,7 @@ commit`}</code>
             {/* v3.130.0 */}
             <div className="mb-12" id="v3.130.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.130.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20237,7 +20237,7 @@ commit`}</code>
             {/* v3.129.0 */}
             <div className="mb-12" id="v3.129.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.129.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20297,7 +20297,7 @@ commit`}</code>
             {/* v3.128.0 */}
             <div className="mb-12" id="v3.128.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.128.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20351,7 +20351,7 @@ commit`}</code>
             {/* v3.127.0 */}
             <div className="mb-12" id="v3.127.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.127.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20408,7 +20408,7 @@ commit`}</code>
             {/* v3.126.0 */}
             <div className="mb-12" id="v3.126.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.126.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20452,7 +20452,7 @@ commit`}</code>
             {/* v3.125.0 */}
             <div className="mb-12" id="v3.125.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.125.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 4, 2026</span>
@@ -20492,7 +20492,7 @@ commit`}</code>
             {/* v3.124.0 */}
             <div className="mb-12" id="v3.124.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.124.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20528,7 +20528,7 @@ commit`}</code>
             {/* v3.123.0 */}
             <div className="mb-12" id="v3.123.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.123.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20578,7 +20578,7 @@ commit`}</code>
             {/* v3.122.0 */}
             <div className="mb-12" id="v3.122.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.122.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20621,7 +20621,7 @@ commit`}</code>
             {/* v3.121.0 */}
             <div className="mb-12" id="v3.121.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.121.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20672,7 +20672,7 @@ commit`}</code>
             {/* v3.120.0 */}
             <div className="mb-12" id="v3.120.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.120.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20717,7 +20717,7 @@ commit`}</code>
             {/* v3.119.1 */}
             <div className="mb-12" id="v3.119.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.119.1
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20743,7 +20743,7 @@ commit`}</code>
             {/* v3.119.0 */}
             <div className="mb-12" id="v3.119.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.119.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20796,7 +20796,7 @@ commit`}</code>
             {/* v3.118.0 */}
             <div className="mb-12" id="v3.118.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.118.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20840,7 +20840,7 @@ commit`}</code>
             {/* v3.117.0 */}
             <div className="mb-12" id="v3.117.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.117.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20890,7 +20890,7 @@ commit`}</code>
             {/* v3.116.0 */}
             <div className="mb-12" id="v3.116.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.116.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20941,7 +20941,7 @@ commit`}</code>
             {/* v3.115.1 */}
             <div className="mb-12" id="v3.115.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.115.1
                 </span>
                 <span className="text-sm text-muted-foreground">August 3, 2026</span>
@@ -20989,7 +20989,7 @@ commit`}</code>
             {/* v3.115.0 */}
             <div className="mb-12" id="v3.115.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.115.0
                 </span>
                 <span className="text-sm text-muted-foreground">August 2, 2026</span>
@@ -21052,7 +21052,7 @@ commit`}</code>
             {/* v3.114.0 */}
             <div className="mb-12" id="v3.114.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.114.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 31, 2026</span>
@@ -21101,7 +21101,7 @@ commit`}</code>
             {/* v3.113.0 */}
             <div className="mb-12" id="v3.113.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.113.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 30, 2026</span>
@@ -21147,7 +21147,7 @@ commit`}</code>
             {/* v3.112.0 */}
             <div className="mb-12" id="v3.112.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.112.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 29, 2026</span>
@@ -21216,7 +21216,7 @@ commit`}</code>
             {/* v3.111.0 */}
             <div className="mb-12" id="v3.111.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.111.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 29, 2026</span>
@@ -21273,7 +21273,7 @@ commit`}</code>
             {/* v3.110.0 */}
             <div className="mb-12" id="v3.110.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.110.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 29, 2026</span>
@@ -21337,7 +21337,7 @@ commit`}</code>
             {/* v3.109.0 */}
             <div className="mb-12" id="v3.109.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.109.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 29, 2026</span>
@@ -21385,7 +21385,7 @@ commit`}</code>
             {/* v3.108.0 */}
             <div className="mb-12" id="v3.108.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.108.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 29, 2026</span>
@@ -21455,7 +21455,7 @@ commit`}</code>
             {/* v3.107.0 */}
             <div className="mb-12" id="v3.107.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.107.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21508,7 +21508,7 @@ commit`}</code>
             {/* v3.106.1 */}
             <div className="mb-12" id="v3.106.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.106.1
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21560,7 +21560,7 @@ commit`}</code>
             {/* v3.106.0 */}
             <div className="mb-12" id="v3.106.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.106.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21637,7 +21637,7 @@ commit`}</code>
             {/* v3.105.0 */}
             <div className="mb-12" id="v3.105.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.105.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21688,7 +21688,7 @@ commit`}</code>
             {/* v3.104.0 */}
             <div className="mb-12" id="v3.104.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.104.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21756,7 +21756,7 @@ commit`}</code>
             {/* v3.103.0 */}
             <div className="mb-12" id="v3.103.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.103.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21794,7 +21794,7 @@ commit`}</code>
             {/* v3.102.0 */}
             <div className="mb-12" id="v3.102.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.102.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21831,7 +21831,7 @@ commit`}</code>
             {/* v3.101.0 */}
             <div className="mb-12" id="v3.101.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.101.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21870,7 +21870,7 @@ commit`}</code>
             {/* v3.100.0 */}
             <div className="mb-12" id="v3.100.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.100.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21918,7 +21918,7 @@ commit`}</code>
             {/* v3.99.0 */}
             <div className="mb-12" id="v3.99.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.99.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21951,7 +21951,7 @@ commit`}</code>
             {/* v3.98.0 */}
             <div className="mb-12" id="v3.98.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.98.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 28, 2026</span>
@@ -21993,7 +21993,7 @@ commit`}</code>
             {/* v3.97.0 */}
             <div className="mb-12" id="v3.97.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.97.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 27, 2026</span>
@@ -22042,7 +22042,7 @@ commit`}</code>
             {/* v3.96.0 */}
             <div className="mb-12" id="v3.96.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.96.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 27, 2026</span>
@@ -22078,7 +22078,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.95.0 */}
             <div className="mb-12" id="v3.95.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.95.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 27, 2026</span>
@@ -22120,7 +22120,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.94.0 */}
             <div className="mb-12" id="v3.94.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.94.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 26, 2026</span>
@@ -22161,7 +22161,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.93.0 */}
             <div className="mb-12" id="v3.93.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.93.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 26, 2026</span>
@@ -22190,7 +22190,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.92.0 */}
             <div className="mb-12" id="v3.92.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.92.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 26, 2026</span>
@@ -22235,7 +22235,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.91.0 */}
             <div className="mb-12" id="v3.91.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.91.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 26, 2026</span>
@@ -22283,7 +22283,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.90.0 */}
             <div className="mb-12" id="v3.90.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.90.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 25, 2026</span>
@@ -22330,7 +22330,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.89.0 */}
             <div className="mb-12" id="v3.89.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.89.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 25, 2026</span>
@@ -22342,7 +22342,7 @@ grit g field Invoice notes:text`}</code></pre>
                   already records a semantic activity log (who did what: auth.login,
                   user.delete, session.revoke_all, with actor, severity, resource and IP). It
                   now speaks the vendor-neutral{" "}
-                  <a href="https://ocsf.io" className="text-primary hover:underline">Open
+                  <a href="https://ocsf.io" className="text-accent hover:underline">Open
                   Cybersecurity Schema Framework</a> that Splunk, Elastic, Microsoft Sentinel,
                   Chronicle and Amazon Security Lake all ingest.
                 </p>
@@ -22383,7 +22383,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.88.0 */}
             <div className="mb-12" id="v3.88.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.88.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 24, 2026</span>
@@ -22455,7 +22455,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.87.0 */}
             <div className="mb-12" id="v3.87.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.87.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 24, 2026</span>
@@ -22523,7 +22523,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.86.0 */}
             <div className="mb-12" id="v3.86.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.86.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 24, 2026</span>
@@ -22587,7 +22587,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.85.0 */}
             <div className="mb-12" id="v3.85.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.85.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 24, 2026</span>
@@ -22598,12 +22598,12 @@ grit g field Invoice notes:text`}</code></pre>
                   <strong>Outbound webhooks — <code>grit plugin add webhooks</code>.</strong> Core
                   already <em>verifies incoming</em> webhooks (Stripe/GitHub signatures); this sends{" "}
                   <em>outgoing</em> ones, signed to the{" "}
-                  <a href="https://www.standardwebhooks.com" className="text-primary hover:underline">Standard Webhooks</a>{" "}
+                  <a href="https://www.standardwebhooks.com" className="text-accent hover:underline">Standard Webhooks</a>{" "}
                   spec so any consumer can verify them with an off-the-shelf library.
                 </p>
                 <ul>
                   <li>
-                    One command wires the <a href="https://github.com/MUKE-coder/grit-plugins/tree/main/grit-webhooks" className="text-primary hover:underline">grit-webhooks</a> module, migrates the tables, mounts the subscription + delivery-log endpoints, and adds a <strong>System → Webhooks</strong> admin page.
+                    One command wires the <a href="https://github.com/MUKE-coder/grit-plugins/tree/main/grit-webhooks" className="text-accent hover:underline">grit-webhooks</a> module, migrates the tables, mounts the subscription + delivery-log endpoints, and adds a <strong>System → Webhooks</strong> admin page.
                   </li>
                   <li>
                     Signatures cover <code>{"{id}.{timestamp}.{body}"}</code> (so a captured delivery can&apos;t be replayed), per-subscription <code>whsec_</code> secrets, exponential backoff with jitter, a dead-letter after the retry budget, and one-click resend.
@@ -22625,7 +22625,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.84.1 */}
             <div className="mb-12" id="v3.84.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.84.1
                 </span>
                 <span className="text-sm text-muted-foreground">July 24, 2026</span>
@@ -22662,7 +22662,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.84.0 */}
             <div className="mb-12" id="v3.84.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.84.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 24, 2026</span>
@@ -22692,7 +22692,7 @@ grit g field Invoice notes:text`}</code></pre>
                 </p>
                 <p>
                   Alongside it, the{" "}
-                  <a href="https://github.com/MUKE-coder/grit-plugins" className="text-primary hover:underline">grit-plugins</a>{" "}
+                  <a href="https://github.com/MUKE-coder/grit-plugins" className="text-accent hover:underline">grit-plugins</a>{" "}
                   packages were repaired and are installable for the first time: their module paths
                   pointed at a GitHub org that doesn&apos;t exist, so <code>go get</code> failed for
                   all ten. They also stored <code>user_id</code> as <code>uint</code> while a Grit{" "}
@@ -22707,7 +22707,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.83.0 */}
             <div className="mb-12" id="v3.83.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.83.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 22, 2026</span>
@@ -22762,7 +22762,7 @@ grit g field Invoice notes:text`}</code></pre>
                   <strong>Adding a field to an existing model?</strong> Edit the Go model, run{" "}
                   <code>grit sync</code> (regenerates the shared types + Zod and adds the field to the
                   admin table + form, non-destructively), then <code>grit migrate</code> for the
-                  column. See <a href="/docs/concepts/code-generation" className="text-primary hover:underline">Code Generation</a>.
+                  column. See <a href="/docs/concepts/code-generation" className="text-accent hover:underline">Code Generation</a>.
                 </p>
               </div>
             </div>
@@ -22770,7 +22770,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.82.0 */}
             <div className="mb-12" id="v3.82.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.82.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 21, 2026</span>
@@ -22816,7 +22816,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.81.0 */}
             <div className="mb-12" id="v3.81.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.81.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 21, 2026</span>
@@ -22850,7 +22850,7 @@ grit g field Invoice notes:text`}</code></pre>
                   Enabling the frontend plugins meant adding a few reusable injection markers to
                   the admin (a layout banner slot, a system-nav slot, and a resource-table toolbar
                   slot) that community plugins can target too. New posts on{" "}
-                  <a href="/blog" className="text-primary hover:underline">The Daily Grit</a>{" "}
+                  <a href="/blog" className="text-accent hover:underline">The Daily Grit</a>{" "}
                   cover the plugin model and how to build your own.
                 </p>
               </div>
@@ -22859,7 +22859,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.80.0 */}
             <div className="mb-12" id="v3.80.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.80.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 21, 2026</span>
@@ -22887,7 +22887,7 @@ grit g field Invoice notes:text`}</code></pre>
                   guards that restore truncates before it replays.
                 </p>
                 <p>
-                  Also: two new posts on <a href="/blog" className="text-primary hover:underline">The Daily Grit</a> —
+                  Also: two new posts on <a href="/blog" className="text-accent hover:underline">The Daily Grit</a> —
                   roles, permissions &amp; automatic backups by default, and a guide to Grit
                   plugins (what they are, the default ones, and how to build your own).
                 </p>
@@ -22897,7 +22897,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.79.0 */}
             <div className="mb-12" id="v3.79.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.79.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 21, 2026</span>
@@ -22962,7 +22962,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.78.0 */}
             <div className="mb-12" id="v3.78.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.78.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 20, 2026</span>
@@ -23000,7 +23000,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.77.0 */}
             <div className="mb-12" id="v3.77.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.77.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 20, 2026</span>
@@ -23053,7 +23053,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.76.0 */}
             <div className="mb-12" id="v3.76.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.76.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 20, 2026</span>
@@ -23088,7 +23088,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.75.0 */}
             <div className="mb-12" id="v3.75.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.75.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 20, 2026</span>
@@ -23138,7 +23138,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.74.0 */}
             <div className="mb-12" id="v3.74.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.74.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 19, 2026</span>
@@ -23182,7 +23182,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.73.0 */}
             <div className="mb-12" id="v3.73.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.73.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 19, 2026</span>
@@ -23221,7 +23221,7 @@ grit g field Invoice notes:text`}</code></pre>
             {/* v3.72.0 */}
             <div className="mb-12" id="v3.72.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.72.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 19, 2026</span>
@@ -23277,7 +23277,7 @@ grit plugin remove multitenant`}
             {/* v3.71.0 */}
             <div className="mb-12" id="v3.71.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.71.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 19, 2026</span>
@@ -23312,7 +23312,7 @@ grit plugin remove multitenant`}
             {/* v3.70.0 */}
             <div className="mb-12" id="v3.70.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.70.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 19, 2026</span>
@@ -23351,7 +23351,7 @@ grit plugin remove multitenant`}
             {/* v3.69.0 */}
             <div className="mb-12" id="v3.69.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.69.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 19, 2026</span>
@@ -23389,7 +23389,7 @@ grit plugin remove multitenant`}
             {/* v3.68.0 */}
             <div className="mb-12" id="v3.68.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.68.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 18, 2026</span>
@@ -23434,7 +23434,7 @@ grit plugin remove multitenant`}
             {/* v3.67.0 */}
             <div className="mb-12" id="v3.67.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.67.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 18, 2026</span>
@@ -23465,7 +23465,7 @@ grit plugin remove multitenant`}
             {/* v3.66.0 */}
             <div className="mb-12" id="v3.66.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.66.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 18, 2026</span>
@@ -23519,7 +23519,7 @@ grit plugin remove multitenant`}
             {/* v3.65.0 */}
             <div className="mb-12" id="v3.65.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.65.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 18, 2026</span>
@@ -23566,7 +23566,7 @@ grit plugin remove multitenant`}
             {/* v3.64.0 */}
             <div className="mb-12" id="v3.64.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.64.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 17, 2026</span>
@@ -23612,7 +23612,7 @@ grit plugin remove multitenant`}
             {/* v3.63.0 */}
             <div className="mb-12" id="v3.63.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.63.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 17, 2026</span>
@@ -23668,7 +23668,7 @@ grit plugin remove multitenant`}
             {/* v3.62.0 */}
             <div className="mb-12" id="v3.62.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.62.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 17, 2026</span>
@@ -23724,7 +23724,7 @@ grit plugin remove multitenant`}
             {/* v3.61.0 */}
             <div className="mb-12" id="v3.61.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.61.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 16, 2026</span>
@@ -23764,7 +23764,7 @@ grit plugin remove multitenant`}
             {/* v3.60.0 */}
             <div className="mb-12" id="v3.60.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.60.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 16, 2026</span>
@@ -23807,7 +23807,7 @@ grit plugin remove multitenant`}
             {/* v3.59.0 */}
             <div className="mb-12" id="v3.59.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.59.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 14, 2026</span>
@@ -23840,7 +23840,7 @@ grit plugin remove multitenant`}
             {/* v3.58.0 */}
             <div className="mb-12" id="v3.58.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.58.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 14, 2026</span>
@@ -23877,7 +23877,7 @@ grit plugin remove multitenant`}
             {/* v3.57.0 */}
             <div className="mb-12" id="v3.57.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.57.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 14, 2026</span>
@@ -23921,7 +23921,7 @@ grit plugin remove multitenant`}
             {/* v3.56.0 */}
             <div className="mb-12" id="v3.56.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.56.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 13, 2026</span>
@@ -23959,7 +23959,7 @@ grit plugin remove multitenant`}
             {/* v3.55.0 */}
             <div className="mb-12" id="v3.55.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.55.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 12, 2026</span>
@@ -23991,7 +23991,7 @@ grit plugin remove multitenant`}
             {/* v3.54.0 */}
             <div className="mb-12" id="v3.54.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.54.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 12, 2026</span>
@@ -24046,7 +24046,7 @@ grit plugin remove multitenant`}
             {/* v3.53.0 */}
             <div className="mb-12" id="v3.53.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.53.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 12, 2026</span>
@@ -24086,7 +24086,7 @@ grit plugin remove multitenant`}
             {/* v3.52.0 */}
             <div className="mb-12" id="v3.52.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.52.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 12, 2026</span>
@@ -24142,7 +24142,7 @@ grit plugin remove multitenant`}
             {/* v3.51.0 */}
             <div className="mb-12" id="v3.51.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.51.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 12, 2026</span>
@@ -24176,7 +24176,7 @@ grit plugin remove multitenant`}
             {/* v3.50.0 */}
             <div className="mb-12" id="v3.50.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.50.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 12, 2026</span>
@@ -24232,7 +24232,7 @@ grit plugin remove multitenant`}
             {/* v3.49.0 */}
             <div className="mb-12" id="v3.49.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.49.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 12, 2026</span>
@@ -24269,7 +24269,7 @@ grit plugin remove multitenant`}
             {/* v3.48.0 */}
             <div className="mb-12" id="v3.48.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.48.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24302,7 +24302,7 @@ grit plugin remove multitenant`}
             {/* v3.47.0 */}
             <div className="mb-12" id="v3.47.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.47.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24338,7 +24338,7 @@ grit plugin remove multitenant`}
             {/* v3.46.0 */}
             <div className="mb-12" id="v3.46.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.46.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24371,7 +24371,7 @@ grit plugin remove multitenant`}
             {/* v3.45.0 */}
             <div className="mb-12" id="v3.45.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.45.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24411,7 +24411,7 @@ grit plugin remove multitenant`}
             {/* v3.44.0 */}
             <div className="mb-12" id="v3.44.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.44.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24446,7 +24446,7 @@ grit plugin remove multitenant`}
             {/* v3.43.0 */}
             <div className="mb-12" id="v3.43.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.43.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24480,7 +24480,7 @@ grit plugin remove multitenant`}
             {/* v3.42.0 */}
             <div className="mb-12" id="v3.42.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.42.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24518,7 +24518,7 @@ grit plugin remove multitenant`}
             {/* v3.41.0 */}
             <div className="mb-12" id="v3.41.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.41.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24561,7 +24561,7 @@ grit plugin remove multitenant`}
             {/* v3.40.0 */}
             <div className="mb-12" id="v3.40.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.40.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24604,7 +24604,7 @@ grit plugin remove multitenant`}
             {/* v3.39.0 */}
             <div className="mb-12" id="v3.39.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.39.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24650,7 +24650,7 @@ grit plugin remove multitenant`}
             {/* v3.38.0 */}
             <div className="mb-12" id="v3.38.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.38.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24695,7 +24695,7 @@ grit plugin remove multitenant`}
             {/* v3.37.0 */}
             <div className="mb-12" id="v3.37.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.37.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24737,7 +24737,7 @@ grit plugin remove multitenant`}
             {/* v3.36.0 */}
             <div className="mb-12" id="v3.36.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.36.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24787,7 +24787,7 @@ grit plugin remove multitenant`}
             {/* v3.35.4 */}
             <div className="mb-12" id="v3.35.4">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.35.4
                 </span>
                 <span className="text-sm text-muted-foreground">July 11, 2026</span>
@@ -24823,7 +24823,7 @@ grit plugin remove multitenant`}
             {/* v3.35.3 */}
             <div className="mb-12" id="v3.35.3">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.35.3
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -24860,7 +24860,7 @@ grit plugin remove multitenant`}
             {/* v3.35.2 */}
             <div className="mb-12" id="v3.35.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.35.2
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -24907,7 +24907,7 @@ grit plugin remove multitenant`}
             {/* v3.35.1 */}
             <div className="mb-12" id="v3.35.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.35.1
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -24944,7 +24944,7 @@ grit plugin remove multitenant`}
             {/* v3.35.0 */}
             <div className="mb-12" id="v3.35.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.35.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -24995,7 +24995,7 @@ grit plugin remove multitenant`}
             {/* v3.34.4 */}
             <div className="mb-12" id="v3.34.4">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.34.4
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -25040,7 +25040,7 @@ grit plugin remove multitenant`}
             {/* v3.34.3 */}
             <div className="mb-12" id="v3.34.3">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.34.3
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -25114,7 +25114,7 @@ grit plugin remove multitenant`}
             {/* v3.34.2 */}
             <div className="mb-12" id="v3.34.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.34.2
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -25162,7 +25162,7 @@ grit plugin remove multitenant`}
             {/* v3.34.1 */}
             <div className="mb-12" id="v3.34.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.34.1
                 </span>
                 <span className="text-sm text-muted-foreground">July 10, 2026</span>
@@ -25217,7 +25217,7 @@ grit plugin remove multitenant`}
             {/* v3.34.0 */}
             <div className="mb-12" id="v3.34.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.34.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 9, 2026</span>
@@ -25241,7 +25241,7 @@ grit plugin remove multitenant`}
             {/* v3.33.0 */}
             <div className="mb-12" id="v3.33.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.33.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 9, 2026</span>
@@ -25269,7 +25269,7 @@ grit plugin remove multitenant`}
             {/* v3.32.0 */}
             <div className="mb-12" id="v3.32.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.32.0
                 </span>
                 <span className="text-sm text-muted-foreground">July 9, 2026</span>
@@ -25325,7 +25325,7 @@ grit plugin remove multitenant`}
             {/* v3.31.83 */}
             <div className="mb-12" id="v3.31.83">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.83
                 </span>
                 <span className="text-sm text-muted-foreground">July 8, 2026</span>
@@ -25349,7 +25349,7 @@ grit plugin remove multitenant`}
             {/* v3.31.82 */}
             <div className="mb-12" id="v3.31.82">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.82
                 </span>
                 <span className="text-sm text-muted-foreground">July 8, 2026</span>
@@ -25377,7 +25377,7 @@ grit plugin remove multitenant`}
             {/* v3.31.81 */}
             <div className="mb-12" id="v3.31.81">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.81
                 </span>
                 <span className="text-sm text-muted-foreground">July 8, 2026</span>
@@ -25398,7 +25398,7 @@ grit plugin remove multitenant`}
             {/* v3.31.80 */}
             <div className="mb-12" id="v3.31.80">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.80
                 </span>
                 <span className="text-sm text-muted-foreground">July 8, 2026</span>
@@ -25421,7 +25421,7 @@ grit plugin remove multitenant`}
             {/* v3.31.79 */}
             <div className="mb-12" id="v3.31.79">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.79
                 </span>
                 <span className="text-sm text-muted-foreground">July 8, 2026</span>
@@ -25463,7 +25463,7 @@ grit plugin remove multitenant`}
             {/* v3.31.78 */}
             <div className="mb-12" id="v3.31.78">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.78
                 </span>
                 <span className="text-sm text-muted-foreground">July 8, 2026</span>
@@ -25492,7 +25492,7 @@ grit plugin remove multitenant`}
             {/* v3.31.77 */}
             <div className="mb-12" id="v3.31.77">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.77
                 </span>
                 <span className="text-sm text-muted-foreground">July 8, 2026</span>
@@ -25542,7 +25542,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.76 */}
             <div className="mb-12" id="v3.31.76">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.76
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25566,7 +25566,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.75 */}
             <div className="mb-12" id="v3.31.75">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.75
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25589,7 +25589,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.74 */}
             <div className="mb-12" id="v3.31.74">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.74
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25613,7 +25613,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.73 */}
             <div className="mb-12" id="v3.31.73">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.73
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25641,7 +25641,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.72 */}
             <div className="mb-12" id="v3.31.72">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.72
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25706,7 +25706,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.70 */}
             <div className="mb-12" id="v3.31.70">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.70
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25736,7 +25736,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.69 */}
             <div className="mb-12" id="v3.31.69">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.69
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25771,7 +25771,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.68 */}
             <div className="mb-12" id="v3.31.68">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.68
                 </span>
                 <span className="text-sm text-muted-foreground">July 6, 2026</span>
@@ -25811,7 +25811,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.67 */}
             <div className="mb-12" id="v3.31.67">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.67
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -25850,7 +25850,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.66 */}
             <div className="mb-12" id="v3.31.66">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.66
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -25876,7 +25876,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.65 */}
             <div className="mb-12" id="v3.31.65">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.65
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -25900,7 +25900,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.64 */}
             <div className="mb-12" id="v3.31.64">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.64
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -25927,7 +25927,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.63 */}
             <div className="mb-12" id="v3.31.63">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.63
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -25954,7 +25954,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.62 */}
             <div className="mb-12" id="v3.31.62">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.62
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -25984,7 +25984,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.61 */}
             <div className="mb-12" id="v3.31.61">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.61
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26011,7 +26011,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.60 */}
             <div className="mb-12" id="v3.31.60">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.60
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26037,7 +26037,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.59 */}
             <div className="mb-12" id="v3.31.59">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.59
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26074,7 +26074,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.58 */}
             <div className="mb-12" id="v3.31.58">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.58
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26105,7 +26105,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.57 */}
             <div className="mb-12" id="v3.31.57">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.57
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26134,7 +26134,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.56 */}
             <div className="mb-12" id="v3.31.56">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.56
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26185,7 +26185,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.55 */}
             <div className="mb-12" id="v3.31.55">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.55
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26221,7 +26221,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.54 */}
             <div className="mb-12" id="v3.31.54">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.54
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26253,7 +26253,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.53 */}
             <div className="mb-12" id="v3.31.53">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.53
                 </span>
                 <span className="text-sm text-muted-foreground">July 3, 2026</span>
@@ -26292,7 +26292,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.52 */}
             <div className="mb-12" id="v3.31.52">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.52
                 </span>
                 <span className="text-sm text-muted-foreground">July 1, 2026</span>
@@ -26323,7 +26323,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.51 */}
             <div className="mb-12" id="v3.31.51">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.51
                 </span>
                 <span className="text-sm text-muted-foreground">July 1, 2026</span>
@@ -26352,7 +26352,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.50 */}
             <div className="mb-12" id="v3.31.50">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.50
                 </span>
                 <span className="text-sm text-muted-foreground">June 26, 2026</span>
@@ -26474,7 +26474,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.49 */}
             <div className="mb-12" id="v3.31.49">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.49
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -26595,7 +26595,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.48 */}
             <div className="mb-12" id="v3.31.48">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.48
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -26695,7 +26695,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.47 */}
             <div className="mb-12" id="v3.31.47">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.47
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -26860,7 +26860,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.46 */}
             <div className="mb-12" id="v3.31.46">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.46
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -26973,7 +26973,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.45 */}
             <div className="mb-12" id="v3.31.45">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.45
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -27076,7 +27076,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.44 */}
             <div className="mb-12" id="v3.31.44">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.44
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -27169,7 +27169,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.43 */}
             <div className="mb-12" id="v3.31.43">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.43
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -27286,7 +27286,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.42 */}
             <div className="mb-12" id="v3.31.42">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.42
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -27435,7 +27435,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.41 */}
             <div className="mb-12" id="v3.31.41">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.41
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -27528,7 +27528,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.40 */}
             <div className="mb-12" id="v3.31.40">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.40
                 </span>
                 <span className="text-sm text-muted-foreground">June 25, 2026</span>
@@ -27662,7 +27662,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.39 */}
             <div className="mb-12" id="v3.31.39">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.39
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -27785,7 +27785,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.38 */}
             <div className="mb-12" id="v3.31.38">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.38
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -27877,7 +27877,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             {/* v3.31.37 */}
             <div className="mb-12" id="v3.31.37">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.37
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28004,7 +28004,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.36 */}
             <div className="mb-12" id="v3.31.36">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.36
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28091,7 +28091,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.35 */}
             <div className="mb-12" id="v3.31.35">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.35
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28205,7 +28205,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.34 */}
             <div className="mb-12" id="v3.31.34">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.34
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28313,7 +28313,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.33 */}
             <div className="mb-12" id="v3.31.33">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.33
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28442,7 +28442,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.32 */}
             <div className="mb-12" id="v3.31.32">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.32
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28530,7 +28530,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.31 */}
             <div className="mb-12" id="v3.31.31">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.31
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28663,7 +28663,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.30 */}
             <div className="mb-12" id="v3.31.30">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.30
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28783,7 +28783,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.29 */}
             <div className="mb-12" id="v3.31.29">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.29
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28842,7 +28842,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.28 */}
             <div className="mb-12" id="v3.31.28">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.28
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28891,7 +28891,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.27 */}
             <div className="mb-12" id="v3.31.27">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.27
                 </span>
                 <span className="text-sm text-muted-foreground">June 24, 2026</span>
@@ -28953,7 +28953,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.14 */}
             <div className="mb-12" id="v3.31.14">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.14
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29030,7 +29030,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.26 */}
             <div className="mb-12" id="v3.31.26">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.26
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29113,7 +29113,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.25 */}
             <div className="mb-12" id="v3.31.25">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.25
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29201,7 +29201,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             {/* v3.31.24 */}
             <div className="mb-12" id="v3.31.24">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.24
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29279,7 +29279,7 @@ grit expose form Contact \\
             {/* v3.31.23 */}
             <div className="mb-12" id="v3.31.23">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.23
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29344,7 +29344,7 @@ grit expose form Contact \\
             {/* v3.31.22 */}
             <div className="mb-12" id="v3.31.22">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.22
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29439,7 +29439,7 @@ grit expose form Contact \\
             {/* v3.31.21 */}
             <div className="mb-12" id="v3.31.21">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.21
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29542,7 +29542,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             {/* v3.31.20 */}
             <div className="mb-12" id="v3.31.20">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.20
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29650,7 +29650,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             {/* v3.31.19 */}
             <div className="mb-12" id="v3.31.19">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.19
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29726,7 +29726,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             {/* v3.31.18 */}
             <div className="mb-12" id="v3.31.18">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.18
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29814,7 +29814,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             {/* v3.31.17 */}
             <div className="mb-12" id="v3.31.17">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.17
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29892,7 +29892,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             {/* v3.31.16 */}
             <div className="mb-12" id="v3.31.16">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.16
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -29977,7 +29977,7 @@ form: {
             {/* v3.31.15 */}
             <div className="mb-12" id="v3.31.15">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.15
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -30091,7 +30091,7 @@ form: {
             {/* v3.31.13 */}
             <div className="mb-12" id="v3.31.13">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.13
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -30124,7 +30124,7 @@ form: {
             {/* v3.31.12 */}
             <div className="mb-12" id="v3.31.12">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.12
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -30151,7 +30151,7 @@ form: {
             {/* v3.31.11 */}
             <div className="mb-12" id="v3.31.11">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.11
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -30179,7 +30179,7 @@ form: {
             {/* v3.31.10 */}
             <div className="mb-12" id="v3.31.10">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.31.10
                 </span>
                 <span className="text-sm text-muted-foreground">June 21, 2026</span>
@@ -30206,7 +30206,7 @@ form: {
             {/* v3.27.0 */}
             <div className="mb-12" id="v3.27.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.27.0
                 </span>
                 <span className="text-sm text-muted-foreground">June 20, 2026</span>
@@ -30333,7 +30333,7 @@ form: {
             {/* v3.26.5 */}
             <div className="mb-12" id="v3.26.5">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.26.5
                 </span>
                 <span className="text-sm text-muted-foreground">June 20, 2026</span>
@@ -30427,7 +30427,7 @@ form: {
             {/* v3.26.4 */}
             <div className="mb-12" id="v3.26.4">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.26.4
                 </span>
                 <span className="text-sm text-muted-foreground">June 15, 2026</span>
@@ -30481,7 +30481,7 @@ form: {
             {/* v3.26.3 */}
             <div className="mb-12" id="v3.26.3">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.26.3
                 </span>
                 <span className="text-sm text-muted-foreground">June 15, 2026</span>
@@ -30548,7 +30548,7 @@ form: {
             {/* v3.26.2 */}
             <div className="mb-12" id="v3.26.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.26.2
                 </span>
                 <span className="text-sm text-muted-foreground">June 15, 2026</span>
@@ -30613,7 +30613,7 @@ form: {
             {/* v3.26.1 */}
             <div className="mb-12" id="v3.26.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.26.1
                 </span>
                 <span className="text-sm text-muted-foreground">June 15, 2026</span>
@@ -30683,7 +30683,7 @@ form: {
             {/* v3.26.0 */}
             <div className="mb-12" id="v3.26.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.26.0
                 </span>
                 <span className="text-sm text-muted-foreground">June 14, 2026</span>
@@ -30766,7 +30766,7 @@ form: {
             {/* v3.25.2 */}
             <div className="mb-12" id="v3.25.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.25.2
                 </span>
                 <span className="text-sm text-muted-foreground">May 31, 2026</span>
@@ -30828,7 +30828,7 @@ form: {
             {/* v3.25.1 */}
             <div className="mb-12" id="v3.25.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.25.1
                 </span>
                 <span className="text-sm text-muted-foreground">May 31, 2026</span>
@@ -30876,7 +30876,7 @@ form: {
             {/* v3.25.0 */}
             <div className="mb-12" id="v3.25.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.25.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 31, 2026</span>
@@ -30939,7 +30939,7 @@ grit update`}</code></pre>
             {/* v3.24.0 */}
             <div className="mb-12" id="v3.24.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.24.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 31, 2026</span>
@@ -30952,11 +30952,11 @@ grit update`}</code></pre>
                   just Postgres — flip <code>DATABASE_URL=sqlite:./app.db</code> in{' '}
                   <code>.env</code> and you skip Docker entirely; (2) every tech-kit page
                   now ships a copyable starter prompt for{' '}
-                  <Link href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">claude.ai</Link>{' '}
+                  <Link href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">claude.ai</Link>{' '}
                   plus a new four-step{' '}
-                  <Link href="/docs/ai-integration" className="text-primary hover:underline">AI Integration wizard</Link>{' '}
+                  <Link href="/docs/ai-integration" className="text-accent hover:underline">AI Integration wizard</Link>{' '}
                   that generates a tailored planning prompt; (3) a new{' '}
-                  <Link href="/docs/learnings" className="text-primary hover:underline">Learnings</Link>{' '}
+                  <Link href="/docs/learnings" className="text-accent hover:underline">Learnings</Link>{' '}
                   section opens an engineering journal — first entry walks a stateless
                   service + k6 load test from <code>grit new --api</code> all the way
                   to a committed p50/p95/p99 latency chart.
@@ -30991,7 +30991,7 @@ grit update`}</code></pre>
                 <ul>
                   <li>
                     <strong>Per-kit starter prompts.</strong> All 7{' '}
-                    <Link href="/docs/tech-kits" className="text-primary hover:underline">tech-kit pages</Link>{' '}
+                    <Link href="/docs/tech-kits" className="text-accent hover:underline">tech-kit pages</Link>{' '}
                     (single, single-vite, double, triple, api, mobile, desktop) now
                     have a &quot;Plan this kit with an AI&quot; section. One copy
                     button gives you a prompt to paste into claude.ai with your idea —
@@ -31000,14 +31000,14 @@ grit update`}</code></pre>
                     you feed to Claude Code.
                   </li>
                   <li>
-                    <strong>New <Link href="/docs/ai-integration" className="text-primary hover:underline">AI Integration page</Link>.</strong>{' '}
+                    <strong>New <Link href="/docs/ai-integration" className="text-accent hover:underline">AI Integration page</Link>.</strong>{' '}
                     A four-step wizard (Platform → Tech Kit → Use case → Your prompt)
                     that customizes the prompt per project shape. Modelled on the
                     DGateway integration helper.
                   </li>
                   <li>
                     <strong>New Learnings section.</strong>{' '}
-                    <Link href="/docs/learnings" className="text-primary hover:underline">/docs/learnings</Link>{' '}
+                    <Link href="/docs/learnings" className="text-accent hover:underline">/docs/learnings</Link>{' '}
                     is an engineering journal. The first entry — a stateless service
                     + k6 load test walkthrough — covers everything end to end:
                     scaffold, install k6, smoke test, average-load profile,
@@ -31026,7 +31026,7 @@ grit update`}</code></pre>
             {/* v3.23.0 */}
             <div className="mb-12" id="v3.23.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.23.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 29, 2026</span>
@@ -31164,7 +31164,7 @@ grit update`}</code></pre>
                 <p>
                   Every fresh <code>grit new</code> project now ships defences for
                   every category by default. The new{' '}
-                  <Link href="/docs/security" className="text-primary hover:underline">
+                  <Link href="/docs/security" className="text-accent hover:underline">
                     Security Guide
                   </Link>{' '}
                   walks each one category-by-category.
@@ -31228,7 +31228,7 @@ grit update`}</code></pre>
                   </li>
                   <li>
                     <strong>New{' '}
-                    <Link href="/docs/testing" className="text-primary hover:underline">
+                    <Link href="/docs/testing" className="text-accent hover:underline">
                       /docs/testing
                     </Link>{' '}
                     page</strong> — k6 install + reading results, the 5-phase pentest
@@ -31239,21 +31239,21 @@ grit update`}</code></pre>
                   <li>
                     <strong>Sentinel and Pulse issues</strong> filed for the
                     cross-project improvements this release uncovered: Sentinel{' '}
-                    <a href="https://github.com/MUKE-coder/sentinel/issues/2" className="text-primary hover:underline">#2</a>{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/2" className="text-accent hover:underline">#2</a>{' '}
                     CSP report endpoint,{' '}
-                    <a href="https://github.com/MUKE-coder/sentinel/issues/3" className="text-primary hover:underline">#3</a>{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/3" className="text-accent hover:underline">#3</a>{' '}
                     SSRF guard,{' '}
-                    <a href="https://github.com/MUKE-coder/sentinel/issues/4" className="text-primary hover:underline">#4</a>{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/4" className="text-accent hover:underline">#4</a>{' '}
                     user-scoped rate limit + CAPTCHA,{' '}
-                    <a href="https://github.com/MUKE-coder/sentinel/issues/5" className="text-primary hover:underline">#5</a>{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/5" className="text-accent hover:underline">#5</a>{' '}
                     CVSS finding model + alerts. Pulse{' '}
-                    <a href="https://github.com/MUKE-coder/pulse/issues/1" className="text-primary hover:underline">#1</a>{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/1" className="text-accent hover:underline">#1</a>{' '}
                     p50/p95/p99 + SLO alerts,{' '}
-                    <a href="https://github.com/MUKE-coder/pulse/issues/2" className="text-primary hover:underline">#2</a>{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/2" className="text-accent hover:underline">#2</a>{' '}
                     N+1 detector,{' '}
-                    <a href="https://github.com/MUKE-coder/pulse/issues/3" className="text-primary hover:underline">#3</a>{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/3" className="text-accent hover:underline">#3</a>{' '}
                     USE method dashboard,{' '}
-                    <a href="https://github.com/MUKE-coder/pulse/issues/4" className="text-primary hover:underline">#4</a>{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/4" className="text-accent hover:underline">#4</a>{' '}
                     k6 timeline + flame graphs.
                   </li>
                 </ul>
@@ -31263,7 +31263,7 @@ grit update`}</code></pre>
             {/* v3.22.0 */}
             <div className="mb-12" id="v3.22.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.22.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -31385,7 +31385,7 @@ grit update`}</code></pre>
             {/* v3.21.0 */}
             <div className="mb-12" id="v3.21.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.21.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -31394,7 +31394,7 @@ grit update`}</code></pre>
               <div className="prose-grit">
                 <p>
                   Feature flags + A/B testing baked into the framework (
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/46" target="_blank" rel="noopener noreferrer">#46</a>).
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/46" target="_blank" rel="noopener noreferrer">#46</a>).
                   No LaunchDarkly bolt-on, no PostHog SaaS dependency — the engine,
                   the model, the admin endpoints, and the realtime push all ship in
                   every scaffolded API.
@@ -31500,7 +31500,7 @@ case "variant_b": /* alternate new flow */
             {/* v3.20.0 */}
             <div className="mb-12" id="v3.20.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.20.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -31509,7 +31509,7 @@ case "variant_b": /* alternate new flow */
               <div className="prose-grit">
                 <p>
                   Webhook receiver framework (
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/57" target="_blank" rel="noopener noreferrer">#57</a>).
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/57" target="_blank" rel="noopener noreferrer">#57</a>).
                   Wiring up Stripe / GitHub / WhatsApp / any HMAC-signed inbound webhook
                   is now {'<'}10 lines of app code. Signature verification, idempotency,
                   failed-handler replay — all framework concerns now.
@@ -31623,7 +31623,7 @@ func init() {
             {/* v3.19.0 */}
             <div className="mb-12" id="v3.19.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.19.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -31632,7 +31632,7 @@ func init() {
               <div className="prose-grit">
                 <p>
                   Tamper-evident audit log via append-only hash chain (
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/48" target="_blank" rel="noopener noreferrer">#48</a>).
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/48" target="_blank" rel="noopener noreferrer">#48</a>).
                   Builds on the v3.16 <code>ActivityLog</code> — every row now carries{' '}
                   <code>PrevHash</code> + <code>Hash</code> columns where{' '}
                   <code>Hash = SHA-256(PrevHash || canonical(row))</code>. Mutating any
@@ -31734,7 +31734,7 @@ func init() {
             {/* v3.18.0 */}
             <div className="mb-12" id="v3.18.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.18.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -31743,7 +31743,7 @@ func init() {
               <div className="prose-grit">
                 <p>
                   PDF generation module (
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/13" target="_blank" rel="noopener noreferrer">#13</a>).
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/13" target="_blank" rel="noopener noreferrer">#13</a>).
                   Every scaffolded API ships <code>internal/pdf/</code> with Grit-styled
                   section helpers + a worked <code>RenderInvoice</code> template. Pure Go,
                   no Chromium / wkhtmltopdf native dependencies.
@@ -31821,7 +31821,7 @@ func init() {
             {/* v3.17.0 */}
             <div className="mb-12" id="v3.17.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.17.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -31830,10 +31830,10 @@ func init() {
               <div className="prose-grit">
                 <p>
                   Quality-of-life bundle. Four GitHub issues closed:
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer"> #12</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/31" target="_blank" rel="noopener noreferrer">#31</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/35" target="_blank" rel="noopener noreferrer">#35</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/43" target="_blank" rel="noopener noreferrer">#43</a>.
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer"> #12</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/31" target="_blank" rel="noopener noreferrer">#31</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/35" target="_blank" rel="noopener noreferrer">#35</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/43" target="_blank" rel="noopener noreferrer">#43</a>.
                 </p>
 
                 <h3><code>grit init</code> — #35</h3>
@@ -31929,7 +31929,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             {/* v3.16.0 */}
             <div className="mb-12" id="v3.16.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.16.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -31939,11 +31939,11 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
                 <p>
                   Three coherent admin-operations features at once:
                   CSV/Excel export per resource (
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/15" target="_blank" rel="noopener noreferrer">#15</a>),
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/15" target="_blank" rel="noopener noreferrer">#15</a>),
                   activity audit log middleware (
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/32" target="_blank" rel="noopener noreferrer">#32</a>),
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/32" target="_blank" rel="noopener noreferrer">#32</a>),
                   and the <code>apiErrorMessage</code> frontend helper (
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/27" target="_blank" rel="noopener noreferrer">#27</a>).
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/27" target="_blank" rel="noopener noreferrer">#27</a>).
                 </p>
 
                 <h3>CSV / Excel export per resource — #15</h3>
@@ -32035,7 +32035,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             {/* v3.15.0 */}
             <div className="mb-12" id="v3.15.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.15.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -32044,13 +32044,13 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
               <div className="prose-grit">
                 <p>
                   Frontend stdlib + form primitives. Closes seven GitHub issues at once
-                  (<a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/19" target="_blank" rel="noopener noreferrer">#19</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/20" target="_blank" rel="noopener noreferrer">#20</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/21" target="_blank" rel="noopener noreferrer">#21</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/22" target="_blank" rel="noopener noreferrer">#22</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/23" target="_blank" rel="noopener noreferrer">#23</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/33" target="_blank" rel="noopener noreferrer">#33</a>,{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/34" target="_blank" rel="noopener noreferrer">#34</a>).
+                  (<a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/19" target="_blank" rel="noopener noreferrer">#19</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/20" target="_blank" rel="noopener noreferrer">#20</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/21" target="_blank" rel="noopener noreferrer">#21</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/22" target="_blank" rel="noopener noreferrer">#22</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/23" target="_blank" rel="noopener noreferrer">#23</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/33" target="_blank" rel="noopener noreferrer">#33</a>,{' '}
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/34" target="_blank" rel="noopener noreferrer">#34</a>).
                   Every primitive lifted from real Grit-built business apps.
                 </p>
 
@@ -32158,7 +32158,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             {/* v3.14.0 */}
             <div className="mb-12" id="v3.14.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.14.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -32313,7 +32313,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             {/* v3.13.0 */}
             <div className="mb-12" id="v3.13.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.13.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -32396,7 +32396,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             {/* v3.12.0 */}
             <div className="mb-12" id="v3.12.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.12.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -32509,7 +32509,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             {/* v3.11.0 */}
             <div className="mb-12" id="v3.11.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.11.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -32596,7 +32596,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             {/* v3.10.0 */}
             <div className="mb-12" id="v3.10.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.10.0
                 </span>
                 <span className="text-sm text-muted-foreground">May 2, 2026</span>
@@ -32680,7 +32680,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             {/* v3.9.2 */}
             <div className="mb-12" id="v3.9.2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.9.2
                 </span>
                 <span className="text-sm text-muted-foreground">April 25, 2026</span>
@@ -32692,7 +32692,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
                   ~15 lines instead of ~55. The page / sort / search boilerplate moved into a shared{' '}
                   <code>internal/paginate</code> package that ships with every scaffolded API —
                   one source of truth for clamping, whitelisting, and search. Addresses{' '}
-                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/14" target="_blank" rel="noopener noreferrer">issue #14</a>.
+                  <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/14" target="_blank" rel="noopener noreferrer">issue #14</a>.
                 </p>
 
                 <h3>New <code>paginate</code> package</h3>
@@ -32731,7 +32731,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
                     Searchable column selection uses <code>IsSearchable()</code> (text / string /
                     slug / richtext only), so FK UUID columns are no longer accidentally included
                     in <code>ILIKE</code> search — a leftover rough edge from{' '}
-                    <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer">issue #12</a>.
+                    <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer">issue #12</a>.
                   </li>
                 </ul>
               </div>
@@ -32740,7 +32740,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             {/* v3.9.1 */}
             <div className="mb-12" id="v3.9.1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.9.1
                 </span>
                 <span className="text-sm text-muted-foreground">April 24, 2026</span>
@@ -32751,10 +32751,10 @@ grit generate sequence Receipt --reset never`}</code></pre>
                   Patch release fixing compilation and consistency bugs in v3.9.0. Every
                   freshly scaffolded project (including <code>--mobile --desktop</code>)
                   and every <code>grit generate resource</code> run now produces Go code that builds
-                  cleanly on the first try. Thanks to <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/9" target="_blank" rel="noopener noreferrer">issue #9</a>,
-                  {' '}<a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/10" target="_blank" rel="noopener noreferrer">#10</a>,
-                  {' '}<a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/11" target="_blank" rel="noopener noreferrer">#11</a>,
-                  {' '}and <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer">#12</a>.
+                  cleanly on the first try. Thanks to <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/9" target="_blank" rel="noopener noreferrer">issue #9</a>,
+                  {' '}<a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/10" target="_blank" rel="noopener noreferrer">#10</a>,
+                  {' '}<a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/11" target="_blank" rel="noopener noreferrer">#11</a>,
+                  {' '}and <a className="text-accent hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer">#12</a>.
                 </p>
 
                 <h3>Scaffold fixes</h3>
@@ -32827,7 +32827,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             {/* v3.9.0 */}
             <div className="mb-12" id="v3.9.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.9.0
                 </span>
                 <span className="text-sm text-muted-foreground">April 15, 2026</span>
@@ -32911,7 +32911,7 @@ grit new myapp --api --desktop
             {/* v3.8.0 */}
             <div className="mb-12" id="v3.8.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.8.0
                 </span>
                 <span className="text-sm text-muted-foreground">April 11, 2026</span>
@@ -32974,7 +32974,7 @@ grit new myapp --api --desktop
             {/* v3.7.0 */}
             <div className="mb-12" id="v3.7.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.7.0
                 </span>
                 <span className="text-sm text-muted-foreground">April 3, 2026</span>
@@ -33006,7 +33006,7 @@ grit new myapp --api --desktop
                   <li>
                     <strong>GORM AutoMigrate silence</strong> &mdash; Migration now uses a{' '}
                     <code>logger.Silent</code> session to suppress schema inspection SQL noise. Fixes{' '}
-                    <a href="https://github.com/MUKE-coder/grit/issues/8" className="text-primary hover:underline"
+                    <a href="https://github.com/MUKE-coder/grit/issues/8" className="text-accent hover:underline"
                        target="_blank" rel="noopener noreferrer">issue #8</a>.
                   </li>
                 </ul>
@@ -33049,7 +33049,7 @@ grit new myapp --api --desktop
             {/* v3.6.0 */}
             <div className="mb-12" id="v3.6.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v3.6.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 27, 2026</span>
@@ -33400,7 +33400,7 @@ grit new myapp --api --desktop
                   <li>
                     <strong>Vercel AI Gateway integration</strong> &mdash; Replaced the multi-provider AI service
                     (Claude, OpenAI, Gemini with separate API implementations) with{' '}
-                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Vercel AI Gateway</a>.
+                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Vercel AI Gateway</a>.
                     One API key now gives access to hundreds of models from all major providers through a single
                     OpenAI-compatible endpoint. Models use the <code>provider/model</code> format
                     (e.g. <code>anthropic/claude-sonnet-4-6</code>, <code>openai/gpt-5.4</code>,{' '}
@@ -33417,7 +33417,7 @@ grit new myapp --api --desktop
                     <code>AI_GATEWAY_API_KEY</code>, <code>AI_GATEWAY_MODEL</code>, and{' '}
                     <code>AI_GATEWAY_URL</code>. Update your <code>.env</code> file accordingly.
                     Get your API key from{' '}
-                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">vercel.com/ai-gateway</a>.
+                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">vercel.com/ai-gateway</a>.
                   </li>
                 </ul>
               </div>
@@ -33462,7 +33462,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/plugins" className="text-primary hover:underline">Plugins</Link>{' '}
+                    <Link href="/docs/plugins" className="text-accent hover:underline">Plugins</Link>{' '}
                     page &mdash; overview of all 10 plugins with installation, environment setup,
                     quick start code, features, and use cases for each.
                   </li>
@@ -33494,7 +33494,7 @@ grit new myapp --api --desktop
             {/* v2.5.0 */}
             <div className="mb-12" id="v2.5.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v2.5.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 6, 2026</span>
@@ -33532,7 +33532,7 @@ grit new myapp --api --desktop
             {/* v2.4.0 */}
             <div className="mb-12" id="v2.4.0">
               <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
                   v2.4.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 5, 2026</span>
@@ -33621,7 +33621,7 @@ grit new myapp --api --desktop
                   <li>
                     <strong>TanStack Router for desktop</strong> &mdash; Migrated the desktop frontend from
                     React Router to{' '}
-                    <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{' '}
+                    <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">TanStack Router</a>{' '}
                     with file-based routing. Routes are auto-discovered by the Vite plugin &mdash; no centralized
                     route registry. Uses <code>createHashHistory()</code> for Wails compatibility and{' '}
                     <code>Route.useParams()</code> for type-safe params. Resource generation now creates 5 files
@@ -33639,7 +33639,7 @@ grit new myapp --api --desktop
                   </li>
                   <li>
                     <strong>20 Desktop Project Ideas</strong> &mdash; New{' '}
-                    <Link href="/docs/desktop/project-ideas" className="text-primary hover:underline">project ideas page</Link>{' '}
+                    <Link href="/docs/desktop/project-ideas" className="text-accent hover:underline">project ideas page</Link>{' '}
                     with 20 ready-to-build desktop app ideas across business, education, healthcare, logistics,
                     and more. Each includes resources, field definitions, and <code>grit generate</code> commands.
                   </li>
@@ -33653,8 +33653,8 @@ grit new myapp --api --desktop
                   </li>
                   <li>
                     Updated{' '}
-                    <Link href="/docs/desktop/llm-reference" className="text-primary hover:underline">LLM Reference</Link>,{' '}
-                    <Link href="/docs/ai-skill" className="text-primary hover:underline">GRIT_SKILL.md</Link>, and
+                    <Link href="/docs/desktop/llm-reference" className="text-accent hover:underline">LLM Reference</Link>,{' '}
+                    <Link href="/docs/ai-skill" className="text-accent hover:underline">GRIT_SKILL.md</Link>, and
                     database docs to reflect TanStack Router and CGO-free SQLite changes.
                   </li>
                 </ul>
@@ -33679,14 +33679,14 @@ grit new myapp --api --desktop
                     TanStack Query), SQLite database, JWT authentication, blog and contact CRUD, PDF/Excel export,
                     custom title bar, dark theme, and GORM Studio. Compiles to a single native executable for
                     Windows, macOS, and Linux. See{' '}
-                    <Link href="/docs/desktop" className="text-primary hover:underline">Desktop docs</Link>.
+                    <Link href="/docs/desktop" className="text-accent hover:underline">Desktop docs</Link>.
                   </li>
                   <li>
                     <strong>Desktop resource generation</strong> &mdash; <code>grit generate resource</code> now
                     works inside desktop projects. Generates Go model, service, and TanStack Router route files
                     (list, new, edit), then injects code into 10 locations (db.go, main.go, app.go, types.go,
                     sidebar.tsx, studio/main.go) using <code>grit:</code> markers. See{' '}
-                    <Link href="/docs/desktop/resource-generation" className="text-primary hover:underline">Desktop Resource Generation</Link>.
+                    <Link href="/docs/desktop/resource-generation" className="text-accent hover:underline">Desktop Resource Generation</Link>.
                   </li>
                   <li>
                     <strong>Project type auto-detection</strong> &mdash; All CLI commands now auto-detect whether
@@ -33721,13 +33721,13 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/desktop" className="text-primary hover:underline">Desktop (Wails)</Link>{' '}
+                    <Link href="/docs/desktop" className="text-accent hover:underline">Desktop (Wails)</Link>{' '}
                     section &mdash; 8 pages covering overview, getting started, first app tutorial, POS app
                     tutorial, resource generation, building/distribution, project ideas, and LLM reference.
                   </li>
                   <li>
                     Updated{' '}
-                    <Link href="/docs/ai-skill/llm-guide" className="text-primary hover:underline">LLM Reference</Link>{' '}
+                    <Link href="/docs/ai-skill/llm-guide" className="text-accent hover:underline">LLM Reference</Link>{' '}
                     with complete desktop section: project structure, CLI commands, markers, and architecture comparison.
                   </li>
                 </ul>
@@ -33780,7 +33780,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/concepts/performance" className="text-primary hover:underline">Performance</Link>{' '}
+                    <Link href="/docs/concepts/performance" className="text-accent hover:underline">Performance</Link>{' '}
                     page &mdash; comprehensive guide to all backend (Go/API) and frontend (Next.js)
                     performance optimisations that ship with every Grit project out of the box.
                     Covers Gzip, Request ID, connection pool, Cache-Control, presigned uploads,
@@ -33789,7 +33789,7 @@ grit new myapp --api --desktop
                   </li>
                   <li>
                     New{' '}
-                    <Link href="/docs/ai-skill/llm-guide" className="text-primary hover:underline">Complete LLM Reference</Link>{' '}
+                    <Link href="/docs/ai-skill/llm-guide" className="text-accent hover:underline">Complete LLM Reference</Link>{' '}
                     page &mdash; a dedicated machine-readable guide that teaches AI assistants
                     everything about Grit: project structure, all CLI commands, every field type,
                     code patterns, API response format, code markers, naming conventions, all
@@ -33837,7 +33837,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/getting-started/installation" className="text-primary hover:underline">Create without Docker</Link>{' '}
+                    <Link href="/docs/getting-started/installation" className="text-accent hover:underline">Create without Docker</Link>{' '}
                     guide &mdash; set up a Grit project using Neon, Upstash, Cloudflare R2, and Resend instead of Docker.
                   </li>
                 </ul>
@@ -33873,26 +33873,26 @@ grit new myapp --api --desktop
                   <li>
                     <strong>Default font changed to Onest</strong> &mdash; New projects scaffolded with{' '}
                     <code>grit new</code> now use the{' '}
-                    <a href="https://fonts.google.com/specimen/Onest" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Onest</a>{' '}
+                    <a href="https://fonts.google.com/specimen/Onest" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">Onest</a>{' '}
                     Google Font for all UI text instead of DM Sans. JetBrains Mono remains the code font.
                     The font is loaded via <code>next/font/google</code> with weights 400, 500, 600, and 700.
                   </li>
                   <li>
                     <strong>Hire Us page</strong> &mdash; New{' '}
-                    <Link href="/hire" className="text-primary hover:underline">/hire</Link>{' '}
+                    <Link href="/hire" className="text-accent hover:underline">/hire</Link>{' '}
                     page for professional Grit development services. Includes service offerings,
                     tech stack overview, and contact CTA.
                   </li>
                   <li>
                     <strong>Monetization banners</strong> &mdash; Docs sidebar now shows promotional cards for{' '}
-                    <a href="https://gritcms.com" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">GritCMS</a>,
+                    <a href="https://gritcms.com" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">GritCMS</a>,
                     developer hiring services, and{' '}
-                    <Link href="/donate" className="text-primary hover:underline">donations</Link>{' '}
+                    <Link href="/donate" className="text-accent hover:underline">donations</Link>{' '}
                     &mdash; visible on every documentation page.
                   </li>
                   <li>
                     <strong>Grit Fullstack Course page</strong> &mdash; New{' '}
-                    <Link href="/course" className="text-primary hover:underline">/course</Link>{' '}
+                    <Link href="/course" className="text-accent hover:underline">/course</Link>{' '}
                     page with a 10-module curriculum covering Go, React, Next.js, and the full Grit stack.
                   </li>
                 </ul>
@@ -33924,13 +33924,13 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/getting-started/cli-cheatsheet" className="text-primary hover:underline">CLI Cheatsheet</Link>{' '}
+                    <Link href="/docs/getting-started/cli-cheatsheet" className="text-accent hover:underline">CLI Cheatsheet</Link>{' '}
                     page &mdash; complete reference for all Grit CLI commands with flags, field types,
                     generated files, common workflows, and full command tree.
                   </li>
                   <li>
                     New{' '}
-                    <Link href="/docs/backend/oauth" className="text-primary hover:underline">Social Login (OAuth2)</Link>{' '}
+                    <Link href="/docs/backend/oauth" className="text-accent hover:underline">Social Login (OAuth2)</Link>{' '}
                     setup guide for Google and GitHub authentication.
                   </li>
                   <li>
@@ -33958,7 +33958,7 @@ grit new myapp --api --desktop
                   <li>
                     <strong>Social Login (Google + GitHub)</strong> &mdash; Every <code>grit new</code> project now
                     includes OAuth2 social authentication via{' '}
-                    <a href="https://github.com/markbates/goth" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Gothic</a>.
+                    <a href="https://github.com/markbates/goth" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">Gothic</a>.
                     Users can sign in with Google or GitHub on all auth pages (login, register, admin).
                     Accounts are linked by email &mdash; existing users who sign in with a social provider are automatically connected.
                     Configurable via <code>GOOGLE_CLIENT_ID</code>, <code>GITHUB_CLIENT_ID</code> environment variables.
@@ -34007,12 +34007,12 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/tutorials/contact-app" className="text-primary hover:underline">Your First App</Link>{' '}
+                    <Link href="/docs/tutorials/contact-app" className="text-accent hover:underline">Your First App</Link>{' '}
                     tutorial &mdash; step-by-step Contact Manager guide covering project setup, resource generation, and CRUD
                   </li>
                   <li>
                     New{' '}
-                    <Link href="/docs/deployment/dokploy" className="text-primary hover:underline">Dokploy Deployment</Link>{' '}
+                    <Link href="/docs/deployment/dokploy" className="text-accent hover:underline">Dokploy Deployment</Link>{' '}
                     guide with Dockerfile examples
                   </li>
                   <li>
@@ -34020,7 +34020,7 @@ grit new myapp --api --desktop
                   </li>
                   <li>
                     Updated{' '}
-                    <Link href="/docs/backend/api-docs" className="text-primary hover:underline">API Documentation</Link>{' '}
+                    <Link href="/docs/backend/api-docs" className="text-accent hover:underline">API Documentation</Link>{' '}
                     page to reflect the new <code>AuthConfig</code> struct format
                   </li>
                 </ul>
@@ -34041,11 +34041,11 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     <strong>Pulse (Observability)</strong> &mdash; Every <code>grit new</code> project now includes{' '}
-                    <a href="https://github.com/MUKE-coder/pulse" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Pulse</a>,
+                    <a href="https://github.com/MUKE-coder/pulse" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">Pulse</a>,
                     a self-hosted observability SDK. Provides request tracing, database monitoring, runtime metrics,
                     error tracking, health checks, alerting, Prometheus export, and an embedded React dashboard
                     at <code>/pulse</code>. Enabled by default, configurable via <code>PULSE_ENABLED</code>.
-                    See <Link href="/docs/backend/pulse" className="text-primary hover:underline">Pulse docs</Link>.
+                    See <Link href="/docs/backend/pulse" className="text-accent hover:underline">Pulse docs</Link>.
                   </li>
                 </ul>
 
@@ -34053,7 +34053,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/backend/pulse" className="text-primary hover:underline">Pulse (Observability)</Link> page
+                    <Link href="/docs/backend/pulse" className="text-accent hover:underline">Pulse (Observability)</Link> page
                     covering configuration, endpoints, health checks, alerting, Prometheus metrics, and data storage
                   </li>
                 </ul>
@@ -34075,7 +34075,7 @@ grit new myapp --api --desktop
                   <li>
                     <strong>API Documentation (gin-docs)</strong> &mdash; Replaced hand-written Scalar/OpenAPI
                     spec with{' '}
-                    <a href="https://github.com/MUKE-coder/gin-docs" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">gin-docs</a>,
+                    <a href="https://github.com/MUKE-coder/gin-docs" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">gin-docs</a>,
                     a zero-annotation API documentation generator. Routes and GORM models are introspected
                     automatically to produce an OpenAPI 3.1 spec with interactive Scalar or Swagger UI,
                     plus Postman and Insomnia export.
@@ -34094,7 +34094,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/backend/api-docs" className="text-primary hover:underline">API Documentation</Link> page
+                    <Link href="/docs/backend/api-docs" className="text-accent hover:underline">API Documentation</Link> page
                     covering gin-docs configuration, GORM model schemas, route customization, UI switching, and spec export
                   </li>
                   <li>Full SEO + AEO implementation: sitemap, robots.txt, JSON-LD structured data, per-page metadata</li>
@@ -34122,7 +34122,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     <strong>Go Playground</strong> &mdash; Interactive code editor at{' '}
-                    <Link href="/playground" className="text-primary hover:underline">/playground</Link> with
+                    <Link href="/playground" className="text-accent hover:underline">/playground</Link> with
                     Go syntax highlighting, code execution via the official Go Playground API, example snippets,
                     share links, and keyboard shortcuts (Ctrl+Enter to run).
                   </li>
@@ -34136,7 +34136,7 @@ grit new myapp --api --desktop
                 <h3>Documentation</h3>
                 <ul>
                   <li>
-                    <Link href="/docs/prerequisites/golang" className="text-primary hover:underline">Go for Grit Developers</Link> &mdash;
+                    <Link href="/docs/prerequisites/golang" className="text-accent hover:underline">Go for Grit Developers</Link> &mdash;
                     comprehensive rewrite with 22 sections covering methods, Gin routing, middleware, CORS,
                     handler/service architecture, GORM CRUD, migrations, seeding, JWT auth flow, and RBAC
                   </li>
@@ -34161,10 +34161,10 @@ grit new myapp --api --desktop
                   <li>
                     <strong>Security (Sentinel)</strong> &mdash; Every <code>grit new</code> project now ships with
                     a production-grade security suite powered by{' '}
-                    <Link href="https://github.com/MUKE-coder/sentinel" className="text-primary hover:underline">Sentinel</Link>.
+                    <Link href="https://github.com/MUKE-coder/sentinel" className="text-accent hover:underline">Sentinel</Link>.
                     Includes WAF, rate limiting, brute-force protection, anomaly detection, IP geolocation,
                     security headers, and a real-time threat dashboard at <code>/sentinel/ui</code>.
-                    See <Link href="/docs/batteries/security" className="text-primary hover:underline">Security docs</Link>.
+                    See <Link href="/docs/batteries/security" className="text-accent hover:underline">Security docs</Link>.
                   </li>
                   <li>
                     <strong>Admin security page</strong> &mdash; New System &rarr; Security page in the admin panel
@@ -34174,7 +34174,7 @@ grit new myapp --api --desktop
 
                 <h3>Documentation</h3>
                 <ul>
-                  <li>New: <Link href="/docs/batteries/security" className="text-primary hover:underline">Security (Sentinel)</Link> documentation page</li>
+                  <li>New: <Link href="/docs/batteries/security" className="text-accent hover:underline">Security (Sentinel)</Link> documentation page</li>
                   <li>Migrated getting-started pages (Installation, Quick Start, Troubleshooting) to use CodeBlock component</li>
                   <li>Added prerequisite learning pages for Go, Next.js, and Docker</li>
                 </ul>
@@ -34197,12 +34197,12 @@ grit new myapp --api --desktop
                     <strong>Multi-step forms</strong> &mdash; New <code>formView: &quot;modal-steps&quot;</code> and{' '}
                     <code>&quot;page-steps&quot;</code> variants with horizontal/vertical step indicators,
                     per-step validation, progress bar, and clickable step navigation.
-                    See <Link href="/docs/admin/multi-step-forms" className="text-primary hover:underline">Multi-Step Forms</Link>.
+                    See <Link href="/docs/admin/multi-step-forms" className="text-accent hover:underline">Multi-Step Forms</Link>.
                   </li>
                   <li>
                     <strong>Standalone component usage</strong> &mdash; FormBuilder, FormStepper, and DataTable
                     can now be used on any page in both web and admin apps without the resource system.
-                    See <Link href="/docs/admin/standalone-usage" className="text-primary hover:underline">Standalone Usage</Link>.
+                    See <Link href="/docs/admin/standalone-usage" className="text-accent hover:underline">Standalone Usage</Link>.
                   </li>
                   <li>
                     <strong>Richtext field type</strong> &mdash; New <code>richtext</code> field with Tiptap WYSIWYG
@@ -34250,9 +34250,9 @@ grit new myapp --api --desktop
 
                 <h3>Documentation</h3>
                 <ul>
-                  <li>New: <Link href="/docs/tutorials/product-catalog" className="text-primary hover:underline">Build a Product Catalog</Link> tutorial &mdash; resource generation, multi-step forms, standalone DataTable &amp; FormBuilder</li>
-                  <li>New: <Link href="/docs/admin/multi-step-forms" className="text-primary hover:underline">Multi-Step Forms</Link> guide</li>
-                  <li>New: <Link href="/docs/admin/standalone-usage" className="text-primary hover:underline">Standalone Usage</Link> guide</li>
+                  <li>New: <Link href="/docs/tutorials/product-catalog" className="text-accent hover:underline">Build a Product Catalog</Link> tutorial &mdash; resource generation, multi-step forms, standalone DataTable &amp; FormBuilder</li>
+                  <li>New: <Link href="/docs/admin/multi-step-forms" className="text-accent hover:underline">Multi-Step Forms</Link> guide</li>
+                  <li>New: <Link href="/docs/admin/standalone-usage" className="text-accent hover:underline">Standalone Usage</Link> guide</li>
                   <li>New: Changelog page</li>
                   <li>Updated CLI Commands, Code Generation, Quick Start, Resources, Shared Package, Web App, Seeders, and Forms pages</li>
                 </ul>

@@ -32,7 +32,7 @@ import {
 const STYLE: Record<Provision, { glyph: string; cls: string; dot: string }> = {
   generated: {
     glyph: '●',
-    cls: 'text-primary',
+    cls: 'text-accent',
     dot: 'bg-primary',
   },
   builtin: {
@@ -124,7 +124,7 @@ export function CapabilityMatrix() {
                     <span
                       className={
                         'text-[11px] font-medium ' +
-                        (f.slug === 'grit' ? 'text-primary' : 'text-muted-foreground')
+                        (f.slug === 'grit' ? 'text-accent' : 'text-muted-foreground')
                       }
                     >
                       {f.name}
@@ -143,7 +143,7 @@ export function CapabilityMatrix() {
                   colSpan={COMPARED.length + 1}
                   className="text-left pt-6 pb-2"
                 >
-                  <span className="tag-mono text-primary/80">{group.title}</span>
+                  <span className="tag-mono text-accent/80">{group.title}</span>
                 </th>
               </tr>
               {group.rows.map((row) => (
@@ -159,7 +159,7 @@ export function CapabilityMatrix() {
                       key={f.slug}
                       className={
                         'text-center py-2.5 px-1 align-top ' +
-                        (f.slug === 'grit' ? 'bg-primary/[0.045]' : '')
+                        (f.slug === 'grit' ? 'bg-accent/[0.045]' : '')
                       }
                     >
                       <Marker
@@ -184,7 +184,7 @@ export function CapabilityMatrix() {
                   className={
                     'text-center py-3 px-1 font-semibold tabular-nums ' +
                     (f.slug === 'grit'
-                      ? 'bg-primary/[0.045] text-primary'
+                      ? 'bg-accent/[0.045] text-accent'
                       : 'text-muted-foreground')
                   }
                 >
@@ -201,7 +201,7 @@ export function CapabilityMatrix() {
       <div className="md:hidden space-y-6">
         {CAPABILITY_GROUPS.map((group) => (
           <section key={group.title}>
-            <h3 className="tag-mono text-primary/80 mb-2">{group.title}</h3>
+            <h3 className="tag-mono text-accent/80 mb-2">{group.title}</h3>
             <ul className="space-y-1.5">
               {group.rows.map((row) => {
                 const open = openRow === row.id
@@ -234,7 +234,7 @@ export function CapabilityMatrix() {
                                   className={
                                     'w-20 shrink-0 ' +
                                     (f.slug === 'grit'
-                                      ? 'text-primary font-medium'
+                                      ? 'text-accent font-medium'
                                       : 'text-foreground')
                                   }
                                 >
@@ -256,10 +256,10 @@ export function CapabilityMatrix() {
           </section>
         ))}
 
-        <div className="rounded-lg border border-primary/25 bg-primary/[0.04] px-4 py-3">
+        <div className="rounded-lg border border-accent/25 bg-accent/[0.04] px-4 py-3">
           <p className="text-sm text-foreground">
             Running without installing anything:{' '}
-            <strong className="text-primary">
+            <strong className="text-accent">
               {readyCount('grit')}/{TOTAL_ROWS}
             </strong>{' '}
             in Grit. The next closest is {readyCount('django')}/{TOTAL_ROWS}.
@@ -279,7 +279,7 @@ export function CapabilityMatrix() {
         </p>
         <Link
           href="/docs/batteries"
-          className="shrink-0 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          className="shrink-0 inline-flex items-center gap-1 text-sm text-accent hover:underline"
         >
           What ships in the box
           <ArrowRight className="h-3.5 w-3.5" />

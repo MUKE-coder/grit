@@ -43,7 +43,7 @@ export default function DoubleKitPage() {
               ].map((r) => (
                 <div key={r.src} className="flex items-center justify-between gap-2 rounded border border-border/40 bg-card/60 px-2 py-1">
                   <span className="text-foreground/80 truncate">{r.src}</span>
-                  <span className="text-primary shrink-0">{r.dst}</span>
+                  <span className="text-accent shrink-0">{r.dst}</span>
                 </div>
               ))}
             </div>

@@ -20,7 +20,7 @@ export default function ContactsApiTutorialPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Tutorial</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Contacts: the API on its own</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">When the clients are somebody else&apos;s: a mobile team, a partner integration, or a frontend you have already built. You get the Go API with authentication, migrations, generated reference documentation and nothing else. No Node, no pnpm, no JavaScript anywhere in the project.</p>
             </div>
@@ -63,19 +63,19 @@ cd contacts`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/api/internal/models</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/api/internal/models</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The Go structs the database is built from</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/api/internal/services</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/api/internal/services</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Where the queries live</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/api/internal/handlers</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/api/internal/handlers</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Thin HTTP handlers that call the services</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/api/internal/routes</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/api/internal/routes</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The route table, and the access registry built from it</td>
                   </tr>
                 </tbody>
@@ -121,15 +121,15 @@ grit seed`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:8080/api/v1</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:8080/api/v1</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The API</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:8080/docs</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:8080/docs</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The reference, generated from the routes</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:8080/studio</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:8080/studio</td>
                     <td className="px-4 py-2.5 text-muted-foreground">GORM Studio: browse and edit the tables</td>
                   </tr>
                 </tbody>

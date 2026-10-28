@@ -17,7 +17,7 @@ export default function ExistingProjectsPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Using Grit with an existing project
               </h1>
@@ -95,7 +95,7 @@ studio.Mount(r, db, "/studio")`,
               ].map((item) => (
                 <div key={item.n} className="rounded-xl border border-border/50 bg-card/40 p-5">
                   <div className="flex items-baseline gap-3 mb-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">
                       {item.n}
                     </span>
                     <h3 className="font-semibold text-sm">{item.title}</h3>
@@ -211,14 +211,14 @@ grit generate resource Invoice --fields "customer:belongs_to[Customer],total:flo
             <div className="flex flex-wrap items-center gap-6 border-t border-border/40 pt-8">
               <Link
                 href="/docs/getting-started/quick-start"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
                 Quick start
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
                 href="/docs/governance"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
                 Governance &amp; risk
                 <ArrowRight className="h-3.5 w-3.5" />

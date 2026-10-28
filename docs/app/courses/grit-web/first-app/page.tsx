@@ -30,7 +30,7 @@ export default function FirstAppCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 1 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 1 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">18 challenges</span>
@@ -54,10 +54,10 @@ export default function FirstAppCourse() {
             caption="Install the CLI, scaffold your first project, and run it — auth, admin, and database included" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/getting-started/quick-start" className="text-primary hover:underline">Quick Start →</a>
+            <a href="/docs/getting-started/quick-start" className="text-accent hover:underline">Quick Start →</a>
           </p>
         </div>
 
@@ -84,11 +84,11 @@ export default function FirstAppCourse() {
           </Definition>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit uses <strong className="text-foreground">Go</strong> with the <a href="https://gin-gonic.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">Gin</a> web framework and <a href="https://gorm.io" target="_blank" rel="noreferrer" className="text-primary hover:underline">GORM</a> ORM for the API</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit uses <strong className="text-foreground">React</strong> with <a href="https://nextjs.org" target="_blank" rel="noreferrer" className="text-primary hover:underline">Next.js</a> or <a href="https://tanstack.com/router" target="_blank" rel="noreferrer" className="text-primary hover:underline">TanStack Router</a> for the frontend</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit generates a complete project with authentication, admin panel, and more</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit has a <strong className="text-foreground">CLI</strong> (Command Line Interface) that helps you generate code, run migrations, and deploy</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit is <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-primary hover:underline">open source</a> and free to use (MIT license)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Grit uses <strong className="text-foreground">Go</strong> with the <a href="https://gin-gonic.com" target="_blank" rel="noreferrer" className="text-accent hover:underline">Gin</a> web framework and <a href="https://gorm.io" target="_blank" rel="noreferrer" className="text-accent hover:underline">GORM</a> ORM for the API</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Grit uses <strong className="text-foreground">React</strong> with <a href="https://nextjs.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">Next.js</a> or <a href="https://tanstack.com/router" target="_blank" rel="noreferrer" className="text-accent hover:underline">TanStack Router</a> for the frontend</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Grit generates a complete project with authentication, admin panel, and more</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Grit has a <strong className="text-foreground">CLI</strong> (Command Line Interface) that helps you generate code, run migrations, and deploy</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Grit is <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-accent hover:underline">open source</a> and free to use (MIT license)</li>
           </ul>
 
           <Definition term="CLI (Command Line Interface)">
@@ -117,25 +117,25 @@ export default function FirstAppCourse() {
               </thead>
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://go.dev/dl/" target="_blank" rel="noreferrer" className="text-primary hover:underline">Go</a></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://go.dev/dl/" target="_blank" rel="noreferrer" className="text-accent hover:underline">Go</a></td>
                   <td className="px-4 py-3"><Code>1.21+</Code></td>
                   <td className="px-4 py-3">Runs the backend API server</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">go version</code></td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://nodejs.org" target="_blank" rel="noreferrer" className="text-primary hover:underline">Node.js</a></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://nodejs.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">Node.js</a></td>
                   <td className="px-4 py-3"><Code>18+</Code></td>
                   <td className="px-4 py-3">Runs the frontend apps</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">node --version</code></td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://pnpm.io/installation" target="_blank" rel="noreferrer" className="text-primary hover:underline">pnpm</a></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://pnpm.io/installation" target="_blank" rel="noreferrer" className="text-accent hover:underline">pnpm</a></td>
                   <td className="px-4 py-3"><Code>8+</Code></td>
                   <td className="px-4 py-3">Installs JavaScript packages</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">pnpm --version</code></td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://docker.com/get-started" target="_blank" rel="noreferrer" className="text-primary hover:underline">Docker</a></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://docker.com/get-started" target="_blank" rel="noreferrer" className="text-accent hover:underline">Docker</a></td>
                   <td className="px-4 py-3"><Code>20+</Code></td>
                   <td className="px-4 py-3">Runs PostgreSQL, Redis, MinIO</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">docker --version</code></td>
@@ -185,9 +185,9 @@ go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
           <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Command Explained</h3>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>go install</Code> tells Go to download and compile a package</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">github.com/MUKE-coder/grit/v3/cmd/grit</code> is the path to the Grit CLI on <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-primary hover:underline">GitHub</a></li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>@latest</Code> means get the newest version</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>go install</Code> tells Go to download and compile a package</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <code className="text-xs bg-muted/30 px-1 rounded">github.com/MUKE-coder/grit/v3/cmd/grit</code> is the path to the Grit CLI on <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-accent hover:underline">GitHub</a></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>@latest</Code> means get the newest version</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -359,13 +359,13 @@ go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
           <Definition term="Monorepo">
             A single Git repository that contains multiple projects (apps and libraries). Instead of having
             separate repos for your API and frontend, everything lives together. This makes it easy to share
-            code and keep things in sync. Grit uses <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-primary hover:underline">Turborepo</a> to
+            code and keep things in sync. Grit uses <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-accent hover:underline">Turborepo</a> to
             manage the monorepo.
           </Definition>
 
           <Definition term="ORM (Object-Relational Mapping)">
             A tool that lets you interact with your database using Go structs instead of writing raw SQL.
-            <a href="https://gorm.io" target="_blank" rel="noreferrer" className="text-primary hover:underline"> GORM</a> is Go{"'"}s most popular ORM.
+            <a href="https://gorm.io" target="_blank" rel="noreferrer" className="text-accent hover:underline"> GORM</a> is Go{"'"}s most popular ORM.
             You define a <Code>User</Code> struct and GORM creates the <Code>users</Code> table automatically.
           </Definition>
 
@@ -398,7 +398,7 @@ go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">packages/shared/</td>
-                  <td className="px-4 py-3">Shared <a href="https://zod.dev" target="_blank" rel="noreferrer" className="text-primary hover:underline">Zod</a> validation schemas and TypeScript types</td>
+                  <td className="px-4 py-3">Shared <a href="https://zod.dev" target="_blank" rel="noreferrer" className="text-accent hover:underline">Zod</a> validation schemas and TypeScript types</td>
                   <td className="px-4 py-3">TypeScript</td>
                 </tr>
                 <tr>
@@ -474,10 +474,10 @@ go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
           </CodeBlock>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Middleware</strong> runs first — checks if the user is logged in, logs the request, applies rate limits</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Handler</strong> receives the request — validates input data, then calls the service</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Service</strong> contains business logic — talks to the database, processes data, applies rules</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Model</strong> defines the database table — what columns exist, their types, and relationships</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Middleware</strong> runs first — checks if the user is logged in, logs the request, applies rate limits</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Handler</strong> receives the request — validates input data, then calls the service</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Service</strong> contains business logic — talks to the database, processes data, applies rules</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Model</strong> defines the database table — what columns exist, their types, and relationships</li>
           </ul>
 
           <Definition term="Middleware">
@@ -516,9 +516,9 @@ docker compose up -d`}
           <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Command Explained</h3>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>cd myapp</Code> — moves into your project folder</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>docker compose up</Code> — reads <Code>docker-compose.yml</Code> and starts all services</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>-d</Code> means {'"'}detached{'"'} — they run in the background so you get your terminal back</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>cd myapp</Code> — moves into your project folder</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>docker compose up</Code> — reads <Code>docker-compose.yml</Code> and starts all services</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>-d</Code> means {'"'}detached{'"'} — they run in the background so you get your terminal back</li>
           </ul>
 
           <div className="overflow-x-auto mb-4">
@@ -597,7 +597,7 @@ docker compose up -d`}
           <p className="text-muted-foreground leading-relaxed mb-4">
             The bare <Code>grit start</Code> boots all three servers at once. You can also start them
             individually: <Code>grit start server</Code> for just the Go API, or <Code>grit start client</Code> for
-            just the frontend apps. Under the hood it uses <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-primary hover:underline">Turborepo</a>:
+            just the frontend apps. Under the hood it uses <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-accent hover:underline">Turborepo</a>:
           </p>
 
           <div className="overflow-x-auto mb-4">

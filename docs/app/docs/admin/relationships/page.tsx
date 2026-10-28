@@ -21,7 +21,7 @@ export default function RelationshipsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Admin Panel</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Admin Panel</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Relationships
               </h1>
@@ -88,9 +88,9 @@ export default function RelationshipsPage() {
                 </div>
                 <div className="p-5 font-mono text-sm">
                   <div className="mb-1 text-muted-foreground/50 text-xs"># Infer related model from field name</div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],price:float&quot;</span></div>
+                  <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],price:float&quot;</span></div>
                   <div className="mt-4 mb-1 text-muted-foreground/50 text-xs"># Explicit related model (when FK name differs)</div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Post --fields &quot;title:string,author:belongs_to:User,content:text&quot;</span></div>
+                  <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Post --fields &quot;title:string,author:belongs_to:User,content:text&quot;</span></div>
                 </div>
               </div>
             </div>
@@ -218,7 +218,7 @@ db.Preload("Category").First(&product, product.ID)`} />
                   <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                 </div>
                 <div className="p-5 font-mono text-sm">
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],tags:many_to_many:Tag,price:float&quot;</span></div>
+                  <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],tags:many_to_many:Tag,price:float&quot;</span></div>
                 </div>
               </div>
             </div>
@@ -398,7 +398,7 @@ type Category struct {
             <div className="mt-4 mb-8">
               <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
                 <div className="p-5 font-mono text-sm">
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Invoice \</span></div>
+                  <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Invoice \</span></div>
                   <div className="pl-4"><span className="text-foreground/80">--fields &quot;number:string,status:string&quot; \</span></div>
                   <div className="pl-4"><span className="text-foreground/80">--items &quot;InvoiceItem:description:string,qty:int,unit_rate:float&quot;</span></div>
                 </div>
@@ -434,7 +434,7 @@ type Category struct {
               <p>
                 If a row&apos;s columns include a quantity and a rate/price, the table shows a
                 derived <strong>Total</strong> column and a grand total automatically. The
-                parent&apos;s <a href="/docs/admin/resources" className="text-primary hover:underline">detail page</a> renders
+                parent&apos;s <a href="/docs/admin/resources" className="text-accent hover:underline">detail page</a> renders
                 the same items as a related table (fetched by the foreign key), so you see them
                 after saving without any extra wiring. You can hand-edit this field like any other
                 &mdash; add columns, change types, point it at a different child.
@@ -705,11 +705,11 @@ GET /api/v1/public/products?category_id=<electronics>,<cameras>,<laptops>
                 </div>
                 <div className="p-5 font-mono text-sm">
                   <div className="mb-1 text-muted-foreground/50 text-xs"># Step 1: Generate Category (the parent)</div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Category --fields &quot;name:string,slug:slug,description:text&quot;</span></div>
+                  <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Category --fields &quot;name:string,slug:slug,description:text&quot;</span></div>
                   <div className="mt-4 mb-1 text-muted-foreground/50 text-xs"># Step 2: Generate Tag</div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Tag --fields &quot;name:string:unique&quot;</span></div>
+                  <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Tag --fields &quot;name:string:unique&quot;</span></div>
                   <div className="mt-4 mb-1 text-muted-foreground/50 text-xs"># Step 3: Generate Product with relationships</div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],tags:many_to_many:Tag,price:float,published:bool&quot;</span></div>
+                  <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],tags:many_to_many:Tag,price:float,published:bool&quot;</span></div>
                 </div>
               </div>
             </div>

@@ -30,7 +30,7 @@ export default function FileStorageCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 5 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 5 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -56,10 +56,10 @@ export default function FileStorageCourse() {
             caption="Start on MinIO locally, then switch to S3 or R2 — same code, presigned uploads" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/batteries/storage" className="text-primary hover:underline">File Storage →</a>
+            <a href="/docs/batteries/storage" className="text-accent hover:underline">File Storage →</a>
           </p>
         </div>
 
@@ -135,19 +135,19 @@ export default function FileStorageCourse() {
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span><strong className="text-foreground">Frontend asks API for an upload URL.</strong> The frontend sends the filename and content type to your API: {'"'}I want to upload photo.jpg (image/jpeg).{'"'}</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span><strong className="text-foreground">API generates a presigned URL.</strong> Your Go API creates a time-limited, signed URL that allows uploading one specific file to one specific location in S3.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span><strong className="text-foreground">Frontend uploads directly to S3.</strong> The frontend sends the file directly to the presigned URL using a PUT request. The file goes straight to S3 — it never passes through your API server.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">4.</span>
+              <span className="text-accent font-mono font-bold shrink-0">4.</span>
               <span><strong className="text-foreground">Frontend confirms the upload.</strong> After a successful upload, the frontend tells your API: {'"'}The upload to key uploads/abc123/photo.jpg is complete.{'"'} The API saves a record in the uploads table.</span>
             </li>
           </ol>
@@ -178,9 +178,9 @@ export default function FileStorageCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">No request body limits.</strong> Your API doesn{"'"}t handle the file data, so there{"'"}s no 10MB or 50MB upload limit to configure. Users can upload files of any size directly to S3.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">No API bottleneck.</strong> Large files don{"'"}t consume your API{"'"}s memory or bandwidth. A 500MB video goes straight to S3 while your API keeps serving other requests.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Progress tracking works.</strong> Because the frontend sends the file directly via XHR, you get real upload progress events. This lets you show a proper progress bar to the user.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">No request body limits.</strong> Your API doesn{"'"}t handle the file data, so there{"'"}s no 10MB or 50MB upload limit to configure. Users can upload files of any size directly to S3.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">No API bottleneck.</strong> Large files don{"'"}t consume your API{"'"}s memory or bandwidth. A 500MB video goes straight to S3 while your API keeps serving other requests.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Progress tracking works.</strong> Because the frontend sends the file directly via XHR, you get real upload progress events. This lets you show a proper progress bar to the user.</li>
           </ul>
 
           <Note>
@@ -230,13 +230,13 @@ MINIO_USE_SSL=false
           </p>
 
           <ul className="space-y-3 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_DRIVER</strong> — The storage backend: <Code>minio</Code> (local dev), <Code>s3</Code>, <Code>r2</Code>, or <Code>b2</Code>. This selects which set of provider variables Grit reads and which client it initializes.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_ENDPOINT</strong> — The MinIO URL for local dev: <Code>http://localhost:9002</Code>. (Cloud drivers use their own endpoint var — <Code>S3_ENDPOINT</Code>, <Code>R2_ENDPOINT</Code>, <Code>B2_ENDPOINT</Code>; leave S3 empty for the AWS regional default.)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_BUCKET</strong> — The bucket where files are stored. Grit uses a single bucket and organizes files with key prefixes.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_ACCESS_KEY</strong> — The access key ID. For local MinIO: generated per project into <Code>.env</Code>. For cloud providers: your IAM access key (via <Code>S3_ACCESS_KEY</Code> / <Code>R2_ACCESS_KEY</Code>).</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_SECRET_KEY</strong> — The secret access key. For local MinIO: generated per project into <Code>.env</Code>. Keep production secrets out of Git.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_REGION</strong> — Required by the S3 protocol. For MinIO any value works (<Code>us-east-1</Code>); R2 uses <Code>auto</Code>; AWS S3 uses your real region.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_USE_SSL</strong> — HTTPS on/off. <Code>false</Code> for local MinIO (HTTP), <Code>true</Code> for cloud providers.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">STORAGE_DRIVER</strong> — The storage backend: <Code>minio</Code> (local dev), <Code>s3</Code>, <Code>r2</Code>, or <Code>b2</Code>. This selects which set of provider variables Grit reads and which client it initializes.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">MINIO_ENDPOINT</strong> — The MinIO URL for local dev: <Code>http://localhost:9002</Code>. (Cloud drivers use their own endpoint var — <Code>S3_ENDPOINT</Code>, <Code>R2_ENDPOINT</Code>, <Code>B2_ENDPOINT</Code>; leave S3 empty for the AWS regional default.)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">MINIO_BUCKET</strong> — The bucket where files are stored. Grit uses a single bucket and organizes files with key prefixes.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">MINIO_ACCESS_KEY</strong> — The access key ID. For local MinIO: generated per project into <Code>.env</Code>. For cloud providers: your IAM access key (via <Code>S3_ACCESS_KEY</Code> / <Code>R2_ACCESS_KEY</Code>).</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">MINIO_SECRET_KEY</strong> — The secret access key. For local MinIO: generated per project into <Code>.env</Code>. Keep production secrets out of Git.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">MINIO_REGION</strong> — Required by the S3 protocol. For MinIO any value works (<Code>us-east-1</Code>); R2 uses <Code>auto</Code>; AWS S3 uses your real region.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">MINIO_USE_SSL</strong> — HTTPS on/off. <Code>false</Code> for local MinIO (HTTP), <Code>true</Code> for cloud providers.</li>
           </ul>
 
           <Tip>
@@ -275,8 +275,8 @@ MINIO_USE_SSL=false
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Port 9000</strong> — The S3 API endpoint. Your Go API connects here to generate presigned URLs and manage files.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Port 9001</strong> — The MinIO Console (web UI). Open <Code>localhost:9003</Code> in your browser to manage buckets and browse files visually.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Port 9000</strong> — The S3 API endpoint. Your Go API connects here to generate presigned URLs and manage files.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Port 9001</strong> — The MinIO Console (web UI). Open <Code>localhost:9003</Code> in your browser to manage buckets and browse files visually.</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -294,11 +294,11 @@ Password: MINIO_SECRET_KEY from .env`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> Browse existing buckets and their contents</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Create new buckets</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Upload and download files manually</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> View file metadata (size, content type, last modified)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Set access policies on buckets</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Browse existing buckets and their contents</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Create new buckets</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Upload and download files manually</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> View file metadata (size, content type, last modified)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Set access policies on buckets</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -513,19 +513,19 @@ The bucket is now ready to receive files.`}
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span><strong className="text-foreground">Upload completes.</strong> The frontend uploads the original image to S3 via a presigned URL and notifies the API.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span><strong className="text-foreground">API enqueues a background job.</strong> The upload handler dispatches an image processing job to the asynq task queue (backed by Redis).</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span><strong className="text-foreground">Worker processes the image.</strong> A background worker picks up the job, downloads the original from S3, generates thumbnail and medium-sized versions, and uploads them back to S3.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">4.</span>
+              <span className="text-accent font-mono font-bold shrink-0">4.</span>
               <span><strong className="text-foreground">Multiple sizes available.</strong> The original, thumbnail, and medium versions are all stored in S3 with predictable keys.</span>
             </li>
           </ol>
@@ -716,11 +716,11 @@ S3_REGION=us-west-2`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Filename</strong> — The original filename the user uploaded (e.g., <Code>photo.jpg</Code>). Used for display purposes and when the user downloads the file.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Key</strong> — The unique storage key in S3 (e.g., <Code>uploads/abc123-photo.jpg</Code>). This is how you locate the file in the bucket. It has a unique index to prevent duplicates.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">ContentType</strong> — The MIME type (e.g., <Code>image/jpeg</Code>, <Code>application/pdf</Code>, <Code>text/csv</Code>). Used to set the correct headers when serving the file.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Size</strong> — The file size in bytes. Useful for showing {'"'}2.4 MB{'"'} in the UI or enforcing storage quotas per user.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">UserID</strong> — Which user uploaded the file. This enables per-user file management and access control.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Filename</strong> — The original filename the user uploaded (e.g., <Code>photo.jpg</Code>). Used for display purposes and when the user downloads the file.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Key</strong> — The unique storage key in S3 (e.g., <Code>uploads/abc123-photo.jpg</Code>). This is how you locate the file in the bucket. It has a unique index to prevent duplicates.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">ContentType</strong> — The MIME type (e.g., <Code>image/jpeg</Code>, <Code>application/pdf</Code>, <Code>text/csv</Code>). Used to set the correct headers when serving the file.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Size</strong> — The file size in bytes. Useful for showing {'"'}2.4 MB{'"'} in the UI or enforcing storage quotas per user.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">UserID</strong> — Which user uploaded the file. This enables per-user file management and access control.</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -790,11 +790,11 @@ S3_REGION=us-west-2`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">File list</strong> — A DataTable showing all uploads with filename, content type, size, uploader, and upload date</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Preview</strong> — Image files show a thumbnail preview directly in the table</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Search and filter</strong> — Search by filename, filter by content type or uploader</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Download</strong> — Generate a presigned download URL to retrieve any file</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Delete</strong> — Remove files from both S3 storage and the database</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">File list</strong> — A DataTable showing all uploads with filename, content type, size, uploader, and upload date</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Preview</strong> — Image files show a thumbnail preview directly in the table</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Search and filter</strong> — Search by filename, filter by content type or uploader</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Download</strong> — Generate a presigned download URL to retrieve any file</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Delete</strong> — Remove files from both S3 storage and the database</li>
           </ul>
 
           <CodeBlock filename="Admin Files Page">
@@ -819,11 +819,11 @@ const columns = [
 
           <ol className="space-y-2 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span>Delete the file (and any thumbnails) from S3 storage</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span>Delete the Upload record from the database</span>
             </li>
           </ol>

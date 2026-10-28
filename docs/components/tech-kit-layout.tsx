@@ -65,7 +65,7 @@ export function TechKitLayout({
             {/* Hero */}
             <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 items-center mb-16">
               <div>
-                <span className="tag-mono text-primary/80 mb-3 block">Tech Kit</span>
+                <span className="tag-mono text-accent/80 mb-3 block">Tech Kit</span>
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3 leading-tight">
                   {name}
                 </h1>
@@ -76,7 +76,7 @@ export function TechKitLayout({
                 <CodeBlock terminal filename="Quick install" code={command} className="!mb-5" />
 
                 <div className="flex flex-wrap gap-2.5">
-                  <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
                     <Link href="/docs/getting-started/quick-start">
                       Get started <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                     </Link>
@@ -110,15 +110,15 @@ export function TechKitLayout({
                   return (
                     <div
                       key={f.title}
-                      className="rounded-xl border border-border/50 bg-card/50 p-5 hover:border-primary/40 transition-colors"
+                      className="rounded-xl border border-border/50 bg-card/50 p-5 hover:border-accent/40 transition-colors"
                     >
                       <div className="flex items-center gap-2.5 mb-2">
-                        <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                        <div className="h-8 w-8 rounded-md bg-accent/10 text-accent flex items-center justify-center">
                           <Icon className="h-4 w-4" />
                         </div>
                         <h3 className="text-sm font-semibold text-foreground">{f.title}</h3>
                         {f.badge && (
-                          <span className="text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded-full ml-auto">
+                          <span className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded-full ml-auto">
                             {f.badge}
                           </span>
                         )}
@@ -140,14 +140,14 @@ export function TechKitLayout({
             )}
 
             {/* Ready-to-build CTA strip */}
-            <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-6 mb-12 text-center">
+            <div className="rounded-2xl border border-accent/20 bg-accent/[0.04] p-6 mb-12 text-center">
               <h3 className="text-xl font-semibold mb-2">Ready to build?</h3>
               <p className="text-muted-foreground mb-5">
                 One command, your app online in 30 seconds. Read the quick-start guide for the
                 rest of the wiring.
               </p>
               <div className="flex flex-wrap justify-center gap-2.5">
-                <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
                   <Link href="/docs/getting-started/quick-start">
                     Read docs <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Link>
@@ -187,7 +187,7 @@ export function TechKitLayout({
 export function IncludedRow({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 text-sm text-foreground/80 mb-1.5">
-      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" strokeWidth={2.5} />
+      <Check className="h-4 w-4 text-accent mt-0.5 shrink-0" strokeWidth={2.5} />
       <span>{children}</span>
     </div>
   )

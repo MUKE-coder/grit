@@ -20,7 +20,7 @@ export default function ProjectStructurePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Project Structure
               </h1>
@@ -108,7 +108,7 @@ export default function ProjectStructurePage() {
                 { file: 'biome.jsonc', desc: 'Biome, the linter and formatter. pnpm lint checks the lint rules in every app; pnpm format rewrites files in the project style (double quotes, semicolons, 100 columns). Each rule switched off in the file says why. Reformatting a file Grit wrote counts as editing it, so grit upgrade leaves that file alone afterwards.' },
               ].map((item) => (
                 <div key={item.file} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
-                  <code className="text-sm font-mono text-primary/70 font-medium">{item.file}</code>
+                  <code className="text-sm font-mono text-accent/70 font-medium">{item.file}</code>
                   <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">{item.desc}</p>
                 </div>
               ))}
@@ -397,7 +397,7 @@ export default function ProjectStructurePage() {
                   ].map((row) => (
                     <tr key={row.what} className="border-b border-border/50">
                       <td className="text-sm text-foreground py-2.5 pr-4">{row.what}</td>
-                      <td className="text-sm text-muted-foreground py-2.5 font-mono text-xs text-primary/60">{row.where}</td>
+                      <td className="text-sm text-muted-foreground py-2.5 font-mono text-xs text-accent/60">{row.where}</td>
                     </tr>
                   ))}
                 </tbody>

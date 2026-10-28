@@ -105,7 +105,7 @@ export function DocsAutoToc() {
                 'block text-[12px] leading-relaxed py-0.5 border-l-2 transition-colors',
                 level === 3 ? 'pl-6' : 'pl-3',
                 activeId === id
-                  ? 'border-primary text-primary font-medium'
+                  ? 'border-accent text-accent font-medium'
                   : 'border-transparent text-muted-foreground/60 hover:text-muted-foreground hover:border-border',
               )}
             >

@@ -358,7 +358,7 @@ export function InfraShowcase() {
               onClick={() => setActive(t.key)}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? 'border-primary/40 bg-primary/10 text-foreground'
+                  ? 'border-accent/40 bg-accent/10 text-foreground'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
@@ -396,7 +396,7 @@ export function InfraShowcase() {
                   onClick={() => setProvider(p.key)}
                   className={`rounded-lg border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
                     selected
-                      ? 'border-primary/40 bg-primary/10 text-foreground'
+                      ? 'border-accent/40 bg-accent/10 text-foreground'
                       : 'border-border/50 text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -442,7 +442,7 @@ export function InfraShowcase() {
                 <ol className="space-y-2.5">
                   {sp.steps.map((step, i) => (
                     <li key={step} className="flex gap-2.5">
-                      <span className="mt-0.5 flex h-4.5 w-4.5 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-mono font-medium text-primary">
+                      <span className="mt-0.5 flex h-4.5 w-4.5 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-mono font-medium text-accent">
                         {i + 1}
                       </span>
                       <span className="text-[12.5px] text-foreground/80 leading-relaxed">{step}</span>
@@ -469,7 +469,7 @@ export function InfraShowcase() {
           <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5 mt-8 pt-6 border-t border-border/40">
             {topic.uses.map((u) => (
               <div key={u} className="flex gap-2 text-[12.5px] text-foreground/80 leading-relaxed">
-                <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" strokeWidth={2.5} />
+                <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent" strokeWidth={2.5} />
                 {u}
               </div>
             ))}
@@ -486,7 +486,7 @@ export function InfraShowcase() {
                   <div className="flex items-center gap-2 mb-1.5">
                     <h4 className="text-[15px] font-semibold">{p.name}</h4>
                     {p.recommended && (
-                      <span className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-primary">
+                      <span className="rounded-full bg-accent/10 border border-accent/20 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-accent">
                         default
                       </span>
                     )}
@@ -511,7 +511,7 @@ export function InfraShowcase() {
               <ul className="space-y-2.5">
                 {topic.uses.map((u) => (
                   <li key={u} className="flex gap-2 text-[12.5px] text-foreground/80 leading-relaxed">
-                    <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" strokeWidth={2.5} />
+                    <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent" strokeWidth={2.5} />
                     {u}
                   </li>
                 ))}

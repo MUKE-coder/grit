@@ -67,31 +67,31 @@ export function CommunityCTA({
         href={DISCORD_INVITE_URL}
         target="_blank"
         rel="noreferrer"
-        className={`group flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3 no-underline transition-colors hover:border-primary/40 hover:bg-primary/[0.10] ${className}`}
+        className={`group flex items-center gap-3 rounded-xl border border-accent/25 bg-accent/[0.06] px-4 py-3 no-underline transition-colors hover:border-accent/40 hover:bg-accent/[0.10] ${className}`}
       >
-        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
           <DiscordIcon className="h-4 w-4" />
         </span>
         <span className="flex-1 text-sm leading-snug text-muted-foreground">
           <span className="font-medium text-foreground">Stuck, or want a second opinion?</span>{' '}
           Ask in the Grit Discord.
         </span>
-        <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" />
       </Link>
     )
   }
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.10] via-card/40 to-card/40 p-7 md:p-8 ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/[0.10] via-card/40 to-card/40 p-7 md:p-8 ${className}`}
     >
       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div className="max-w-xl">
           <div className="mb-3 flex items-center gap-2.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-accent/15 text-accent">
               <DiscordIcon className="h-[18px] w-[18px]" />
             </span>
-            <span className="tag-mono text-primary">Community</span>
+            <span className="tag-mono text-accent">Community</span>
           </div>
           <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground md:text-2xl">
             Build alongside other Grit developers
@@ -110,7 +110,7 @@ export function CommunityCTA({
             href={DISCORD_INVITE_URL}
             target="_blank"
             rel="noreferrer"
-            className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground no-underline transition-colors hover:bg-primary/85"
+            className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground no-underline transition-colors hover:bg-accent/85"
           >
             <DiscordIcon className="h-4 w-4" />
             Join the Discord
@@ -138,11 +138,11 @@ export function CommunitySidebarLink({ className = '' }: { className?: string })
       href={DISCORD_INVITE_URL}
       target="_blank"
       rel="noreferrer"
-      className={`group flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/[0.06] px-3 py-2.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/[0.10] ${className}`}
+      className={`group flex items-center gap-2.5 rounded-lg border border-accent/20 bg-accent/[0.06] px-3 py-2.5 text-xs transition-colors hover:border-accent/40 hover:bg-accent/[0.10] ${className}`}
     >
-      <MessagesSquare className="h-3.5 w-3.5 shrink-0 text-primary" />
+      <MessagesSquare className="h-3.5 w-3.5 shrink-0 text-accent" />
       <span className="flex-1 font-medium text-foreground/90">Ask the community</span>
-      <ArrowRight className="h-3 w-3 shrink-0 text-primary/70 transition-transform group-hover:translate-x-0.5" />
+      <ArrowRight className="h-3 w-3 shrink-0 text-accent/70 transition-transform group-hover:translate-x-0.5" />
     </Link>
   )
 }

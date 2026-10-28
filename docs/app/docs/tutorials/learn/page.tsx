@@ -19,7 +19,7 @@ export default function TutorialLearnPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Tutorial
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -50,7 +50,7 @@ export default function TutorialLearnPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-1">&#10003;</span>
+                    <span className="text-accent mt-1">&#10003;</span>
                     {item}
                   </li>
                 ))}
@@ -90,7 +90,7 @@ export default function TutorialLearnPage() {
                   },
                 ].map((m) => (
                   <div key={m.milestone} className="flex items-start gap-4">
-                    <span className="shrink-0 rounded-md bg-primary/10 border border-primary/15 px-2 py-1 text-xs font-mono font-semibold text-primary">
+                    <span className="shrink-0 rounded-md bg-accent/10 border border-accent/15 px-2 py-1 text-xs font-mono font-semibold text-accent">
                       {m.milestone}
                     </span>
                     <div>
@@ -126,7 +126,7 @@ export default function TutorialLearnPage() {
             {/* STEP 1 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 1
               </div>
               <div>
@@ -169,7 +169,7 @@ export default function TutorialLearnPage() {
             {/* STEP 2 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 2
               </div>
               <div>
@@ -208,7 +208,7 @@ export default function TutorialLearnPage() {
             {/* STEP 3 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 3
               </div>
               <div>
@@ -260,8 +260,8 @@ type Task struct {
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Go Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -322,7 +322,7 @@ type Task struct {
             {/* STEP 4 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 4
               </div>
               <div>
@@ -381,8 +381,8 @@ type Task struct {
     })
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Go Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -454,7 +454,7 @@ type Task struct {
             {/* STEP 5 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 5
               </div>
               <div>
@@ -500,8 +500,8 @@ type Task struct {
   }
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Go Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -542,7 +542,7 @@ type Task struct {
             {/* STEP 6 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 6
               </div>
               <div>
@@ -567,7 +567,7 @@ type Task struct {
             {/* STEP 7 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 7
               </div>
               <div>
@@ -606,8 +606,8 @@ type Task struct {
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Go Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -675,7 +675,7 @@ h.DB.Preload("Category").First(&item, id)`} />
             {/* STEP 8 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 8
               </div>
               <div>
@@ -714,8 +714,8 @@ h.DB.Preload("Category").First(&item, id)`} />
   }
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Go Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -753,7 +753,7 @@ h.DB.Preload("Category").First(&item, id)`} />
             {/* STEP 9 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 9
               </div>
               <div>
@@ -799,8 +799,8 @@ h.DB.Preload("Category").First(&item, id)`} />
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Go Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -852,7 +852,7 @@ h.DB.Preload("Category").First(&item, id)`} />
             {/* STEP 10 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 10
               </div>
               <div>
@@ -892,8 +892,8 @@ h.DB.Preload("Category").First(&item, id)`} />
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Go Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -940,7 +940,7 @@ h.DB.Preload("Category").First(&item, id)`} />
             {/* STEP 11 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 11
               </div>
               <div>
@@ -987,7 +987,7 @@ h.DB.Preload("Category").First(&item, id)`} />
             {/* STEP 12 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 12
               </div>
               <div>
@@ -1013,8 +1013,8 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
   return res.json();
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     React Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -1039,7 +1039,7 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
             {/* STEP 13 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 13
               </div>
               <div>
@@ -1132,8 +1132,8 @@ export default function TasksPage() {
   );
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     React Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -1170,7 +1170,7 @@ export default function TasksPage() {
             {/* STEP 14 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 14
               </div>
               <div>
@@ -1289,7 +1289,7 @@ export default function TaskDetailPage() {
             {/* STEP 15 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 15
               </div>
               <div>
@@ -1412,8 +1412,8 @@ export default function NewTaskPage() {
   );
 }`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     React Basics
                   </p>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -1471,7 +1471,7 @@ export default function NewTaskPage() {
             {/* STEP 16 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 16
               </div>
               <div>
@@ -1503,7 +1503,7 @@ export default function NewTaskPage() {
                       key={i}
                       className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70"
                     >
-                      <span className="text-primary/70 font-mono text-xs mt-0.5">
+                      <span className="text-accent/70 font-mono text-xs mt-0.5">
                         {i + 1}.
                       </span>
                       {item}
@@ -1543,7 +1543,7 @@ export default function NewTaskPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-0.5">&#10003;</span>
+                    <span className="text-accent mt-0.5">&#10003;</span>
                     {item}
                   </li>
                 ))}

@@ -33,7 +33,7 @@ export default function NotFound() {
           <div className="font-display text-[6rem] md:text-[9rem] font-bold leading-none tracking-tight text-foreground/10 select-none">
             404
           </div>
-          <span className="tag-mono text-primary -mt-6 block mb-5">Page not found</span>
+          <span className="tag-mono text-accent -mt-6 block mb-5">Page not found</span>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">
             This page took a different architecture mode
           </h1>
@@ -45,7 +45,7 @@ export default function NotFound() {
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link
               href="/"
-              className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors glow-primary-sm"
+              className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors glow-primary-sm"
             >
               Back home
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -68,8 +68,8 @@ export default function NotFound() {
               className="group border-b border-r border-foreground/15 p-5 hover:bg-card/50 transition-colors"
             >
               <div className="flex items-center gap-2.5 mb-1.5">
-                <Icon className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{title}</span>
+                <Icon className="h-4 w-4 text-accent" />
+                <span className="font-semibold text-foreground text-sm group-hover:text-accent transition-colors">{title}</span>
                 <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>

@@ -274,20 +274,20 @@ function Card({
       className={cn(
         'group relative flex w-full flex-col rounded-xl border p-4 text-left transition-all',
         active
-          ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
-          : 'border-border bg-card/40 hover:border-primary/40 hover:bg-card/60',
+          ? 'border-accent bg-accent/5 ring-1 ring-accent/40'
+          : 'border-border bg-card/40 hover:border-accent/40 hover:bg-card/60',
         disabled && 'cursor-not-allowed opacity-40 hover:border-border hover:bg-card/40',
       )}
     >
       <div className="flex items-center gap-2">
-        {Icon && <Icon className={cn('h-4 w-4', active ? 'text-primary' : 'text-muted-foreground')} />}
+        {Icon && <Icon className={cn('h-4 w-4', active ? 'text-accent' : 'text-muted-foreground')} />}
         <span className="font-medium text-foreground">{name}</span>
         {badge && (
-          <span className="ml-auto rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          <span className="ml-auto rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
             {badge}
           </span>
         )}
-        {active && !badge && <Check className="ml-auto h-4 w-4 text-primary" />}
+        {active && !badge && <Check className="ml-auto h-4 w-4 text-accent" />}
       </div>
       <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{desc}</p>
     </button>
@@ -362,7 +362,7 @@ export function StackBuilder() {
             onChange={(e) => set('name', e.target.value)}
             spellCheck={false}
             placeholder="my-app"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/40"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/40"
           />
         </div>
 
@@ -376,7 +376,7 @@ export function StackBuilder() {
           </div>
           <div className="rounded-lg border border-border bg-background/60 p-3">
             <code className="block whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-foreground">
-              <span className="text-primary">$</span> {command}
+              <span className="text-accent">$</span> {command}
             </code>
           </div>
         </div>
@@ -421,7 +421,7 @@ export function StackBuilder() {
               onClick={() => setView(v)}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-xs uppercase tracking-wider transition-colors',
-                view === v ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground',
+                view === v ? 'bg-accent/15 text-accent' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {v === 'configure' ? <Terminal className="h-3.5 w-3.5" /> : <FolderTree className="h-3.5 w-3.5" />}
@@ -459,7 +459,7 @@ export function StackBuilder() {
                 type="button"
                 onClick={() => setState((s) => ({ ...p.state, name: s.name }))}
                 title={p.desc}
-                className="rounded-lg border border-border bg-card/40 px-3 py-2 text-left transition-all hover:border-primary/40 hover:bg-card/60"
+                className="rounded-lg border border-border bg-card/40 px-3 py-2 text-left transition-all hover:border-accent/40 hover:bg-card/60"
               >
                 <span className="block text-[13px] font-medium text-foreground">{p.name}</span>
                 <span className="block text-[11px] text-muted-foreground">{p.desc}</span>

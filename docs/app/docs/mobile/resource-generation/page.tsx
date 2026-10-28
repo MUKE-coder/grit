@@ -20,7 +20,7 @@ export default function MobileResourceGenerationPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Mobile</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Mobile</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Resource Generation
               </h1>
@@ -100,7 +100,7 @@ export default function MobileResourceGenerationPage() {
                     ['components/resource-forms/<plural>-form.tsx', 'Shared form rendered by both new and edit (and the list’s create sheet).'],
                   ].map(([file, desc]) => (
                     <tr key={file}>
-                      <td className="p-3 font-mono text-xs text-primary align-top whitespace-nowrap">{file}</td>
+                      <td className="p-3 font-mono text-xs text-accent align-top whitespace-nowrap">{file}</td>
                       <td className="p-3">{desc}</td>
                     </tr>
                   ))}
@@ -160,7 +160,7 @@ export default function MobileResourceGenerationPage() {
                     ['slug, many_to_many, string_array', 'Skipped in the form (slug is derived server-side)'],
                   ].map(([type, control]) => (
                     <tr key={type}>
-                      <td className="p-3 font-mono text-xs text-primary align-top whitespace-nowrap">{type}</td>
+                      <td className="p-3 font-mono text-xs text-accent align-top whitespace-nowrap">{type}</td>
                       <td className="p-3">{control}</td>
                     </tr>
                   ))}
@@ -207,7 +207,7 @@ const categoriesOpts = categoriesQuery.data?.pages.flatMap((p) => p.data) ?? [];
                 as <code>FileRef</code> objects. A single <code>file</code> is one framed
                 preview; <code>files</code> is a grid of removable thumbnails with an add tile.
               </p>
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mt-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   <strong className="text-foreground">Images that just work.</strong> Uploaded
                   images are stored through the API&apos;s S3-compatible storage. The scaffold

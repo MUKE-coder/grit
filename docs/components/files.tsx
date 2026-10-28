@@ -47,7 +47,7 @@ export function File({
   return (
     <div
       className={`flex items-center gap-2 rounded-md py-1 pl-1.5 pr-2 ${
-        highlight ? 'bg-primary/[0.07]' : ''
+        highlight ? 'bg-accent/[0.07]' : ''
       }`}
     >
       {icon ?? <FileIcon name={name} className="h-4 w-4 shrink-0" />}

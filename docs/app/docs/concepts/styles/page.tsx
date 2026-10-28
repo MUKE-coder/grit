@@ -21,7 +21,7 @@ export default function StyleVariantsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Style Variants
               </h1>
@@ -33,10 +33,10 @@ export default function StyleVariantsPage() {
             </div>
 
             <div className="prose-grit">
-              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-8">
+              <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 mb-8">
                 <p className="text-sm text-muted-foreground leading-relaxed m-0">
                   <strong className="text-foreground">Looking for the difference between a style and a theme?</strong>{' '}
-                  <Link href="/docs/design/styles-and-themes" className="text-primary hover:underline">
+                  <Link href="/docs/design/styles-and-themes" className="text-accent hover:underline">
                     Styles and themes
                   </Link>{' '}
                   has both, side by side, with a screenshot of each. In short: a theme sets the
@@ -61,7 +61,7 @@ export default function StyleVariantsPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style modern</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style modern</span></div>
                   </div>
                 </div>
 
@@ -109,27 +109,27 @@ export default function StyleVariantsPage() {
                     </thead>
                     <tbody className="text-muted-foreground">
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">default</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">default</td>
                         <td className="px-4 py-2.5">Split-screen with branding panel</td>
                         <td className="px-4 py-2.5">Stats grid + resource cards + quick links</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">modern</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">modern</td>
                         <td className="px-4 py-2.5">Centered card on gradient background</td>
                         <td className="px-4 py-2.5">Bento grid with varied card sizes</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">minimal</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">minimal</td>
                         <td className="px-4 py-2.5">Clean full-width form (Vercel/Linear style)</td>
                         <td className="px-4 py-2.5">Compact data-dense with table layout</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">glass</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">glass</td>
                         <td className="px-4 py-2.5">Frosted-glass card with backdrop blur</td>
                         <td className="px-4 py-2.5">Hero banner with gradient mesh</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">centered</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">centered</td>
                         <td className="px-4 py-2.5">Single centered card on radial gradient (Linear school)</td>
                         <td className="px-4 py-2.5">Uses default dashboard</td>
                       </tr>
@@ -156,9 +156,9 @@ export default function StyleVariantsPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit new my-app</span></div>
                     <div className="text-muted-foreground/50 mt-1"># or explicitly:</div>
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style default</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style default</span></div>
                   </div>
                 </div>
 
@@ -195,7 +195,7 @@ export default function StyleVariantsPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style modern</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style modern</span></div>
                   </div>
                 </div>
 
@@ -234,7 +234,7 @@ export default function StyleVariantsPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style minimal</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style minimal</span></div>
                   </div>
                 </div>
 
@@ -274,7 +274,7 @@ export default function StyleVariantsPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style glass</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style glass</span></div>
                   </div>
                 </div>
 
@@ -314,7 +314,7 @@ export default function StyleVariantsPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style centered</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style centered</span></div>
                   </div>
                 </div>
 

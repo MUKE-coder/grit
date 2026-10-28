@@ -54,7 +54,7 @@ export default function CommandPalettePage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Command className="h-5 w-5 text-primary" />
+            <Command className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Plugin
             </span>
@@ -117,9 +117,9 @@ New <Singular>    →  /resources/<slug>?action=create`} />
               is nothing to wire up.
             </p>
 
-            <div className="my-8 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <div className="my-8 rounded-xl border border-accent/30 bg-accent/5 p-5">
               <div className="mb-2 flex items-center gap-2">
-                <Search className="h-4 w-4 text-primary" />
+                <Search className="h-4 w-4 text-accent" />
                 <strong className="text-foreground">Fuzzy search and keyboard control</strong>
               </div>
               <p className="mb-0 text-sm text-muted-foreground">
@@ -176,9 +176,9 @@ Enter         open the highlighted command`} />
               </li>
             </ul>
 
-            <div className="my-8 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <div className="my-8 rounded-xl border border-accent/30 bg-accent/5 p-5">
               <div className="mb-2 flex items-center gap-2">
-                <Keyboard className="h-4 w-4 text-primary" />
+                <Keyboard className="h-4 w-4 text-accent" />
                 <strong className="text-foreground">A plugin can be pure frontend</strong>
               </div>
               <p className="mb-0 text-sm text-muted-foreground">

@@ -21,7 +21,7 @@ export default function MobileGettingStartedPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Mobile</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Mobile</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Getting Started with Mobile
               </h1>
@@ -74,7 +74,7 @@ export default function MobileGettingStartedPage() {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[15px] font-semibold">{tool.name}</span>
-                    <span className="text-sm font-mono text-primary/60">{tool.version}</span>
+                    <span className="text-sm font-mono text-accent/60">{tool.version}</span>
                   </div>
                   <code className="text-sm font-mono text-muted-foreground/50">{tool.check}</code>
                 </div>
@@ -84,7 +84,7 @@ export default function MobileGettingStartedPage() {
             <div className="prose-grit mb-10">
               <p>
                 To run the app on a <strong>physical device</strong>, install the free{' '}
-                <a href="https://expo.dev/go" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Expo Go</a>{' '}
+                <a href="https://expo.dev/go" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Expo Go</a>{' '}
                 app from the App Store or Google Play — no native toolchain required. To run on
                 a <strong>simulator/emulator</strong> instead, install Xcode (iOS, macOS only)
                 or Android Studio (Android, any OS). You only need the emulators if you want to
@@ -95,7 +95,7 @@ export default function MobileGettingStartedPage() {
             {/* Step 1 */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   1
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">Scaffold the Project</h2>
@@ -124,7 +124,7 @@ grit new myapp --arch=triple --expo   # web + admin + API, plus Expo`} className
             {/* Step 2 */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   2
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">Project Structure</h2>
@@ -132,7 +132,7 @@ grit new myapp --arch=triple --expo   # web + admin + API, plus Expo`} className
               <div className="prose-grit mb-4">
                 <p>
                   The Expo app lives at <code>apps/expo</code> and uses{' '}
-                  <a href="https://docs.expo.dev/router/introduction/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Expo Router</a>{' '}
+                  <a href="https://docs.expo.dev/router/introduction/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Expo Router</a>{' '}
                   for file-based navigation — the same mental model as the Next.js App Router,
                   but for native screens. Files under <code>app/</code> become screens; the{' '}
                   <code>(tabs)/</code> group is the tab bar.
@@ -178,7 +178,7 @@ grit new myapp --arch=triple --expo   # web + admin + API, plus Expo`} className
             {/* Step 3 */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   3
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">Start Development</h2>
@@ -212,7 +212,7 @@ grit start expo     # Expo dev server only  (runs \`expo start\` in apps/expo)`}
             {/* Step 4: API URL matrix */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   4
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -254,7 +254,7 @@ grit start expo     # Expo dev server only  (runs \`expo start\` in apps/expo)`}
                     ].map(([target, url, why]) => (
                       <tr key={target}>
                         <td className="p-3">{target}</td>
-                        <td className="p-3 font-mono text-xs text-primary">{url}</td>
+                        <td className="p-3 font-mono text-xs text-accent">{url}</td>
                         <td className="p-3">{why}</td>
                       </tr>
                     ))}
@@ -293,7 +293,7 @@ function resolveApiUrl(): string {
   }) as string;
 }`} className="mb-4" />
 
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   <strong className="text-foreground">Deploying?</strong> Set{' '}
                   <code className="text-xs font-mono">EXPO_PUBLIC_API_URL=https://api.yourapp.com</code>{' '}
@@ -306,7 +306,7 @@ function resolveApiUrl(): string {
             {/* Step 5: First run */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   5
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">Run It on Your Phone</h2>

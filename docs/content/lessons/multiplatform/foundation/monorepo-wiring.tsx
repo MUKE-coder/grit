@@ -120,7 +120,7 @@ overmind start`}
       />
       <p>
         The Procfile that ships with the scaffold defines every
-        service. Install <a href="https://github.com/DarthSim/overmind" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">overmind</a> once and you boot the
+        service. Install <a href="https://github.com/DarthSim/overmind" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">overmind</a> once and you boot the
         whole monorepo with one command.
       </p>
 

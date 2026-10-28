@@ -38,7 +38,7 @@ export default function MoneyPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts · Reference</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts · Reference</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Money</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 A field type for anything you will add up. It stores an integer count of a
@@ -195,7 +195,7 @@ formatMoney({ amount: 50000, currency: "UGX" })  // "UGX 50,000", not 500`}
                     <tbody>
                       {EXPONENTS.map((row) => (
                         <tr key={row.places} className="border-t border-border align-top">
-                          <td className="px-4 py-2.5 font-mono text-primary">{row.places}</td>
+                          <td className="px-4 py-2.5 font-mono text-accent">{row.places}</td>
                           <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
                             {row.example}
                           </td>

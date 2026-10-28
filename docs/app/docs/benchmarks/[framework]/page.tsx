@@ -70,7 +70,7 @@ export default async function FrameworkBenchmarkPage({
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Benchmark methodology</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Benchmark methodology</span>
 
               {/* The two marks, side by side — it is a head-to-head and the page
                   should look like one before you read a word of it. */}
@@ -135,7 +135,7 @@ export default async function FrameworkBenchmarkPage({
                         return (
                           <tr key={s.id} className="border-b border-border/20 last:border-0">
                             <td className="px-4 py-3">
-                              <div className="font-mono text-xs text-primary">{s.id}</div>
+                              <div className="font-mono text-xs text-accent">{s.id}</div>
                               <div className="text-xs text-muted-foreground mt-0.5">
                                 {s.request}
                               </div>
@@ -159,7 +159,7 @@ export default async function FrameworkBenchmarkPage({
                             <td
                               className={
                                 'px-4 py-3 text-right font-semibold ' +
-                                (ratio(f) < 1 ? 'text-warning' : 'text-primary')
+                                (ratio(f) < 1 ? 'text-warning' : 'text-accent')
                               }
                             >
                               {ratio(f).toFixed(2)}&times;
@@ -204,7 +204,7 @@ export default async function FrameworkBenchmarkPage({
             {/* ── Fairness ─────────────────────────────────────────── */}
             <section className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-                <Scale className="h-5 w-5 text-primary" />
+                <Scale className="h-5 w-5 text-accent" />
                 How {fw?.name ?? 'this framework'} is kept from being handicapped
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
@@ -222,14 +222,14 @@ export default async function FrameworkBenchmarkPage({
             {/* ── Steps ────────────────────────────────────────────── */}
             <section className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-6 flex items-center gap-2">
-                <Video className="h-5 w-5 text-primary" />
+                <Video className="h-5 w-5 text-accent" />
                 Reproduce it, start to finish
               </h2>
 
               <ol className="space-y-8">
                 {guide.steps.map((step, i) => (
                   <li key={i} className="relative pl-10">
-                    <span className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                    <span className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">
                       {i + 1}
                     </span>
                     <h3 className="font-semibold text-foreground mb-1.5">{step.title}</h3>
@@ -282,7 +282,7 @@ export default async function FrameworkBenchmarkPage({
                     <Link
                       key={g.slug}
                       href={`/docs/benchmarks/${g.slug}`}
-                      className="flex items-center gap-3 rounded-lg border border-border/40 px-4 py-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                      className="flex items-center gap-3 rounded-lg border border-border/40 px-4 py-3 hover:border-accent/40 hover:bg-muted/30 transition-colors"
                     >
                       {mark && (
                         <span className="w-11 shrink-0 flex justify-center">

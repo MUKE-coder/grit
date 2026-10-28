@@ -55,7 +55,7 @@ export default function ComingFromPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Coming from Laravel, Django, or Next.js
               </h1>
@@ -109,7 +109,7 @@ export default function ComingFromPage() {
                         <th className="px-3 py-2 font-medium">Task</th>
                         <th className="px-3 py-2 font-medium">Laravel</th>
                         <th className="px-3 py-2 font-medium">Django</th>
-                        <th className="px-3 py-2 font-medium text-primary">Grit</th>
+                        <th className="px-3 py-2 font-medium text-accent">Grit</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -118,7 +118,7 @@ export default function ComingFromPage() {
                           <td className="px-3 py-2 text-muted-foreground">{r.task}</td>
                           <td className="px-3 py-2 font-mono text-[12px] text-muted-foreground/70">{r.laravel}</td>
                           <td className="px-3 py-2 font-mono text-[12px] text-muted-foreground/70">{r.django}</td>
-                          <td className="px-3 py-2 font-mono text-[12px] text-primary">{r.grit}</td>
+                          <td className="px-3 py-2 font-mono text-[12px] text-accent">{r.grit}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -154,7 +154,7 @@ grit start                    # run the API + web + admin together`}
                 <div className="space-y-4">
                   {CONCEPTS.map((c) => (
                     <div key={c.grit} className="rounded-lg border border-border/40 bg-card/30 p-4">
-                      <div className="font-mono text-[13px] text-primary mb-1">{c.grit}</div>
+                      <div className="font-mono text-[13px] text-accent mb-1">{c.grit}</div>
                       <p className="text-sm text-muted-foreground leading-relaxed">{c.is}</p>
                     </div>
                   ))}
@@ -207,19 +207,19 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">postgres</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">postgres</td>
                         <td className="px-3 py-2 text-muted-foreground">Your primary database in dev.</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">redis</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">redis</td>
                         <td className="px-3 py-2 text-muted-foreground">Cache and background-job queue (asynq).</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">minio</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">minio</td>
                         <td className="px-3 py-2 text-muted-foreground">S3-compatible object storage for uploads.</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">mailhog</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">mailhog</td>
                         <td className="px-3 py-2 text-muted-foreground">Catches outgoing email so you can preview it locally.</td>
                       </tr>
                     </tbody>
@@ -248,29 +248,29 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
                     <thead>
                       <tr className="border-b border-border bg-muted/30 text-left">
                         <th className="px-3 py-2 font-medium">Laravel / Django</th>
-                        <th className="px-3 py-2 font-medium text-primary">Grit equivalent</th>
+                        <th className="px-3 py-2 font-medium text-accent">Grit equivalent</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground">Model</td>
-                        <td className="px-3 py-2 text-primary">GORM model (Go struct with tags)</td>
+                        <td className="px-3 py-2 text-accent">GORM model (Go struct with tags)</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground">Controller</td>
-                        <td className="px-3 py-2 text-primary">Handler (thin Gin handler)</td>
+                        <td className="px-3 py-2 text-accent">Handler (thin Gin handler)</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground">Fat controllers / business logic</td>
-                        <td className="px-3 py-2 text-primary">Service layer</td>
+                        <td className="px-3 py-2 text-accent">Service layer</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground">Blade / template / View</td>
-                        <td className="px-3 py-2 text-primary">React frontend + shared generated types</td>
+                        <td className="px-3 py-2 text-accent">React frontend + shared generated types</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground">Route</td>
-                        <td className="px-3 py-2 text-primary">Gin route + <code>grit:routes</code> markers</td>
+                        <td className="px-3 py-2 text-accent">Gin route + <code>grit:routes</code> markers</td>
                       </tr>
                     </tbody>
                   </table>
@@ -296,19 +296,19 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">apps/api</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">apps/api</td>
                         <td className="px-3 py-2 text-muted-foreground">The Go backend (Gin + GORM).</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">apps/web</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">apps/web</td>
                         <td className="px-3 py-2 text-muted-foreground">The Next.js user-facing frontend.</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">apps/admin</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">apps/admin</td>
                         <td className="px-3 py-2 text-muted-foreground">The generated admin panel.</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
-                        <td className="px-3 py-2 font-mono text-[12px] text-primary">packages/shared</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-accent">packages/shared</td>
                         <td className="px-3 py-2 text-muted-foreground">The Go&rarr;TS types &amp; Zod schemas that keep everything in sync.</td>
                       </tr>
                     </tbody>
@@ -333,21 +333,21 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
                     <thead>
                       <tr className="border-b border-border bg-muted/30 text-left">
                         <th className="px-3 py-2 font-medium">Prisma</th>
-                        <th className="px-3 py-2 font-medium text-primary">Grit / GORM</th>
+                        <th className="px-3 py-2 font-medium text-accent">Grit / GORM</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground"><code>schema.prisma</code> DSL</td>
-                        <td className="px-3 py-2 text-primary">Go structs with <code>gorm</code>/<code>json</code> tags</td>
+                        <td className="px-3 py-2 text-accent">Go structs with <code>gorm</code>/<code>json</code> tags</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground"><code>prisma migrate</code></td>
-                        <td className="px-3 py-2 text-primary"><code>grit migrate</code> (GORM AutoMigrate)</td>
+                        <td className="px-3 py-2 text-accent"><code>grit migrate</code> (GORM AutoMigrate)</td>
                       </tr>
                       <tr className="border-b border-border/50 align-top">
                         <td className="px-3 py-2 text-muted-foreground">Generated Prisma Client types</td>
-                        <td className="px-3 py-2 text-primary"><code>grit sync</code> &rarr; TypeScript from your Go structs</td>
+                        <td className="px-3 py-2 text-accent"><code>grit sync</code> &rarr; TypeScript from your Go structs</td>
                       </tr>
                     </tbody>
                   </table>
@@ -375,8 +375,8 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
                 <div className="grid gap-3 sm:grid-cols-2">
                   {NEXT_DOCS.map((item) => (
                     <Link key={item.href} href={item.href}>
-                      <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-primary/20 hover:bg-card/80 transition-all duration-200">
-                        <h3 className="text-[15px] font-semibold mb-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                      <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-accent/20 hover:bg-card/80 transition-all duration-200">
+                        <h3 className="text-[15px] font-semibold mb-1 group-hover:text-accent transition-colors flex items-center gap-1.5">
                           {item.title}
                           <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                         </h3>

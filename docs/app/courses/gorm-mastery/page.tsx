@@ -28,7 +28,7 @@ export default function GORMMasteryCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -55,10 +55,10 @@ export default function GORMMasteryCourse() {
             caption="Work with Go structs instead of SQL — migrations, queries, scopes, and hooks all flow from the model" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/backend/models" className="text-primary hover:underline">Models & Database →</a>
+            <a href="/docs/backend/models" className="text-accent hover:underline">Models & Database →</a>
           </p>
         </div>
 
@@ -208,11 +208,11 @@ grit migrate --fresh`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Creates tables that don{"'"}t exist</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Adds columns that are missing</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Creates indexes and constraints</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Does <strong className="text-foreground">NOT</strong> delete columns (to prevent data loss)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Does <strong className="text-foreground">NOT</strong> change column types</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Creates tables that don{"'"}t exist</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Adds columns that are missing</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Creates indexes and constraints</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Does <strong className="text-foreground">NOT</strong> delete columns (to prevent data loss)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Does <strong className="text-foreground">NOT</strong> change column types</li>
           </ul>
 
           <Tip>
@@ -741,15 +741,15 @@ db.Model(&Product{}).Where("active = ?", true).Count(&count)`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Models</strong> — Go structs with GORM tags define your database schema</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Migrations</strong> — <Code>grit migrate</Code> creates/updates tables automatically</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">CRUD</strong> — Create, Read (First, Find, Where), Update, Delete (soft + hard)</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Relationships</strong> — belongs_to, has_many, many_to_many with Preload</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Query Building</strong> — Where, Or, Not, Order, Select, Group, Count</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Scopes</strong> — reusable, composable query conditions</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Hooks</strong> — automatic logic before/after database operations</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Raw SQL</strong> — full SQL power when GORM isn{"'"}t enough</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Performance</strong> — indexes, Preload, pagination, Select</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Models</strong> — Go structs with GORM tags define your database schema</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Migrations</strong> — <Code>grit migrate</Code> creates/updates tables automatically</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">CRUD</strong> — Create, Read (First, Find, Where), Update, Delete (soft + hard)</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Relationships</strong> — belongs_to, has_many, many_to_many with Preload</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Query Building</strong> — Where, Or, Not, Order, Select, Group, Count</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Scopes</strong> — reusable, composable query conditions</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Hooks</strong> — automatic logic before/after database operations</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Raw SQL</strong> — full SQL power when GORM isn{"'"}t enough</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Performance</strong> — indexes, Preload, pagination, Select</span></li>
           </ul>
 
           <Challenge number={11} title="Final Challenge: Product Analytics (GORM Query Builder)">

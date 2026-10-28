@@ -251,11 +251,11 @@ http://localhost:3000/accept/abc123def...`}
       </p>
       <p>
         From here: try{' '}
-        <a href="/courses/multiplatform" className="text-primary hover:underline">
+        <a href="/courses/multiplatform" className="text-accent hover:underline">
           Building Web + Desktop + Mobile
         </a>{' '}
         to add native surfaces, or go deeper on the API with the{' '}
-        <a href="/docs/plugins" className="text-primary hover:underline">
+        <a href="/docs/plugins" className="text-accent hover:underline">
           Grit plugins
         </a>{' '}
         (Stripe, WebSockets, OAuth).

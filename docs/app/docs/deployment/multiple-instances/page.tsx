@@ -17,7 +17,7 @@ export default function MultipleInstancesPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
+            <Layers className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Deployment
             </span>
@@ -114,7 +114,7 @@ cluster_generations   one row per shared cache: authz, sso`} />
                 limit, including the login limit. Tracked in{' '}
                 <a
                   href="https://github.com/MUKE-coder/sentinel/issues/18"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   Sentinel #18
                 </a>

@@ -100,12 +100,12 @@ export default function HomePage() {
 
         {/* Firecrawl-style crosshair accents pinned to the grid */}
         <span className="crosshair absolute top-28 left-[11%] text-foreground/30 hidden md:block" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute top-44 right-[13%] text-primary/40 hidden md:block" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute top-44 right-[13%] text-accent/40 hidden md:block" style={{ width: 16, height: 16 }} />
         <span className="crosshair absolute bottom-36 left-[18%] text-foreground/25 hidden lg:block" style={{ width: 14, height: 14 }} />
         <span className="crosshair absolute bottom-24 right-[22%] text-foreground/30 hidden lg:block" style={{ width: 14, height: 14 }} />
 
         {/* Floating glow orbs */}
-        <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-primary/25" duration={18} />
+        <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-accent/25" duration={18} />
         <GlowOrb className="top-40 right-1/4 h-[300px] w-[300px] bg-cyan-300/20" delay={2} duration={16} />
 
         <div className="relative max-w-7xl mx-auto pt-14 pb-16 md:pt-20 md:pb-24 px-6">
@@ -126,7 +126,7 @@ export default function HomePage() {
               <FadeIn>
                 <Link
                   href="/docs/changelog"
-                  className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-mono font-medium text-primary hover:bg-primary/15 transition-colors mb-7"
+                  className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-mono font-medium text-accent hover:bg-accent/15 transition-colors mb-7"
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   Grit v{GRIT_VERSION} is out
@@ -143,7 +143,7 @@ export default function HomePage() {
                   <br />
                   <span className="lg:whitespace-nowrap">Full-Stack Framework</span>
                   <br />
-                  <span className="bg-gradient-to-r from-primary via-primary/70 to-primary bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-accent via-accent/70 to-accent bg-clip-text text-transparent">
                     for Go &amp; React
                   </span>
                 </h1>
@@ -163,7 +163,7 @@ export default function HomePage() {
                   <MagneticButton>
                     <Link
                       href="/docs/start"
-                      className="group relative inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm glow-primary-sm hover:bg-primary/90 transition-all"
+                      className="group relative inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm glow-primary-sm hover:bg-accent/90 transition-all"
                     >
                       Get started
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -193,7 +193,7 @@ export default function HomePage() {
                   right binary for your OS.{' '}
                   <Link
                     href="/docs/getting-started/installation"
-                    className="text-foreground/80 hover:text-primary underline underline-offset-2"
+                    className="text-foreground/80 hover:text-accent underline underline-offset-2"
                   >
                     All install options
                   </Link>
@@ -264,7 +264,7 @@ export default function HomePage() {
       <section className="py-24 px-6 border-b border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent mb-6">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Every platform
             </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
@@ -285,7 +285,7 @@ export default function HomePage() {
       <section className="py-24 px-6 border-b border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent mb-6">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Authentication
             </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
@@ -307,7 +307,7 @@ export default function HomePage() {
       <section className="py-24 px-6 border-b border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent mb-6">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Customisation
             </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
@@ -329,7 +329,7 @@ export default function HomePage() {
       <section className="relative py-24 px-6 overflow-hidden">
         {/* Soft warm gradient backdrop */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-card/30 via-background to-background" />
-        <div className="absolute top-20 right-10 w-[600px] h-[600px] -z-10 rounded-full bg-primary/[0.04] blur-[120px]" />
+        <div className="absolute top-20 right-10 w-[600px] h-[600px] -z-10 rounded-full bg-accent/[0.04] blur-[120px]" />
 
         <div className="max-w-6xl mx-auto">
           <div className="max-w-3xl mx-auto text-center mb-10">
@@ -355,7 +355,7 @@ export default function HomePage() {
               'OWASP 2025 hardened: secure by default',
             ].map((line) => (
               <span key={line} className="flex items-center gap-2 text-sm text-foreground/80">
-                <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={2.5} />
                 {line}
               </span>
             ))}
@@ -378,12 +378,12 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">One-Command Deploy</p>
+              <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">One-Command Deploy</p>
               <h2 className="text-3xl font-bold text-foreground mb-4">
                 From code to production<br />in one command
               </h2>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                <code className="text-primary bg-primary/5 px-1.5 py-0.5 rounded text-sm">grit deploy</code> builds
+                <code className="text-accent bg-accent/5 px-1.5 py-0.5 rounded text-sm">grit deploy</code> builds
                 your app, uploads via SSH, configures systemd, and sets up Caddy with auto-TLS.
               </p>
               <ul className="space-y-3 mb-8">
@@ -395,7 +395,7 @@ export default function HomePage() {
                   'Configures Caddy reverse proxy with Let\'s Encrypt TLS',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
-                    <span className="text-primary font-mono font-bold text-xs mt-0.5">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="text-accent font-mono font-bold text-xs mt-0.5">{String(i + 1).padStart(2, '0')}</span>
                     {item}
                   </li>
                 ))}
@@ -426,7 +426,7 @@ export default function HomePage() {
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Framework Comparison</p>
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">Framework Comparison</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">How Grit compares</h2>
           </div>
 
@@ -435,7 +435,7 @@ export default function HomePage() {
               <thead>
                 <tr className="border-b border-border/40 bg-card/80">
                   <th className="px-5 py-4 text-left font-medium text-muted-foreground w-[200px]">Feature</th>
-                  <th className="px-5 py-4 text-center font-semibold text-primary">Grit</th>
+                  <th className="px-5 py-4 text-center font-semibold text-accent">Grit</th>
                   <th className="px-5 py-4 text-center font-medium text-muted-foreground">Next.js</th>
                   <th className="px-5 py-4 text-center font-medium text-muted-foreground">Laravel</th>
                   <th className="px-5 py-4 text-center font-medium text-muted-foreground hidden lg:table-cell">Goravel</th>
@@ -465,7 +465,7 @@ export default function HomePage() {
                     {[row.grit, row.next, row.laravel, row.goravel].map((val, i) => (
                       <td key={i} className={`px-5 py-3 text-center ${i === 3 ? 'hidden lg:table-cell' : ''}`}>
                         {val === true ? (
-                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${i === 0 ? 'bg-primary/15 text-primary' : 'bg-emerald-500/15 text-emerald-400'}`}>
+                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${i === 0 ? 'bg-accent/15 text-accent' : 'bg-emerald-500/15 text-emerald-400'}`}>
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                           </span>
                         ) : val === 'partial' ? (
@@ -491,7 +491,7 @@ export default function HomePage() {
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Built With Grit</p>
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">Built With Grit</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Showcase</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">Projects and products built with the Grit framework.</p>
           </div>
@@ -506,9 +506,9 @@ export default function HomePage() {
               { name: 'Scout', desc: 'Security scanner you mount in your own API. Headers, TLS, DNS, exposed files, secrets, reachable CVEs, and your real route table. `grit add scout`.', url: 'https://github.com/MUKE-coder/scout', tag: 'Security' },
               { name: 'gin-docs', desc: 'Zero-annotation API documentation generator for Gin. Auto-generates OpenAPI spec with Scalar UI.', url: 'https://github.com/MUKE-coder/gin-docs', tag: 'Library' },
             ].map((project) => (
-              <Link key={project.name} href={project.url} target={project.url.startsWith('http') ? '_blank' : undefined} className="group rounded-xl border border-border/40 bg-card/50 card-gradient p-6 card-grit hover:border-primary/40 block">
+              <Link key={project.name} href={project.url} target={project.url.startsWith('http') ? '_blank' : undefined} className="group rounded-xl border border-border/40 bg-card/50 card-gradient p-6 card-grit hover:border-accent/40 block">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{project.name}</h3>
+                  <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">{project.name}</h3>
                   <span className="text-[10px] font-mono text-muted-foreground/60 bg-accent/30 px-2 py-0.5 rounded">{project.tag}</span>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{project.desc}</p>
@@ -551,7 +551,7 @@ export default function HomePage() {
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">FAQ</p>
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">FAQ</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Frequently asked questions</h2>
           </div>
 
@@ -599,7 +599,7 @@ grit new my-app --triple`} />
           {/* One primary. There were three buttons here, all filled, so the
               eye had nowhere to land. DESIGN.md section 6. */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-7 h-11 text-sm rounded-full" asChild>
+            <Button size="lg" className="bg-primary hover:bg-accent/90 text-primary-foreground px-7 h-11 text-sm rounded-full" asChild>
               <Link href="/docs/getting-started/quick-start">Read the docs <ArrowRight className="ml-2 h-3.5 w-3.5" /></Link>
             </Button>
             <Button variant="outline" size="lg" className="border-border/60 text-foreground hover:bg-accent/30 px-7 h-11 text-sm rounded-full" asChild>
@@ -612,12 +612,12 @@ grit new my-app --triple`} />
               ask. Both belong where somebody is deciding, not three screens
               earlier as sections of their own. */}
           <p className="mt-10 text-sm text-muted-foreground">
-            <Link href="/docs/upgrades" className="text-primary hover:underline">
+            <Link href="/docs/upgrades" className="text-accent hover:underline">
               grit upgrade
             </Link>{' '}
             keeps a project on the current framework without touching the code you
             wrote, and{' '}
-            <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+            <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" className="text-accent hover:underline">
               the Discord
             </Link>{' '}
             is where the questions get answered.
@@ -649,7 +649,7 @@ grit new my-app --triple`} />
                 <Link href="https://www.linkedin.com/company/grit-framework" target="_blank" aria-label="Grit on LinkedIn" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14zM8.339 18.337v-8.59H5.667v8.59h2.672zM7.003 8.574a1.548 1.548 0 1 0 0-3.096 1.548 1.548 0 0 0 0 3.096zm11.335 9.763V13.64c0-2.465-1.338-3.612-3.123-3.612-1.44 0-2.087.791-2.448 1.348v-1.157h-2.671c.034.751 0 8.59 0 8.59h2.671v-4.79c0-.243.018-.487.09-.66.196-.485.642-.989 1.39-.989.982 0 1.376.752 1.376 1.852v4.587h2.715z" /></svg>
                 </Link>
-                <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" aria-label="Join the Grit Discord server" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors">
+                <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" aria-label="Join the Grit Discord server" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent/40 transition-colors">
                   <DiscordIcon className="h-3.5 w-3.5" />
                 </Link>
               </div>
@@ -693,7 +693,7 @@ grit new my-app --triple`} />
                 <li><Link href="/pitch" className="text-muted-foreground hover:text-foreground transition-colors">Pitch</Link></li>
                 <li><Link href="/talk" className="text-muted-foreground hover:text-foreground transition-colors">The Talk</Link></li>
                 <li>
-                  <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-primary/90 hover:text-primary transition-colors">
+                  <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-accent/90 hover:text-accent transition-colors">
                     <DiscordIcon className="h-3 w-3" />
                     Discord Server
                   </Link>
@@ -721,7 +721,7 @@ grit new my-app --triple`} />
 
           {/* Giant decorative GRIT wordmark */}
           <div className="relative mt-12 -mb-4 select-none pointer-events-none">
-            <div className="text-center font-bold tracking-tighter leading-none text-primary/[0.08]" style={{ fontSize: 'clamp(80px, 22vw, 320px)' }}>
+            <div className="text-center font-bold tracking-tighter leading-none text-accent/[0.08]" style={{ fontSize: 'clamp(80px, 22vw, 320px)' }}>
               GRIT
             </div>
           </div>

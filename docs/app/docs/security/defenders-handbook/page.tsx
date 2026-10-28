@@ -211,7 +211,7 @@ AuthShield: sentinel.AuthShieldConfig{
               For server access, the scaffold&apos;s deploy guide{' '}
               <Link
                 href="/docs/deployment/vps"
-                className="text-primary hover:underline"
+                className="text-accent hover:underline"
               >
                 (/docs/deployment/vps)
               </Link>{' '}
@@ -502,7 +502,7 @@ networks:
                 href="https://hstspreload.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-accent hover:underline"
               >
                 Chrome HSTS preload list
               </Link>{' '}
@@ -874,13 +874,13 @@ const BONUS: Bonus[] = [
           directory ships six pre-written tests — smoke, average load, stress,
           spike, soak, breakpoint — with thresholds that turn the suite into a
           pass/fail in CI. See the{' '}
-          <Link href="/docs/testing" className="text-primary hover:underline">
+          <Link href="/docs/testing" className="text-accent hover:underline">
             Testing
           </Link>{' '}
           page for the full methodology, and the{' '}
           <Link
             href="/docs/learnings/stateless-service-load-test"
-            className="text-primary hover:underline"
+            className="text-accent hover:underline"
           >
             Learnings walkthrough
           </Link>{' '}
@@ -917,7 +917,7 @@ export default function DefendersHandbookPage() {
           <div className="max-w-3xl">
             {/* Hero */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 inline-flex items-center gap-1.5">
+              <span className="tag-mono text-accent/80 mb-3 inline-flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Security · Handbook mapping
               </span>
@@ -930,7 +930,7 @@ export default function DefendersHandbookPage() {
                   href="https://jb.desishub.com/blog/defenders-handbook-how-hackers-break-in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
+                  className="text-accent hover:underline inline-flex items-center gap-1"
                 >
                   Defender&apos;s Handbook
                   <ExternalLink className="h-3.5 w-3.5" />
@@ -961,24 +961,24 @@ export default function DefendersHandbookPage() {
             </div>
 
             {/* Quick legend */}
-            <div className="mb-10 rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
+            <div className="mb-10 rounded-2xl border border-accent/20 bg-accent/[0.04] p-5">
               <p className="text-sm text-foreground/85 leading-relaxed mb-3">
                 <strong>How to read this page:</strong>
               </p>
               <ul className="space-y-1.5 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
-                  <span className="font-mono text-primary text-[10px] mt-1">›</span>
+                  <span className="font-mono text-accent text-[10px] mt-1">›</span>
                   Chapters mirror the handbook 1:1. Read them in order or jump
                   to the attack you care about.
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="font-mono text-primary text-[10px] mt-1">›</span>
+                  <span className="font-mono text-accent text-[10px] mt-1">›</span>
                   Each attack section answers two things:{' '}
                   <em>what the attacker does</em> and{' '}
                   <em>how Grit defends — by default, in code</em>.
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="font-mono text-primary text-[10px] mt-1">›</span>
+                  <span className="font-mono text-accent text-[10px] mt-1">›</span>
                   The Bonus section at the bottom lists defences Grit ships that
                   the handbook doesn&apos;t cover at all.
                 </li>
@@ -990,7 +990,7 @@ export default function DefendersHandbookPage() {
               {CHAPTERS.map((ch) => (
                 <section key={ch.num} className="mt-12">
                   <h2 className="text-2xl font-semibold tracking-tight mb-2 leading-tight">
-                    <span className="text-primary font-mono text-base mr-2">
+                    <span className="text-accent font-mono text-base mr-2">
                       ch.{ch.num}
                     </span>
                     {ch.title}
@@ -1028,7 +1028,7 @@ export default function DefendersHandbookPage() {
               {/* Bonus */}
               <section className="mt-16">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-5 w-5 text-accent" />
                   <h2 className="text-2xl font-semibold tracking-tight m-0 leading-tight">
                     Bonus — defences Grit ships beyond the handbook
                   </h2>
@@ -1044,10 +1044,10 @@ export default function DefendersHandbookPage() {
                 {BONUS.map((b) => (
                   <section
                     key={b.title}
-                    className="mt-5 rounded-2xl border border-primary/20 bg-primary/[0.03] p-5"
+                    className="mt-5 rounded-2xl border border-accent/20 bg-accent/[0.03] p-5"
                   >
                     <h3 className="text-lg font-semibold mb-2 leading-snug flex items-start gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-primary mt-1 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-accent mt-1 shrink-0" />
                       {b.title}
                     </h3>
                     <div className="text-sm prose-grit">{b.body}</div>
@@ -1056,7 +1056,7 @@ export default function DefendersHandbookPage() {
               </section>
 
               {/* CTA strip */}
-              <div className="mt-14 rounded-2xl border border-primary/20 bg-primary/[0.04] p-6">
+              <div className="mt-14 rounded-2xl border border-accent/20 bg-accent/[0.04] p-6">
                 <h3 className="text-lg font-semibold mb-2">
                   Want the OWASP-by-category view too?
                 </h3>
@@ -1064,7 +1064,7 @@ export default function DefendersHandbookPage() {
                   The same defences mapped against{' '}
                   <Link
                     href="/docs/security"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     OWASP Top 10:2025
                   </Link>{' '}
@@ -1072,7 +1072,7 @@ export default function DefendersHandbookPage() {
                   prove the defences hold, see{' '}
                   <Link
                     href="/docs/testing"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     Performance &amp; Pentest Testing
                   </Link>{' '}
@@ -1081,7 +1081,7 @@ export default function DefendersHandbookPage() {
                 <div className="flex flex-wrap gap-2.5">
                   <Button
                     asChild
-                    className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground"
                   >
                     <Link href="/docs/security">
                       OWASP view
@@ -1104,7 +1104,7 @@ export default function DefendersHandbookPage() {
                     refactor. Walk the{' '}
                     <Link
                       href="/docs/testing"
-                      className="text-primary hover:underline"
+                      className="text-accent hover:underline"
                     >
                       pentest methodology
                     </Link>{' '}

@@ -27,9 +27,9 @@ export function KnowledgeCheck({ question, choices }: Props) {
   const [picked, setPicked] = useState<number | null>(null)
 
   return (
-    <div className="not-prose my-8 rounded-2xl border border-primary/30 bg-primary/[0.03]">
-      <div className="px-5 py-4 border-b border-primary/20 bg-primary/[0.05]">
-        <p className="text-[10px] uppercase tracking-wider text-primary font-mono mb-1.5 inline-flex items-center gap-1.5">
+    <div className="not-prose my-8 rounded-2xl border border-accent/30 bg-accent/[0.03]">
+      <div className="px-5 py-4 border-b border-accent/20 bg-accent/[0.05]">
+        <p className="text-[10px] uppercase tracking-wider text-accent font-mono mb-1.5 inline-flex items-center gap-1.5">
           <HelpCircle className="h-3.5 w-3.5" />
           Quick check
         </p>
@@ -46,7 +46,7 @@ export function KnowledgeCheck({ question, choices }: Props) {
               onClick={() => setPicked(i)}
               className={cn(
                 'w-full text-left rounded-xl border-2 px-4 py-3 text-sm transition-all flex items-start gap-3 group',
-                !showState && 'border-border bg-card/60 hover:border-primary/50 hover:bg-primary/[0.04]',
+                !showState && 'border-border bg-card/60 hover:border-accent/50 hover:bg-accent/[0.04]',
                 showState && c.correct && 'border-emerald-500 bg-emerald-500/[0.08]',
                 showState && !c.correct && 'border-rose-500 bg-rose-500/[0.08]',
               )}
@@ -55,7 +55,7 @@ export function KnowledgeCheck({ question, choices }: Props) {
               <span
                 className={cn(
                   'relative h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors',
-                  !showState && 'border-border bg-background group-hover:border-primary/70',
+                  !showState && 'border-border bg-background group-hover:border-accent/70',
                   showState && c.correct && 'border-emerald-500 bg-emerald-500',
                   showState && !c.correct && 'border-rose-500 bg-rose-500',
                 )}
@@ -63,7 +63,7 @@ export function KnowledgeCheck({ question, choices }: Props) {
                 {showState && c.correct && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                 {showState && !c.correct && <X className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                 {!showState && (
-                  <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-primary/30 transition-colors" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-accent/30 transition-colors" />
                 )}
               </span>
               <span className="flex-1 text-foreground/95 leading-relaxed">{c.label}</span>

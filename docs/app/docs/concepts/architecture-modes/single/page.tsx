@@ -20,7 +20,7 @@ export default function SingleArchitecturePage() {
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Architecture Modes
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -271,7 +271,7 @@ export default function SingleArchitecturePage() {
               <div className="space-y-6">
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">main.go</code> -- Entry Point
+                    <code className="text-sm font-mono text-accent">main.go</code> -- Entry Point
                   </h3>
                   <p className="text-muted-foreground leading-relaxed mb-3">
                     The root <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">main.go</code> file
@@ -320,7 +320,7 @@ func main() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">internal/</code> -- Go Backend
+                    <code className="text-sm font-mono text-accent">internal/</code> -- Go Backend
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     Identical structure to the other architectures. Contains config, database connection,
@@ -340,7 +340,7 @@ func main() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">frontend/</code> -- React SPA
+                    <code className="text-sm font-mono text-accent">frontend/</code> -- React SPA
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     A standard React + Vite + TanStack Router application. File-based routing
@@ -362,7 +362,7 @@ func main() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">grit.json</code> -- Project Config
+                    <code className="text-sm font-mono text-accent">grit.json</code> -- Project Config
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     Tells the Grit CLI which architecture this project uses. Code generation reads this
@@ -592,27 +592,27 @@ ssh yourserver 'cd /opt/myapp && ./myapp'`} />
                 When to Choose Single
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
                   <h4 className="text-sm font-semibold text-foreground mb-3">Good fit</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Solo developers who want the simplest deploy story
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Laravel or Rails developers who like one-app-does-everything
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Internal tools and admin dashboards
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Microservices where each service has its own UI
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Apps where SSR and SEO are not critical (SPA is fine)
                     </li>
                   </ul>
@@ -655,7 +655,7 @@ ssh yourserver 'cd /opt/myapp && ./myapp'`} />
                   href="https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-single-vite"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
                 >
                   View Job Portal (Single + Vite) on GitHub &rarr;
                 </a>

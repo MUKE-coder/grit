@@ -51,7 +51,7 @@ export default function PluginAuthoringPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Boxes className="h-5 w-5 text-primary" />
+            <Boxes className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Plugins
             </span>
@@ -60,7 +60,7 @@ export default function PluginAuthoringPage() {
           <h1 className="mb-4 font-display text-4xl font-bold tracking-tight">Writing a plugin</h1>
           <p className="mb-10 text-lg leading-relaxed text-muted-foreground">
             This guide is written around the{' '}
-            <Link href="/docs/plugins/kanban" className="text-primary hover:underline">
+            <Link href="/docs/plugins/kanban" className="text-accent hover:underline">
               kanban plugin
             </Link>
             , because a board is the smallest feature that needs every part of the system at once:
@@ -157,7 +157,7 @@ export default function PluginAuthoringPage() {
 }`}
           />
 
-          <div className="my-6 rounded-xl border border-primary/30 bg-primary/5 p-5">
+          <div className="my-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
             <p className="mb-2 font-medium">Embed code you want tested</p>
             <p className="leading-relaxed text-muted-foreground">
               <code>kanbanRankSource</code> is not a Go string. It is{' '}
@@ -289,7 +289,7 @@ export default function PluginAuthoringPage() {
             {RULES.map((r, i) => (
               <li key={r.rule} className="rounded-xl border border-border bg-card/40 p-5">
                 <p className="mb-2 font-medium">
-                  <span className="mr-2 font-mono text-sm text-primary">{i + 1}</span>
+                  <span className="mr-2 font-mono text-sm text-accent">{i + 1}</span>
                   {r.rule}
                 </p>
                 <p className="leading-relaxed text-muted-foreground">{r.why}</p>
@@ -375,7 +375,7 @@ cd apps/api && go build ./...     # STILL compiles`}
             Put it in a public repository with the manifest at the root or in <code>plugin/</code>,
             then run <code>grit plugin submit</code> for the checklist and the submission link.
             Accepted plugins appear in <code>grit plugin list</code> and on the{' '}
-            <Link href="/docs/plugins/marketplace" className="text-primary hover:underline">
+            <Link href="/docs/plugins/marketplace" className="text-accent hover:underline">
               marketplace
             </Link>
             .
@@ -384,7 +384,7 @@ cd apps/api && go build ./...     # STILL compiles`}
           <div className="mt-12 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/docs/plugins/marketplace"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">
                 <span className="block font-medium">Marketplace</span>
@@ -394,7 +394,7 @@ cd apps/api && go build ./...     # STILL compiles`}
             </Link>
             <Link
               href="/docs/plugins/kanban"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">
                 <span className="block font-medium">The kanban plugin</span>

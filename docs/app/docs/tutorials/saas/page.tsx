@@ -20,7 +20,7 @@ export default function TutorialSaaSPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Tutorial
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -68,7 +68,7 @@ export default function TutorialSaaSPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-1">&#10003;</span>
+                    <span className="text-accent mt-1">&#10003;</span>
                     {item}
                   </li>
                 ))}
@@ -79,7 +79,7 @@ export default function TutorialSaaSPage() {
             {/* STEP 1 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 1
               </div>
               <div>
@@ -100,7 +100,7 @@ export default function TutorialSaaSPage() {
             {/* STEP 2 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 2
               </div>
               <div>
@@ -121,7 +121,7 @@ export default function TutorialSaaSPage() {
             {/* STEP 3 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 3
               </div>
               <div>
@@ -158,7 +158,7 @@ type Project struct {
             {/* STEP 4 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 4
               </div>
               <div>
@@ -198,7 +198,7 @@ type Task struct {
             {/* STEP 5 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 5
               </div>
               <div>
@@ -219,7 +219,7 @@ type Task struct {
             {/* STEP 6 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 6
               </div>
               <div>
@@ -310,7 +310,7 @@ type Comment struct {
             {/* STEP 7 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 7
               </div>
               <div>
@@ -407,7 +407,7 @@ func (t *Task) CanTransitionTo(newStatus string) bool {
             {/* STEP 8 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 8
               </div>
               <div>
@@ -507,7 +507,7 @@ export function ProjectStatsWidget() {
       label: 'Total Projects',
       value: stats?.total_projects ?? 0,
       icon: FolderKanban,
-      color: 'text-primary',
+      color: 'text-accent',
     },
     {
       label: 'Total Tasks',
@@ -555,7 +555,7 @@ export function ProjectStatsWidget() {
             {/* STEP 9 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 9
               </div>
               <div>
@@ -677,7 +677,7 @@ if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
             {/* STEP 10 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 10
               </div>
               <div>
@@ -762,7 +762,7 @@ export default defineResource({
             {/* STEP 11 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 11
               </div>
               <div>
@@ -866,7 +866,7 @@ func (s *TaskService) GetAllScoped(
             {/* STEP 12 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 12
               </div>
               <div>
@@ -947,7 +947,7 @@ func (s *TaskService) GetAllScoped(
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-0.5">&#10003;</span>
+                    <span className="text-accent mt-0.5">&#10003;</span>
                     {item}
                   </li>
                 ))}

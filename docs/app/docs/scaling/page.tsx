@@ -32,7 +32,7 @@ export default function ScalingPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Operations</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Operations</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Scaling</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Ten stages, from one server to sharding. A Grit app starts at the far side of five

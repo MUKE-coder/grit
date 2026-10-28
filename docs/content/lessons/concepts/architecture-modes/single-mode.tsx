@@ -83,7 +83,7 @@ grit new my-app --single --vite # Vite + TanStack frontend embedded`}
 
       <TipBox tone="success">
         <strong>Single + Vite</strong> (<code>--single --vite</code>) is the
-        Grit demo at <Link href="/docs/demo" className="text-primary hover:underline">demo.gritframework.dev</Link>{' '}
+        Grit demo at <Link href="/docs/demo" className="text-accent hover:underline">demo.gritframework.dev</Link>{' '}
         — sub-second cold starts, the same single-binary deploy. Worth
         considering when SEO doesn&apos;t matter.
       </TipBox>

@@ -25,7 +25,7 @@ export default function FromGitHubPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Deployment</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Deployment</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Deploy from GitHub</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Every platform in these guides deploys the same way: it clones your repository,
@@ -38,7 +38,7 @@ export default function FromGitHubPage() {
             {/* ── 1. The compose file ─────────────────────────────── */}
             <section className="mb-14">
               <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-                <FileCode className="h-5 w-5 text-primary" />
+                <FileCode className="h-5 w-5 text-accent" />
                 The production compose file, line by line
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
@@ -187,7 +187,7 @@ networks:
             {/* ── 2. GitHub ───────────────────────────────────────── */}
             <section className="mb-14">
               <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-                <GitBranch className="h-5 w-5 text-primary" />
+                <GitBranch className="h-5 w-5 text-accent" />
                 Getting the code on GitHub
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
@@ -238,7 +238,7 @@ git push -u origin main`}
             {/* ── 3. Then pick a platform ─────────────────────────── */}
             <section className="mb-14">
               <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-                <Rocket className="h-5 w-5 text-primary" />
+                <Rocket className="h-5 w-5 text-accent" />
                 Then pick a platform
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-5">
@@ -254,7 +254,7 @@ git push -u origin main`}
                   <Link
                     key={p.slug}
                     href={`/docs/deployment/${p.slug}`}
-                    className="rounded-lg border border-border/40 px-4 py-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                    className="rounded-lg border border-border/40 px-4 py-3 hover:border-accent/40 hover:bg-muted/30 transition-colors"
                   >
                     <div className="font-medium text-foreground">{p.name}</div>
                     <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">

@@ -49,7 +49,7 @@ export default function GoForGritPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Prerequisites</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Prerequisites</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Go for Grit Developers</h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Everything you need to know about Go to work with Grit&apos;s backend.
@@ -64,7 +64,7 @@ export default function GoForGritPage() {
             <TableOfContents items={tocItems} />
 
             {/* Try it live callout */}
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-10 flex items-center justify-between">
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-10 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground/90">Want to practice as you learn?</p>
                 <p className="text-xs text-muted-foreground/70 mt-0.5">Try the code examples in our interactive Go Playground.</p>
@@ -140,8 +140,8 @@ func main() {
   go run .\`)
 }`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 The entry point for every Grit backend is <code>apps/api/cmd/server/main.go</code>.
                 This file initializes the database connection, sets up middleware, registers routes,
@@ -388,8 +388,8 @@ func main() {
               </table>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 You will see <code>:=</code> everywhere in handlers and services. Config values loaded
                 from <code>.env</code> are stored in typed struct fields (like <code>Port int</code>,
@@ -629,8 +629,8 @@ outer:
     fmt.Println()
 }`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 The shape you will write most often is the guard clause: an <code>if</code> that
                 checks one thing and returns early. Handlers are a stack of them — reject the bad
@@ -865,8 +865,8 @@ func main() {
 }`} />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Every service function in <code>internal/services/</code> returns <code>(result, error)</code>.
                 Handlers call services, check for errors, and return the appropriate HTTP response.
@@ -1076,8 +1076,8 @@ func main() {
 }`} />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Every model in <code>internal/models/</code> is a struct with these three tag types.
                 When you run <code>grit generate resource Product</code>, the CLI creates a struct
@@ -1297,8 +1297,8 @@ func main() {
 }`} />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 GORM query results are always slices: <code>var users []models.User</code>. Gin JSON
                 responses use <code>gin.H{"{}"}</code> which is just a shortcut for <code>map[string]any</code>.
@@ -1544,8 +1544,8 @@ func main() {
 }`} />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 GORM uses pointers for nullable database fields. A regular <code>string</code> defaults
                 to <code>&quot;&quot;</code> (empty), but <code>*string</code> can be <code>nil</code> -- meaning the
@@ -1821,8 +1821,8 @@ func main() {
 }`} />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Methods are the foundation of Grit&apos;s architecture. Services are structs with
                 a <code>DB *gorm.DB</code> field, and all their operations are methods:
@@ -2530,8 +2530,8 @@ func main() {
               </table>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit services follow the interface pattern for testability and flexibility. The mailer
                 service, storage service, cache service, and AI service all define interfaces internally.
@@ -2843,8 +2843,8 @@ Time ~100ms:
               </p>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">Mental Model</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">Mental Model</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 <code>Add</code> = &quot;I&apos;m starting work&quot;, <code>Done</code> = &quot;I&apos;m finished&quot;,
                 <code>Wait</code> = &quot;hold here until everyone&apos;s finished.&quot; The WaitGroup is just
@@ -2990,8 +2990,8 @@ func main() {
               </table>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">The Go Proverb</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">The Go Proverb</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 <em>&quot;Don&apos;t communicate by sharing memory; share memory by communicating.&quot;</em> Channels
                 <strong> are</strong> that communication. An unbuffered channel (<code>make(chan string)</code>)
@@ -3253,8 +3253,8 @@ func main() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit&apos;s background job system (powered by asynq) uses goroutines under the hood to
                 process tasks like sending emails, resizing images, and running cleanup jobs.
@@ -3613,8 +3613,8 @@ func main() {
             />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit follows Go&apos;s standard project layout exactly. All application code lives
                 inside <code>internal/</code>: models, handlers, services, middleware, routes, and
@@ -3933,8 +3933,8 @@ func main() {
             />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit&apos;s config lives in <code>internal/config/config.go</code>. It loads settings for the
                 database, Redis, S3 storage, Resend email, AI keys, Sentinel security, and more -- all from
@@ -4094,8 +4094,8 @@ func createUser(c *gin.Context) {
     fmt.Println(input.Name, input.Email)
 }`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 All API routes are defined in <code>internal/routes/routes.go</code>. The <code>Setup()</code>
                 function creates a Gin engine, applies global middleware (Logger, Recovery, CORS),
@@ -4365,8 +4365,8 @@ admin.Use(middleware.RequireRole("ADMIN"))          // AND must be admin
     admin.DELETE("/users/:id", userHandler.Delete)
 }`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit scaffolds four middleware functions: <code>Logger</code> (request timing),
                 <code>CORS</code> (cross-origin access), <code>Auth</code> (JWT validation),
@@ -4595,8 +4595,8 @@ func CORS(allowedOrigins string) gin.HandlerFunc {
             <CodeBlock language="bash" filename=".env" code={`# Comma-separated list of allowed frontend origins
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit&apos;s CORS middleware reads allowed origins from the <code>CORS_ORIGINS</code> environment
                 variable. By default, it allows <code>localhost:3000</code> (web app)
@@ -4973,8 +4973,8 @@ func main() {
 }`} />
 
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit scaffolds auth handlers (<code>Login</code>, <code>Register</code>, <code>Refresh</code>,
                 <code>ForgotPassword</code>, <code>Me</code>) and a user handler (<code>List</code>, <code>Create</code>,
@@ -5283,8 +5283,8 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
     c.JSON(200, gin.H{"data": product})
 }`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Every generated resource gets a service in <code>internal/services/</code> with
                 <code>List</code>, <code>GetByID</code>, <code>Create</code>, <code>Update</code>,
@@ -5672,8 +5672,8 @@ user := models.User{
 }
 db.Create(&user) // BeforeCreate hashes it before INSERT`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Every resource generated by <code>grit generate resource</code> gets a service file
                 with these exact GORM operations: <code>Create</code>, <code>List</code> (with
@@ -6028,8 +6028,8 @@ func seedAdminUser(db *gorm.DB) error {
             <CodeBlock terminal code={`# Run the seeder
 grit seed`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit scaffolds both <code>cmd/migrate/main.go</code> and <code>cmd/seed/main.go</code>
                 out of the box. The seed file includes an admin user, demo users with different roles,
@@ -6399,8 +6399,8 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
     return claims, nil
 }`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 The auth service is created in <code>routes.go</code> with the JWT secret and expiry
                 durations from the config. It&apos;s passed to the auth handler and the auth middleware.
@@ -6740,8 +6740,8 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
     c.JSON(200, gin.H{"data": user})
 }`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit scaffolds three route groups: public (no auth), protected (Auth middleware),
                 and admin (Auth + RequireRole). You can add custom role-restricted groups with
@@ -7303,8 +7303,8 @@ func main() {
 │ }                                         │
 └───────────────────────────────────────────┘`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 This entire flow is generated for you. When you run <code>grit generate resource Product</code>,
                 it creates the model, service, handler, routes, and injects everything into the right

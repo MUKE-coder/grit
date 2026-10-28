@@ -20,24 +20,24 @@ export default function APIDocsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 API Documentation
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Every Grit project ships with auto-generated, interactive API documentation powered by{' '}
-                <a href="https://github.com/MUKE-coder/gin-docs" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">gin-docs</a>.
+                <a href="https://github.com/MUKE-coder/gin-docs" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">gin-docs</a>.
                 No annotations, no comments, no manual spec files &mdash; your docs are generated
                 directly from your Gin routes and GORM models.
               </p>
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-8">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Go deeper:</strong> the{' '}
-                <Link href="/courses/api-docs-scalar" className="text-primary hover:underline">API Docs: Scalar &amp; Swagger</Link>{' '}
+                <Link href="/courses/api-docs-scalar" className="text-accent hover:underline">API Docs: Scalar &amp; Swagger</Link>{' '}
                 course covers the doc UI end to end, and{' '}
-                <Link href="/courses/api-masterclass" className="text-primary hover:underline">API-Only Masterclass</Link>{' '}
+                <Link href="/courses/api-masterclass" className="text-accent hover:underline">API-Only Masterclass</Link>{' '}
                 builds a full REST API from scratch.
               </p>
             </div>

@@ -20,7 +20,7 @@ export default function AuthenticationPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend (Go API)</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend (Go API)</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Authentication
               </h1>
@@ -444,7 +444,7 @@ curl https://api.example.com/api/v1/products \\
               <h2 id="auth-middleware">Auth Middleware Usage</h2>
               <p>
                 Apply the <code>Auth</code> middleware to any route group that requires authentication.
-                See the <Link href="/docs/backend/middleware" className="text-primary hover:underline">Middleware</Link> page
+                See the <Link href="/docs/backend/middleware" className="text-accent hover:underline">Middleware</Link> page
                 for the full implementation.
               </p>
               <CodeBlock filename="routes.go" code={`// Protected routes -- any authenticated user

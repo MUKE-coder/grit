@@ -127,10 +127,10 @@ export default function CoursesPage() {
             }}
           />
           <span className="crosshair absolute top-16 left-[16%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
-          <span className="crosshair absolute top-28 right-[18%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
+          <span className="crosshair absolute top-28 right-[18%] text-accent/30 hidden md:block" style={{ width: 14, height: 14 }} />
           <div className="max-w-6xl mx-auto relative py-24 px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent mb-6">
                 <BookOpen className="h-3.5 w-3.5" />
                 DIY Self-Paced Courses
               </div>
@@ -184,7 +184,7 @@ export default function CoursesPage() {
                     <div className="relative flex items-start gap-3 mb-3">
                       <span className="text-3xl shrink-0" aria-hidden="true">{course.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors leading-tight mb-1">
+                        <h3 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors leading-tight mb-1">
                           {course.name}
                         </h3>
                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
@@ -207,7 +207,7 @@ export default function CoursesPage() {
                       </span>
                     </div>
                     <div className="relative mt-auto flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary group-hover:gap-2.5 transition-all">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-accent group-hover:gap-2.5 transition-all">
                         {isComing ? "Preview outline" : "Start course"}
                         <ArrowRight className="h-3.5 w-3.5" />
                       </span>
@@ -224,8 +224,8 @@ export default function CoursesPage() {
             </Reveal>
 
             <p className="text-center text-xs text-muted-foreground/70 mt-6">
-              <Sparkles className="inline h-3 w-3 mr-1 text-primary" />
-              Start with <Link href="/courses/concepts" className="text-primary hover:underline">Grit Concepts</Link> if you&apos;re new — every other path assumes it.
+              <Sparkles className="inline h-3 w-3 mr-1 text-accent" />
+              Start with <Link href="/courses/concepts" className="text-accent hover:underline">Grit Concepts</Link> if you&apos;re new — every other path assumes it.
             </p>
           </div>
         </section>
@@ -234,7 +234,7 @@ export default function CoursesPage() {
         <section className="py-20 md:py-24">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-14">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-4">
+              <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent mb-4">
                 <Zap className="h-3.5 w-3.5" />
                 Focused Tutorials
               </div>
@@ -255,11 +255,11 @@ export default function CoursesPage() {
                 >
                   {/* Icon + meta */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/15">
-                      <cat.icon className="h-5 w-5 text-primary" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 border border-accent/15">
+                      <cat.icon className="h-5 w-5 text-accent" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                      <h2 className="text-lg font-semibold tracking-tight text-foreground group-hover:text-accent transition-colors">
                         {cat.title}
                       </h2>
                       <p className="text-xs text-muted-foreground">{cat.subtitle}</p>
@@ -269,11 +269,11 @@ export default function CoursesPage() {
                   {/* Stats row */}
                   <div className="flex items-center gap-4 mb-5 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <BookOpen className="h-3.5 w-3.5 text-primary/60" />
+                      <BookOpen className="h-3.5 w-3.5 text-accent/60" />
                       {cat.courseCount} courses
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-primary/60" />
+                      <Clock className="h-3.5 w-3.5 text-accent/60" />
                       {cat.totalTime}
                     </span>
                   </div>
@@ -282,7 +282,7 @@ export default function CoursesPage() {
                   <ul className="flex-1 space-y-2 mb-6">
                     {cat.courses.map((course, i) => (
                       <li key={i} className="flex items-start gap-2.5 text-[13px] text-muted-foreground/80">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-[10px] font-mono font-medium text-primary/70 mt-px">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-accent/10 text-[10px] font-mono font-medium text-accent/70 mt-px">
                           {i + 1}
                         </span>
                         {course}
@@ -291,7 +291,7 @@ export default function CoursesPage() {
                   </ul>
 
                   {/* CTA */}
-                  <div className="flex items-center gap-1.5 text-sm font-medium text-primary group-hover:gap-2.5 transition-all">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-accent group-hover:gap-2.5 transition-all">
                     Start Learning
                     <ArrowRight className="h-4 w-4" />
                   </div>
@@ -313,11 +313,11 @@ export default function CoursesPage() {
                     href={course.href}
                     className="group flex items-start gap-3 p-5 border-b-[3px] border-r-[3px] border-double border-foreground/20 bg-card/20 hover:bg-card/50 transition-colors"
                   >
-                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
+                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-accent/10 text-accent shrink-0 group-hover:bg-accent/20 transition-colors">
                       <course.icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                      <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
                         {course.title}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">{course.subtitle}</p>

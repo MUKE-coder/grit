@@ -28,7 +28,7 @@ export default function ReactViteGoCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -53,10 +53,10 @@ export default function ReactViteGoCourse() {
             caption="A fast Vite SPA with type-safe routing — perfect for dashboards where SEO does not matter" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/frontend/tanstack-router" className="text-primary hover:underline">TanStack Router →</a>
+            <a href="/docs/frontend/tanstack-router" className="text-accent hover:underline">TanStack Router →</a>
           </p>
         </div>
 
@@ -235,10 +235,10 @@ export default function ReactViteGoCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">__root.tsx</strong> — the root layout that wraps every page (like Next.js{"'"} root <Code>layout.tsx</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">index.tsx</strong> — the default page for a directory (like Next.js{"'"} <Code>page.tsx</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">$param.tsx</strong> — a dynamic route segment (Next.js uses <Code>[param]</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">_layout.tsx</strong> — a nested layout for a route group</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">__root.tsx</strong> — the root layout that wraps every page (like Next.js{"'"} root <Code>layout.tsx</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">index.tsx</strong> — the default page for a directory (like Next.js{"'"} <Code>page.tsx</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">$param.tsx</strong> — a dynamic route segment (Next.js uses <Code>[param]</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">_layout.tsx</strong> — a nested layout for a route group</li>
           </ul>
 
           <Note>

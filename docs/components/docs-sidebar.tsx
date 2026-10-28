@@ -406,7 +406,7 @@ function NavSection({ item }: { item: NavItem }) {
         className={cn(
           'flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors',
           pathname === item.href
-            ? 'text-primary bg-primary/[0.07]'
+            ? 'text-accent bg-accent/[0.07]'
             : 'text-foreground/80 hover:text-foreground hover:bg-accent/25'
         )}
       >
@@ -430,7 +430,7 @@ function NavSection({ item }: { item: NavItem }) {
             className={cn(
               'block px-3 py-1.5 text-sm transition-colors border-l-2',
               pathname === subItem.href
-                ? 'text-primary font-medium border-primary bg-primary/[0.06] rounded-r-md'
+                ? 'text-accent font-medium border-accent bg-accent/[0.06] rounded-r-md'
                 : 'text-muted-foreground hover:text-foreground border-transparent hover:border-muted-foreground/30 hover:bg-accent/20 rounded-r-md'
             )}
           >
@@ -503,10 +503,10 @@ function CommunityNudge() {
           href={DISCORD_INVITE_URL}
           target="_blank"
           rel="noreferrer"
-          className="group block rounded-xl border border-primary/25 bg-primary/[0.05] p-3.5 transition-colors hover:border-primary/45 hover:bg-primary/[0.10]"
+          className="group block rounded-xl border border-accent/25 bg-accent/[0.05] p-3.5 transition-colors hover:border-accent/45 hover:bg-accent/[0.10]"
         >
           <div className="flex items-center gap-2">
-            <DiscordIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <DiscordIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
             <span className="text-[13px] font-semibold text-foreground">
               Ask the community
             </span>
@@ -514,7 +514,7 @@ function CommunityNudge() {
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             Stuck on something? Get help on Discord from other Grit developers.
           </p>
-          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent">
             Join the server
             <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
           </span>
@@ -542,10 +542,10 @@ function SponsorNudge() {
       <div className="pt-1">
         <Link
           href="/sponsor"
-          className="group block rounded-xl border border-primary/25 bg-primary/[0.04] p-3.5 transition-colors hover:border-primary/40 hover:bg-primary/[0.08]"
+          className="group block rounded-xl border border-accent/25 bg-accent/[0.04] p-3.5 transition-colors hover:border-accent/40 hover:bg-accent/[0.08]"
         >
           <div className="flex items-center gap-2">
-            <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <Heart className="h-3.5 w-3.5 shrink-0 text-accent" />
             <span className="text-[13px] font-semibold text-foreground">
               Sponsor Grit
             </span>
@@ -553,7 +553,7 @@ function SponsorNudge() {
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             These docs are free and MIT licensed. Sponsors keep them that way.
           </p>
-          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent">
             See the tiers
             <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
           </span>
@@ -577,7 +577,7 @@ function MobileNavSection({ item, onNavigate }: { item: NavItem; onNavigate: () 
         className={cn(
           'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all',
           pathname === item.href
-            ? 'bg-primary/10 text-primary font-medium'
+            ? 'bg-accent/10 text-accent font-medium'
             : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
         )}
       >
@@ -614,7 +614,7 @@ function MobileNavSection({ item, onNavigate }: { item: NavItem; onNavigate: () 
               className={cn(
                 'block rounded-md px-2.5 py-1.5 text-[13px] transition-all',
                 pathname === subItem.href
-                  ? 'text-primary font-medium bg-primary/5'
+                  ? 'text-accent font-medium bg-accent/5'
                   : 'text-muted-foreground/70 hover:text-foreground hover:bg-accent/30'
               )}
             >
@@ -686,7 +686,7 @@ export function MobileNav() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5 text-xs font-medium text-primary/80 hover:bg-primary/15 hover:text-primary transition-colors cursor-pointer">
+              <div className="flex items-center gap-2 rounded-lg border border-accent/25 bg-accent/8 px-3 py-2.5 text-xs font-medium text-accent/80 hover:bg-accent/15 hover:text-accent transition-colors cursor-pointer">
                 <Download className="h-3.5 w-3.5 shrink-0" />
                 <span>Download Handbook PDF</span>
               </div>

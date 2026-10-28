@@ -135,21 +135,21 @@ export function AnimatedTerminal() {
           <div key={`${i}-${line.text}`} className="flex items-start gap-2">
             {line.type === 'command' ? (
               <>
-                <span className="text-primary/50 select-none shrink-0">$ </span>
+                <span className="text-accent/50 select-none shrink-0">$ </span>
                 <span className="text-foreground/80">
                   {line.typed}
                   {i === visibleLines.length - 1 && isTyping && line.text === lines[currentLineIndex]?.text && (
-                    <span className="inline-block w-[7px] h-[14px] bg-primary/70 ml-[1px] animate-pulse align-middle" />
+                    <span className="inline-block w-[7px] h-[14px] bg-accent/70 ml-[1px] animate-pulse align-middle" />
                   )}
                 </span>
               </>
             ) : line.type === 'step' ? (
               <span className="text-muted-foreground/40 text-xs pl-4 flex items-center gap-2">
-                <span className="text-primary/60">+</span>
+                <span className="text-accent/60">+</span>
                 <span>{line.text}</span>
               </span>
             ) : (
-              <span className="text-xs pl-4 flex items-center gap-2 text-primary/80">
+              <span className="text-xs pl-4 flex items-center gap-2 text-accent/80">
                 <span>&#10003;</span>
                 <span>{line.text}</span>
               </span>
@@ -159,8 +159,8 @@ export function AnimatedTerminal() {
         {/* Initial cursor */}
         {visibleLines.length === 0 && hasStarted && (
           <div className="flex items-center gap-2">
-            <span className="text-primary/50 select-none">$ </span>
-            <span className="inline-block w-[7px] h-[14px] bg-primary/70 animate-pulse" />
+            <span className="text-accent/50 select-none">$ </span>
+            <span className="inline-block w-[7px] h-[14px] bg-accent/70 animate-pulse" />
           </div>
         )}
       </div>

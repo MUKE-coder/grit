@@ -52,7 +52,7 @@ export function SiteHeader() {
                 badge saying "stable" on every page is noise, and its absence
                 has to mean stable for that to work. */}
             <span
-              className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80"
+              className="hidden sm:inline-flex items-center rounded-full bg-accent/10 border border-accent/20 px-2 py-0.5 text-[10px] font-mono font-medium text-accent/80"
               title={`Grit ${GRIT_VERSION}, a ${RELEASE_CHANNEL_LABEL[releaseChannel()]} release`}
             >
               v{GRIT_VERSION}
@@ -99,9 +99,9 @@ export function SiteHeader() {
                 className={cn(
                   'relative px-3 py-1.5 text-[13px] transition-colors',
                   active
-                    ? 'font-semibold text-primary'
+                    ? 'font-semibold text-accent'
                     : item.highlight
-                      ? 'font-medium text-primary hover:text-primary/80'
+                      ? 'font-medium text-accent hover:text-accent/80'
                       : 'text-muted-foreground hover:text-foreground',
                 )}
               >
@@ -139,7 +139,7 @@ export function SiteHeader() {
             </Link>
           </Button>
 
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-primary/70 hover:text-primary hover:bg-primary/10" asChild>
+          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-accent/70 hover:text-accent hover:bg-accent/10" asChild>
             <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer">
               <DiscordIcon className="h-4 w-4" />
               <span className="sr-only">Join the Discord server</span>
@@ -160,7 +160,7 @@ export function SiteHeader() {
             </Link>
           </Button>
 
-          <Button size="sm" className="hidden md:inline-flex h-8 px-4 text-xs font-medium bg-primary hover:bg-primary/80 text-primary-foreground border-0 rounded-full" asChild>
+          <Button size="sm" className="hidden md:inline-flex h-8 px-4 text-xs font-medium bg-primary hover:bg-accent/80 text-primary-foreground border-0 rounded-full" asChild>
             <Link href="/docs/getting-started/quick-start">
               Get Started
             </Link>

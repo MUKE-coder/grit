@@ -20,7 +20,7 @@ export default function ContactsMobileTutorialPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Tutorial</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Contacts: the mobile app</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">An Expo client beside the web apps, sharing the Zod schemas and the TypeScript types the Go models generate. The contact you create on the phone is the contact the admin panel shows, because there is one API and one definition of what a contact is.</p>
             </div>
@@ -92,35 +92,35 @@ pnpm install`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">atlas</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">atlas</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Split-screen sign-in, Inter. The default: sharp and neutral, for a team tool.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">aurora</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">aurora</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Centered sign-in, Geist. Pastel and friendly, for consumer software.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">pulse</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">pulse</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Split-screen with a carousel, Onest and DM Serif. Warm and bold, for a brand.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">coral</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">coral</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A sign-in modal over the page. Soft, close up.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">amber</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">amber</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A boxed sign-in card. Warm neutrals.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">sky</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">sky</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A banner above the form. Open and light.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">mono</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">mono</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A showcase panel beside the form. Monochrome and typographic.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">emerald</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">emerald</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A quote beside the form. Green and calm: the one the commands above use.</td>
                   </tr>
                 </tbody>
@@ -142,23 +142,23 @@ pnpm install`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/api</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/api</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The Go API</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/expo</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/expo</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The Expo client: screens, navigation, and the API hooks</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/web</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/web</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The public site</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">apps/admin</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">apps/admin</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The admin panel</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">packages/shared</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">packages/shared</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The types all three clients import</td>
                   </tr>
                 </tbody>
@@ -204,15 +204,15 @@ grit seed`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">Expo Go, or a simulator</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">Expo Go, or a simulator</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The phone app</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:8080/api/v1</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:8080/api/v1</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The API</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:3001</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:3001</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The admin panel</td>
                   </tr>
                 </tbody>

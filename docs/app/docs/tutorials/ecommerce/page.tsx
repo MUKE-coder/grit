@@ -20,7 +20,7 @@ export default function TutorialEcommercePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Tutorial
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -55,23 +55,23 @@ export default function TutorialEcommercePage() {
               />
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-10">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Prefer a narrative walkthrough?</strong> The blog builds
                 a smaller Category &rarr; Product store step by step:{' '}
-                <Link href="/blog/build-your-first-grit-app" className="text-primary hover:underline">Build your first Grit app &rarr;</Link>
+                <Link href="/blog/build-your-first-grit-app" className="text-accent hover:underline">Build your first Grit app &rarr;</Link>
               </p>
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-10">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Want the code rather than the commands?</strong>{' '}
-                <a href="https://github.com/MUKE-coder/grit/tree/main/examples/commerce" className="text-primary hover:underline">examples/commerce</a>{' '}
+                <a href="https://github.com/MUKE-coder/grit/tree/main/examples/commerce" className="text-accent hover:underline">examples/commerce</a>{' '}
                 is a checked-in storefront, built and tested by CI on every push: twelve products, a
                 Colour &times; Size variant matrix with ninety-six combinations, and a server-side
                 basket. It is modelled on vercel/commerce, which is a storefront with no backend,
                 and adds the part that one leaves to Shopify. Its{' '}
-                <a href="https://github.com/MUKE-coder/grit/blob/main/examples/commerce/TUTORIAL.md" className="text-primary hover:underline">TUTORIAL.md</a>{' '}
+                <a href="https://github.com/MUKE-coder/grit/blob/main/examples/commerce/TUTORIAL.md" className="text-accent hover:underline">TUTORIAL.md</a>{' '}
                 reproduces it from an empty directory, with every hand-written file in full.
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function TutorialEcommercePage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-1">&#10003;</span>
+                    <span className="text-accent mt-1">&#10003;</span>
                     {item}
                   </li>
                 ))}
@@ -103,7 +103,7 @@ export default function TutorialEcommercePage() {
             {/* STEP 1 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 1
               </div>
               <div>
@@ -122,7 +122,7 @@ export default function TutorialEcommercePage() {
             {/* STEP 2 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 2
               </div>
               <div>
@@ -143,7 +143,7 @@ export default function TutorialEcommercePage() {
             {/* STEP 3 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 3
               </div>
               <div>
@@ -184,7 +184,7 @@ type Product struct {
             {/* STEP 4 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 4
               </div>
               <div>
@@ -237,7 +237,7 @@ type Product struct {
             {/* STEP 5 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 5
               </div>
               <div>
@@ -293,7 +293,7 @@ type Order struct {
             {/* STEP 6 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 6
               </div>
               <div>
@@ -345,7 +345,7 @@ type OrderItem struct {
             {/* STEP 7 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 7
               </div>
               <div>
@@ -398,7 +398,7 @@ type Category struct {
             {/* STEP 8 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 8
               </div>
               <div>
@@ -538,7 +538,7 @@ export default defineResource({
             {/* STEP 9 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 9
               </div>
               <div>
@@ -694,7 +694,7 @@ orders := auth.Group("/orders")
             {/* STEP 10 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 10
               </div>
               <div>
@@ -790,7 +790,7 @@ func HandleOrderConfirmation(mailer *mail.Mailer) asynq.HandlerFunc {
             {/* STEP 11 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 11
               </div>
               <div>
@@ -898,7 +898,7 @@ export function RevenueStatsWidget() {
       label: 'Total Orders',
       value: stats?.total_orders ?? 0,
       icon: ShoppingCart,
-      color: 'text-primary',
+      color: 'text-accent',
     },
     {
       label: 'Products Listed',
@@ -955,7 +955,7 @@ export function RevenueStatsWidget() {
             {/* STEP 12 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 12
               </div>
               <div>
@@ -1088,7 +1088,7 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
             {/* STEP 13 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 13
               </div>
               <div>
@@ -1194,7 +1194,7 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-0.5">&#10003;</span>
+                    <span className="text-accent mt-0.5">&#10003;</span>
                     {item}
                   </li>
                 ))}

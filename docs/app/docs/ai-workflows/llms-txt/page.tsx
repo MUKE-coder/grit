@@ -19,7 +19,7 @@ export default function LLMSTxtPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">AI agent workflows</span>
+              <span className="tag-mono text-accent/80 mb-3 block">AI agent workflows</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">llms.txt</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 An agent pointed at Grit, or at an API you built with it, should not have to

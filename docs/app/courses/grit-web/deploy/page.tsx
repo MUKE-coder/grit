@@ -30,7 +30,7 @@ export default function DeployToProductionCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 8 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 8 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -56,10 +56,10 @@ export default function DeployToProductionCourse() {
             caption="grit deploy sets up systemd and Caddy — your app stays running with automatic HTTPS" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/deployment/vps" className="text-primary hover:underline">Deployment →</a>
+            <a href="/docs/deployment/vps" className="text-accent hover:underline">Deployment →</a>
           </p>
         </div>
 
@@ -189,7 +189,7 @@ export default function DeployToProductionCourse() {
 
           <div className="space-y-4 mb-6">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold">1</div>
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center text-sm font-bold">1</div>
               <div>
                 <p className="text-foreground font-medium">Cross-compile Go binary for Linux</p>
                 <p className="text-muted-foreground text-sm mt-1">
@@ -199,7 +199,7 @@ export default function DeployToProductionCourse() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold">2</div>
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center text-sm font-bold">2</div>
               <div>
                 <p className="text-foreground font-medium">Build frontend if present</p>
                 <p className="text-muted-foreground text-sm mt-1">
@@ -209,7 +209,7 @@ export default function DeployToProductionCourse() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold">3</div>
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center text-sm font-bold">3</div>
               <div>
                 <p className="text-foreground font-medium">Upload binary to server via SCP</p>
                 <p className="text-muted-foreground text-sm mt-1">
@@ -218,7 +218,7 @@ export default function DeployToProductionCourse() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold">4</div>
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center text-sm font-bold">4</div>
               <div>
                 <p className="text-foreground font-medium">Create systemd service with auto-restart</p>
                 <p className="text-muted-foreground text-sm mt-1">
@@ -228,7 +228,7 @@ export default function DeployToProductionCourse() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold">5</div>
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center text-sm font-bold">5</div>
               <div>
                 <p className="text-foreground font-medium">Configure Caddy reverse proxy with auto-TLS</p>
                 <p className="text-muted-foreground text-sm mt-1">
@@ -776,23 +776,23 @@ grit deploy`}</CodeBlock>
           <div className="bg-white/[0.03] border border-border/50 rounded-lg p-4 mb-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">1</span>
+                <span className="text-xs font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">1</span>
                 <p className="text-muted-foreground text-sm">Make code changes and commit to git</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">2</span>
+                <span className="text-xs font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">2</span>
                 <p className="text-muted-foreground text-sm">Run tests locally: <Code>go test ./...</Code></p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">3</span>
+                <span className="text-xs font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">3</span>
                 <p className="text-muted-foreground text-sm">Run <Code>grit deploy</Code></p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">4</span>
+                <span className="text-xs font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">4</span>
                 <p className="text-muted-foreground text-sm">Verify the update: visit your domain and test the changes</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">5</span>
+                <span className="text-xs font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">5</span>
                 <p className="text-muted-foreground text-sm">Check logs: <Code>sudo journalctl -u myapp -f</Code></p>
               </div>
             </div>

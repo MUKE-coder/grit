@@ -169,7 +169,7 @@ export function OneApiClients() {
       </div>
 
       <div className="flex lg:flex-col items-center justify-center gap-2 py-2">
-        <ArrowRight className="h-5 w-5 text-primary lg:rotate-0 rotate-90" />
+        <ArrowRight className="h-5 w-5 text-accent lg:rotate-0 rotate-90" />
       </div>
 
       {/* ── Right: whichever client you asked for ───────────────────── */}
@@ -190,7 +190,7 @@ export function OneApiClients() {
                 onClick={() => setActive(c.key)}
                 className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors ${
                   selected
-                    ? 'border-primary text-foreground'
+                    ? 'border-accent text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >

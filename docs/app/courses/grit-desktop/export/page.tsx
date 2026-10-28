@@ -30,7 +30,7 @@ export default function ExportCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 4 of 5</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 4 of 5</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">10 challenges</span>
@@ -56,10 +56,10 @@ export default function ExportCourse() {
             caption="One export service turns your data into PDF documents, Excel spreadsheets, or CSV files" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/admin/datatable" className="text-primary hover:underline">DataTable & Export →</a>
+            <a href="/docs/admin/datatable" className="text-accent hover:underline">DataTable & Export →</a>
           </p>
         </div>
 
@@ -75,10 +75,10 @@ export default function ExportCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Invoices</strong> — generate a PDF invoice to email or print for a client</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Reports</strong> — export monthly data summaries for management</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Data backups</strong> — export all records to CSV for archiving or migration</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Spreadsheets</strong> — export data to Excel for further analysis in tools like Google Sheets</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Invoices</strong> — generate a PDF invoice to email or print for a client</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Reports</strong> — export monthly data summaries for management</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Data backups</strong> — export all records to CSV for archiving or migration</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Spreadsheets</strong> — export data to Excel for further analysis in tools like Google Sheets</li>
           </ul>
 
           <Definition term="Export">
@@ -314,10 +314,10 @@ func (s *ExportService) GenerateCSV(resource string) (string, error) {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> React calls the Go export method via Wails binding</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> Go queries the database and generates the file in a temp directory</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> Go returns the file path to React</li>
-            <li className="flex gap-2"><span className="text-primary">4.</span> React uses the Wails runtime to open the file or show a save dialog</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> React calls the Go export method via Wails binding</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> Go queries the database and generates the file in a temp directory</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> Go returns the file path to React</li>
+            <li className="flex gap-2"><span className="text-accent">4.</span> React uses the Wails runtime to open the file or show a save dialog</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -374,10 +374,10 @@ async function handleExportPDF() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Header</strong> — add your app name, logo, or company information</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Footer</strong> — page numbers, generation date, confidentiality notice</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Colors</strong> — match your brand{"'"}s accent color for headers and borders</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Layout</strong> — landscape vs portrait, margins, font sizes</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Header</strong> — add your app name, logo, or company information</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Footer</strong> — page numbers, generation date, confidentiality notice</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Colors</strong> — match your brand{"'"}s accent color for headers and borders</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Layout</strong> — landscape vs portrait, margins, font sizes</li>
           </ul>
 
           <CodeBlock filename="Custom PDF header example">

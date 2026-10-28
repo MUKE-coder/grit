@@ -30,7 +30,7 @@ export default function FirstDesktopAppCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 1 of 5</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 1 of 5</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -54,10 +54,10 @@ export default function FirstDesktopAppCourse() {
             caption="Scaffold a Wails app where React calls Go functions directly — auth, CRUD, and SQLite included" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/desktop/first-app" className="text-primary hover:underline">Your First Desktop App →</a>
+            <a href="/docs/desktop/first-app" className="text-accent hover:underline">Your First Desktop App →</a>
           </p>
         </div>
 
@@ -83,10 +83,10 @@ export default function FirstDesktopAppCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> They run <strong className="text-foreground">locally</strong> — no browser needed, no internet required (unless your app needs it)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> They can <strong className="text-foreground">access the filesystem</strong> — read and write files on the user{"'"}s computer</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> They feel <strong className="text-foreground">faster</strong> — no network latency between the UI and backend</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> They are <strong className="text-foreground">distributed as a single file</strong> — users download one executable and run it</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> They run <strong className="text-foreground">locally</strong> — no browser needed, no internet required (unless your app needs it)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> They can <strong className="text-foreground">access the filesystem</strong> — read and write files on the user{"'"}s computer</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> They feel <strong className="text-foreground">faster</strong> — no network latency between the UI and backend</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> They are <strong className="text-foreground">distributed as a single file</strong> — users download one executable and run it</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -113,18 +113,18 @@ export default function FirstDesktopAppCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Go side:</strong> You write normal Go methods like <Code>GetUsers()</Code> or <Code>CreateBlog(input)</Code></li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">React side:</strong> You import and call them as if they were local functions — <Code>{'const users = await GetUsers()'}</Code></li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">No HTTP layer:</strong> No REST endpoints, no fetch(), no axios — direct function calls over an internal bridge</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Go side:</strong> You write normal Go methods like <Code>GetUsers()</Code> or <Code>CreateBlog(input)</Code></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">React side:</strong> You import and call them as if they were local functions — <Code>{'const users = await GetUsers()'}</Code></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">No HTTP layer:</strong> No REST endpoints, no fetch(), no axios — direct function calls over an internal bridge</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Learn more at <a href="https://wails.io" target="_blank" rel="noreferrer" className="text-primary hover:underline">wails.io</a>.
+            Learn more at <a href="https://wails.io" target="_blank" rel="noreferrer" className="text-accent hover:underline">wails.io</a>.
             Wails supports Windows, macOS, and Linux from a single codebase.
           </p>
 
           <Challenge number={1} title="Visit Wails.io">
-            <p>Open <a href="https://wails.io" target="_blank" rel="noreferrer" className="text-primary hover:underline">wails.io</a> in your browser. What platforms does Wails support? Find the {'"'}Getting Started{'"'} section — does it mention Go as a requirement?</p>
+            <p>Open <a href="https://wails.io" target="_blank" rel="noreferrer" className="text-accent hover:underline">wails.io</a> in your browser. What platforms does Wails support? Find the {'"'}Getting Started{'"'} section — does it mention Go as a requirement?</p>
           </Challenge>
         </section>
 
@@ -367,12 +367,12 @@ grit start`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Login and Register pages</strong> — local authentication with bcrypt password hashing</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Dashboard</strong> — stats cards showing total blogs, contacts, and recent activity</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Blog CRUD</strong> — create, read, update, and delete blog posts</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Contact CRUD</strong> — manage a contacts list with full CRUD operations</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Sidebar navigation</strong> — collapsible sidebar with icons for every section</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Dark theme</strong> — premium dark UI using Grit{"'"}s design system</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Login and Register pages</strong> — local authentication with bcrypt password hashing</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Dashboard</strong> — stats cards showing total blogs, contacts, and recent activity</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Blog CRUD</strong> — create, read, update, and delete blog posts</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Contact CRUD</strong> — manage a contacts list with full CRUD operations</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Sidebar navigation</strong> — collapsible sidebar with icons for every section</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Dark theme</strong> — premium dark UI using Grit{"'"}s design system</li>
           </ul>
 
           <Challenge number={7} title="Create Some Data">
@@ -397,10 +397,10 @@ TOTP_ISSUER=notes-app`}
           </CodeBlock>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>APP_NAME</Code> — your application name, shown in the title bar</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>JWT_SECRET</Code> — secret key for signing authentication tokens</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>DB_PATH</Code> — path to the SQLite database file</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>TOTP_ISSUER</Code> — name shown in authenticator apps for two-factor auth</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>APP_NAME</Code> — your application name, shown in the title bar</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>JWT_SECRET</Code> — secret key for signing authentication tokens</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>DB_PATH</Code> — path to the SQLite database file</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>TOTP_ISSUER</Code> — name shown in authenticator apps for two-factor auth</li>
           </ul>
 
           <Challenge number={8} title="Read the .env File">

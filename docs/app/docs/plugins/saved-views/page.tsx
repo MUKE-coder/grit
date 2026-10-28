@@ -53,7 +53,7 @@ export default function SavedViewsPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Bookmark className="h-5 w-5 text-primary" />
+            <Bookmark className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Plugin
             </span>
@@ -84,9 +84,9 @@ cd apps/api && go run cmd/migrate/main.go`} />
               when you want it.
             </p>
 
-            <div className="my-8 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <div className="my-8 rounded-xl border border-accent/30 bg-accent/5 p-5">
               <div className="mb-2 flex items-center gap-2">
-                <ListFilter className="h-4 w-4 text-primary" />
+                <ListFilter className="h-4 w-4 text-accent" />
                 <strong className="text-foreground">A saved view is just a saved query string</strong>
               </div>
               <p className="mb-0 text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ cd apps/api && go run cmd/migrate/main.go`} />
             </p>
             <ul>
               <li>
-                <Filter className="mr-1 inline h-4 w-4 text-primary align-text-bottom" />
+                <Filter className="mr-1 inline h-4 w-4 text-accent align-text-bottom" />
                 <strong>Active users</strong> &mdash; status filter plus a sort by signup
                 date.
               </li>

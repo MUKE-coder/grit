@@ -227,11 +227,11 @@ export default function CoursePage() {
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-border/30">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.03] to-transparent" />
           <div className="container max-w-screen-xl relative py-20 px-6">
             <div className="max-w-3xl">
               <div className="flex items-center gap-2 mb-6">
-                <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary">
+                <span className="inline-flex items-center rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent">
                   Free Course
                 </span>
                 <span className="inline-flex items-center rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-muted-foreground">
@@ -269,7 +269,7 @@ export default function CoursePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border/30">
               {stats.map((stat) => (
                 <div key={stat.label} className="py-8 px-6 text-center">
-                  <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />
+                  <stat.icon className="h-5 w-5 text-accent mx-auto mb-2" />
                   <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
                   <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
                 </div>
@@ -294,20 +294,20 @@ export default function CoursePage() {
                   <Link
                     key={p.number}
                     href={`#module-${p.module}`}
-                    className="group flex items-start gap-4 rounded-lg border border-border/40 bg-card/50 p-4 hover:border-primary/20 hover:bg-card/80 transition-all"
+                    className="group flex items-start gap-4 rounded-lg border border-border/40 bg-card/50 p-4 hover:border-accent/20 hover:bg-card/80 transition-all"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-bold text-primary">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-bold text-accent">
                       {p.number}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-medium text-[15px] group-hover:text-primary transition-colors">
+                      <div className="font-medium text-[15px] group-hover:text-accent transition-colors">
                         {p.name}
                       </div>
                       <div className="text-xs text-muted-foreground/70 mt-0.5">
                         Module {p.module} &middot; {p.description}
                       </div>
                     </div>
-                    <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground/30 group-hover:text-primary/50 transition-colors shrink-0 mt-2.5" />
+                    <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground/30 group-hover:text-accent/50 transition-colors shrink-0 mt-2.5" />
                   </Link>
                 ))}
               </div>
@@ -335,12 +335,12 @@ export default function CoursePage() {
                   >
                     {/* Module header */}
                     <div className="flex items-start gap-4 p-5 border-b border-border/30 bg-card/50">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/15">
-                        <mod.icon className="h-5 w-5 text-primary" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 border border-accent/15">
+                        <mod.icon className="h-5 w-5 text-accent" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-mono font-semibold text-primary/60 uppercase tracking-wider">
+                          <span className="text-[10px] font-mono font-semibold text-accent/60 uppercase tracking-wider">
                             Module {mod.number}
                           </span>
                           <span className="text-[10px] text-muted-foreground/50">&middot;</span>
@@ -356,7 +356,7 @@ export default function CoursePage() {
                           {mod.description}
                         </p>
                         {mod.project && (
-                          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/15 px-2.5 py-0.5 text-[10px] font-medium text-primary">
+                          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/15 px-2.5 py-0.5 text-[10px] font-medium text-accent">
                             <Trophy className="h-3 w-3" />
                             Project: {mod.project}
                           </div>
@@ -378,7 +378,7 @@ export default function CoursePage() {
                               </div>
                               {lesson.assignment && (
                                 <div className="flex items-start gap-1.5 mt-1">
-                                  <CheckCircle2 className="h-3 w-3 text-primary/50 shrink-0 mt-0.5" />
+                                  <CheckCircle2 className="h-3 w-3 text-accent/50 shrink-0 mt-0.5" />
                                   <span className="text-[11px] text-muted-foreground/60 leading-relaxed">
                                     {lesson.assignment}
                                   </span>
@@ -400,7 +400,7 @@ export default function CoursePage() {
         <section className="py-16 border-t border-border/30">
           <div className="container max-w-screen-xl px-6">
             <div className="max-w-xl mx-auto text-center">
-              <GraduationCap className="h-8 w-8 text-primary mx-auto mb-4" />
+              <GraduationCap className="h-8 w-8 text-accent mx-auto mb-4" />
               <h2 className="text-2xl font-semibold tracking-tight mb-3">
                 Join the waitlist
               </h2>

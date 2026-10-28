@@ -21,7 +21,7 @@ export default function WebAppPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Frontend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Frontend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Web App
               </h1>
@@ -449,7 +449,7 @@ export const queryClient = new QueryClient({
   --bg-elevated:   #22222e;
   --bg-hover:      #2a2a38;
   --border:        #2a2a3a;
-  --text-primary:  #e8e8f0;
+  --text-accent:  #e8e8f0;
   --text-secondary:#9090a8;
   --text-muted:    #606078;
   --accent:        #6c5ce7;
@@ -475,7 +475,7 @@ const config: Config = {
         "bg-secondary": "var(--bg-secondary)",
         "bg-tertiary": "var(--bg-tertiary)",
         border: "var(--border)",
-        foreground: "var(--text-primary)",
+        foreground: "var(--text-accent)",
         accent: {
           DEFAULT: "var(--accent)",
           hover: "var(--accent-hover)",
@@ -532,7 +532,7 @@ export default config;`} />
                         <td className="px-4 py-2.5">Buttons, links, highlights</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs">--text-primary</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">--text-accent</td>
                         <td className="px-4 py-2.5 font-mono text-xs">#e8e8f0</td>
                         <td className="px-4 py-2.5">Headings, body text</td>
                       </tr>
@@ -562,7 +562,7 @@ export default config;`} />
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">grit start web</span>
                     </div>
                   </div>
@@ -579,7 +579,7 @@ export default config;`} />
                   </div>
                   <div className="p-5 font-mono text-sm">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">grit start</span>
                     </div>
                   </div>

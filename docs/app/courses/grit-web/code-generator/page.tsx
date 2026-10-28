@@ -30,7 +30,7 @@ export default function CodeGeneratorCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 2 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 2 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">15 challenges</span>
@@ -60,10 +60,10 @@ export default function CodeGeneratorCourse() {
             caption="One command writes the model, service, handler, schemas, types, hooks, and UI" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/concepts/code-generation" className="text-primary hover:underline">Code Generation →</a>
+            <a href="/docs/concepts/code-generation" className="text-accent hover:underline">Code Generation →</a>
           </p>
         </div>
 
@@ -124,10 +124,10 @@ export default function CodeGeneratorCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>grit generate resource</Code> — the command that triggers the code generator</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>Book</Code> — the resource name, always in <strong className="text-foreground">PascalCase</strong> and <strong className="text-foreground">singular</strong> (Book, not Books)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>--fields</Code> — inline field definitions, a comma-separated list</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>title:string</Code> — a field definition: <strong className="text-foreground">field name</strong> : <strong className="text-foreground">field type</strong></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>grit generate resource</Code> — the command that triggers the code generator</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>Book</Code> — the resource name, always in <strong className="text-foreground">PascalCase</strong> and <strong className="text-foreground">singular</strong> (Book, not Books)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>--fields</Code> — inline field definitions, a comma-separated list</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>title:string</Code> — a field definition: <strong className="text-foreground">field name</strong> : <strong className="text-foreground">field type</strong></li>
           </ul>
 
           <h3 className="text-lg font-semibold text-foreground mb-3">Generated Files</h3>
@@ -150,9 +150,9 @@ apps/admin/app/(dashboard)/books/page.tsx  # Admin page with DataTable`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>routes.go</Code> — registers all Book API routes (<Code>/api/books</Code>, <Code>/api/books/:id</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>database.go</Code> — adds <Code>Book</Code> to the auto-migration list</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>main.go</Code> — initializes the Book service and handler</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>routes.go</Code> — registers all Book API routes (<Code>/api/books</Code>, <Code>/api/books/:id</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>database.go</Code> — adds <Code>Book</Code> to the auto-migration list</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>main.go</Code> — initializes the Book service and handler</li>
           </ul>
 
           <Challenge number={1} title="Generate Your First Resource">
@@ -187,11 +187,11 @@ type Book struct {
           <h3 className="text-lg font-semibold text-foreground mb-3">Explained</h3>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>gorm.Model</Code> gives you four fields for free: <Code>ID</Code> (primary key), <Code>CreatedAt</Code>, <Code>UpdatedAt</Code>, and <Code>DeletedAt</Code> (for soft deletes)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>gorm:{'"'}not null{'"'}</Code> means the database requires this field — it cannot be empty</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>json:{'"'}title{'"'}</Code> controls how the field appears in API responses (lowercase, matching JavaScript conventions)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> The struct name <Code>Book</Code> becomes the database table <Code>books</Code> (GORM automatically pluralizes and lowercases it)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>gorm:{'"'}default:false{'"'}</Code> on the <Code>Published</Code> field means new books are unpublished by default</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>gorm.Model</Code> gives you four fields for free: <Code>ID</Code> (primary key), <Code>CreatedAt</Code>, <Code>UpdatedAt</Code>, and <Code>DeletedAt</Code> (for soft deletes)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>gorm:{'"'}not null{'"'}</Code> means the database requires this field — it cannot be empty</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>json:{'"'}title{'"'}</Code> controls how the field appears in API responses (lowercase, matching JavaScript conventions)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The struct name <Code>Book</Code> becomes the database table <Code>books</Code> (GORM automatically pluralizes and lowercases it)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>gorm:{'"'}default:false{'"'}</Code> on the <Code>Published</Code> field means new books are unpublished by default</li>
           </ul>
 
           <Definition term="Struct">
@@ -210,7 +210,7 @@ type Book struct {
           <Challenge number={2} title="Explore gorm.Model">
             <p>Open the generated <Code>book.go</Code> model. Find the <Code>gorm.Model</Code> line.
             What 4 fields does it give you for free? (Hint: check the{' '}
-            <a href="https://gorm.io/docs/models.html" target="_blank" rel="noreferrer" className="text-primary hover:underline">GORM documentation</a>.)</p>
+            <a href="https://gorm.io/docs/models.html" target="_blank" rel="noreferrer" className="text-accent hover:underline">GORM documentation</a>.)</p>
           </Challenge>
 
           <Challenge number={3} title="Understand GORM Tags">
@@ -555,10 +555,10 @@ grit generate resource Post --fields "title:string,content:richtext,category_id:
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> A <Code>CategoryID string</Code> field (UUID, varchar(36)) on the Post model</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> A foreign key index in the database</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> A <strong className="text-foreground">dropdown select</strong> in the admin form to pick a category</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> The API automatically returns the related category data when fetching posts</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> A <Code>CategoryID string</Code> field (UUID, varchar(36)) on the Post model</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> A foreign key index in the database</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> A <strong className="text-foreground">dropdown select</strong> in the admin form to pick a category</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The API automatically returns the related category data when fetching posts</li>
           </ul>
 
           <Note>

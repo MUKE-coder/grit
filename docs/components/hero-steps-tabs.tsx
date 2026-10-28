@@ -152,7 +152,7 @@ export function HeroStepsTabs() {
               onClick={() => setActive(v.key)}
               className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors ${
                 selected
-                  ? 'border-primary bg-white text-foreground dark:bg-[#0d1117] dark:text-slate-100'
+                  ? 'border-accent bg-white text-foreground dark:bg-[#0d1117] dark:text-slate-100'
                   : 'border-transparent text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-slate-300'
               }`}
             >
@@ -174,7 +174,7 @@ export function HeroStepsTabs() {
         <ol className="space-y-2.5">
           {variant.steps.map((step, i) => (
             <li key={step.command} className="flex gap-3">
-              <span className="mt-1.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+              <span className="mt-1.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-semibold text-accent">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">

@@ -28,7 +28,7 @@ export default function MobileFitnessAppCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -52,10 +52,10 @@ export default function MobileFitnessAppCourse() {
             caption="Design the workout model, generate the API, and build React Native screens you can use on your phone" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/mobile/first-app" className="text-primary hover:underline">Mobile Apps →</a>
+            <a href="/docs/mobile/first-app" className="text-accent hover:underline">Mobile Apps →</a>
           </p>
         </div>
 
@@ -76,10 +76,10 @@ export default function MobileFitnessAppCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Exercise Library</strong> — browse all exercises grouped by muscle group (chest, back, legs, shoulders, arms)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Workout Logger</strong> — create a workout, add exercises, log sets/reps/weight in real-time</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Workout History</strong> — see past workouts with total volume and duration</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Dashboard</strong> — weekly summary, workout streak, total volume lifted</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Exercise Library</strong> — browse all exercises grouped by muscle group (chest, back, legs, shoulders, arms)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Workout Logger</strong> — create a workout, add exercises, log sets/reps/weight in real-time</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Workout History</strong> — see past workouts with total volume and duration</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Dashboard</strong> — weekly summary, workout streak, total volume lifted</li>
           </ul>
 
           <Definition term="Expo">
@@ -316,9 +316,9 @@ grit start expo`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">iPhone</strong> — install Expo Go from the App Store, scan the QR code with your camera</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Android</strong> — install Expo Go from Google Play, scan the QR code from the Expo Go app</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Emulator</strong> — press <Code>i</Code> for iOS Simulator or <Code>a</Code> for Android Emulator</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">iPhone</strong> — install Expo Go from the App Store, scan the QR code with your camera</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Android</strong> — install Expo Go from Google Play, scan the QR code from the Expo Go app</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Emulator</strong> — press <Code>i</Code> for iOS Simulator or <Code>a</Code> for Android Emulator</li>
           </ul>
 
           <Note>
@@ -694,7 +694,7 @@ export default function ExercisesScreen() {
               'Expo Go lets you test on a physical device without native toolchains',
             ].map((item, i) => (
               <li key={i} className="flex gap-3 text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}

@@ -165,7 +165,7 @@ export default function FieldTypesPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts · Reference</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts · Reference</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Field Types</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The complete set of field types you can pass to{' '}
@@ -262,7 +262,7 @@ export default function FieldTypesPage() {
                     ['rating option', 'score:rating[10] gives the field 10 stars, from 2 to 10. The default is 5.'],
                   ].map(([k, v]) => (
                     <li key={k} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1 font-mono text-xs shrink-0">{k}</span>
+                      <span className="text-accent mt-1 font-mono text-xs shrink-0">{k}</span>
                       <span>{v}</span>
                     </li>
                   ))}
@@ -321,7 +321,7 @@ export default function FieldTypesPage() {
                     <tbody>
                       {COLUMNS.map((row) => (
                         <tr key={row.type} className="border-b border-border/20 align-top">
-                          <td className="px-3 py-2 font-mono text-xs text-primary break-words">{row.type}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-accent break-words">{row.type}</td>
                           <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-words">{row.tag}</td>
                           <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.note}</td>
                         </tr>
@@ -348,7 +348,7 @@ export default function FieldTypesPage() {
                     <tbody>
                       {MODIFIER_TAGS.map((row) => (
                         <tr key={row.modifier} className="border-b border-border/20 align-top">
-                          <td className="px-3 py-2 font-mono text-xs text-primary break-words">{row.modifier}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-accent break-words">{row.modifier}</td>
                           <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-words">{row.tag}</td>
                           <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.note}</td>
                         </tr>
@@ -381,7 +381,7 @@ export default function FieldTypesPage() {
                     <tbody>
                       {FLAGS.map((row) => (
                         <tr key={row.flag} className="border-b border-border/20 align-top">
-                          <td className="px-3 py-2 font-mono text-xs text-primary break-words">{row.flag}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-accent break-words">{row.flag}</td>
                           <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.what}</td>
                         </tr>
                       ))}
@@ -436,7 +436,7 @@ export default function FieldTypesPage() {
                     <tbody className="font-mono text-[12px]">
                       {ROWS.map((r) => (
                         <tr key={r.type} className="border-b border-border/50 align-top">
-                          <td className="px-3 py-2 text-primary">{r.type}</td>
+                          <td className="px-3 py-2 text-accent">{r.type}</td>
                           <td className="px-3 py-2 text-muted-foreground">{r.syntax}</td>
                           <td className="px-3 py-2">{r.go}</td>
                           <td className="px-3 py-2">{r.ts}</td>
@@ -471,7 +471,7 @@ export default function FieldTypesPage() {
                     <tbody>
                       {RENDER.map((r) => (
                         <tr key={r.type} className="border-b border-border/50">
-                          <td className="px-4 py-2 font-mono text-[12px] text-primary">{r.type}</td>
+                          <td className="px-4 py-2 font-mono text-[12px] text-accent">{r.type}</td>
                           <td className="px-4 py-2 text-muted-foreground text-[13px]">{r.form}</td>
                           <td className="px-4 py-2 font-mono text-[12px] text-muted-foreground">{r.table}</td>
                         </tr>
@@ -507,7 +507,7 @@ export default function FieldTypesPage() {
                     <tbody className="text-[13px]">
                       {FORMATTED.map((r) => (
                         <tr key={r.type} className="border-b border-border/50 align-top">
-                          <td className="px-3 py-2 font-mono text-[12px] text-primary">{r.type}</td>
+                          <td className="px-3 py-2 font-mono text-[12px] text-accent">{r.type}</td>
                           <td className="px-3 py-2 text-muted-foreground">{r.stored}</td>
                           <td className="px-3 py-2 text-muted-foreground">{r.refused}</td>
                         </tr>

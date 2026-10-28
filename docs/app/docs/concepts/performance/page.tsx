@@ -20,7 +20,7 @@ export default function PerformancePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Performance
               </h1>
@@ -36,8 +36,8 @@ export default function PerformancePage() {
               {/* ── BLOCK 1: Backend ─────────────────────────────── */}
               <div className="mb-16">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                    <Server className="h-5 w-5 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
+                    <Server className="h-5 w-5 text-accent" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold tracking-tight">Backend Performance</h2>
@@ -50,7 +50,7 @@ export default function PerformancePage() {
                   {/* Gzip */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Wind className="h-4 w-4 text-primary/70" />
+                      <Wind className="h-4 w-4 text-accent/70" />
                       <h3 className="text-lg font-semibold tracking-tight">Gzip Response Compression</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
@@ -100,7 +100,7 @@ r.Use(middleware.Gzip())`} />
                   {/* Request ID */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Code2 className="h-4 w-4 text-primary/70" />
+                      <Code2 className="h-4 w-4 text-accent/70" />
                       <h3 className="text-lg font-semibold tracking-tight">Request ID Tracing</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
@@ -130,7 +130,7 @@ log.Printf("[%s] %s %s %d", requestID, c.Request.Method, c.Request.URL.Path, sta
                   {/* DB Connection Pool */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Database className="h-4 w-4 text-primary/70" />
+                      <Database className="h-4 w-4 text-accent/70" />
                       <h3 className="text-lg font-semibold tracking-tight">Database Connection Pool</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
@@ -154,7 +154,7 @@ sqlDB.SetConnMaxIdleTime(10 * time.Minute) // evict idle connections sooner`} />
                         { label: 'ConnMaxIdleTime: 10m', desc: 'Evicts idle connections to free Postgres resources during quiet periods' },
                       ].map((item) => (
                         <div key={item.label} className="p-3 rounded-lg border border-border/30 bg-card/30">
-                          <p className="text-xs font-mono font-semibold text-primary/80 mb-1">{item.label}</p>
+                          <p className="text-xs font-mono font-semibold text-accent/80 mb-1">{item.label}</p>
                           <p className="text-xs text-muted-foreground/70 leading-relaxed">{item.desc}</p>
                         </div>
                       ))}
@@ -164,7 +164,7 @@ sqlDB.SetConnMaxIdleTime(10 * time.Minute) // evict idle connections sooner`} />
                   {/* Cache-Control */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Clock className="h-4 w-4 text-primary/70" />
+                      <Clock className="h-4 w-4 text-accent/70" />
                       <h3 className="text-lg font-semibold tracking-tight">Cache-Control Headers on Public Endpoints</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
@@ -192,7 +192,7 @@ func (h *BlogHandler) GetBySlug(c *gin.Context) {
                   {/* Presigned uploads */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Zap className="h-4 w-4 text-primary/70" />
+                      <Zap className="h-4 w-4 text-accent/70" />
                       <h3 className="text-lg font-semibold tracking-tight">Presigned URL Uploads (Bypass the API)</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
@@ -209,7 +209,7 @@ func (h *BlogHandler) GetBySlug(c *gin.Context) {
                           { step: '3', label: 'Browser → POST /api/uploads/complete', desc: 'API creates the Upload DB record and enqueues thumbnail processing job' },
                         ].map((item) => (
                           <div key={item.step} className="flex items-start gap-3">
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary mt-0.5">
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent mt-0.5">
                               {item.step}
                             </div>
                             <div>
@@ -225,7 +225,7 @@ func (h *BlogHandler) GetBySlug(c *gin.Context) {
                   {/* Background Jobs */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Layers className="h-4 w-4 text-primary/70" />
+                      <Layers className="h-4 w-4 text-accent/70" />
                       <h3 className="text-lg font-semibold tracking-tight">Async Background Jobs</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
@@ -267,7 +267,7 @@ protected.GET("/orders", orderHandler.List)`} />
                   {/* Rate Limiting + Security */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <Shield className="h-4 w-4 text-primary/70" />
+                      <Shield className="h-4 w-4 text-accent/70" />
                       <h3 className="text-lg font-semibold tracking-tight">Rate Limiting & WAF (Sentinel)</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
@@ -512,7 +512,7 @@ const RichTextEditor = dynamic(() => import('@/components/editor'), {
                           <td className="px-4 py-2.5">
                             <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium ${
                               row.layer === 'Backend'
-                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                ? 'bg-accent/10 text-accent border border-accent/20'
                                 : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                             }`}>
                               {row.layer}

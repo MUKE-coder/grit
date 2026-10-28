@@ -58,7 +58,7 @@ export function TableOfContents({ items }: TableOfContentsProps) {
               className={cn(
                 'block text-[12px] leading-relaxed py-0.5 border-l-2 pl-3 transition-colors',
                 activeId === id
-                  ? 'border-primary text-primary font-medium'
+                  ? 'border-accent text-accent font-medium'
                   : 'border-transparent text-muted-foreground/60 hover:text-muted-foreground hover:border-border'
               )}
             >

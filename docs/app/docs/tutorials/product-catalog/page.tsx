@@ -20,7 +20,7 @@ export default function TutorialProductCatalogPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Tutorial
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -52,8 +52,8 @@ export default function TutorialProductCatalogPage() {
             </div>
 
             {/* What you'll learn */}
-            <div className="mb-12 rounded-xl border border-primary/20 bg-primary/5 p-6">
-              <h3 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-3">
+            <div className="mb-12 rounded-xl border border-accent/20 bg-accent/5 p-6">
+              <h3 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-3">
                 What you&apos;ll learn
               </h3>
               <ul className="space-y-2">
@@ -68,7 +68,7 @@ export default function TutorialProductCatalogPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[13px] text-muted-foreground/80"
                   >
-                    <span className="text-primary mt-0.5">&#10003;</span>
+                    <span className="text-accent mt-0.5">&#10003;</span>
                     {item}
                   </li>
                 ))}
@@ -91,7 +91,7 @@ export default function TutorialProductCatalogPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-1">&#10003;</span>
+                    <span className="text-accent mt-1">&#10003;</span>
                     {item}
                   </li>
                 ))}
@@ -102,7 +102,7 @@ export default function TutorialProductCatalogPage() {
             {/* STEP 1 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 1
               </div>
               <div>
@@ -130,7 +130,7 @@ export default function TutorialProductCatalogPage() {
             {/* STEP 2 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 2
               </div>
               <div>
@@ -150,7 +150,7 @@ export default function TutorialProductCatalogPage() {
             {/* STEP 3 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 3
               </div>
               <div>
@@ -214,7 +214,7 @@ type Product struct {
             {/* STEP 4 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 4
               </div>
               <div>
@@ -331,8 +331,8 @@ export default defineResource({
   },
 });`} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mt-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mt-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Multi-step forms
                   </p>
                   <p className="text-[13px] text-muted-foreground/70">
@@ -341,7 +341,7 @@ export default defineResource({
                     and a progress bar. Each step only validates its own fields
                     before allowing navigation to the next step. You can also use{" "}
                     <code>&quot;page-steps&quot;</code> for a full-page layout. See the{" "}
-                    <Link href="/docs/admin/multi-step-forms" className="text-primary hover:underline">
+                    <Link href="/docs/admin/multi-step-forms" className="text-accent hover:underline">
                       Multi-Step Forms
                     </Link>{" "}
                     guide for all options.
@@ -354,7 +354,7 @@ export default defineResource({
             {/* STEP 5 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 5
               </div>
               <div>
@@ -386,7 +386,7 @@ export default defineResource({
                       key={i}
                       className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70"
                     >
-                      <span className="text-primary/70 font-mono text-xs mt-0.5">
+                      <span className="text-accent/70 font-mono text-xs mt-0.5">
                         {i + 1}.
                       </span>
                       {item}
@@ -407,7 +407,7 @@ export default defineResource({
             {/* STEP 6 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 6
               </div>
               <div>
@@ -485,7 +485,7 @@ public := router.Group("/api")
             {/* STEP 7 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 7
               </div>
               <div>
@@ -499,15 +499,15 @@ public := router.Group("/api")
                   display a sortable, filterable product listing for customers.
                 </p>
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
-                  <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-4">
+                  <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider mb-2">
                     Standalone components
                   </p>
                   <p className="text-[13px] text-muted-foreground/70">
                     Grit&apos;s DataTable and FormBuilder are fully prop-driven.
                     They work outside the admin resource system on any page in
                     any app. See the{" "}
-                    <Link href="/docs/admin/standalone-usage" className="text-primary hover:underline">
+                    <Link href="/docs/admin/standalone-usage" className="text-accent hover:underline">
                       Standalone Usage
                     </Link>{" "}
                     guide for the full reference.
@@ -613,7 +613,7 @@ export default function ProductCatalogPage() {
             {/* STEP 8 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 8
               </div>
               <div>
@@ -732,7 +732,7 @@ export default function InquiryPage() {
             {/* STEP 9 */}
             {/* ============================================================ */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 9
               </div>
               <div>
@@ -767,7 +767,7 @@ export default function InquiryPage() {
                       key={item.url}
                       className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70"
                     >
-                      <code className="text-primary/70 text-xs whitespace-nowrap">
+                      <code className="text-accent/70 text-xs whitespace-nowrap">
                         {item.url}
                       </code>
                       <span>&mdash; {item.desc}</span>
@@ -807,7 +807,7 @@ export default function InquiryPage() {
                     key={item}
                     className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
                   >
-                    <span className="text-primary mt-0.5">&#10003;</span>
+                    <span className="text-accent mt-0.5">&#10003;</span>
                     {item}
                   </li>
                 ))}
@@ -833,7 +833,7 @@ export default function InquiryPage() {
                 </li>
                 <li>
                   <strong>Image uploads</strong> &mdash; Use Grit&apos;s{" "}
-                  <Link href="/docs/batteries/storage" className="text-primary hover:underline">
+                  <Link href="/docs/batteries/storage" className="text-accent hover:underline">
                     file storage service
                   </Link>{" "}
                   to upload actual product images instead of URLs.

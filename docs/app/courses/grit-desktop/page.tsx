@@ -97,15 +97,15 @@ export default function GritDesktopCourses() {
           {/* Stats */}
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BookOpen className="h-4 w-4 text-primary" />
+              <BookOpen className="h-4 w-4 text-accent" />
               <span><strong className="text-foreground">5</strong> courses</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4 text-primary" />
+              <Clock className="h-4 w-4 text-accent" />
               <span><strong className="text-foreground">~2.5 hours</strong> total</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Trophy className="h-4 w-4 text-primary" />
+              <Trophy className="h-4 w-4 text-accent" />
               <span><strong className="text-foreground">{totalChallenges}</strong> challenges</span>
             </div>
           </div>
@@ -119,9 +119,9 @@ export default function GritDesktopCourses() {
             <Link
               key={course.number}
               href={course.href}
-              className="group flex items-start gap-4 p-5 rounded-lg border border-border/40 bg-card/30 hover:border-primary/30 hover:bg-card/50 transition-all"
+              className="group flex items-start gap-4 p-5 rounded-lg border border-border/40 bg-card/30 hover:border-accent/30 hover:bg-card/50 transition-all"
             >
-              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
+              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-accent/10 text-accent shrink-0 group-hover:bg-accent/20 transition-colors">
                 <course.icon className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
@@ -132,12 +132,12 @@ export default function GritDesktopCourses() {
                   <span className="text-xs text-muted-foreground/50">•</span>
                   <span className="text-xs text-muted-foreground">{course.challenges} challenges</span>
                 </div>
-                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
                   {course.title}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">{course.description}</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-3" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors shrink-0 mt-3" />
             </Link>
           ))}
         </div>
@@ -153,7 +153,7 @@ export default function GritDesktopCourses() {
           </Link>
           <Link
             href="/courses/grit-desktop/first-app"
-            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
           >
             Start Course 1
             <ArrowRight className="h-4 w-4" />

@@ -20,7 +20,7 @@ export default function DoubleArchitecturePage() {
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Architecture Modes
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -54,24 +54,24 @@ grit new myapp --double --next`} />
             <div className="mt-6 rounded-lg border border-border/40 bg-accent/20 p-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">Best suited for</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Projects where admins and users share the same interface with extra privileges</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Blogs, portfolios, and content sites where the author manages content inline</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Simpler SaaS applications where admin features are minimal (user management, settings)</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> MERN/MEAN stack developers transitioning to Go who want a familiar two-app structure</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Teams that want fewer apps to deploy and maintain</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Projects where admins and users share the same interface with extra privileges</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Blogs, portfolios, and content sites where the author manages content inline</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Simpler SaaS applications where admin features are minimal (user management, settings)</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> MERN/MEAN stack developers transitioning to Go who want a familiar two-app structure</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Teams that want fewer apps to deploy and maintain</li>
               </ul>
             </div>
 
-            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-6">
+            <div className="mt-4 rounded-lg border border-accent/20 bg-accent/5 p-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">Key differences from Triple</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>No apps/admin/ directory</strong> — the admin panel is a route group inside the web app instead, at <code className="text-xs font-mono bg-accent/30 px-1 rounded">/admin/dashboard</code>, with its own layout and all the same screens (v3.235.0)</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Resource definitions live in the web app</strong> — <code className="text-xs font-mono bg-accent/30 px-1 rounded">defineResource()</code> files land in <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/admin-panel/resources/</code>, and the DataTable and FormBuilder work exactly as they do in a triple</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>One app to run and deploy</strong> — one Next.js process serves your pages and the panel. The panel guards itself: its layout redirects anybody who is not signed in, and sends a plain USER role to their profile rather than the dashboard</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>grit generate writes the admin screens too</strong> — the list and detail pages land at <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/app/admin/(dashboard)/resources/&lt;name&gt;/</code> and the resource appears in the sidebar, the same as in a triple</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Either frontend</strong> — <code className="text-xs font-mono bg-accent/30 px-1 rounded">--next</code> puts the panel in a route group at <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/admin/</code>; <code className="text-xs font-mono bg-accent/30 px-1 rounded">--vite</code> puts it in the TanStack router at <code className="text-xs font-mono bg-accent/30 px-1 rounded">src/routes/admin/</code>, with its code behind <code className="text-xs font-mono bg-accent/30 px-1 rounded">@admin</code>. Same screens, same URLs (v3.239.0)</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Three layouts, one app</strong> — the root layout is the document alone. <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/(marketing)/</code> is the public site with the navbar and footer, <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/admin/</code> the panel with its sidebar, and <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/(app)/</code> the signed-in customer area at /account. Route groups, so no URL changes (v3.237.0)</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Simpler deployment</strong> — 2 apps instead of 3, fewer Docker images, less infrastructure</li>
+                <li className="flex items-start gap-2"><span className="text-accent">-</span> <strong>No apps/admin/ directory</strong> — the admin panel is a route group inside the web app instead, at <code className="text-xs font-mono bg-accent/30 px-1 rounded">/admin/dashboard</code>, with its own layout and all the same screens (v3.235.0)</li>
+                <li className="flex items-start gap-2"><span className="text-accent">-</span> <strong>Resource definitions live in the web app</strong> — <code className="text-xs font-mono bg-accent/30 px-1 rounded">defineResource()</code> files land in <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/admin-panel/resources/</code>, and the DataTable and FormBuilder work exactly as they do in a triple</li>
+                <li className="flex items-start gap-2"><span className="text-accent">-</span> <strong>One app to run and deploy</strong> — one Next.js process serves your pages and the panel. The panel guards itself: its layout redirects anybody who is not signed in, and sends a plain USER role to their profile rather than the dashboard</li>
+                <li className="flex items-start gap-2"><span className="text-accent">-</span> <strong>grit generate writes the admin screens too</strong> — the list and detail pages land at <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/app/admin/(dashboard)/resources/&lt;name&gt;/</code> and the resource appears in the sidebar, the same as in a triple</li>
+                <li className="flex items-start gap-2"><span className="text-accent">-</span> <strong>Either frontend</strong> — <code className="text-xs font-mono bg-accent/30 px-1 rounded">--next</code> puts the panel in a route group at <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/admin/</code>; <code className="text-xs font-mono bg-accent/30 px-1 rounded">--vite</code> puts it in the TanStack router at <code className="text-xs font-mono bg-accent/30 px-1 rounded">src/routes/admin/</code>, with its code behind <code className="text-xs font-mono bg-accent/30 px-1 rounded">@admin</code>. Same screens, same URLs (v3.239.0)</li>
+                <li className="flex items-start gap-2"><span className="text-accent">-</span> <strong>Three layouts, one app</strong> — the root layout is the document alone. <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/(marketing)/</code> is the public site with the navbar and footer, <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/admin/</code> the panel with its sidebar, and <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/(app)/</code> the signed-in customer area at /account. Route groups, so no URL changes (v3.237.0)</li>
+                <li className="flex items-start gap-2"><span className="text-accent">-</span> <strong>Simpler deployment</strong> — 2 apps instead of 3, fewer Docker images, less infrastructure</li>
               </ul>
             </div>
           </section>
@@ -412,31 +412,31 @@ export default function AdminLayout() {
               <h3 className="text-lg font-semibold text-foreground">Files Created</h3>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">Go Backend (apps/api/)</h4>
+                <h4 className="text-sm font-mono text-accent mb-3">Go Backend (apps/api/)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/models/product.go</code> — GORM model with struct tags, belongs_to relationship</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/services/product_service.go</code> — CRUD operations with pagination</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/handlers/product.go</code> — Gin handlers: Create, GetAll, GetByID, Update, Delete</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/models/product.go</code> — GORM model with struct tags, belongs_to relationship</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/services/product_service.go</code> — CRUD operations with pagination</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/handlers/product.go</code> — Gin handlers: Create, GetAll, GetByID, Update, Delete</li>
                 </ul>
               </div>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">Shared Package (packages/shared/)</h4>
+                <h4 className="text-sm font-mono text-accent mb-3">Shared Package (packages/shared/)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">schemas/product.ts</code> — Zod schemas: <code className="text-xs font-mono bg-accent/30 px-1 rounded">CreateProductSchema</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">UpdateProductSchema</code></li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">types/product.ts</code> — TypeScript interface: <code className="text-xs font-mono bg-accent/30 px-1 rounded">Product</code></li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">schemas/product.ts</code> — Zod schemas: <code className="text-xs font-mono bg-accent/30 px-1 rounded">CreateProductSchema</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">UpdateProductSchema</code></li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">types/product.ts</code> — TypeScript interface: <code className="text-xs font-mono bg-accent/30 px-1 rounded">Product</code></li>
                 </ul>
               </div>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">Web App (apps/web/)</h4>
+                <h4 className="text-sm font-mono text-accent mb-3">Web App (apps/web/)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">hooks/use-products.ts</code> — React Query hooks: <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProducts()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProduct(id)</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useCreateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useUpdateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useDeleteProduct()</code></li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">hooks/use-products.ts</code> — React Query hooks: <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProducts()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProduct(id)</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useCreateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useUpdateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useDeleteProduct()</code></li>
                 </ul>
               </div>
 
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">NOT generated (compared to triple)</h4>
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
+                <h4 className="text-sm font-mono text-accent mb-3">NOT generated (compared to triple)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2"><span className="text-muted-foreground">-</span> <s>resources/products.ts</s> — No admin resource definition</li>
                   <li className="flex items-start gap-2"><span className="text-muted-foreground">-</span> <s>app/(dashboard)/products/page.tsx</s> — No auto-generated admin page with DataTable and FormBuilder</li>
@@ -569,15 +569,15 @@ docker compose -f docker-compose.prod.yml up -d --build`} />
               but don&apos;t need a separate admin application.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-6">
                 <h3 className="text-sm font-semibold text-foreground mb-3">Choose Double when...</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> Admins and users share the same UI with role-based visibility</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> Your admin features are simple (user list, settings page)</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You are building a blog, portfolio, or personal SaaS</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You want fewer apps to deploy and maintain</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You prefer building admin UI manually with your own components</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You are familiar with MERN/MEAN stack structure (API + SPA)</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> Admins and users share the same UI with role-based visibility</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> Your admin features are simple (user list, settings page)</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You are building a blog, portfolio, or personal SaaS</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You want fewer apps to deploy and maintain</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You prefer building admin UI manually with your own components</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You are familiar with MERN/MEAN stack structure (API + SPA)</li>
                 </ul>
               </div>
               <div className="rounded-lg border border-border/40 bg-accent/20 p-6">
@@ -626,7 +626,7 @@ docker compose -f docker-compose.prod.yml up -d --build`} />
                   href="https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-double-vite"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors whitespace-nowrap"
                 >
                   View on GitHub &rarr;
                 </a>

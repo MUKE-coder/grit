@@ -176,7 +176,7 @@ export function AuthShowcase() {
               onClick={() => pick(f.key)}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? 'border-primary/40 bg-primary/10 text-foreground'
+                  ? 'border-accent/40 bg-accent/10 text-foreground'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
@@ -203,7 +203,7 @@ export function AuthShowcase() {
                       onClick={() => setShot(i)}
                       className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
                         on
-                          ? 'border-primary/40 bg-primary/10 text-foreground'
+                          ? 'border-accent/40 bg-accent/10 text-foreground'
                           : 'border-border/50 text-muted-foreground hover:text-foreground'
                       }`}
                     >
@@ -271,7 +271,7 @@ export function AuthShowcase() {
           <ul className="space-y-2.5">
             {feature.points.map((p) => (
               <li key={p} className="flex gap-2 text-[12.5px] text-foreground/80 leading-relaxed">
-                <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" strokeWidth={2.5} />
+                <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent" strokeWidth={2.5} />
                 {p}
               </li>
             ))}

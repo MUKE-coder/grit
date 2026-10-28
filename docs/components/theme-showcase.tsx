@@ -127,7 +127,7 @@ export function ThemeShowcase() {
               aria-pressed={selected}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? 'border-primary/40 bg-primary/10 text-foreground'
+                  ? 'border-accent/40 bg-accent/10 text-foreground'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
@@ -137,7 +137,7 @@ export function ThemeShowcase() {
                 style={{ backgroundColor: t.accent }}
               />
               {t.name}
-              {selected && <Check className="h-3.5 w-3.5 text-primary" />}
+              {selected && <Check className="h-3.5 w-3.5 text-accent" />}
             </button>
           )
         })}

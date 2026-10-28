@@ -84,7 +84,7 @@ export default function Lesson() {
       </p>
 
       <h2>The tagline you&apos;ll see everywhere</h2>
-      <blockquote className="border-l-2 border-primary pl-4 italic text-foreground/80 my-4">
+      <blockquote className="border-l-2 border-accent pl-4 italic text-foreground/80 my-4">
         Describe your data. Get the whole app.
       </blockquote>
       <p>
@@ -141,7 +141,7 @@ export default function Lesson() {
         solution={
           <>
             <p>One acceptable answer:</p>
-            <blockquote className="border-l-2 border-primary pl-4 italic">
+            <blockquote className="border-l-2 border-accent pl-4 italic">
               Grit is an open-source meta-framework for building production
               apps with Go on the backend and React on the front. Instead of
               spending a week wiring 12 libraries — auth, jobs, mail, storage,

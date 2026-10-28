@@ -143,7 +143,7 @@ export default function StartPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-8">
-              <span className="tag-mono text-primary/80 mb-3 block">Start here</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Start here</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Let&apos;s build a full-stack app in under two minutes
               </h1>
@@ -177,7 +177,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
               />
               <p className="text-sm text-muted-foreground leading-relaxed mt-4">
                 Already have the Go toolchain?{' '}
-                <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">
+                <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">
                   go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
                 </code>{' '}
                 does the same thing.
@@ -187,9 +187,9 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
               </p>
               <CodeBlock language="bash" filename="Terminal" code="grit version" />
               <p className="text-sm text-muted-foreground leading-relaxed mt-4">
-                Later, <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">grit update</code>{' '}
+                Later, <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">grit update</code>{' '}
                 moves you to the newest release.{' '}
-                <Link href="/docs/getting-started/installation" className="text-primary hover:underline">
+                <Link href="/docs/getting-started/installation" className="text-accent hover:underline">
                   Full installation notes
                 </Link>
                 , including what the script does and how to install a specific version.
@@ -248,7 +248,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
             {/* The golden path. Grit supports five architectures and three
                 frontends; that flexibility is a feature and a liability, because
                 a newcomer's first decision should not be a matrix. */}
-            <div className="rounded-xl border border-primary/25 bg-primary/[0.04] p-6 mb-12">
+            <div className="rounded-xl border border-accent/25 bg-accent/[0.04] p-6 mb-12">
               <h2 className="font-semibold mb-3">If you do not have a preference, use this</h2>
               <CodeBlock language="bash" code="grit new my-app --triple --next" />
               <p className="text-sm text-muted-foreground leading-relaxed mt-4">
@@ -258,7 +258,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed mt-3">
                 The other four architectures are real and supported —{' '}
-                <Link href="/docs/getting-started/create-a-project" className="text-primary hover:underline">
+                <Link href="/docs/getting-started/create-a-project" className="text-accent hover:underline">
                   single binary, double, API-only and mobile
                 </Link>{' '}
                 — but choose one because you have a reason, not because you were made to
@@ -274,12 +274,12 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                     className="group block rounded-xl border border-border/50 bg-card/40 p-5 transition-colors hover:border-border hover:bg-card/70"
                   >
                     <div className="flex items-start gap-4">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
                         {step.n}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                          <h3 className="font-semibold group-hover:text-primary transition-colors">
+                          <h3 className="font-semibold group-hover:text-accent transition-colors">
                             {step.title}
                           </h3>
                           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">

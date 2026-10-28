@@ -19,7 +19,7 @@ export default function InstallationPage() {
         <div className="max-w-5xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Getting Started
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -73,7 +73,7 @@ export default function InstallationPage() {
                   ].map((row) => (
                     <tr key={row.tool} className="hover:bg-accent/20 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground">{row.tool}</td>
-                      <td className="px-4 py-3 font-mono text-sm text-primary">{row.version}</td>
+                      <td className="px-4 py-3 font-mono text-sm text-accent">{row.version}</td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{row.for}</td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <code className="text-xs font-mono text-muted-foreground/70 bg-accent/30 px-1.5 py-0.5 rounded">{row.check}</code>
@@ -96,12 +96,12 @@ export default function InstallationPage() {
                 <>
                   <p>
                     Use the one-line install script. It detects an existing install and
-                    runs <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit update</code> (idempotent —
+                    runs <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit update</code> (idempotent —
                     no-ops if already on latest); otherwise it downloads the binary from the
                     matching GitHub release for your OS / arch and puts it on PATH.
                   </p>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    Prefer Go? <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code> does
+                    Prefer Go? <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code> does
                     the same thing if you have the Go toolchain.
                   </p>
                 </>
@@ -120,7 +120,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
               title="Create your project"
               description={
                 <p>
-                  Run <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit new</code> and
+                  Run <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit new</code> and
                   follow the interactive prompts to select your architecture and frontend framework.
                 </p>
               }
@@ -147,7 +147,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 <p>
                   Start PostgreSQL, Redis, MinIO, and Mailhog with Docker Compose.
                   These services are pre-configured in the generated{' '}
-                  <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker-compose.yml</code>.
+                  <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker-compose.yml</code>.
                 </p>
               }
               code={`cd my-app
@@ -163,9 +163,9 @@ docker compose up -d`}
                 <p>
                   Install frontend dependencies, apply migrations, seed the database, then start
                   every development server with a single command.
-                  The Go API runs on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:8080</code>,
-                  web app on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3000</code>,
-                  and admin on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3001</code>.
+                  The Go API runs on <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:8080</code>,
+                  web app on <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3000</code>,
+                  and admin on <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3001</code>.
                 </p>
               }
               code={`pnpm install
@@ -214,7 +214,7 @@ grit new-desktop my-app`} />
                 <div key={svc.name} className="rounded-lg border border-border/40 bg-accent/20 p-4 hover:bg-accent/30 transition-colors">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-foreground">{svc.name}</span>
-                    <code className="text-[11px] font-mono text-primary/70">{svc.url.replace('http://', '')}</code>
+                    <code className="text-[11px] font-mono text-accent/70">{svc.url.replace('http://', '')}</code>
                   </div>
                   <p className="text-xs text-muted-foreground/70">{svc.desc}</p>
                 </div>
@@ -233,7 +233,7 @@ grit new-desktop my-app`} />
             <h3 className="text-lg font-semibold text-foreground mb-3">Option A — SQLite, no services</h3>
             <p className="text-muted-foreground mb-4 max-w-2xl">
               Point the API at a local SQLite file instead of PostgreSQL and skip{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker compose</code> entirely.
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker compose</code> entirely.
               GORM auto-migrates the SQLite file on first run, so there is nothing else to provision.
               Redis and MinIO are optional — the cache falls back to in-memory and file storage falls
               back to the local disk when their env vars are unset.
@@ -253,8 +253,8 @@ grit start client`} />
             <p className="text-muted-foreground mb-4 max-w-2xl">
               Prefer PostgreSQL, Redis, and object storage without running them locally? Point the same
               env vars at managed services — all have generous free tiers. Set them in{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> and
-              run the API and frontends directly (no <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker compose</code>).
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> and
+              run the API and frontends directly (no <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker compose</code>).
             </p>
             <div className="overflow-x-auto rounded-lg border border-border/40 mb-4">
               <table className="w-full text-sm">
@@ -275,16 +275,16 @@ grit start client`} />
                     <tr key={row.svc} className="hover:bg-accent/20 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-foreground">{row.svc}</td>
                       <td className="px-4 py-2.5 text-muted-foreground">{row.provider}</td>
-                      <td className="px-4 py-2.5 font-mono text-[12px] text-primary/80">{row.env}</td>
+                      <td className="px-4 py-2.5 font-mono text-[12px] text-accent/80">{row.env}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="text-sm text-muted-foreground/70 max-w-2xl">
-              Grit scaffolds a <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">.env.cloud.example</code> file
+              Grit scaffolds a <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">.env.cloud.example</code> file
               with these variables pre-filled as placeholders — copy it to{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">.env</code> and drop in your keys.
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">.env</code> and drop in your keys.
               The same setup doubles as your production infrastructure.
             </p>
           </div>

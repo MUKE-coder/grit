@@ -28,7 +28,7 @@ export default function DeploymentGuideCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -54,10 +54,10 @@ export default function DeploymentGuideCourse() {
             caption="From a one-command deploy to a full PaaS — choose the method that fits your project" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/deployment/vps" className="text-primary hover:underline">Deployment →</a>
+            <a href="/docs/deployment/vps" className="text-accent hover:underline">Deployment →</a>
           </p>
         </div>
 
@@ -135,11 +135,11 @@ export default function DeploymentGuideCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> <strong className="text-foreground">Builds the Go binary</strong> — cross-compiles for Linux (your server{"'"}s OS)</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> <strong className="text-foreground">Uploads via SCP</strong> — securely copies the binary to your server</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> <strong className="text-foreground">Creates a systemd service</strong> — so your app auto-restarts on crash or reboot</li>
-            <li className="flex gap-2"><span className="text-primary">4.</span> <strong className="text-foreground">Configures Caddy</strong> — reverse proxy with automatic HTTPS (Lets Encrypt)</li>
-            <li className="flex gap-2"><span className="text-primary">5.</span> <strong className="text-foreground">Starts the service</strong> — your app is live at your domain</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> <strong className="text-foreground">Builds the Go binary</strong> — cross-compiles for Linux (your server{"'"}s OS)</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> <strong className="text-foreground">Uploads via SCP</strong> — securely copies the binary to your server</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> <strong className="text-foreground">Creates a systemd service</strong> — so your app auto-restarts on crash or reboot</li>
+            <li className="flex gap-2"><span className="text-accent">4.</span> <strong className="text-foreground">Configures Caddy</strong> — reverse proxy with automatic HTTPS (Lets Encrypt)</li>
+            <li className="flex gap-2"><span className="text-accent">5.</span> <strong className="text-foreground">Starts the service</strong> — your app is live at your domain</li>
           </ul>
 
           <Definition term="systemd Service">
@@ -181,11 +181,11 @@ export default function DeploymentGuideCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Git push to deploy</strong> — Dokploy watches your repo and auto-deploys on push</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Web dashboard</strong> — manage apps, view logs, set environment variables from a browser</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Docker-based</strong> — each app runs in an isolated container</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Auto-SSL</strong> — HTTPS certificates managed automatically</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Database management</strong> — spin up PostgreSQL, Redis, and more from the UI</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Git push to deploy</strong> — Dokploy watches your repo and auto-deploys on push</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Web dashboard</strong> — manage apps, view logs, set environment variables from a browser</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Docker-based</strong> — each app runs in an isolated container</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Auto-SSL</strong> — HTTPS certificates managed automatically</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Database management</strong> — spin up PostgreSQL, Redis, and more from the UI</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -299,11 +299,11 @@ volumes:
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">One-click deploy</strong> — connect your server, select a Grit project, deploy</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Auto-SSL</strong> — HTTPS certificates managed automatically via Lets Encrypt</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Environment management</strong> — configure production .env through the UI</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Log viewing</strong> — stream application logs from the dashboard</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Server management</strong> — manage multiple servers and apps from one place</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">One-click deploy</strong> — connect your server, select a Grit project, deploy</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Auto-SSL</strong> — HTTPS certificates managed automatically via Lets Encrypt</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Environment management</strong> — configure production .env through the UI</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Log viewing</strong> — stream application logs from the dashboard</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Server management</strong> — manage multiple servers and apps from one place</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -311,11 +311,11 @@ volumes:
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> Install Orbita on your VPS (or use a separate management server)</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> Add your server{"'"}s SSH credentials in the Orbita dashboard</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> Connect your GitHub repository</li>
-            <li className="flex gap-2"><span className="text-primary">4.</span> Configure environment variables and domain</li>
-            <li className="flex gap-2"><span className="text-primary">5.</span> Click Deploy — Orbita builds and ships your app</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> Install Orbita on your VPS (or use a separate management server)</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> Add your server{"'"}s SSH credentials in the Orbita dashboard</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> Connect your GitHub repository</li>
+            <li className="flex gap-2"><span className="text-accent">4.</span> Configure environment variables and domain</li>
+            <li className="flex gap-2"><span className="text-accent">5.</span> Click Deploy — Orbita builds and ships your app</li>
           </ul>
 
           <Challenge number={5} title="Explore Orbita">
@@ -424,10 +424,10 @@ cd apps/web && vercel`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Global CDN</strong> — frontend served from edge nodes closest to the user</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Automatic previews</strong> — every PR gets a preview deployment URL</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Zero-config</strong> — Vercel auto-detects Next.js and configures everything</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Free tier</strong> — generous free plan for personal projects</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Global CDN</strong> — frontend served from edge nodes closest to the user</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Automatic previews</strong> — every PR gets a preview deployment URL</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Zero-config</strong> — Vercel auto-detects Next.js and configures everything</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Free tier</strong> — generous free plan for personal projects</li>
           </ul>
 
           <Challenge number={7} title="The Connection Point">
@@ -539,11 +539,11 @@ REDIS_URL=redis://localhost:6379`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">APP_ENV</strong> — set to <Code>production</Code> (disables debug logging, enables security headers)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">JWT_SECRET</strong> — must be a long, random string (not {'"'}secret{'"'} or {'"'}changeme{'"'})</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">DB_PASSWORD</strong> — a strong, unique password (not {'"'}password{'"'})</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_DRIVER</strong> — switch from local to S3, R2, or B2 for persistent file storage</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">RESEND_API_KEY</strong> — your real Resend API key (development uses Mailhog)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">APP_ENV</strong> — set to <Code>production</Code> (disables debug logging, enables security headers)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">JWT_SECRET</strong> — must be a long, random string (not {'"'}secret{'"'} or {'"'}changeme{'"'})</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">DB_PASSWORD</strong> — a strong, unique password (not {'"'}password{'"'})</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">STORAGE_DRIVER</strong> — switch from local to S3, R2, or B2 for persistent file storage</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">RESEND_API_KEY</strong> — your real Resend API key (development uses Mailhog)</li>
           </ul>
 
           <Tip>
@@ -572,10 +572,10 @@ REDIS_URL=redis://localhost:6379`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">grit deploy</strong> — Caddy auto-provisions Lets Encrypt certificates</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Dokploy</strong> — built-in Lets Encrypt support through the dashboard</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Orbita</strong> — automatic SSL certificate management</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Vercel</strong> — SSL included automatically for all deployments</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">grit deploy</strong> — Caddy auto-provisions Lets Encrypt certificates</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Dokploy</strong> — built-in Lets Encrypt support through the dashboard</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Orbita</strong> — automatic SSL certificate management</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Vercel</strong> — SSL included automatically for all deployments</li>
           </ul>
 
           <Definition term="Lets Encrypt">
@@ -616,9 +616,9 @@ REDIS_URL=redis://localhost:6379`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Pulse</strong> — built into Grit, shows response times, error rates, and active connections</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">UptimeRobot</strong> (free) — pings your health endpoint every 5 minutes, alerts on downtime</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Better Stack</strong> (free tier) — uptime monitoring + incident management + status pages</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Pulse</strong> — built into Grit, shows response times, error rates, and active connections</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">UptimeRobot</strong> (free) — pings your health endpoint every 5 minutes, alerts on downtime</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Better Stack</strong> (free tier) — uptime monitoring + incident management + status pages</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

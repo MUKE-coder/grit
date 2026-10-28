@@ -9,7 +9,7 @@ export default function Lesson() {
       <p>
         Every product sends email: welcome, password reset, receipt,
         notification. Grit&apos;s mail battery wraps{' '}
-        <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Resend</a>{' '}
+        <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Resend</a>{' '}
         with editable HTML templates and a preview page in the admin
         panel. Type-safe, testable, swappable.
       </p>
@@ -178,7 +178,7 @@ func (s *Service) Send(ctx context.Context, to, templateName, subject string, da
       <h2>Local dev — Mailhog</h2>
       <p>
         For local dev, Grit defaults to{' '}
-        <a href="https://github.com/mailhog/MailHog" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Mailhog</a> —
+        <a href="https://github.com/mailhog/MailHog" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Mailhog</a> —
         an in-memory SMTP server with a web UI at{' '}
         <code>localhost:8025</code>. Sending an email shows it in the
         Mailhog inbox; nothing leaves your machine.

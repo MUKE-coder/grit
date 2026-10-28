@@ -38,7 +38,7 @@ export function BlogList({ posts }: { posts: BlogCard[] }) {
               onClick={() => setActive(c)}
               className={`text-left rounded-md px-2.5 py-1.5 text-sm transition-colors ${
                 c === active
-                  ? 'text-primary font-medium bg-primary/10'
+                  ? 'text-accent font-medium bg-accent/10'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
               }`}
             >
@@ -87,7 +87,7 @@ export function BlogList({ posts }: { posts: BlogCard[] }) {
             )}
 
             <div className="p-5 flex flex-col flex-1">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-primary mb-2">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-accent mb-2">
                 {post.category} · {post.dateLabel}
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 flex-1">
@@ -95,7 +95,7 @@ export function BlogList({ posts }: { posts: BlogCard[] }) {
               </p>
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground/60">{post.readingTime} read</span>
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-accent group-hover:gap-2 transition-all">
                   Read <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </div>

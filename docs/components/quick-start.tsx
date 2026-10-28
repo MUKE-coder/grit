@@ -92,7 +92,7 @@ export function QuickStart() {
   }
 
   return (
-    <section aria-labelledby="quick-start" className="rounded-2xl border border-primary/25 bg-primary/[0.04] p-6">
+    <section aria-labelledby="quick-start" className="rounded-2xl border border-accent/25 bg-accent/[0.04] p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 id="quick-start" className="sr-only">
           Quick start
@@ -136,7 +136,7 @@ export function QuickStart() {
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         {path.after.map((item) => (
           <div key={item.title} className="rounded-xl border border-border/60 bg-card/40 p-4">
-            <p className="font-mono text-[13px] font-semibold text-primary">{item.title}</p>
+            <p className="font-mono text-[13px] font-semibold text-accent">{item.title}</p>
             <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{item.body}</p>
           </div>
         ))}

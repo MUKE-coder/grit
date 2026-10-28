@@ -19,7 +19,7 @@ export default function TanStackRouterPage() {
       <main className="lg:pl-64">
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Frontend
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -75,8 +75,8 @@ export default function TanStackRouterPage() {
           <div className="mb-14">
             <h2 className="text-xl font-semibold text-foreground mb-4">Project structure</h2>
             <p className="text-muted-foreground mb-6">
-              TanStack Router apps use <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">src/routes/</code> for
-              file-based routing instead of Next.js{"'"}s <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">app/</code> directory.
+              TanStack Router apps use <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">src/routes/</code> for
+              file-based routing instead of Next.js{"'"}s <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">app/</code> directory.
             </p>
             <CodeBlock language="bash" filename="apps/web/ (TanStack Router)" code={`apps/web/
 ├── src/
@@ -129,7 +129,7 @@ export default function TanStackRouterPage() {
                     <tr key={aspect} className="hover:bg-accent/20 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground">{aspect}</td>
                       <td className="px-4 py-3 text-muted-foreground">{next}</td>
-                      <td className="px-4 py-3 text-primary/80">{tanstack}</td>
+                      <td className="px-4 py-3 text-accent/80">{tanstack}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -181,26 +181,26 @@ function BlogDetailPage() {
             <h2 className="text-xl font-semibold text-foreground mb-4">Admin panel with TanStack Router</h2>
             <p className="text-muted-foreground mb-6">
               When you choose TanStack Router, the admin panel also uses it. Auth and dashboard
-              are handled via layout routes with <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">beforeLoad</code> guards.
+              are handled via layout routes with <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">beforeLoad</code> guards.
               It renders the same pages as the Next.js admin — resources, widgets, and the
               System group — against the same theme tokens, so switching frontends does not
               change what the admin looks like or what it can do.
             </p>
             <Callout type="note" title="The Vite admin is on Tailwind v4">
               Unlike the web app, the admin is styled by the{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@tailwindcss/vite</code>{' '}
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@tailwindcss/vite</code>{' '}
               plugin with{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@import &quot;tailwindcss&quot;</code>{' '}
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@import &quot;tailwindcss&quot;</code>{' '}
               and{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@theme</code>{' '}
-              in <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">globals.css</code>.
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@theme</code>{' '}
+              in <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">globals.css</code>.
               There is no{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">tailwind.config.ts</code>{' '}
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">tailwind.config.ts</code>{' '}
               or{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">postcss.config</code>{' '}
-              in <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">apps/admin</code> —
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">postcss.config</code>{' '}
+              in <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">apps/admin</code> —
               customise the palette in the{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@theme</code>{' '}
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@theme</code>{' '}
               block instead. The web app shown above is still on Tailwind v3 and keeps its config files.
             </Callout>
             <CodeBlock language="tsx" filename="src/routes/_dashboard.tsx" code={`import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'

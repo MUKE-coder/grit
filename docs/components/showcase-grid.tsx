@@ -49,7 +49,7 @@ function GridCard({
     <button
       type="button"
       onClick={onClick}
-      className="card-grit group rounded-xl border border-border/60 bg-card/50 overflow-hidden hover:border-primary/40 text-left w-full cursor-pointer"
+      className="card-grit group rounded-xl border border-border/60 bg-card/50 overflow-hidden hover:border-accent/40 text-left w-full cursor-pointer"
     >
       <div className="aspect-[16/10] bg-accent/30 overflow-hidden">
         <img
@@ -60,7 +60,7 @@ function GridCard({
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between mb-1.5">
-          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
             {project.name}
           </h3>
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -147,7 +147,7 @@ function ProjectDetailSheet({
                   {project.name}
                 </h2>
                 {project.featured && (
-                  <span className="inline-flex items-center rounded-full bg-primary/20 border border-primary/30 px-2.5 py-0.5 text-[10px] font-mono font-medium text-primary uppercase tracking-wider">
+                  <span className="inline-flex items-center rounded-full bg-accent/20 border border-accent/30 px-2.5 py-0.5 text-[10px] font-mono font-medium text-accent uppercase tracking-wider">
                     Featured
                   </span>
                 )}
@@ -158,7 +158,7 @@ function ProjectDetailSheet({
             </div>
             <Button
               size="sm"
-              className="hidden md:inline-flex h-8 px-3 text-xs bg-primary/90 hover:bg-primary shrink-0"
+              className="hidden md:inline-flex h-8 px-3 text-xs bg-accent/90 hover:bg-primary shrink-0"
               asChild
             >
               <Link href={project.url} target="_blank" rel="noreferrer">
@@ -199,7 +199,7 @@ function ProjectDetailSheet({
                       key={item}
                       className="flex items-center gap-2 text-sm text-muted-foreground"
                     >
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                      <div className="h-1.5 w-1.5 rounded-full bg-accent/60 shrink-0" />
                       {item}
                     </div>
                   ))}
@@ -210,7 +210,7 @@ function ProjectDetailSheet({
               <div className="md:hidden">
                 <Button
                   size="sm"
-                  className="h-9 px-4 text-sm bg-primary/90 hover:bg-primary w-full"
+                  className="h-9 px-4 text-sm bg-accent/90 hover:bg-primary w-full"
                   asChild
                 >
                   <Link href={project.url} target="_blank" rel="noreferrer">
@@ -231,8 +231,8 @@ function ProjectDetailSheet({
                   {project.stats.tables && (
                     <>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                          <Database className="h-5 w-5 text-primary" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                          <Database className="h-5 w-5 text-accent" />
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-foreground">
@@ -248,8 +248,8 @@ function ProjectDetailSheet({
                   )}
                   {project.stats.models && (
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                        <Box className="h-5 w-5 text-primary" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                        <Box className="h-5 w-5 text-accent" />
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-foreground">
@@ -283,8 +283,8 @@ function ProjectDetailSheet({
                     <>
                       <div className="h-px bg-border/40" />
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                          <Layers className="h-5 w-5 text-primary" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                          <Layers className="h-5 w-5 text-accent" />
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-foreground">
@@ -311,7 +311,7 @@ function ProjectDetailSheet({
                           href={project.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-primary hover:underline"
+                          className="text-accent hover:underline"
                         >
                           {project.url.replace("https://", "")}
                         </Link>

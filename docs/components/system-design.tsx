@@ -40,7 +40,7 @@ function Bullets({ items }: { items: string[] }) {
     <ul className="my-3 space-y-2">
       {items.map((t, i) => (
         <li key={i} className="flex gap-2.5 text-[15px] leading-relaxed text-muted-foreground">
-          <span aria-hidden className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-primary/70" />
+          <span aria-hidden className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-accent/70" />
           <span>{t}</span>
         </li>
       ))}
@@ -53,7 +53,7 @@ function LabelledList({ items }: { items: Labelled[] }) {
     <ul className="my-3 space-y-2.5">
       {items.map((it, i) => (
         <li key={i} className="flex gap-2.5 text-[15px] leading-relaxed text-muted-foreground">
-          <span aria-hidden className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-primary/70" />
+          <span aria-hidden className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-accent/70" />
           <span>
             <strong className="font-semibold text-foreground">{it.label}.</strong> {it.text}
           </span>
@@ -93,7 +93,7 @@ function Working({ e }: { e: Estimate }) {
   return (
     <div className="my-4">
       <h3 className="text-base font-semibold">{e.label}</h3>
-      <div className="my-2 space-y-1 rounded-lg border-l-2 border-primary/50 bg-card/40 px-4 py-3 font-mono text-[13px] leading-relaxed">
+      <div className="my-2 space-y-1 rounded-lg border-l-2 border-accent/50 bg-card/40 px-4 py-3 font-mono text-[13px] leading-relaxed">
         {e.working.map((line, i) => (
           <div key={i}>{line}</div>
         ))}
@@ -176,7 +176,7 @@ function InterviewQuestions({ s }: { s: SystemDesign }) {
             <summary className="flex cursor-pointer list-none items-start gap-3 px-4 py-3 text-[15px] font-medium hover:bg-card/60">
               <span
                 aria-hidden
-                className="mt-0.5 shrink-0 text-xs font-semibold tabular-nums text-primary"
+                className="mt-0.5 shrink-0 text-xs font-semibold tabular-nums text-accent"
               >
                 {String(i + 1).padStart(2, '0')}
               </span>
@@ -193,7 +193,7 @@ function InterviewQuestions({ s }: { s: SystemDesign }) {
               {item.see && SECTION_NAMES[item.see] && (
                 <a
                   href={`#${item.see}`}
-                  className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                  className="mt-2 inline-block text-sm font-medium text-accent hover:underline"
                 >
                   Worked through in {SECTION_NAMES[item.see]} &rarr;
                 </a>

@@ -34,7 +34,7 @@ export default function BenchmarksPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Benchmarks</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Benchmarks</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 The same CRUD API, built {FRAMEWORKS.length + 1} times
               </h1>
@@ -48,8 +48,8 @@ export default function BenchmarksPage() {
 
             {/* ── Why pairs ────────────────────────────────────────── */}
             <section className="mb-12">
-              <div className="flex gap-3 rounded-xl border border-primary/25 bg-primary/[0.04] px-5 py-4">
-                <Scale className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+              <div className="flex gap-3 rounded-xl border border-accent/25 bg-accent/[0.04] px-5 py-4">
+                <Scale className="h-5 w-5 shrink-0 text-accent mt-0.5" />
                 <div>
                   <h2 className="font-semibold text-foreground mb-1.5">
                     Read the ratios, not the raw numbers
@@ -71,7 +71,7 @@ export default function BenchmarksPage() {
             {/* ── Results ──────────────────────────────────────────── */}
             <section className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-                <Gauge className="h-5 w-5 text-primary" />
+                <Gauge className="h-5 w-5 text-accent" />
                 Results
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
@@ -101,7 +101,7 @@ export default function BenchmarksPage() {
                         />
                         <Link
                           href={`/docs/benchmarks/${fw.slug}`}
-                          className="text-primary hover:underline"
+                          className="text-accent hover:underline"
                         >
                           {fw.name}
                         </Link>
@@ -142,7 +142,7 @@ export default function BenchmarksPage() {
                                 className="border-b border-border/20 last:border-0 align-top"
                               >
                                 <td className="px-4 py-2.5">
-                                  <div className="font-mono text-xs text-primary">{s.id}</div>
+                                  <div className="font-mono text-xs text-accent">{s.id}</div>
                                   <div className="text-xs text-muted-foreground mt-0.5">
                                     {s.request}
                                   </div>
@@ -170,7 +170,7 @@ export default function BenchmarksPage() {
                                       ? 'text-muted-foreground'
                                       : ratio(r) < 1
                                         ? 'text-warning'
-                                        : 'text-primary')
+                                        : 'text-accent')
                                   }
                                 >
                                   {ratio(r).toFixed(2)}&times;
@@ -201,7 +201,7 @@ export default function BenchmarksPage() {
                       <li key={u.slug}>
                         <Link
                           href={`/docs/benchmarks/${u.slug}`}
-                          className="font-medium text-foreground hover:text-primary"
+                          className="font-medium text-foreground hover:text-accent"
                         >
                           {u.name}
                         </Link>{' '}:
@@ -395,7 +395,7 @@ export default function BenchmarksPage() {
             {/* ── Harness gotchas ─────────────────────────────────── */}
             <section className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-                <ScrollText className="h-5 w-5 text-primary" />
+                <ScrollText className="h-5 w-5 text-accent" />
                 Four ways this benchmark lied before it was fixed
               </h2>
 
@@ -509,7 +509,7 @@ python pair-report.py bun`}
                   <Link
                     key={f.slug}
                     href={`/docs/benchmarks/${f.slug}`}
-                    className="flex items-center gap-3 rounded-lg border border-border/40 px-4 py-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                    className="flex items-center gap-3 rounded-lg border border-border/40 px-4 py-3 hover:border-accent/40 hover:bg-muted/30 transition-colors"
                   >
                     <span className="w-11 shrink-0 flex justify-center">
                       <FrameworkLogo

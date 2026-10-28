@@ -370,7 +370,7 @@ function PlaygroundInner() {
           <div className="flex items-center gap-2">
             {/* Examples dropdown */}
             <select
-              className="h-8 rounded-md border border-border/40 bg-background px-2 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+              className="h-8 rounded-md border border-border/40 bg-background px-2 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
               onChange={(e) => {
                 const example = EXAMPLES.find((ex) => ex.label === e.target.value)
                 if (example) {

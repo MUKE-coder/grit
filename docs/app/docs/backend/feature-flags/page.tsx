@@ -20,7 +20,7 @@ export default function FeatureFlagsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Feature Flags &amp; A/B Testing
               </h1>
@@ -150,7 +150,7 @@ func (h *CheckoutHandler) Start(c *gin.Context) {
 variant := engine.VariantForUser(userID, "pricing_experiment")`}
                 />
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Fail closed.</strong> An
                     unknown flag name returns <code>false</code> from{' '}
@@ -297,7 +297,7 @@ if flags.IsEnabledFor(eu, "eu_approvals") {
                   bucket stable across process restarts and Go versions.
                 </p>
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Anonymous users.</strong> With
                     an empty <code>user_id</code> the bucket is drawn from{' '}
@@ -406,7 +406,7 @@ if flags.IsEnabledFor(eu, "eu_approvals") {
 
               {/* Go deeper callout */}
               <div className="mb-12">
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
                   <h3 className="text-base font-semibold text-foreground mb-2">
                     Go deeper
                   </h3>
@@ -417,7 +417,7 @@ if flags.IsEnabledFor(eu, "eu_approvals") {
                   </p>
                   <Link
                     href="/courses/feature-flags"
-                    className="text-sm text-primary hover:underline font-medium"
+                    className="text-sm text-accent hover:underline font-medium"
                   >
                     Course: Feature Flags &amp; A/B Testing &rarr;
                   </Link>

@@ -28,7 +28,7 @@ export default function PulseAnalyticsCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">10 challenges</span>
@@ -54,10 +54,10 @@ export default function PulseAnalyticsCourse() {
             caption="Pulse captures every request's timing, queries, and errors — so you can find the bottleneck fast" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/backend/pulse" className="text-primary hover:underline">Pulse Observability →</a>
+            <a href="/docs/backend/pulse" className="text-accent hover:underline">Pulse Observability →</a>
           </p>
         </div>
 
@@ -131,12 +131,12 @@ export default function PulseAnalyticsCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Request tracing</strong> — every API request timed and recorded with endpoint, method, status, and duration</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Database monitoring</strong> — SQL query tracking, duration, and connection pool status</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Runtime metrics</strong> — goroutine count, memory usage, garbage collection stats</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Error tracking</strong> — automatic error capture with stack traces and frequency</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Health checks</strong> — <Code>GET /pulse/health</Code> for load balancers and uptime monitoring</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Prometheus export</strong> — <Code>/pulse/metrics</Code> for integration with Grafana</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Request tracing</strong> — every API request timed and recorded with endpoint, method, status, and duration</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Database monitoring</strong> — SQL query tracking, duration, and connection pool status</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Runtime metrics</strong> — goroutine count, memory usage, garbage collection stats</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Error tracking</strong> — automatic error capture with stack traces and frequency</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Health checks</strong> — <Code>GET /pulse/health</Code> for load balancers and uptime monitoring</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Prometheus export</strong> — <Code>/pulse/metrics</Code> for integration with Grafana</li>
           </ul>
 
           <Tip>
@@ -163,12 +163,12 @@ export default function PulseAnalyticsCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Endpoint</strong> — the URL path (e.g., <Code>/api/users</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Method</strong> — GET, POST, PUT, DELETE</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Status code</strong> — 200, 201, 400, 401, 404, 500</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Duration</strong> — how long the request took in milliseconds</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Timestamp</strong> — when the request was made</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Client IP</strong> — the origin of the request</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Endpoint</strong> — the URL path (e.g., <Code>/api/users</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Method</strong> — GET, POST, PUT, DELETE</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Status code</strong> — 200, 201, 400, 401, 404, 500</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Duration</strong> — how long the request took in milliseconds</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Timestamp</strong> — when the request was made</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Client IP</strong> — the origin of the request</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -213,10 +213,10 @@ export default function PulseAnalyticsCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Query text</strong> — the actual SQL that was executed</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Duration</strong> — how long the query took</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Rows affected</strong> — how many rows were returned or modified</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Frequency</strong> — how many times this query pattern was executed</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Query text</strong> — the actual SQL that was executed</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Duration</strong> — how long the query took</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Rows affected</strong> — how many rows were returned or modified</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Frequency</strong> — how many times this query pattern was executed</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -336,11 +336,11 @@ Max idle time:       10m`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Error message</strong> — what went wrong</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Stack trace</strong> — where in the code the error occurred</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Endpoint</strong> — which URL triggered the error</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Frequency</strong> — how many times this error has occurred</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Last occurrence</strong> — when it happened most recently</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Error message</strong> — what went wrong</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Stack trace</strong> — where in the code the error occurred</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Endpoint</strong> — which URL triggered the error</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Frequency</strong> — how many times this error has occurred</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Last occurrence</strong> — when it happened most recently</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -380,10 +380,10 @@ Max idle time:       10m`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Load balancers</strong> — to route traffic only to healthy instances</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Kubernetes</strong> — as a liveness probe to restart unhealthy pods</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Uptime monitors</strong> — services like UptimeRobot or Pingdom that alert you when your API goes down</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Deployment scripts</strong> — to verify a new deployment is healthy before switching traffic</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Load balancers</strong> — to route traffic only to healthy instances</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Kubernetes</strong> — as a liveness probe to restart unhealthy pods</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Uptime monitors</strong> — services like UptimeRobot or Pingdom that alert you when your API goes down</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Deployment scripts</strong> — to verify a new deployment is healthy before switching traffic</li>
           </ul>
 
           <CodeBlock filename="Health Check Response">

@@ -30,7 +30,7 @@ export default function AuthenticationCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 3 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 3 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">16 challenges</span>
@@ -58,10 +58,10 @@ export default function AuthenticationCourse() {
             caption="JWT, bcrypt, RBAC, TOTP 2FA, and OAuth social login — a complete auth stack, built in" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/backend/authentication" className="text-primary hover:underline">Authentication →</a>
+            <a href="/docs/backend/authentication" className="text-accent hover:underline">Authentication →</a>
           </p>
         </div>
 
@@ -115,20 +115,20 @@ export default function AuthenticationCourse() {
           </p>
 
           <ol className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">1.</span> User sends email + password to <Code>POST /api/auth/register</Code> or <Code>POST /api/auth/login</Code></li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">2.</span> Server verifies credentials against the database (password hashed with bcrypt)</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">3.</span> Server creates two tokens: an <strong className="text-foreground">access token</strong> (short-lived, 15 minutes) and a <strong className="text-foreground">refresh token</strong> (long-lived, 7 days)</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">4.</span> Frontend stores both tokens</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">5.</span> Every API request includes the access token in the <Code>Authorization</Code> header</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">6.</span> When the access token expires, the frontend uses the refresh token to get a new one</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">7.</span> When the refresh token expires, the user must log in again</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">1.</span> User sends email + password to <Code>POST /api/auth/register</Code> or <Code>POST /api/auth/login</Code></li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">2.</span> Server verifies credentials against the database (password hashed with bcrypt)</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">3.</span> Server creates two tokens: an <strong className="text-foreground">access token</strong> (short-lived, 15 minutes) and a <strong className="text-foreground">refresh token</strong> (long-lived, 7 days)</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">4.</span> Frontend stores both tokens</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">5.</span> Every API request includes the access token in the <Code>Authorization</Code> header</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">6.</span> When the access token expires, the frontend uses the refresh token to get a new one</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">7.</span> When the refresh token expires, the user must log in again</li>
           </ol>
 
           <Definition term="JWT (JSON Web Token)">
             A compact, URL-safe token that contains encoded information about the user (like their ID and
             role). It is signed with a secret key so the server can verify it was not tampered with.
             The format is three parts separated by dots: <Code>header.payload.signature</Code>. You can
-            decode a JWT at <a href="https://jwt.io" target="_blank" rel="noreferrer" className="text-primary hover:underline">jwt.io</a> to
+            decode a JWT at <a href="https://jwt.io" target="_blank" rel="noreferrer" className="text-accent hover:underline">jwt.io</a> to
             see its contents.
           </Definition>
 
@@ -219,7 +219,7 @@ export default function AuthenticationCourse() {
           </Challenge>
 
           <Challenge number={4} title="Decode a JWT">
-            <p>Copy your access token and paste it at <a href="https://jwt.io" target="_blank" rel="noreferrer" className="text-primary hover:underline">jwt.io</a>.
+            <p>Copy your access token and paste it at <a href="https://jwt.io" target="_blank" rel="noreferrer" className="text-accent hover:underline">jwt.io</a>.
             Look at the payload section — can you see your user ID and role? What is the <Code>exp</Code> field?
             (Hint: it is a Unix timestamp for when the token expires.)</p>
           </Challenge>
@@ -235,10 +235,10 @@ export default function AuthenticationCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>apps/api/internal/handlers/auth.go</Code> — Register, Login, RefreshToken, and GetMe handlers</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>apps/api/internal/services/auth_service.go</Code> — Password hashing, token generation, user lookup</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>apps/api/internal/middleware/auth.go</Code> — JWT verification middleware</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>apps/api/internal/routes/routes.go</Code> — Public vs protected route groups</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>apps/api/internal/handlers/auth.go</Code> — Register, Login, RefreshToken, and GetMe handlers</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>apps/api/internal/services/auth_service.go</Code> — Password hashing, token generation, user lookup</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>apps/api/internal/middleware/auth.go</Code> — JWT verification middleware</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>apps/api/internal/routes/routes.go</Code> — Public vs protected route groups</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -302,9 +302,9 @@ protected.GET("/me", authHandler.GetMe)`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary font-bold">ADMIN</span> — Full access to everything: manage users, system settings, all resources</li>
-            <li className="flex gap-2"><span className="text-primary font-bold">EDITOR</span> — Can create, edit, and publish content, but cannot manage users or system settings</li>
-            <li className="flex gap-2"><span className="text-primary font-bold">USER</span> — Basic access: their own profile and public content</li>
+            <li className="flex gap-2"><span className="text-accent font-bold">ADMIN</span> — Full access to everything: manage users, system settings, all resources</li>
+            <li className="flex gap-2"><span className="text-accent font-bold">EDITOR</span> — Can create, edit, and publish content, but cannot manage users or system settings</li>
+            <li className="flex gap-2"><span className="text-accent font-bold">USER</span> — Basic access: their own profile and public content</li>
           </ul>
 
           <Definition term="RBAC (Role-Based Access Control)">
@@ -384,10 +384,10 @@ admin.PUT("/users/:id/role", userHandler.UpdateRole)`}
           </p>
 
           <ol className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">1.</span> <strong className="text-foreground">Go models</strong> — adds <Code>MODERATOR</Code> to the role constants</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">2.</span> <strong className="text-foreground">TypeScript types</strong> — adds {'"'}MODERATOR{'"'} to the role union type</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">3.</span> <strong className="text-foreground">Zod schemas</strong> — adds {'"'}MODERATOR{'"'} to the role validation</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">4.</span> <strong className="text-foreground">Admin UI</strong> — adds MODERATOR as an option in role dropdowns</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">1.</span> <strong className="text-foreground">Go models</strong> — adds <Code>MODERATOR</Code> to the role constants</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">2.</span> <strong className="text-foreground">TypeScript types</strong> — adds {'"'}MODERATOR{'"'} to the role union type</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">3.</span> <strong className="text-foreground">Zod schemas</strong> — adds {'"'}MODERATOR{'"'} to the role validation</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">4.</span> <strong className="text-foreground">Admin UI</strong> — adds MODERATOR as an option in role dropdowns</li>
           </ol>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -436,7 +436,7 @@ admin.PUT("/users/:id/role", userHandler.UpdateRole)`}
           <Definition term="TOTP (Time-Based One-Time Password)">
             A 6-digit code that changes every 30 seconds, generated by an authenticator app like Google
             Authenticator, Authy, or 1Password. It is based on{' '}
-            <a href="https://datatracker.ietf.org/doc/html/rfc6238" target="_blank" rel="noreferrer" className="text-primary hover:underline">RFC 6238</a>
+            <a href="https://datatracker.ietf.org/doc/html/rfc6238" target="_blank" rel="noreferrer" className="text-accent hover:underline">RFC 6238</a>
             {' '}— a shared secret combined with the current time produces a unique code. Both the server
             and your app generate the same code independently, so no network request is needed.
           </Definition>
@@ -446,12 +446,12 @@ admin.PUT("/users/:id/role", userHandler.UpdateRole)`}
           </p>
 
           <ol className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">1.</span> User calls <Code>POST /api/totp/setup</Code> — server generates a secret key and returns a QR code URL</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">2.</span> User scans the QR code with their authenticator app (Google Authenticator, Authy, etc.)</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">3.</span> User enters the 6-digit code to verify: <Code>POST /api/totp/verify</Code></li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">4.</span> Server stores that 2FA is enabled for this user</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">5.</span> On next login, after the password check, the server asks for the TOTP code</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">6.</span> User enters the code from their app — if it matches, login succeeds</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">1.</span> User calls <Code>POST /api/totp/setup</Code> — server generates a secret key and returns a QR code URL</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">2.</span> User scans the QR code with their authenticator app (Google Authenticator, Authy, etc.)</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">3.</span> User enters the 6-digit code to verify: <Code>POST /api/totp/verify</Code></li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">4.</span> Server stores that 2FA is enabled for this user</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">5.</span> On next login, after the password check, the server asks for the TOTP code</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">6.</span> User enters the code from their app — if it matches, login succeeds</li>
           </ol>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -486,7 +486,7 @@ Authorization: Bearer <token>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             The <Code>qr_url</Code> follows the{' '}
-            <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format" target="_blank" rel="noreferrer" className="text-primary hover:underline">otpauth:// URI format</a>
+            <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format" target="_blank" rel="noreferrer" className="text-accent hover:underline">otpauth:// URI format</a>
             {' '}that all authenticator apps understand. The <Code>secret</Code> is the raw key — you
             can enter it manually if you cannot scan the QR code.
           </p>
@@ -495,7 +495,7 @@ Authorization: Bearer <token>
             <p>Call the TOTP setup endpoint from the API docs (you need to be logged in). Copy the
             {' '}<Code>qr_url</Code> from the response. If you have Google Authenticator or Authy on your
             phone, scan the QR code. Otherwise, use an{' '}
-            <a href="https://totp.danhersam.com/" target="_blank" rel="noreferrer" className="text-primary hover:underline">online TOTP generator</a>
+            <a href="https://totp.danhersam.com/" target="_blank" rel="noreferrer" className="text-accent hover:underline">online TOTP generator</a>
             {' '}to test with the secret key.</p>
           </Challenge>
         </section>
@@ -591,11 +591,11 @@ Authorization: Bearer <token>
             another service (Google, GitHub) without sharing their password. The user clicks {'"'}Sign in
             with Google{'"'}, Google confirms their identity, and sends your app a token with the
             user{"'"}s basic info (name and email). Read more in the{' '}
-            <a href="https://oauth.net/2/" target="_blank" rel="noreferrer" className="text-primary hover:underline">OAuth 2.0 specification</a>.
+            <a href="https://oauth.net/2/" target="_blank" rel="noreferrer" className="text-accent hover:underline">OAuth 2.0 specification</a>.
           </Definition>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit uses the <a href="https://github.com/markbates/goth" target="_blank" rel="noreferrer" className="text-primary hover:underline">goth</a> library
+            Grit uses the <a href="https://github.com/markbates/goth" target="_blank" rel="noreferrer" className="text-accent hover:underline">goth</a> library
             for OAuth2. You configure it by adding client credentials to your <Code>.env</Code> file:
           </p>
 
@@ -611,20 +611,20 @@ GITHUB_CLIENT_SECRET=your-github-client-secret`}
           </p>
 
           <ol className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">1.</span> User clicks {'"'}Sign in with Google{'"'} on your login page</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">2.</span> Browser redirects to Google{"'"}s login page</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">3.</span> User logs in with their Google account</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">4.</span> Google redirects back to your app with a temporary code</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">5.</span> Your API exchanges the code for the user{"'"}s email and name</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">6.</span> If the email already exists in your database, the accounts are linked</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">7.</span> If it is a new email, a new account is created automatically</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">1.</span> User clicks {'"'}Sign in with Google{'"'} on your login page</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">2.</span> Browser redirects to Google{"'"}s login page</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">3.</span> User logs in with their Google account</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">4.</span> Google redirects back to your app with a temporary code</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">5.</span> Your API exchanges the code for the user{"'"}s email and name</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">6.</span> If the email already exists in your database, the accounts are linked</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">7.</span> If it is a new email, a new account is created automatically</li>
           </ol>
 
           <Tip>
             To set up Google OAuth2, go to the{' '}
-            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-primary hover:underline">Google Cloud Console</a>
+            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-accent hover:underline">Google Cloud Console</a>
             {' '}and create OAuth2 credentials. For GitHub, go to{' '}
-            <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer" className="text-primary hover:underline">GitHub Developer Settings</a>
+            <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer" className="text-accent hover:underline">GitHub Developer Settings</a>
             {' '}and create a new OAuth App. Both services are free for development.
           </Tip>
 
@@ -651,9 +651,9 @@ GITHUB_CLIENT_SECRET=your-github-client-secret`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> It must be <strong className="text-foreground">long and random</strong> (at least 32 characters)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> It must <strong className="text-foreground">never</strong> be committed to Git (it is in <Code>.env</Code>, which is in <Code>.gitignore</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> It must be <strong className="text-foreground">different</strong> in development and production</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> It must be <strong className="text-foreground">long and random</strong> (at least 32 characters)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> It must <strong className="text-foreground">never</strong> be committed to Git (it is in <Code>.env</Code>, which is in <Code>.gitignore</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> It must be <strong className="text-foreground">different</strong> in development and production</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -691,11 +691,11 @@ GITHUB_CLIENT_SECRET=your-github-client-secret`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">On login:</strong> stores the <Code>access_token</Code> and <Code>refresh_token</Code></li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">On every API call:</strong> attaches the <Code>Authorization: Bearer &lt;token&gt;</Code> header automatically</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">When access token expires:</strong> automatically calls <Code>/api/auth/refresh</Code> to get a new one</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">On logout:</strong> clears both tokens and redirects to the login page</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Auth context:</strong> a React context that provides user data and auth state to all components</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">On login:</strong> stores the <Code>access_token</Code> and <Code>refresh_token</Code></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">On every API call:</strong> attaches the <Code>Authorization: Bearer &lt;token&gt;</Code> header automatically</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">When access token expires:</strong> automatically calls <Code>/api/auth/refresh</Code> to get a new one</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">On logout:</strong> clears both tokens and redirects to the login page</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Auth context:</strong> a React context that provides user data and auth state to all components</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

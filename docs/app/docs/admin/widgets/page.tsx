@@ -20,7 +20,7 @@ export default function DashboardWidgetsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Admin Panel</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Admin Panel</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Dashboard & Widgets
               </h1>
@@ -162,7 +162,7 @@ export interface DashboardDefinition {
                       ['activity', '—', 'A list of the latest limit records/events.'],
                     ].map(([type, chart, renders]) => (
                       <tr key={`${type}-${chart}`} className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{type}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{type}</td>
                         <td className="px-4 py-2.5 font-mono text-xs">{chart}</td>
                         <td className="px-4 py-2.5 text-xs">{renders}</td>
                       </tr>
@@ -521,13 +521,13 @@ export default defineResource({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-card/30 hover:bg-card/60 hover:border-primary/20 transition-all group"
+                    className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-card/30 hover:bg-card/60 hover:border-accent/20 transition-all group"
                   >
                     <div>
-                      <p className="text-sm font-medium group-hover:text-primary transition-colors">{item.label}</p>
+                      <p className="text-sm font-medium group-hover:text-accent transition-colors">{item.label}</p>
                       <p className="text-xs text-muted-foreground/60 mt-0.5">{item.desc}</p>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-accent transition-colors" />
                   </Link>
                 ))}
               </div>

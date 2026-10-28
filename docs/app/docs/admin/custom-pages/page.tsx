@@ -23,7 +23,7 @@ export default function CustomPagesPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Admin Panel</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Admin Panel</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Custom pages and tables
               </h1>
@@ -106,8 +106,8 @@ export default function ProductsPage() {
 }`}
             />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-10">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-10">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">
                 Why this is safe
               </h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">

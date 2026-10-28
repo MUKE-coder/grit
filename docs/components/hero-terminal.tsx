@@ -51,8 +51,8 @@ export function HeroTerminal() {
 
           const colorClass = {
             command: 'text-slate-200',
-            ascii: 'text-primary/70',
-            info: 'text-primary font-semibold',
+            ascii: 'text-accent/70',
+            info: 'text-accent font-semibold',
             dim: 'text-slate-500',
             step: 'text-slate-400',
             success: 'text-emerald-400 font-semibold',
@@ -62,7 +62,7 @@ export function HeroTerminal() {
             <div key={i} className={`${colorClass} transition-opacity duration-300`}>
               {line.text}
               {i === visibleLines - 1 && line.type === 'command' && (
-                <span className="inline-block w-2 h-4 bg-primary/80 ml-0.5 animate-pulse align-middle" />
+                <span className="inline-block w-2 h-4 bg-accent/80 ml-0.5 animate-pulse align-middle" />
               )}
             </div>
           )
@@ -71,7 +71,7 @@ export function HeroTerminal() {
         {visibleLines === 0 && (
           <div className="text-slate-200">
             <span className="text-sky-400/60">$</span>
-            <span className="inline-block w-2 h-4 bg-primary/80 ml-1 animate-pulse align-middle" />
+            <span className="inline-block w-2 h-4 bg-accent/80 ml-1 animate-pulse align-middle" />
           </div>
         )}
       </div>

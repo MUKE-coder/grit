@@ -110,7 +110,7 @@ export default function BlueprintsPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Boxes className="h-5 w-5 text-primary" />
+            <Boxes className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Blueprints
             </span>
@@ -120,7 +120,7 @@ export default function BlueprintsPage() {
           <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
             A blueprint is a whole application, in its own repository, built with Grit. Not
             something you install: something you clone and work from. A{' '}
-            <Link href="/docs/plugins/overview" className="text-primary hover:underline">
+            <Link href="/docs/plugins/overview" className="text-accent hover:underline">
               plugin
             </Link>{' '}
             adds a feature to your project; a blueprint is a project.
@@ -171,7 +171,7 @@ export default function BlueprintsPage() {
                   {b.access === 'open' ? (
                     <Link
                       href={b.repo}
-                      className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                      className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
                     >
                       <Github className="h-3.5 w-3.5" />
                       Clone it
@@ -218,7 +218,7 @@ export default function BlueprintsPage() {
           <div className="mt-12 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/docs/extending"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">
                 <span className="block font-medium">Blueprint, plugin, resource or block?</span>
@@ -228,7 +228,7 @@ export default function BlueprintsPage() {
             </Link>
             <Link
               href="https://gritframework.dev/blueprints"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">
                 <span className="block font-medium">Get access</span>

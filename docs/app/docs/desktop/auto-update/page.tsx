@@ -30,7 +30,7 @@ export default function DesktopAutoUpdatePage() {
           <div className="max-w-3xl">
             {/* Hero */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 inline-flex items-center gap-1.5">
+              <span className="tag-mono text-accent/80 mb-3 inline-flex items-center gap-1.5">
                 <RefreshCw className="h-3.5 w-3.5" />
                 Desktop · Auto-update + installers
               </span>
@@ -48,7 +48,7 @@ export default function DesktopAutoUpdatePage() {
                   href="https://jb.desishub.com/blog/wails-desktop-auto-updater-github-releases"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   jb.desishub.com&apos;s walkthrough
                 </Link>
@@ -74,8 +74,8 @@ export default function DesktopAutoUpdatePage() {
             </div>
 
             {/* What ships */}
-            <div className="mb-12 rounded-2xl border border-primary/20 bg-primary/[0.04] p-6">
-              <p className="text-xs font-mono uppercase tracking-wider text-primary mb-3 inline-flex items-center gap-2">
+            <div className="mb-12 rounded-2xl border border-accent/20 bg-accent/[0.04] p-6">
+              <p className="text-xs font-mono uppercase tracking-wider text-accent mb-3 inline-flex items-center gap-2">
                 <Box className="h-3.5 w-3.5" /> What ships in every scaffolded desktop app
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -91,7 +91,7 @@ export default function DesktopAutoUpdatePage() {
                   { p: 'scripts/release-desktop.sh', d: 'One-shot release pipeline' },
                 ].map((row) => (
                   <div key={row.p} className="text-sm">
-                    <code className="text-primary/90 text-[12px]">{row.p}</code>
+                    <code className="text-accent/90 text-[12px]">{row.p}</code>
                     <p className="text-xs text-muted-foreground mt-0.5">{row.d}</p>
                   </div>
                 ))}
@@ -155,7 +155,7 @@ export default function DesktopAutoUpdatePage() {
                       },
                     ].map((r) => (
                       <tr key={r.m} className="hover:bg-card/40 transition-colors">
-                        <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-primary/90">
+                        <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-accent/90">
                           {r.m}
                         </td>
                         <td className="px-4 py-2.5 align-top text-[13px] text-foreground/80">
@@ -178,7 +178,7 @@ export default function DesktopAutoUpdatePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 not-prose my-5">
                 <div className="rounded-xl border border-border/50 bg-card/30 p-4">
-                  <p className="text-xs font-mono uppercase tracking-wider text-primary mb-1.5">
+                  <p className="text-xs font-mono uppercase tracking-wider text-accent mb-1.5">
                     Linux / macOS
                   </p>
                   <p className="text-sm text-foreground/85 leading-relaxed">
@@ -190,7 +190,7 @@ export default function DesktopAutoUpdatePage() {
                   </p>
                 </div>
                 <div className="rounded-xl border border-border/50 bg-card/30 p-4">
-                  <p className="text-xs font-mono uppercase tracking-wider text-primary mb-1.5">
+                  <p className="text-xs font-mono uppercase tracking-wider text-accent mb-1.5">
                     Windows
                   </p>
                   <p className="text-sm text-foreground/85 leading-relaxed">
@@ -265,7 +265,7 @@ UPDATER_PROXY_URL=https://my-api.com/api/desktop`}
                   </thead>
                   <tbody className="divide-y divide-border/40">
                     <tr className="hover:bg-card/40 transition-colors">
-                      <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-primary/90">
+                      <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-accent/90">
                         project.nsi (full)
                       </td>
                       <td className="px-4 py-2.5 align-top text-[13px] text-foreground/80">
@@ -281,7 +281,7 @@ UPDATER_PROXY_URL=https://my-api.com/api/desktop`}
                       </td>
                     </tr>
                     <tr className="hover:bg-card/40 transition-colors">
-                      <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-primary/90">
+                      <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-accent/90">
                         project-slim.nsi (slim)
                       </td>
                       <td className="px-4 py-2.5 align-top text-[13px] text-foreground/80">
@@ -425,7 +425,7 @@ done`}
               </p>
 
               {/* CTA strip */}
-              <div className="mt-14 rounded-2xl border border-primary/20 bg-primary/[0.04] p-6 not-prose">
+              <div className="mt-14 rounded-2xl border border-accent/20 bg-accent/[0.04] p-6 not-prose">
                 <h3 className="text-lg font-semibold mb-2">Ready to ship</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   <code>grit new-desktop my-app</code> gives you all of this
@@ -436,7 +436,7 @@ done`}
                 <div className="flex flex-wrap gap-2.5">
                   <Button
                     asChild
-                    className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground"
                   >
                     <Link href="/docs/desktop">
                       Desktop guide

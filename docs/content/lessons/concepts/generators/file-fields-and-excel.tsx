@@ -243,7 +243,7 @@ files.RunOrphanCleanup(ctx, db, storage, 24*time.Hour)`}
           href="https://sheetjs.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary hover:underline"
+          className="text-accent hover:underline"
         >
           SheetJS
         </a>

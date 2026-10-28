@@ -46,12 +46,12 @@ export function RightSideBanners() {
           href="https://gritcms.com"
           target="_blank"
           rel="noreferrer"
-          className="group block rounded-lg border border-primary/20 bg-primary/[0.06] p-3 transition-all hover:border-primary/35 hover:bg-primary/[0.10]"
+          className="group block rounded-lg border border-accent/20 bg-accent/[0.06] p-3 transition-all hover:border-accent/35 hover:bg-accent/[0.10]"
         >
           <div className="flex items-center gap-2 mb-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/grit_logo.png" alt="" className="h-5 w-5 rounded" />
-            <span className="text-[12px] font-semibold text-foreground/90 group-hover:text-primary transition-colors">
+            <span className="text-[12px] font-semibold text-foreground/90 group-hover:text-accent transition-colors">
               GritCMS
             </span>
             <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/40 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -60,7 +60,7 @@ export function RightSideBanners() {
             The self-hostable creator platform. Website builder, email marketing,
             courses, community. All in one.
           </p>
-          <span className="mt-2 inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80">
+          <span className="mt-2 inline-flex items-center rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-mono font-medium text-accent/80">
             Built with Grit
           </span>
         </Link>
@@ -68,11 +68,11 @@ export function RightSideBanners() {
         {/* Hire Us Banner */}
         <Link
           href="/hire"
-          className="group block rounded-lg border border-border/30 bg-card/30 p-3 transition-all hover:border-primary/20 hover:bg-card/60"
+          className="group block rounded-lg border border-border/30 bg-card/30 p-3 transition-all hover:border-accent/20 hover:bg-card/60"
         >
           <div className="flex items-center gap-2 mb-1.5">
-            <Users className="h-3.5 w-3.5 text-primary/70" />
-            <span className="text-[12px] font-semibold text-foreground/90 group-hover:text-primary transition-colors">
+            <Users className="h-3.5 w-3.5 text-accent/70" />
+            <span className="text-[12px] font-semibold text-foreground/90 group-hover:text-accent transition-colors">
               Hire Grit Developers
             </span>
           </div>

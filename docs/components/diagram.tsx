@@ -13,7 +13,7 @@ type Tone = 'default' | 'primary' | 'blue' | 'green' | 'amber' | 'rose' | 'cyan'
 
 const TONES: Record<Tone, string> = {
   default: 'border-border/60 bg-card/60 text-foreground',
-  primary: 'border-primary/30 bg-primary/[0.07] text-foreground',
+  primary: 'border-accent/30 bg-accent/[0.07] text-foreground',
   blue: 'border-blue-500/30 bg-blue-500/[0.07] text-foreground',
   green: 'border-emerald-500/30 bg-emerald-500/[0.07] text-foreground',
   amber: 'border-amber-500/30 bg-amber-500/[0.07] text-foreground',
@@ -24,7 +24,7 @@ const TONES: Record<Tone, string> = {
 
 const ACCENT: Record<Tone, string> = {
   default: 'text-muted-foreground',
-  primary: 'text-primary',
+  primary: 'text-accent',
   blue: 'text-blue-400',
   green: 'text-emerald-400',
   amber: 'text-amber-400',
@@ -116,7 +116,7 @@ export function FileTree({ title, nodes }: { title?: string; nodes: TreeNode[] }
             <div
               key={i}
               className={`flex items-center gap-2 rounded-md px-2 py-1 text-[13px] ${
-                n.highlight ? 'bg-primary/[0.07] border-l-2 border-primary' : 'border-l-2 border-transparent'
+                n.highlight ? 'bg-accent/[0.07] border-l-2 border-accent' : 'border-l-2 border-transparent'
               }`}
               style={{ paddingLeft: `${(n.depth ?? 0) * 18 + 8}px` }}
             >

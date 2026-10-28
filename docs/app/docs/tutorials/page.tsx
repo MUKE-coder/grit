@@ -127,7 +127,7 @@ function MockupThumb({ tag, cmd }: { tag: string; cmd: string }) {
     <div className="relative border-b border-border/40 bg-[#0d1117] px-4 py-3 overflow-hidden">
       <div className="flex items-center gap-1.5 mb-2">
         <WindowDots />
-        <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-primary/50">{tag}</span>
+        <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-accent/50">{tag}</span>
       </div>
       <pre className="text-[11px] leading-5 font-mono text-slate-300/80 whitespace-pre-wrap">{cmd}</pre>
     </div>
@@ -144,7 +144,7 @@ export default function TutorialsPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-5xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Learn Grit</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Learn Grit</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Tutorials</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Learn Grit by building. Follow a{' '}
@@ -161,7 +161,7 @@ export default function TutorialsPage() {
             {/* Guided tracks */}
             <div className="mb-12">
               <div className="flex items-center gap-2 mb-5">
-                <BookOpen className="h-4 w-4 text-primary" />
+                <BookOpen className="h-4 w-4 text-accent" />
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   Guided tracks
                 </h2>
@@ -171,15 +171,15 @@ export default function TutorialsPage() {
                   <Link
                     key={t.href}
                     href={t.href}
-                    className="group rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-primary/30 transition-colors flex flex-col"
+                    className="group rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-accent/30 transition-colors flex flex-col"
                   >
                     <MockupThumb tag="Track" cmd={t.cmd} />
                     <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-center gap-2.5 mb-1.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/15">
-                          <t.icon className="h-4 w-4 text-primary" />
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 border border-accent/15">
+                          <t.icon className="h-4 w-4 text-accent" />
                         </div>
-                        <h3 className="text-base font-semibold flex items-center gap-1.5 group-hover:text-primary transition-colors">
+                        <h3 className="text-base font-semibold flex items-center gap-1.5 group-hover:text-accent transition-colors">
                           {t.title}
                           <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                         </h3>
@@ -187,11 +187,11 @@ export default function TutorialsPage() {
                       <p className="text-sm text-muted-foreground/70 leading-relaxed mb-4">{t.outline}</p>
                       <div className="mt-auto flex items-center gap-4 text-[11px] font-mono text-muted-foreground/70">
                         <span className="inline-flex items-center gap-1">
-                          <BookOpen className="h-3 w-3 text-primary/60" />
+                          <BookOpen className="h-3 w-3 text-accent/60" />
                           {t.courses} lessons
                         </span>
                         <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-primary/60" />
+                          <Clock className="h-3 w-3 text-accent/60" />
                           {t.time}
                         </span>
                       </div>
@@ -204,7 +204,7 @@ export default function TutorialsPage() {
             {/* Focused tutorials */}
             <div>
               <div className="flex items-center gap-2 mb-5">
-                <Zap className="h-4 w-4 text-primary" />
+                <Zap className="h-4 w-4 text-accent" />
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   Focused tutorials
                 </h2>
@@ -214,15 +214,15 @@ export default function TutorialsPage() {
                   <Link
                     key={t.title}
                     href={t.href}
-                    className="group rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-primary/30 transition-colors flex flex-col"
+                    className="group rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-accent/30 transition-colors flex flex-col"
                   >
                     <MockupThumb tag={t.duration} cmd={t.cmd} />
                     <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-center gap-2.5 mb-1.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
                           <t.icon className="h-4 w-4" />
                         </div>
-                        <h3 className="text-sm font-semibold flex items-center gap-1.5 group-hover:text-primary transition-colors">
+                        <h3 className="text-sm font-semibold flex items-center gap-1.5 group-hover:text-accent transition-colors">
                           {t.title}
                           <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                         </h3>

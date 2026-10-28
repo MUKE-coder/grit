@@ -33,14 +33,14 @@ export function LessonComingSoon({ courseSlug, courseName, lessonTitle }: Props)
         This lesson is part of the <strong>{courseName}</strong> course and
         is being written. The structure (chapters / modules / lesson
         order) is final. The prose is being polished. While you wait, the{' '}
-        <Link href="/courses/concepts" className="text-primary hover:underline">
+        <Link href="/courses/concepts" className="text-accent hover:underline">
           Grit Concepts course
         </Link>{' '}
         is fully written and covers the foundation every other course
         builds on.
       </p>
       <div className="flex items-center justify-center gap-3 flex-wrap">
-        <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+        <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
           <Link href="/courses/concepts">
             Start with Grit Concepts
             <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -57,7 +57,7 @@ export function LessonComingSoon({ courseSlug, courseName, lessonTitle }: Props)
           href="https://github.com/MUKE-coder/grit"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary hover:underline"
+          className="text-accent hover:underline"
         >
           repo
         </Link>{' '}

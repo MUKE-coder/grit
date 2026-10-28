@@ -17,7 +17,7 @@ export default function AIIntegrationPage() {
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="mb-12">
-              <span className="tag-mono text-primary/80 mb-3 block inline-flex items-center gap-1.5">
+              <span className="tag-mono text-accent/80 mb-3 block inline-flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                 Build with AI
               </span>

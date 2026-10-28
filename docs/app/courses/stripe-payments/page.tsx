@@ -28,7 +28,7 @@ export default function StripePaymentsCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -54,10 +54,10 @@ export default function StripePaymentsCourse() {
             caption="Redirect to Stripe Checkout; a verified webhook tells your app to grant access" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/backend/webhooks" className="text-primary hover:underline">Webhooks →</a>
+            <a href="/docs/backend/webhooks" className="text-accent hover:underline">Webhooks →</a>
           </p>
         </div>
 
@@ -144,11 +144,11 @@ go get github.com/MUKE-coder/grit-plugins/grit-stripe`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">CreateCheckoutSession</strong> — Redirect users to Stripe{"'"}s hosted payment page</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">CreatePortalSession</strong> — Let users manage their subscription (change plan, update card, cancel)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">HandleWebhook</strong> — Process Stripe events (payment succeeded, subscription cancelled, etc.)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">GetSubscription</strong> — Check a customer{"'"}s current subscription status</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">CancelSubscription</strong> — Cancel at period end or immediately</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">CreateCheckoutSession</strong> — Redirect users to Stripe{"'"}s hosted payment page</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">CreatePortalSession</strong> — Let users manage their subscription (change plan, update card, cancel)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">HandleWebhook</strong> — Process Stripe events (payment succeeded, subscription cancelled, etc.)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">GetSubscription</strong> — Check a customer{"'"}s current subscription status</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">CancelSubscription</strong> — Cancel at period end or immediately</li>
           </ul>
 
           <Challenge number={2} title="Install the Plugin">
@@ -312,23 +312,23 @@ Team Plan
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span>Go to Products in the Stripe Dashboard</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span>Click {'"'}Add Product{'"'}</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span>Name: {'"'}Pro Plan{'"'}, Pricing: Recurring, Amount: $20.00, Billing period: Monthly</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">4.</span>
+              <span className="text-accent font-mono font-bold shrink-0">4.</span>
               <span>Save — Stripe generates a Price ID (starts with <Code>price_</Code>)</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">5.</span>
+              <span className="text-accent font-mono font-bold shrink-0">5.</span>
               <span>Repeat for Team Plan ($50/month)</span>
             </li>
           </ol>
@@ -463,10 +463,10 @@ r.POST("/api/webhooks/stripe", h.HandleStripeWebhook)`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Update payment method</strong> — change credit card, add backup card</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">View invoices</strong> — download PDF invoices for each billing period</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Change plan</strong> — upgrade or downgrade (with prorated billing)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Cancel subscription</strong> — cancel at end of billing period</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Update payment method</strong> — change credit card, add backup card</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">View invoices</strong> — download PDF invoices for each billing period</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Change plan</strong> — upgrade or downgrade (with prorated billing)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Cancel subscription</strong> — cancel at end of billing period</li>
           </ul>
 
           <Tip>
@@ -528,10 +528,10 @@ r.POST("/api/webhooks/stripe", h.HandleStripeWebhook)`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Highlight the recommended plan</strong> with a border, badge ({'"'}Most Popular{'"'}), or different background</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Show savings for yearly billing</strong> — add a toggle (Monthly/Yearly) with a {'"'}Save 20%{'"'} badge on yearly</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Use checkmarks for features</strong> — green checkmarks for included, gray X or dash for excluded</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Keep it simple</strong> — 3 plans maximum, clear differentiation between each tier</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Highlight the recommended plan</strong> with a border, badge ({'"'}Most Popular{'"'}), or different background</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Show savings for yearly billing</strong> — add a toggle (Monthly/Yearly) with a {'"'}Save 20%{'"'} badge on yearly</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Use checkmarks for features</strong> — green checkmarks for included, gray X or dash for excluded</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Keep it simple</strong> — 3 plans maximum, clear differentiation between each tier</li>
           </ul>
 
           <Challenge number={8} title="Build a Pricing Page">
@@ -641,14 +641,14 @@ r.POST("/api/webhooks/stripe", h.HandleStripeWebhook)`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Stripe fundamentals</strong> — payment gateway, PCI compliance, test vs live mode</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">grit-stripe plugin</strong> — checkout sessions, portal sessions, webhook handling</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Configuration</strong> — API keys, webhook secrets, test card numbers</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Checkout Sessions</strong> — Stripe-hosted payment pages, no PCI burden</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Subscription Plans</strong> — Products and Prices in the Stripe Dashboard</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Webhooks</strong> — server-to-server event notifications for payment lifecycle</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Customer Portal</strong> — Stripe-hosted subscription management page</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Subscription middleware</strong> — protect routes based on user{"'"}s plan</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Stripe fundamentals</strong> — payment gateway, PCI compliance, test vs live mode</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">grit-stripe plugin</strong> — checkout sessions, portal sessions, webhook handling</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Configuration</strong> — API keys, webhook secrets, test card numbers</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Checkout Sessions</strong> — Stripe-hosted payment pages, no PCI burden</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Subscription Plans</strong> — Products and Prices in the Stripe Dashboard</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Webhooks</strong> — server-to-server event notifications for payment lifecycle</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Customer Portal</strong> — Stripe-hosted subscription management page</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Subscription middleware</strong> — protect routes based on user{"'"}s plan</span></li>
           </ul>
 
           <Challenge number={10} title="Final Challenge: Pricing Page + Checkout">

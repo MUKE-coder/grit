@@ -209,11 +209,11 @@ useEffect(() => {
       <p>
         From here: pair this with{' '}
         <code>--triple --mobile</code> in the{' '}
-        <a href="/courses/multiplatform" className="text-primary hover:underline">
+        <a href="/courses/multiplatform" className="text-accent hover:underline">
           Multi-Platform course
         </a>{' '}
         to add web + admin to the mix, or move to{' '}
-        <a href="/courses/web-nextjs" className="text-primary hover:underline">
+        <a href="/courses/web-nextjs" className="text-accent hover:underline">
           Building Web with Next.js
         </a>{' '}
         to add a marketing site + dashboard.

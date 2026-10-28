@@ -32,7 +32,7 @@ export default function StudioPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Infrastructure</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Infrastructure</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 GORM Studio (Database Browser)
               </h1>
@@ -52,7 +52,7 @@ export default function StudioPage() {
                   <a
                     key={f.title}
                     href={f.href}
-                    className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 block hover:border-primary/40 transition-colors"
+                    className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 block hover:border-accent/40 transition-colors"
                   >
                     <h3 className="text-sm font-semibold text-foreground mb-1">{f.title}</h3>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{f.desc}</p>
@@ -64,7 +64,7 @@ export default function StudioPage() {
                 Nearly all of Studio&apos;s design is constraints, for that reason. Put
                 authentication in front of it, keep the SQL editor off unless a task needs it,
                 hide the tables that should never be read, and serve it over HTTPS.{' '}
-                <Link href="/docs/security/doctor" className="text-primary hover:underline">
+                <Link href="/docs/security/doctor" className="text-accent hover:underline">
                   <code>grit doctor</code>
                 </Link>{' '}
                 fails when it is mounted with no login or on a default password.
@@ -173,7 +173,7 @@ export default function StudioPage() {
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 In a Grit project you usually want{' '}
-                <Link href="/docs/concepts/code-generation" className="text-primary hover:underline">
+                <Link href="/docs/concepts/code-generation" className="text-accent hover:underline">
                   <code>grit generate resource</code>
                 </Link>{' '}
                 instead, which writes the model plus the service, handler, routes, schemas, types
@@ -226,7 +226,7 @@ export default function StudioPage() {
                 In a Grit project this is <code>GORM_STUDIO_USERNAME</code> and{' '}
                 <code>GORM_STUDIO_PASSWORD</code>. The scaffold adds the middleware only when
                 both are set, which means forgetting one leaves Studio open;{' '}
-                <Link href="/docs/security/doctor" className="text-primary hover:underline">
+                <Link href="/docs/security/doctor" className="text-accent hover:underline">
                   <code>grit doctor</code>
                 </Link>{' '}
                 reports exactly that, and reports a default password as an error in production.

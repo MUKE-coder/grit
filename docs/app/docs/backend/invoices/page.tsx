@@ -17,7 +17,7 @@ export default function InvoicesPage() {
       <main className="lg:pl-64">
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
-            <p className="tag-mono text-primary/80 mb-3">Backend</p>
+            <p className="tag-mono text-accent/80 mb-3">Backend</p>
             <h1 className="text-4xl font-bold tracking-tight mb-4">Invoices &amp; Line Items</h1>
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
               An invoice is the canonical parent-with-children resource: an{' '}
@@ -95,7 +95,7 @@ grit g resource InvoiceItem \\
               table on the invoice form. Add the inline table later by adding a{' '}
               <code>line-items</code> field to the invoice&apos;s resource definition, or forget a
               column and add it with{' '}
-              <Link href="/docs/backend/migrations" className="text-primary hover:underline">
+              <Link href="/docs/backend/migrations" className="text-accent hover:underline">
                 grit g field
               </Link>
               :

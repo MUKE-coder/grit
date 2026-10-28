@@ -21,7 +21,7 @@ export default function AIPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Batteries</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Batteries</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 AI Integration
               </h1>
@@ -79,7 +79,7 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`} />
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">openai/gpt-5.4</code>,{" "}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">google/gemini-2.5-pro</code>.
                     See the full list at{" "}
-                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noreferrer" className="text-primary/70 underline underline-offset-2">vercel.com/ai-gateway</a>.
+                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noreferrer" className="text-accent/70 underline underline-offset-2">vercel.com/ai-gateway</a>.
                   </p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ fmt.Println(resp.Usage.OutputTokens) // 87`} />
                   </div>
                   <div className="p-5 font-mono text-sm space-y-1">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">curl -X POST http://localhost:8080/api/ai/complete \</span>
                     </div>
                     <div>

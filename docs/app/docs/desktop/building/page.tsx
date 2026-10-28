@@ -18,7 +18,7 @@ export default function DesktopBuildingPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop (Wails)
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -137,7 +137,7 @@ wails build -platform linux/amd64`}
                   href="https://nsis.sourceforge.io/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   NSIS
                 </a>{" "}
@@ -161,7 +161,7 @@ wails build -platform linux/amd64`}
                 Installed apps can update themselves — see the{" "}
                 <a
                   href="/docs/desktop/auto-update"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   Auto-Update
                 </a>{" "}
@@ -247,9 +247,9 @@ wails build -platform linux/amd64`}
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

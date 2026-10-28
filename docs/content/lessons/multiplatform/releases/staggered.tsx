@@ -276,7 +276,7 @@ export default function Lesson() {
         </li>
         <li>
           Open-source contribution: PRs to{' '}
-          <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">github.com/MUKE-coder/grit</a>{' '}
+          <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">github.com/MUKE-coder/grit</a>{' '}
           welcome — generators, kits, docs.
         </li>
         <li>

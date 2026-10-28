@@ -29,7 +29,7 @@ function TerminalCard({
       </div>
       <div className="px-5 py-3 font-mono text-sm">
         <div>
-          <span className="text-primary/50 select-none">$ </span>
+          <span className="text-accent/50 select-none">$ </span>
           <span className="text-foreground/80">{cmd}</span>
         </div>
         <p className="text-xs text-muted-foreground/50 mt-1">{desc}</p>
@@ -52,7 +52,7 @@ export default function CLICheatsheetPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Getting Started
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -252,7 +252,7 @@ export default function CLICheatsheetPage() {
                         <td className="px-4 py-2.5 font-mono text-xs text-foreground/90 font-medium">
                           {row.cmd}
                         </td>
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary/60">
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent/60">
                           {row.alias || "—"}
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground/70">
@@ -391,7 +391,7 @@ export default function CLICheatsheetPage() {
                         },
                       ].map((f) => (
                         <tr key={f.flag} className="border-b border-border/15 last:border-0">
-                          <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                          <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                             {f.flag}
                           </td>
                           <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -406,7 +406,7 @@ export default function CLICheatsheetPage() {
                   </table>
                 </div>
 
-                <div className="p-4 rounded-lg border border-primary/15 bg-primary/5 mt-4">
+                <div className="p-4 rounded-lg border border-accent/15 bg-accent/5 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     The project name must be lowercase, alphanumeric, and hyphens
                     only (e.g.{" "}
@@ -436,7 +436,7 @@ export default function CLICheatsheetPage() {
                   grit generate resource
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-1">
-                  <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5 mr-2">
+                  <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5 mr-2">
                     alias: grit g resource
                   </span>
                 </p>
@@ -561,7 +561,7 @@ export default function CLICheatsheetPage() {
                         },
                       ].map((f) => (
                         <tr key={f.flag} className="border-b border-border/15 last:border-0">
-                          <td className="px-4 py-2 font-mono text-xs text-primary/70 w-40">
+                          <td className="px-4 py-2 font-mono text-xs text-accent/70 w-40">
                             {f.flag}
                           </td>
                           <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -655,7 +655,7 @@ export default function CLICheatsheetPage() {
                           { type: "string_array", go: "JSONSlice[string]", ts: "string[]", form: "images" },
                         ].map((f) => (
                           <tr key={f.type} className="border-b border-border/15 last:border-0">
-                            <td className="px-4 py-2 font-mono text-xs text-primary/70 font-medium">
+                            <td className="px-4 py-2 font-mono text-xs text-accent/70 font-medium">
                               {f.type}
                             </td>
                             <td className="px-4 py-2 font-mono text-xs text-foreground/70">
@@ -699,7 +699,7 @@ export default function CLICheatsheetPage() {
                         key={m.mod}
                         className="rounded-lg border border-border/30 bg-card/30 px-4 py-2.5"
                       >
-                        <code className="text-xs font-mono text-primary/70 font-medium">
+                        <code className="text-xs font-mono text-accent/70 font-medium">
                           :{m.mod}
                         </code>
                         <span className="text-sm text-muted-foreground/60 ml-2">
@@ -719,7 +719,7 @@ export default function CLICheatsheetPage() {
                   grit generate seeder
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-1">
-                  <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5 mr-2">
+                  <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5 mr-2">
                     alias: grit g seeder
                   </span>
                 </p>
@@ -766,7 +766,7 @@ export default function CLICheatsheetPage() {
                         { flag: "--count", type: "int", desc: "Number of rows for the faker seeder (default 10)" },
                       ].map((f) => (
                         <tr key={f.flag} className="border-b border-border/15 last:border-0">
-                          <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                          <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                             {f.flag}
                           </td>
                           <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -790,7 +790,7 @@ export default function CLICheatsheetPage() {
                   grit generate sequence
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-1">
-                  <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5 mr-2">
+                  <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5 mr-2">
                     alias: grit g sequence
                   </span>
                 </p>
@@ -834,7 +834,7 @@ export default function CLICheatsheetPage() {
                         { flag: "--width", type: "int", desc: "Zero-padded width of the numeric portion (default 4)" },
                       ].map((f) => (
                         <tr key={f.flag} className="border-b border-border/15 last:border-0">
-                          <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                          <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                             {f.flag}
                           </td>
                           <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -861,7 +861,7 @@ export default function CLICheatsheetPage() {
                   Plugins write real code into your repo — models, routes, pages,
                   migrations — rather than hiding behind a runtime dependency.
                   Every install is recorded in{' '}
-                  <code className="text-xs font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                  <code className="text-xs font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                     .grit/plugins.lock.json
                   </code>
                   , and removal replays that record backwards. Commit the lockfile.
@@ -906,7 +906,7 @@ export default function CLICheatsheetPage() {
                   grit remove resource
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-1">
-                  <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5 mr-2">
+                  <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5 mr-2">
                     alias: grit rm resource
                   </span>
                 </p>
@@ -933,7 +933,7 @@ export default function CLICheatsheetPage() {
                   <table className="w-full text-sm">
                     <tbody className="text-muted-foreground">
                       <tr>
-                        <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                        <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                           --force
                         </td>
                         <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -970,7 +970,7 @@ export default function CLICheatsheetPage() {
                     desc="Add a custom MODERATOR role across the stack"
                   />
                 </div>
-                <div className="p-4 rounded-lg border border-primary/15 bg-primary/5 mt-4">
+                <div className="p-4 rounded-lg border border-accent/15 bg-accent/5 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     Role names should be UPPERCASE. The command updates all the
                     right files so the role is instantly available in both Go
@@ -1066,7 +1066,7 @@ export default function CLICheatsheetPage() {
                         { flag: "--token", type: "string", desc: "form only — FormShare token (falls back to NEXT_PUBLIC_FORM_TOKEN)" },
                       ].map((f) => (
                         <tr key={f.flag} className="border-b border-border/15 last:border-0">
-                          <td className="px-4 py-2 font-mono text-xs text-primary/70 w-40">
+                          <td className="px-4 py-2 font-mono text-xs text-accent/70 w-40">
                             {f.flag}
                           </td>
                           <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -1416,7 +1416,7 @@ export default function CLICheatsheetPage() {
                   <table className="w-full text-sm">
                     <tbody className="text-muted-foreground">
                       <tr>
-                        <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                        <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                           --fresh
                         </td>
                         <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -1504,7 +1504,7 @@ export default function CLICheatsheetPage() {
                   <table className="w-full text-sm">
                     <tbody className="text-muted-foreground">
                       <tr>
-                        <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                        <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                           -o, --output
                         </td>
                         <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -1554,7 +1554,7 @@ export default function CLICheatsheetPage() {
                   <table className="w-full text-sm">
                     <tbody className="text-muted-foreground">
                       <tr>
-                        <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                        <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                           --no-migrate
                         </td>
                         <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -1646,7 +1646,7 @@ export default function CLICheatsheetPage() {
                   <table className="w-full text-sm">
                     <tbody className="text-muted-foreground">
                       <tr>
-                        <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                        <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                           -f, --force
                         </td>
                         <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
@@ -1798,7 +1798,7 @@ export default function CLICheatsheetPage() {
                         { flag: "--app-port", type: "string", desc: "Port the app listens on (default 8080)" },
                       ].map((f) => (
                         <tr key={f.flag} className="border-b border-border/15 last:border-0">
-                          <td className="px-4 py-2 font-mono text-xs text-primary/70 w-28">
+                          <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
                             {f.flag}
                           </td>
                           <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">

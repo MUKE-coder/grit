@@ -43,8 +43,8 @@ export function GridFrame({ width = '80rem' }: { width?: string }) {
           {/* Faint grid texture inside the column only. */}
           <div className="absolute inset-0 bg-grit-grid-sm opacity-90" />
           {/* Slow light drifting down each rail. */}
-          <div className="rail-scan absolute left-0 h-28 w-px bg-gradient-to-b from-transparent via-primary/60 to-transparent" />
-          <div className="rail-scan absolute right-0 h-28 w-px bg-gradient-to-b from-transparent via-primary/60 to-transparent" style={{ animationDelay: '4s' }} />
+          <div className="rail-scan absolute left-0 h-28 w-px bg-gradient-to-b from-transparent via-accent/60 to-transparent" />
+          <div className="rail-scan absolute right-0 h-28 w-px bg-gradient-to-b from-transparent via-accent/60 to-transparent" style={{ animationDelay: '4s' }} />
           {/* Crosshair markers on the rails (gentle pulse). */}
           <span className="crosshair animate-pulse-glow absolute left-0 top-[68px] -translate-x-1/2 text-foreground/45" style={{ width: 16, height: 16 }} />
           <span className="crosshair animate-pulse-glow absolute right-0 top-[68px] translate-x-1/2 text-foreground/45" style={{ width: 16, height: 16 }} />

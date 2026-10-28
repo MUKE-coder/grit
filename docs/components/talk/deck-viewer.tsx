@@ -272,7 +272,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
               aria-pressed={notesOpen}
               className={cn(
                 'inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs transition-colors hover:bg-accent/50',
-                notesOpen ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+                notesOpen ? 'text-accent' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <NotebookText className="h-3.5 w-3.5" />
@@ -331,7 +331,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
                 className={cn(
                   'group overflow-hidden rounded-lg border text-left transition-colors',
                   i === current
-                    ? 'border-primary'
+                    ? 'border-accent'
                     : 'border-border hover:border-muted-foreground/50',
                 )}
               >

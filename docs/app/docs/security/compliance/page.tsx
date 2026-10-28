@@ -17,7 +17,7 @@ export default function CompliancePage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
+            <ShieldCheck className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Security
             </span>
@@ -31,7 +31,7 @@ export default function CompliancePage() {
             bolt on by hand: a <strong>GDPR data toolkit</strong> (export &amp; erasure with a
             tamper-evident journal) and <strong>Access Reviews</strong> (point-in-time role
             recertification). Both live under <em>Security &amp; Access</em> in the{' '}
-            <Link href="/docs/admin/overview" className="text-primary hover:underline">
+            <Link href="/docs/admin/overview" className="text-accent hover:underline">
               System Hub
             </Link>
             . The question this page answers: <strong>how do they get populated?</strong> For
@@ -89,7 +89,7 @@ export default function CompliancePage() {
             <p>
               So the deletion journal is populated <strong>one row per erasure</strong> — never by
               export, never automatically, never by a seeder. The user&apos;s{' '}
-              <Link href="/docs/batteries/security" className="text-primary hover:underline">
+              <Link href="/docs/batteries/security" className="text-accent hover:underline">
                 activity-log
               </Link>{' '}
               rows are deliberately <em>left untouched</em> (they carry only a UUID, and editing
@@ -278,7 +278,7 @@ canonical(entry) = deleted_user_id | actor_id | actor_email |
               opens a form for the campaign&apos;s name and an optional note.
             </p>
 
-            <div className="mt-8 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <div className="mt-8 rounded-lg border border-accent/20 bg-accent/5 p-4">
               <p className="!mb-0 text-sm">
                 <strong>Populated on demand, both of them.</strong> The GDPR journal grows by one
                 row each time an admin erases a user; an access review&apos;s items appear the

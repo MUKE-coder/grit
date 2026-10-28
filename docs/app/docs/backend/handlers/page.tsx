@@ -19,7 +19,7 @@ export default function HandlersPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend (Go API)</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend (Go API)</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Handlers
               </h1>

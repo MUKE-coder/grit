@@ -20,7 +20,7 @@ export default function CodeGenerationPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Code Generation
               </h1>
@@ -49,7 +49,7 @@ export default function CodeGenerationPage() {
                     { step: '4', title: 'Inject into existing files', desc: 'Finds marker comments in existing files (e.g., // grit:models) and injects code at those locations. This wires up routes, imports, model registration, and more.' },
                   ].map((item) => (
                     <div key={item.step} className="flex gap-3 p-3 rounded-lg border border-border/30 bg-card/30">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                         {item.step}
                       </div>
                       <div>
@@ -350,52 +350,52 @@ export const postResource = defineResource({
                     </thead>
                     <tbody className="text-muted-foreground">
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:models'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:models'}</td>
                         <td className="px-4 py-2.5 text-xs">models/user.go</td>
                         <td className="px-4 py-2.5 text-xs">Add new model to AutoMigrate</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'/* grit:studio */'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'/* grit:studio */'}</td>
                         <td className="px-4 py-2.5 text-xs">routes/routes.go</td>
                         <td className="px-4 py-2.5 text-xs">Add model to GORM Studio (inline)</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:handlers'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:handlers'}</td>
                         <td className="px-4 py-2.5 text-xs">routes/routes.go</td>
                         <td className="px-4 py-2.5 text-xs">Initialize handler struct</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:routes:protected'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:routes:protected'}</td>
                         <td className="px-4 py-2.5 text-xs">routes/routes.go</td>
                         <td className="px-4 py-2.5 text-xs">Register authenticated API routes</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:routes:admin'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:routes:admin'}</td>
                         <td className="px-4 py-2.5 text-xs">routes/routes.go</td>
                         <td className="px-4 py-2.5 text-xs">Register admin-only routes</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:schemas'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:schemas'}</td>
                         <td className="px-4 py-2.5 text-xs">schemas/index.ts</td>
                         <td className="px-4 py-2.5 text-xs">Export Zod schemas</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:types'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:types'}</td>
                         <td className="px-4 py-2.5 text-xs">types/index.ts</td>
                         <td className="px-4 py-2.5 text-xs">Export TypeScript types</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:api-routes'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:api-routes'}</td>
                         <td className="px-4 py-2.5 text-xs">constants/index.ts</td>
                         <td className="px-4 py-2.5 text-xs">Add API route constants</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:resources'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:resources'}</td>
                         <td className="px-4 py-2.5 text-xs">resources/index.ts</td>
                         <td className="px-4 py-2.5 text-xs">Import resource definition</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{'// grit:resource-list'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{'// grit:resource-list'}</td>
                         <td className="px-4 py-2.5 text-xs">resources/index.ts</td>
                         <td className="px-4 py-2.5 text-xs">Register in resources array</td>
                       </tr>
@@ -403,7 +403,7 @@ export const postResource = defineResource({
                   </table>
                 </div>
 
-                <div className="mt-4 p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="mt-4 p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-foreground/80">
                     <strong>Important:</strong> Never remove marker comments from your files.
                     If a marker is missing, the generator will skip that injection and print
@@ -615,7 +615,7 @@ grit migrate`} />
                 <h3 className="text-lg font-semibold tracking-tight mb-2 mt-8">Change a sidebar icon</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Every resource declares an <code>icon</code> — a{" "}
-                  <a href="https://lucide.dev/icons" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Lucide</a>{" "}
+                  <a href="https://lucide.dev/icons" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">Lucide</a>{" "}
                   icon name — at the top of its resource file. The generator guesses one from the
                   resource name; change it to any icon you like:
                 </p>
@@ -852,7 +852,7 @@ query.Where("title ILIKE ? OR content ILIKE ?",
                     'At least one field is required',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       {item}
                     </li>
                   ))}

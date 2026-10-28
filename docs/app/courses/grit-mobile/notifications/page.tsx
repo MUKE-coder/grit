@@ -30,7 +30,7 @@ export default function NotificationsCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 4 of 5</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 4 of 5</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">10 challenges</span>
@@ -56,10 +56,10 @@ export default function NotificationsCourse() {
             caption="Register the device token, send from your Go API, and Expo delivers — even when the app is closed" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/mobile" className="text-primary hover:underline">Mobile Docs →</a>
+            <a href="/docs/mobile" className="text-accent hover:underline">Mobile Docs →</a>
           </p>
         </div>
 
@@ -87,9 +87,9 @@ export default function NotificationsCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">1.</span> <strong className="text-foreground">Your app</strong> — registers for notifications and gets a push token</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">2.</span> <strong className="text-foreground">Your Go API</strong> — stores the token and sends notifications when events occur</li>
-            <li className="flex gap-2"><span className="text-primary font-mono font-bold">3.</span> <strong className="text-foreground">Apple/Google</strong> — delivers the notification to the specific device</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">1.</span> <strong className="text-foreground">Your app</strong> — registers for notifications and gets a push token</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">2.</span> <strong className="text-foreground">Your Go API</strong> — stores the token and sends notifications when events occur</li>
+            <li className="flex gap-2"><span className="text-accent font-mono font-bold">3.</span> <strong className="text-foreground">Apple/Google</strong> — delivers the notification to the specific device</li>
           </ul>
 
           <Challenge number={1} title="Understand the Flow">
@@ -215,11 +215,11 @@ if (token) {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Device model</strong> — stores push tokens linked to user accounts</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Send to one</strong> — send a notification to a single device</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Send to many</strong> — broadcast to all devices of a user, or all users</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Notification history</strong> — log of all sent notifications for debugging</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Token cleanup</strong> — automatically removes invalid tokens</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Device model</strong> — stores push tokens linked to user accounts</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Send to one</strong> — send a notification to a single device</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Send to many</strong> — broadcast to all devices of a user, or all users</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Notification history</strong> — log of all sent notifications for debugging</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Token cleanup</strong> — automatically removes invalid tokens</li>
           </ul>
 
           <Challenge number={4} title="Explore the Plugin">
@@ -278,9 +278,9 @@ err = notify.SendToUser(db, userID, notify.PushMessage{
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Foreground</strong> — app is open and visible. Show an in-app banner or toast.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Background</strong> — app is in the background. The OS shows the notification in the tray.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Killed</strong> — app is completely closed. The OS shows the notification. Tapping it opens the app.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Foreground</strong> — app is open and visible. Show an in-app banner or toast.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Background</strong> — app is in the background. The OS shows the notification in the tray.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Killed</strong> — app is completely closed. The OS shows the notification. Tapping it opens the app.</li>
           </ul>
 
           <CodeBlock language="tsx">{`import * as Notifications from 'expo-notifications'
@@ -378,10 +378,10 @@ await Notifications.scheduleNotificationAsync({
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Workout reminders ({'"'}Time to exercise!{'"'})</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Timer completions ({'"'}Rest period over — next set!{'"'})</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Daily streaks ({'"'}Don{"'"}t break your 7-day streak!{'"'})</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Meal reminders ({'"'}Time to log your lunch{'"'})</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Workout reminders ({'"'}Time to exercise!{'"'})</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Timer completions ({'"'}Rest period over — next set!{'"'})</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Daily streaks ({'"'}Don{"'"}t break your 7-day streak!{'"'})</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Meal reminders ({'"'}Time to log your lunch{'"'})</li>
           </ul>
 
           <Challenge number={8} title="Schedule a Local Notification">

@@ -27,7 +27,7 @@ export default function UIComponentsPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Frontend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Frontend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">UI Components</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit UI is a registry of 100 ready-made React components. Install one
@@ -37,14 +37,14 @@ export default function UIComponentsPage() {
             </div>
 
             <div className="prose-grit">
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-8">
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Browse and preview every component at{' '}
                   <Link
                     href="https://ui.gritframework.dev"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     ui.gritframework.dev
                   </Link>

@@ -60,7 +60,7 @@ export default function KanbanPluginPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <SquareKanban className="h-5 w-5 text-primary" />
+            <SquareKanban className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Plugin
             </span>
@@ -70,7 +70,7 @@ export default function KanbanPluginPage() {
           <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
             Boards, columns and cards in the admin, with dragging by pointer, by finger and by
             keyboard. It is also the plugin the{' '}
-            <Link href="/docs/plugins/authoring" className="text-primary hover:underline">
+            <Link href="/docs/plugins/authoring" className="text-accent hover:underline">
               authoring guide
             </Link>{' '}
             is written around, because a board is the smallest feature that needs every part of the
@@ -107,7 +107,7 @@ cd apps/api && go run cmd/migrate/main.go`}
           <p className="mb-4 leading-relaxed text-muted-foreground">
             Boards are visible to every signed-in user and record who created them. If boards need
             to be per-tenant, install the{' '}
-            <Link href="/docs/plugins/multitenant" className="text-primary hover:underline">
+            <Link href="/docs/plugins/multitenant" className="text-accent hover:underline">
               multitenant plugin
             </Link>
             , which scopes every model including these.
@@ -237,7 +237,7 @@ WHERE column_id = ? AND position >= ?`}
           <div className="mt-12 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/docs/plugins/authoring"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">
                 <span className="block font-medium">Write a plugin like this one</span>
@@ -247,7 +247,7 @@ WHERE column_id = ? AND position >= ?`}
             </Link>
             <Link
               href="/docs/extending"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">
                 <span className="block font-medium">Plugin, resource, block or blueprint</span>

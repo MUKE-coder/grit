@@ -21,7 +21,7 @@ export default function ArchitecturePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Architecture Overview
               </h1>
@@ -313,7 +313,7 @@ func (s *PostService) List(params PostListParams) ([]models.Post, int64, int, er
                     'Dark theme matching the GORM Studio aesthetic',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       {item}
                     </li>
                   ))}
@@ -415,7 +415,7 @@ export function useCreatePost() {
                     { step: '9', title: 'Cache invalidation', desc: 'React Query receives the response, triggers onSuccess, and invalidates the ["posts"] query key. The list refetches automatically.' },
                   ].map((item) => (
                     <div key={item.step} className="flex gap-3 p-3 rounded-lg border border-border/30 bg-card/30">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                         {item.step}
                       </div>
                       <div>
@@ -447,7 +447,7 @@ studio.Mount(router, db, []interface{}{
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   When you generate a new resource, the CLI automatically injects the model into
                   the GORM Studio mount call using the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/* grit:studio */</code> marker.
-                  See the <Link href="/docs/infrastructure/database" className="text-primary hover:underline">Database</Link> page
+                  See the <Link href="/docs/infrastructure/database" className="text-accent hover:underline">Database</Link> page
                   for full GORM Studio documentation.
                 </p>
               </div>

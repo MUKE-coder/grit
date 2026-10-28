@@ -100,12 +100,12 @@ export function HubAndSpoke() {
           backgroundSize: '32px 32px',
         }}
       />
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 h-[400px] w-[400px] rounded-full bg-primary/[0.06] blur-[100px]" />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 h-[400px] w-[400px] rounded-full bg-accent/[0.06] blur-[100px]" />
 
       <div className="max-w-6xl mx-auto">
 
         <div className="text-center mb-16">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent mb-5">
             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" /> One Project · Every Primitive
           </span>
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5 leading-[1.1]">
@@ -188,7 +188,7 @@ export function HubAndSpoke() {
               return (
                 <div
                   key={s.label}
-                  className="absolute right-0 flex items-center gap-3 rounded-xl border-2 border-border/60 bg-card/95 backdrop-blur px-4 py-3 shadow-[0_2px_0_rgba(0,0,0,0.04),0_8px_24px_-8px_rgba(0,0,0,0.15)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_8px_24px_-8px_rgba(0,0,0,0.5)] hover:border-primary/50 hover:-translate-x-0.5 transition-all"
+                  className="absolute right-0 flex items-center gap-3 rounded-xl border-2 border-border/60 bg-card/95 backdrop-blur px-4 py-3 shadow-[0_2px_0_rgba(0,0,0,0.04),0_8px_24px_-8px_rgba(0,0,0,0.15)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_8px_24px_-8px_rgba(0,0,0,0.5)] hover:border-accent/50 hover:-translate-x-0.5 transition-all"
                   style={{
                     top: pct(SRC_YS[i], VB_H),
                     transform: 'translateY(-50%)',
@@ -215,9 +215,9 @@ export function HubAndSpoke() {
           >
             <div className="relative">
               {/* Pulsing primary halo */}
-              <div className="absolute inset-0 rounded-2xl bg-primary/30 blur-2xl scale-110 animate-pulse" />
+              <div className="absolute inset-0 rounded-2xl bg-accent/30 blur-2xl scale-110 animate-pulse" />
 
-              <div className="relative rounded-2xl border-2 border-primary/40 bg-card px-6 py-5 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.35),0_0_0_4px_hsl(var(--primary)/0.08)]">
+              <div className="relative rounded-2xl border-2 border-accent/40 bg-card px-6 py-5 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.35),0_0_0_4px_hsl(var(--primary)/0.08)]">
                 <div className="flex items-center gap-3 mb-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -234,7 +234,7 @@ export function HubAndSpoke() {
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-mono text-emerald-600 dark:text-emerald-400">
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" /> LIVE
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[9px] font-mono text-primary">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/30 px-2 py-0.5 text-[9px] font-mono text-accent">
                     v{GRIT_VERSION}
                   </span>
                 </div>
@@ -252,7 +252,7 @@ export function HubAndSpoke() {
               return (
                 <div
                   key={o.label}
-                  className="absolute left-0 flex items-center gap-3 rounded-xl border-2 border-border/60 bg-card/95 backdrop-blur px-4 py-2.5 shadow-[0_2px_0_rgba(0,0,0,0.04),0_8px_24px_-8px_rgba(0,0,0,0.15)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_8px_24px_-8px_rgba(0,0,0,0.5)] hover:border-primary/50 hover:translate-x-0.5 transition-all"
+                  className="absolute left-0 flex items-center gap-3 rounded-xl border-2 border-border/60 bg-card/95 backdrop-blur px-4 py-2.5 shadow-[0_2px_0_rgba(0,0,0,0.04),0_8px_24px_-8px_rgba(0,0,0,0.15)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_8px_24px_-8px_rgba(0,0,0,0.5)] hover:border-accent/50 hover:translate-x-0.5 transition-all"
                   style={{
                     top: pct(OUT_YS[i], VB_H),
                     transform: 'translateY(-50%)',

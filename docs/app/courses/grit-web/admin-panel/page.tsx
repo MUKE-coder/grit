@@ -30,7 +30,7 @@ export default function AdminPanelCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 4 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 4 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -56,10 +56,10 @@ export default function AdminPanelCourse() {
             caption="Define a resource once — the table, forms, dashboard, and navigation come for free" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/admin/overview" className="text-primary hover:underline">Admin Overview →</a>
+            <a href="/docs/admin/overview" className="text-accent hover:underline">Admin Overview →</a>
           </p>
         </div>
 
@@ -94,10 +94,10 @@ export default function AdminPanelCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Dashboard</strong> with stats cards and charts</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">DataTable</strong> for listing, sorting, filtering, and exporting data</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">FormBuilder</strong> for creating and editing records</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">System pages</strong> for jobs, files, cron, email preview, and security</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Dashboard</strong> with stats cards and charts</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">DataTable</strong> for listing, sorting, filtering, and exporting data</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">FormBuilder</strong> for creating and editing records</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">System pages</strong> for jobs, files, cron, email preview, and security</li>
           </ul>
 
           <Tip>
@@ -124,9 +124,9 @@ export default function AdminPanelCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Stats cards</strong> at the top — quick numbers like total users, total posts, revenue, etc.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Charts</strong> below — a line chart for signups over time, a bar chart for content by category</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Activity feed</strong> — a list of recent actions (user registered, post created, order placed)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Stats cards</strong> at the top — quick numbers like total users, total posts, revenue, etc.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Charts</strong> below — a line chart for signups over time, a bar chart for content by category</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Activity feed</strong> — a list of recent actions (user registered, post created, order placed)</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -174,12 +174,12 @@ export default function AdminPanelCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Server-side pagination</strong> — load 20 records at a time, not all at once</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Column sorting</strong> — click a header to sort ascending or descending</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Text search</strong> — filter records by typing a keyword</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Column visibility toggle</strong> — show or hide columns</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Row selection</strong> — select multiple rows for bulk actions</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Export to CSV or JSON</strong> — download data for offline use</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Server-side pagination</strong> — load 20 records at a time, not all at once</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Column sorting</strong> — click a header to sort ascending or descending</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Text search</strong> — filter records by typing a keyword</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Column visibility toggle</strong> — show or hide columns</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Row selection</strong> — select multiple rows for bulk actions</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Export to CSV or JSON</strong> — download data for offline use</li>
           </ul>
 
           <Definition term="Server-side Pagination">
@@ -259,15 +259,15 @@ export default function AdminPanelCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>text</Code> — Single line input</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>textarea</Code> — Multi-line text</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>select</Code> — Dropdown menu</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>date</Code> — Date picker</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>richtext</Code> — Rich text editor (Tiptap with bold, italic, headings, lists, links, code)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>file</Code> — File upload with preview</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>checkbox</Code> — True/false toggle</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>relationship-select</Code> — Dropdown that loads related records from another table</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>multi-relationship-select</Code> — Multi-select with tags for many-to-many relations</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>text</Code> — Single line input</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>textarea</Code> — Multi-line text</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>select</Code> — Dropdown menu</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>date</Code> — Date picker</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>richtext</Code> — Rich text editor (Tiptap with bold, italic, headings, lists, links, code)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>file</Code> — File upload with preview</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>checkbox</Code> — True/false toggle</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>relationship-select</Code> — Dropdown that loads related records from another table</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>multi-relationship-select</Code> — Multi-select with tags for many-to-many relations</li>
           </ul>
 
           <Definition term="Zod Validation">
@@ -393,8 +393,8 @@ export default function AdminPanelCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>formView: {'"'}modal-steps{'"'}</Code> — Multi-step form inside a modal dialog</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>formView: {'"'}page-steps{'"'}</Code> — Full-page multi-step form with a progress bar</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>formView: {'"'}modal-steps{'"'}</Code> — Multi-step form inside a modal dialog</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>formView: {'"'}page-steps{'"'}</Code> — Full-page multi-step form with a progress bar</li>
           </ul>
 
           <Definition term="Modal">
@@ -477,10 +477,10 @@ form: {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Default</strong> — Clean dark theme with subtle borders</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Modern</strong> — Gradient accents and bolder colors</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Minimal</strong> — Ultra clean, lots of whitespace</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Glass</strong> — Glassmorphism effect (frosted glass backgrounds with blur)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Default</strong> — Clean dark theme with subtle borders</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Modern</strong> — Gradient accents and bolder colors</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Minimal</strong> — Ultra clean, lots of whitespace</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Glass</strong> — Glassmorphism effect (frosted glass backgrounds with blur)</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -579,23 +579,23 @@ export default function CustomPage() {
 
           <ul className="space-y-3 text-muted-foreground mb-4">
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <span><strong className="text-foreground">Jobs Dashboard</strong> — View background job status, retries, and failures. See which jobs are queued, processing, or completed. Retry failed jobs with one click.</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <span><strong className="text-foreground">Files</strong> — Manage uploaded files. See file names, sizes, types, and storage locations. Preview images directly in the browser.</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <span><strong className="text-foreground">Cron Tasks</strong> — View scheduled recurring tasks. See when each task last ran, when it will run next, and whether it succeeded or failed.</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <span><strong className="text-foreground">Mail Preview</strong> — Preview email templates before sending them. See how your welcome emails, password resets, and notification emails look.</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <span><strong className="text-foreground">Security (Sentinel)</strong> — View rate limits, blocked IPs, and security threats. Monitor who is hitting your API and whether any suspicious activity is occurring.</span>
             </li>
           </ul>

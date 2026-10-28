@@ -21,7 +21,7 @@ export default function TypeSystemPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Type System
               </h1>

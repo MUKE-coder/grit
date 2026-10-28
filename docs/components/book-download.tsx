@@ -42,7 +42,7 @@ export function BookDownload({
       <Link
         href={BOOK_HREF}
         className={cn(
-          'group inline-flex items-center gap-2 text-sm text-primary hover:underline',
+          'group inline-flex items-center gap-2 text-sm text-accent hover:underline',
           className,
         )}
       >
@@ -55,12 +55,12 @@ export function BookDownload({
   return (
     <div
       className={cn(
-        'rounded-xl border border-primary/20 bg-primary/5 p-5 sm:p-6',
+        'rounded-xl border border-accent/20 bg-accent/5 p-5 sm:p-6',
         className,
       )}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
           <BookOpen className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
@@ -79,7 +79,7 @@ export function BookDownload({
               href={LEAGUE_JOIN_HREF}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-primary hover:underline"
+              className="font-medium text-accent hover:underline"
             >
               Gopher League
             </a>
@@ -89,7 +89,7 @@ export function BookDownload({
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href={BOOK_HREF}
-              className="group inline-flex h-9 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="group inline-flex h-9 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent/90"
             >
               <Download className="h-3.5 w-3.5" />
               Download the PDF

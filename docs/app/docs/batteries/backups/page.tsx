@@ -21,7 +21,7 @@ export default function BackupsPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <DatabaseBackup className="h-5 w-5 text-primary" />
+            <DatabaseBackup className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Batteries
             </span>
@@ -64,7 +64,7 @@ export default function BackupsPage() {
           {/* Scheduled */}
           <div className="my-8 rounded-xl border border-border bg-card/40 p-6">
             <div className="mb-2 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
+              <Clock className="h-4 w-4 text-accent" />
               <span className="font-semibold">Scheduled backups</span>
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">
@@ -78,7 +78,7 @@ export default function BackupsPage() {
           {/* Download */}
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
             <span className="inline-flex items-center gap-2">
-              <Download className="h-5 w-5 text-primary" />
+              <Download className="h-5 w-5 text-accent" />
               Download
             </span>
           </h2>
@@ -93,7 +93,7 @@ export default function BackupsPage() {
           {/* Restore */}
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
             <span className="inline-flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-primary" />
+              <RotateCcw className="h-5 w-5 text-accent" />
               Restore
             </span>
           </h2>
@@ -143,7 +143,7 @@ grit restore backup.zip --no-migrate`} />
             Backups use the same storage layer as uploads. In development that&apos;s the bundled
             MinIO; in production, set <code>STORAGE_DRIVER</code> to <code>s3</code>, <code>r2</code>{' '}
             or <code>b2</code> and your archives land in your own bucket. See{' '}
-            <Link href="/docs/batteries/storage" className="text-primary hover:underline">
+            <Link href="/docs/batteries/storage" className="text-accent hover:underline">
               File Storage
             </Link>{' '}
             for provider configuration.

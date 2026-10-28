@@ -28,7 +28,7 @@ export default function ApiDocsScalarCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -58,10 +58,10 @@ export default function ApiDocsScalarCourse() {
             caption="Grit reads your routes and struct tags to generate interactive docs — no annotations" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/backend/api-docs" className="text-primary hover:underline">API Documentation →</a>
+            <a href="/docs/backend/api-docs" className="text-accent hover:underline">API Documentation →</a>
           </p>
         </div>
 
@@ -109,9 +109,9 @@ export default function ApiDocsScalarCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">For other developers:</strong> Frontend developers, mobile developers, and third-party integrators need to know your API{"'"}s contract without reading Go code</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">For your future self:</strong> You will forget what endpoints exist, what parameters are required, and what the response looks like. Documentation is your memory</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">For testing:</strong> Interactive docs let you test endpoints directly in the browser — no Postman, no curl, no frontend needed</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">For other developers:</strong> Frontend developers, mobile developers, and third-party integrators need to know your API{"'"}s contract without reading Go code</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">For your future self:</strong> You will forget what endpoints exist, what parameters are required, and what the response looks like. Documentation is your memory</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">For testing:</strong> Interactive docs let you test endpoints directly in the browser — no Postman, no curl, no frontend needed</li>
           </ul>
 
           <Challenge number={1} title="Reflect on Undocumented APIs">
@@ -133,7 +133,7 @@ export default function ApiDocsScalarCourse() {
           </p>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit uses <a href="https://github.com/MUKE-coder/gin-docs" target="_blank" rel="noreferrer" className="text-primary hover:underline">gin-docs</a> to
+            Grit uses <a href="https://github.com/MUKE-coder/gin-docs" target="_blank" rel="noreferrer" className="text-accent hover:underline">gin-docs</a> to
             auto-generate OpenAPI 3.1 specifications. No annotations needed. It works by <strong className="text-foreground">introspecting</strong> your
             Gin routes and GORM models at startup.
           </p>
@@ -151,19 +151,19 @@ export default function ApiDocsScalarCourse() {
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span><strong className="text-foreground">Scans your Gin router.</strong> It reads every registered route — the HTTP method, the URL path, the middleware chain, and the handler function.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span><strong className="text-foreground">Reads your GORM models.</strong> It inspects the struct fields, their types, JSON tags, and GORM tags to generate request/response schemas.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span><strong className="text-foreground">Generates the OpenAPI 3.1 spec.</strong> A complete JSON specification describing every endpoint, parameter, request body, and response schema.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">4.</span>
+              <span className="text-accent font-mono font-bold shrink-0">4.</span>
               <span><strong className="text-foreground">Serves the Scalar UI.</strong> The interactive documentation is available at <Code>/docs</Code> in your browser.</span>
             </li>
           </ol>
@@ -209,12 +209,12 @@ http://localhost:8080/docs
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">HTTP method badge</strong> — color-coded: green for GET, blue for POST, orange for PUT, red for DELETE</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">URL path</strong> — the full endpoint path including path parameters like <Code>/api/users/:id</Code></li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Description</strong> — auto-generated from the handler name and route</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Request builder</strong> — fill in parameters and body, then click Send to test the endpoint live</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Response preview</strong> — shows the actual response with syntax highlighting</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Authentication indicator</strong> — shows whether the endpoint requires a JWT token</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">HTTP method badge</strong> — color-coded: green for GET, blue for POST, orange for PUT, red for DELETE</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">URL path</strong> — the full endpoint path including path parameters like <Code>/api/users/:id</Code></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Description</strong> — auto-generated from the handler name and route</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Request builder</strong> — fill in parameters and body, then click Send to test the endpoint live</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Response preview</strong> — shows the actual response with syntax highlighting</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Authentication indicator</strong> — shows whether the endpoint requires a JWT token</li>
           </ul>
 
           <Note>
@@ -262,10 +262,10 @@ http://localhost:8080/docs
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> A <strong className="text-foreground">request schema</strong> for POST/PUT — includes name, email, role (excludes id, password, timestamps)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> A <strong className="text-foreground">response schema</strong> for GET — includes id, name, email, role, timestamps (excludes password)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Required field markers</strong> — from the <Code>binding:{'"'}required{'"'}</Code> tag</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Type information</strong> — string, integer, boolean, datetime for each field</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> A <strong className="text-foreground">request schema</strong> for POST/PUT — includes name, email, role (excludes id, password, timestamps)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> A <strong className="text-foreground">response schema</strong> for GET — includes id, name, email, role, timestamps (excludes password)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Required field markers</strong> — from the <Code>binding:{'"'}required{'"'}</Code> tag</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Type information</strong> — string, integer, boolean, datetime for each field</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -306,15 +306,15 @@ http://localhost:8080/docs
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span><strong className="text-foreground">Login via the docs.</strong> Find <Code>POST /api/auth/login</Code>, enter your email and password, click Send. Copy the <Code>access_token</Code> from the response.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span><strong className="text-foreground">Set the token.</strong> Look for the {'"'}Authentication{'"'} or {'"'}Auth{'"'} section in Scalar. Select {'"'}Bearer Token{'"'} and paste your access token.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span><strong className="text-foreground">Test protected endpoints.</strong> Now every request you send from the docs will include the <Code>Authorization: Bearer &lt;token&gt;</Code> header automatically.</span>
             </li>
           </ol>
@@ -477,9 +477,9 @@ Authorization: Bearer <your-token>
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Single item:</strong> <Code>data</Code> (object) + <Code>message</Code> (string)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">List:</strong> <Code>data</Code> (array) + <Code>meta</Code> (pagination object)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Error:</strong> <Code>error.code</Code> (string) + <Code>error.message</Code> (string) + optional <Code>error.details</Code> (object)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Single item:</strong> <Code>data</Code> (object) + <Code>message</Code> (string)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">List:</strong> <Code>data</Code> (array) + <Code>meta</Code> (pagination object)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Error:</strong> <Code>error.code</Code> (string) + <Code>error.message</Code> (string) + optional <Code>error.details</Code> (object)</li>
           </ul>
 
           <Challenge number={7} title="Trigger Each Response Format">
@@ -502,10 +502,10 @@ Authorization: Bearer <your-token>
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Postman</strong> — import as a collection with all endpoints pre-configured</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Insomnia</strong> — another popular API client that reads OpenAPI specs</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">API client generators</strong> — tools like openapi-generator can create TypeScript, Python, or Java clients from your spec</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">API testing tools</strong> — tools like Dredd or Schemathesis can validate your API against the spec</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Postman</strong> — import as a collection with all endpoints pre-configured</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Insomnia</strong> — another popular API client that reads OpenAPI specs</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">API client generators</strong> — tools like openapi-generator can create TypeScript, Python, or Java clients from your spec</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">API testing tools</strong> — tools like Dredd or Schemathesis can validate your API against the spec</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

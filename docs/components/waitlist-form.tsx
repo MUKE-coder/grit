@@ -41,8 +41,8 @@ export function WaitlistForm() {
 
   if (status === 'success') {
     return (
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-8 text-center">
-        <CheckCircle2 className="h-8 w-8 text-primary mx-auto mb-3" />
+      <div className="rounded-xl border border-accent/20 bg-accent/5 p-8 text-center">
+        <CheckCircle2 className="h-8 w-8 text-accent mx-auto mb-3" />
         <h3 className="text-lg font-semibold mb-1">You&apos;re on the list!</h3>
         <p className="text-sm text-muted-foreground">
           We&apos;ll notify you when the course launches. Check your inbox.
@@ -60,7 +60,7 @@ export function WaitlistForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="flex-1 h-11 rounded-lg border border-border/60 bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-colors"
+          className="flex-1 h-11 rounded-lg border border-border/60 bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-colors"
         />
         <input
           type="email"
@@ -68,7 +68,7 @@ export function WaitlistForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="flex-1 h-11 rounded-lg border border-border/60 bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-colors"
+          className="flex-1 h-11 rounded-lg border border-border/60 bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-colors"
         />
         <Button
           type="submit"

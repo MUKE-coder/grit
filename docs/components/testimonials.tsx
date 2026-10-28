@@ -18,7 +18,7 @@ export function Testimonials() {
   return (
     <section className="relative overflow-hidden border-t border-border/40 px-6 py-24">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-card/40 via-background to-background" />
-      <div className="absolute left-1/4 top-40 -z-10 h-[500px] w-[500px] rounded-full bg-primary/[0.04] blur-[120px]" />
+      <div className="absolute left-1/4 top-40 -z-10 h-[500px] w-[500px] rounded-full bg-accent/[0.04] blur-[120px]" />
 
       {hasTestimonials ? (
         <div className="mx-auto max-w-5xl">
@@ -46,7 +46,7 @@ export function Testimonials() {
                 key={t.name + t.quote.slice(0, 24)}
                 className="flex flex-col rounded-xl border border-border/60 bg-card/50 p-6"
               >
-                <Quote className="h-5 w-5 shrink-0 text-primary/40" aria-hidden="true" />
+                <Quote className="h-5 w-5 shrink-0 text-accent/40" aria-hidden="true" />
                 <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-foreground">
                   {t.quote}
                 </blockquote>
@@ -69,7 +69,7 @@ export function Testimonials() {
                           href={t.link}
                           target="_blank"
                           rel="noreferrer"
-                          className="hover:text-primary"
+                          className="hover:text-accent"
                         >
                           {t.name}
                         </Link>
@@ -116,7 +116,7 @@ export function Testimonials() {
               href={TESTIMONIAL_ISSUE_URL}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent/90"
             >
               <Github className="h-4 w-4" aria-hidden="true" />
               Share your experience

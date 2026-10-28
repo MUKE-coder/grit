@@ -21,7 +21,7 @@ export default function CLICommandsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 CLI Commands
               </h1>
@@ -107,27 +107,27 @@ export default function CLICommandsPage() {
                   <div className="p-5 font-mono text-sm space-y-4">
                     <div>
                       <span className="text-muted-foreground/40"># Blog post with title, content, and published flag</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Post --fields &quot;title:string,content:text,published:bool&quot;</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Post --fields &quot;title:string,content:text,published:bool&quot;</span></div>
                     </div>
                     <div>
                       <span className="text-muted-foreground/40"># Product with name, price, and stock</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Product --fields &quot;name:string,description:text,price:float,stock:uint&quot;</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Product --fields &quot;name:string,description:text,price:float,stock:uint&quot;</span></div>
                     </div>
                     <div>
                       <span className="text-muted-foreground/40"># Event with title, date, and description</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Event --fields &quot;title:string,description:text,start_date:datetime,end_date:datetime&quot;</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Event --fields &quot;title:string,description:text,start_date:datetime,end_date:datetime&quot;</span></div>
                     </div>
                     <div>
                       <span className="text-muted-foreground/40"># Category with just a name</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Category --fields &quot;name:string,description:text&quot;</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Category --fields &quot;name:string,description:text&quot;</span></div>
                     </div>
                     <div>
                       <span className="text-muted-foreground/40"># Article with an auto-generated slug</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Article --fields &quot;title:string,slug:slug,body:text,published:bool&quot;</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Article --fields &quot;title:string,slug:slug,body:text,published:bool&quot;</span></div>
                     </div>
                     <div>
                       <span className="text-muted-foreground/40"># Invoice with inline line-items — an editable child table inside the form, saved atomically</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Invoice --fields &quot;number:string,status:string&quot; --items &quot;InvoiceItem:description:string,qty:int,unit_rate:float&quot;</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Invoice --fields &quot;number:string,status:string&quot; --items &quot;InvoiceItem:description:string,qty:int,unit_rate:float&quot;</span></div>
                     </div>
                   </div>
                 </div>
@@ -150,20 +150,20 @@ export default function CLICommandsPage() {
                   <div className="space-y-2">
                     <div>
                       <span className="text-muted-foreground/40"># See what&apos;s available and what you have</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin list</span></div>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin info multitenant</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit plugin list</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit plugin info multitenant</span></div>
                     </div>
                     <div>
                       <span className="text-muted-foreground/40"># Install / uninstall</span>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin add multitenant</span></div>
-                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin remove multitenant</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit plugin add multitenant</span></div>
+                      <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit plugin remove multitenant</span></div>
                     </div>
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  See <Link href="/docs/plugins/authoring" className="text-primary hover:underline">Plugins</Link>{' '}
+                  See <Link href="/docs/plugins/authoring" className="text-accent hover:underline">Plugins</Link>{' '}
                   for writing your own, and{' '}
-                  <Link href="/docs/plugins/multitenant" className="text-primary hover:underline">Multi-tenancy</Link>{' '}
+                  <Link href="/docs/plugins/multitenant" className="text-accent hover:underline">Multi-tenancy</Link>{' '}
                   for the first-party one.
                 </p>
               </div>
@@ -185,7 +185,7 @@ export default function CLICommandsPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit remove resource Post</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit remove resource Post</span></div>
                   </div>
                 </div>
 
@@ -224,7 +224,7 @@ grit rm resource <Name>`} />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit add role MODERATOR</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit add role MODERATOR</span></div>
                   </div>
                 </div>
 
@@ -243,7 +243,7 @@ grit rm resource <Name>`} />
                     'Admin form select options',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-accent/50 shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -279,7 +279,7 @@ grit rm resource <Name>`} />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit start client</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit start client</span></div>
                   </div>
                 </div>
 
@@ -298,7 +298,7 @@ grit rm resource <Name>`} />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit start server</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit start server</span></div>
                   </div>
                 </div>
 
@@ -326,7 +326,7 @@ grit rm resource <Name>`} />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-1">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit test</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit test</span></div>
                     <div className="text-muted-foreground/50">&nbsp;</div>
                     <div className="text-muted-foreground/70">&nbsp;&nbsp;RUNNER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STATUS&nbsp;&nbsp;TIME</div>
                     <div className="text-muted-foreground/40">&nbsp;&nbsp;──────────&nbsp;&nbsp;──────&nbsp;&nbsp;────────</div>
@@ -386,7 +386,7 @@ grit rm resource <Name>`} />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit sync</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit sync</span></div>
                   </div>
                 </div>
 
@@ -421,7 +421,7 @@ grit rm resource <Name>`} />
                     'After adding a completely new model file manually (without using grit generate)',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       {item}
                     </li>
                   ))}
@@ -511,13 +511,13 @@ grit rm resource <Name>`} />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit update</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit update</span></div>
                     <div className="mt-1 text-muted-foreground/40 text-xs space-y-0.5">
                       <div>  Grit self-update — current: v3.55.0</div>
                       <div>  → Checking GitHub for the latest release...</div>
                       <div>  → New version available: v3.55.0 → v3.56.0</div>
                       <div>  → Running: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.56.0</div>
-                      <div className="text-primary/60">  ✓ Updated to v3.56.0</div>
+                      <div className="text-accent/60">  ✓ Updated to v3.56.0</div>
                     </div>
                   </div>
                 </div>
@@ -553,7 +553,7 @@ grit rm resource <Name>`} />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit version</span></div>
+                    <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit version</span></div>
                     <div className="mt-1"><span className="text-muted-foreground/60">grit version 3.55.0</span></div>
                   </div>
                 </div>
@@ -627,15 +627,15 @@ grit rm resource <Name>`} />
                   <h4 className="text-sm font-semibold text-foreground mb-2">How it works</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">1.</span>
+                      <span className="text-accent mt-0.5">1.</span>
                       <span><code className="text-foreground/80">grit down</code> creates a <code className="text-foreground/80">.maintenance</code> file in the project root</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">2.</span>
+                      <span className="text-accent mt-0.5">2.</span>
                       <span>The scaffolded <code className="text-foreground/80">Maintenance()</code> middleware checks for this file on every request</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">3.</span>
+                      <span className="text-accent mt-0.5">3.</span>
                       <span><code className="text-foreground/80">grit up</code> removes the file, resuming normal operation</span>
                     </li>
                   </ul>
@@ -663,7 +663,7 @@ grit rm resource <Name>`} />
                 </h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   One-command production deployment. See the dedicated{' '}
-                  <Link href="/docs/deployment/deploy-command" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/deploy-command" className="text-accent hover:underline">
                     Deploy Command
                   </Link>{' '}
                   guide for full details.
@@ -892,10 +892,10 @@ grit deploy`} />
             </div>
 
             {/* Bug Reports */}
-            <div className="mb-10 rounded-xl border border-primary/20 bg-primary/5 p-5">
+            <div className="mb-10 rounded-xl border border-accent/20 bg-accent/5 p-5">
               <p className="text-[15px] text-muted-foreground leading-relaxed">
                 Found a bug? Open an issue at{' '}
-                <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                   https://github.com/MUKE-coder/grit/issues
                 </a>{' '}
                 — we fix bugs fast and appreciate every report.

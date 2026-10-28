@@ -150,7 +150,7 @@ export function CliExplorer() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search commands, use cases, or a file path like routes.go"
-            className="w-full rounded-xl border border-border/60 bg-card/40 py-3 pl-10 pr-20 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
+            className="w-full rounded-xl border border-border/60 bg-card/40 py-3 pl-10 pr-20 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-accent/50"
           />
           {query ? (
             <button
@@ -206,14 +206,14 @@ export function CliExplorer() {
                       onClick={() => select(cmd.id)}
                       className={`group w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
                         active
-                          ? 'border-primary/40 bg-primary/[0.07]'
+                          ? 'border-accent/40 bg-accent/[0.07]'
                           : 'border-transparent hover:border-border/60 hover:bg-accent/20'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <code
                           className={`truncate font-mono text-[13px] ${
-                            active ? 'text-primary' : 'text-foreground'
+                            active ? 'text-accent' : 'text-foreground'
                           }`}
                         >
                           {cmd.name}
@@ -221,7 +221,7 @@ export function CliExplorer() {
                         <ChevronRight
                           className={`ml-auto h-3.5 w-3.5 shrink-0 transition-transform ${
                             active
-                              ? 'translate-x-0 text-primary'
+                              ? 'translate-x-0 text-accent'
                               : '-translate-x-1 text-muted-foreground/0 group-hover:translate-x-0 group-hover:text-muted-foreground/50'
                           }`}
                         />
@@ -259,7 +259,7 @@ function FilterChip({
       onClick={onClick}
       className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
         active
-          ? 'border-primary/40 bg-primary/10 text-primary'
+          ? 'border-accent/40 bg-accent/10 text-accent'
           : 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
       }`}
     >
@@ -349,7 +349,7 @@ function CommandDetail({ cmd }: { cmd: CliCommand }) {
           <ul className="space-y-1.5">
             {cmd.useCases.map((use) => (
               <li key={use} className="flex gap-2 text-[13px] leading-relaxed text-muted-foreground">
-                <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-primary/60" />
+                <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-accent/60" />
                 {use}
               </li>
             ))}
@@ -366,7 +366,7 @@ function CommandDetail({ cmd }: { cmd: CliCommand }) {
                 key={f.flag}
                 className="grid gap-1 border-b border-border/40 px-4 py-2.5 last:border-0 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] sm:gap-4"
               >
-                <code className="font-mono text-[12.5px] text-primary/90">{f.flag}</code>
+                <code className="font-mono text-[12.5px] text-accent/90">{f.flag}</code>
                 <span className="text-[13px] text-muted-foreground">{f.desc}</span>
               </div>
             ))}
@@ -394,7 +394,7 @@ function CommandDetail({ cmd }: { cmd: CliCommand }) {
             <Link
               key={doc.href}
               href={doc.href}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-1.5 text-[12px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-1.5 text-[12px] text-muted-foreground transition-colors hover:border-accent/40 hover:text-accent"
             >
               {doc.label}
               <ChevronRight className="h-3 w-3" />
@@ -498,7 +498,7 @@ function CommandTerminal({ cmd }: { cmd: CliCommand }) {
             <button
               type="button"
               onClick={run}
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary/90 px-2.5 py-1 font-mono text-[11px] font-medium text-white transition-colors hover:bg-primary"
+              className="inline-flex items-center gap-1.5 rounded-md bg-accent/90 px-2.5 py-1 font-mono text-[11px] font-medium text-white transition-colors hover:bg-primary"
             >
               <Play className="h-3 w-3" />
               run
@@ -523,11 +523,11 @@ function CommandTerminal({ cmd }: { cmd: CliCommand }) {
         className="max-h-[420px] overflow-y-auto scroll-smooth px-4 py-3.5 font-mono text-[12.5px] leading-[1.7]"
       >
         <div className="flex gap-2">
-          <span className="shrink-0 select-none text-primary/80">$</span>
+          <span className="shrink-0 select-none text-accent/80">$</span>
           <span className="min-w-0 break-all text-white/90">
             {phase === 'idle' ? cmd.example : typed}
             {phase === 'typing' && (
-              <span className="ml-0.5 inline-block h-[1.05em] w-[7px] translate-y-[2px] animate-pulse bg-primary/80" />
+              <span className="ml-0.5 inline-block h-[1.05em] w-[7px] translate-y-[2px] animate-pulse bg-accent/80" />
             )}
           </span>
         </div>

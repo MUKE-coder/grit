@@ -332,7 +332,7 @@ export function SystemFlow({
                   />
                   {e.step !== undefined && (
                     <>
-                      <circle cx={badge.x} cy={badge.y} r={13} className="fill-primary" />
+                      <circle cx={badge.x} cy={badge.y} r={13} className="fill-accent" />
                       <text
                         x={badge.x}
                         y={badge.y}
@@ -362,7 +362,7 @@ export function SystemFlow({
                     strokeWidth={1.5}
                     className={
                       n.accent
-                        ? 'fill-primary/15 stroke-primary/60'
+                        ? 'fill-accent/15 stroke-accent/60'
                         : 'fill-emerald-500/10 stroke-emerald-500/40'
                     }
                   />

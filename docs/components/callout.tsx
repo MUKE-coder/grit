@@ -63,7 +63,7 @@ export function Callout({ type = 'note', title, children, className = '' }: Call
       className={`my-6 flex gap-3 rounded-lg border ${s.border} ${s.bg} px-4 py-3.5 ${className}`}
     >
       <Icon className={`h-[18px] w-[18px] shrink-0 mt-0.5 ${s.icon}`} aria-hidden />
-      <div className="min-w-0 text-sm leading-relaxed text-muted-foreground [&_a]:text-primary [&_a:hover]:underline [&_code]:text-foreground/90 [&_code]:text-[13px]">
+      <div className="min-w-0 text-sm leading-relaxed text-muted-foreground [&_a]:text-accent [&_a:hover]:underline [&_code]:text-foreground/90 [&_code]:text-[13px]">
         <span className={`mr-2 font-semibold ${s.icon}`}>{title ?? s.label}</span>
         {children}
       </div>

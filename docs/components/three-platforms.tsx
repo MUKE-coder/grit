@@ -33,8 +33,8 @@ function DashboardMockup({ variant }: { variant: 'web' | 'desktop' | 'mobile' })
             <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Good morning</p>
             <p className="text-sm font-semibold text-foreground">Acme, Sales</p>
           </div>
-          <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center">
-            <Bell className="h-3 w-3 text-primary" />
+          <div className="h-7 w-7 rounded-full bg-accent/15 flex items-center justify-center">
+            <Bell className="h-3 w-3 text-accent" />
           </div>
         </div>
         {/* Stat cards stacked vertically */}
@@ -84,7 +84,7 @@ function DashboardMockup({ variant }: { variant: 'web' | 'desktop' | 'mobile' })
               <div
                 key={row.l}
                 className={`rounded px-1.5 py-0.5 text-[9px] ${
-                  row.sel ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
+                  row.sel ? 'bg-accent/10 text-accent' : 'text-muted-foreground'
                 }`}
               >
                 {row.l}
@@ -119,7 +119,7 @@ function DashboardMockup({ variant }: { variant: 'web' | 'desktop' | 'mobile' })
               {[40, 55, 48, 62, 58, 70, 75, 62, 80, 72, 88, 84].map((h, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-sm bg-gradient-to-t from-primary/60 to-primary/30"
+                  className="flex-1 rounded-sm bg-gradient-to-t from-accent/60 to-accent/30"
                   style={{ height: `${h}%` }}
                 />
               ))}
@@ -220,18 +220,18 @@ export function ThreePlatforms() {
           backgroundSize: '32px 32px',
         }}
       />
-      <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -z-10 h-[500px] w-[700px] rounded-full bg-primary/[0.05] blur-[120px]" />
+      <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -z-10 h-[500px] w-[700px] rounded-full bg-accent/[0.05] blur-[120px]" />
 
       <div className="max-w-6xl mx-auto">
 
         {/* Heading */}
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-mono font-medium text-accent mb-5">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Grit&apos;s Superpower
           </span>
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5 leading-[1.1]">
             One framework.<br className="md:hidden" />{' '}
-            <span className="bg-gradient-to-r from-primary via-sky-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-accent via-sky-400 to-cyan-400 bg-clip-text text-transparent">
               Three platforms.
             </span>
           </h2>
@@ -252,14 +252,14 @@ export function ThreePlatforms() {
             return (
               <Reveal key={p.label} delay={i * 0.1}>
               <div
-                className="h-full rounded-xl border-2 border-border/50 bg-card/60 backdrop-blur p-4 text-center hover:border-primary/40 transition-colors"
+                className="h-full rounded-xl border-2 border-border/50 bg-card/60 backdrop-blur p-4 text-center hover:border-accent/40 transition-colors"
               >
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent mb-2">
                   <Icon className="h-5 w-5" />
                 </div>
                 <p className="font-semibold text-foreground text-sm">{p.label}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{p.stack}</p>
-                <code className="text-[9px] font-mono text-primary/80 bg-primary/5 px-1.5 py-0.5 rounded mt-1.5 inline-block">{p.flag}</code>
+                <code className="text-[9px] font-mono text-accent/80 bg-accent/5 px-1.5 py-0.5 rounded mt-1.5 inline-block">{p.flag}</code>
               </div>
               </Reveal>
             )
@@ -308,7 +308,7 @@ export function ThreePlatforms() {
         {/* Bottom CTA strip */}
         <div className="mt-14 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border-2 border-border/50 bg-card/60 p-6">
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex h-10 w-10 rounded-lg bg-primary/10 text-primary items-center justify-center">
+            <div className="hidden sm:flex h-10 w-10 rounded-lg bg-accent/10 text-accent items-center justify-center">
               <Users className="h-5 w-5" />
             </div>
             <div>

@@ -28,7 +28,7 @@ export default function RealtimeChatCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~40 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -56,10 +56,10 @@ export default function RealtimeChatCourse() {
             caption="A message is written by REST, then published on its channel and pushed to everyone subscribed, on every replica" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/backend/realtime" className="text-primary hover:underline">Realtime (WebSockets) →</a>
+            <a href="/docs/backend/realtime" className="text-accent hover:underline">Realtime (WebSockets) →</a>
           </p>
         </div>
 
@@ -116,11 +116,11 @@ WebSocket (Persistent Connection):
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Chat applications</strong>: Slack, Discord, WhatsApp Web</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Live notifications</strong>: GitHub, Twitter, Facebook</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Collaborative editing</strong>: Google Docs, Figma, Notion</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Real-time dashboards</strong>: stock prices, analytics, monitoring</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Multiplayer games</strong>: real-time game state synchronization</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Chat applications</strong>: Slack, Discord, WhatsApp Web</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Live notifications</strong>: GitHub, Twitter, Facebook</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Collaborative editing</strong>: Google Docs, Figma, Notion</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Real-time dashboards</strong>: stock prices, analytics, monitoring</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Multiplayer games</strong>: real-time game state synchronization</li>
           </ul>
 
           <Challenge number={1} title="Name 3 Real-Time Apps">
@@ -147,13 +147,13 @@ WebSocket (Persistent Connection):
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">One socket per app</strong>: the client opens it once and every component shares it</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Authentication</strong>: the same JWT as the REST API, from the HttpOnly cookie in a browser</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Channels</strong>: named groups with an authorizer you write, which is what a chat room is</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Presence</strong>: a live member list per channel, kept in Redis so it survives a replica dying</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Client events</strong>: browser to browser, which is how a typing indicator costs nothing</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Reconnection</strong>: exponential backoff with jitter, and every subscription restored afterwards</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">More than one replica</strong>: a Redis backplane, on by default wherever the project has Redis</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">One socket per app</strong>: the client opens it once and every component shares it</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Authentication</strong>: the same JWT as the REST API, from the HttpOnly cookie in a browser</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Channels</strong>: named groups with an authorizer you write, which is what a chat room is</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Presence</strong>: a live member list per channel, kept in Redis so it survives a replica dying</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Client events</strong>: browser to browser, which is how a typing indicator costs nothing</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Reconnection</strong>: exponential backoff with jitter, and every subscription restored afterwards</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">More than one replica</strong>: a Redis backplane, on by default wherever the project has Redis</li>
           </ul>
 
           <Note>
@@ -251,9 +251,9 @@ realtime.Channel("rooms.{id}", func(c realtime.ChannelContext) bool {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> It runs on the connection&apos;s own goroutine, so keep it to a query or two. A slow authorizer is a slow subscribe for that one client.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> A panic inside it refuses the subscription instead of taking the API down.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>c.SetInfo</Code> is the only way a member&apos;s name and avatar reach the other clients. Set it here, from the database, not from anything the client sent.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> It runs on the connection&apos;s own goroutine, so keep it to a query or two. A slow authorizer is a slow subscribe for that one client.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> A panic inside it refuses the subscription instead of taking the API down.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>c.SetInfo</Code> is the only way a member&apos;s name and avatar reach the other clients. Set it here, from the database, not from anything the client sent.</li>
           </ul>
 
           <Challenge number={4} title="Write an Authorizer">
@@ -404,10 +404,10 @@ export function ChatRoom({ room }: { room: string }) {
           </CodeBlock>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Auto-scroll</strong>: keep a ref on the list and scroll to <Code>scrollHeight</Code> in an effect on the message array, not in the socket handler</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Optimistic send</strong>: add the message to the cache before the POST returns, and dedupe by id when the channel echoes it back</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Status</strong>: <Code>closed</Code> means the user is looking at stale data. Say so, do not hide it</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Escape everything</strong>: a message is user input, and so is every whisper below</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Auto-scroll</strong>: keep a ref on the list and scroll to <Code>scrollHeight</Code> in an effect on the message array, not in the socket handler</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Optimistic send</strong>: add the message to the cache before the POST returns, and dedupe by id when the channel echoes it back</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Status</strong>: <Code>closed</Code> means the user is looking at stale data. Say so, do not hide it</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Escape everything</strong>: a message is user input, and so is every whisper below</li>
           </ul>
 
           <Challenge number={7} title="Build the Room">
@@ -567,9 +567,9 @@ realtimeHub := realtime.NewHub(realtimeOptions...)`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>messages_dropped</Code> climbing means clients cannot drain their 32 message buffer, so somebody is looking at a stale room</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>backplane_publish_errors</Code> above zero means chat works for the people on one replica and not the others</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>client_events_rate_limited</Code> rising usually means a typing indicator that fires on every keystroke</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>messages_dropped</Code> climbing means clients cannot drain their 32 message buffer, so somebody is looking at a stale room</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>backplane_publish_errors</Code> above zero means chat works for the people on one replica and not the others</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>client_events_rate_limited</Code> rising usually means a typing indicator that fires on every keystroke</li>
           </ul>
 
           <Challenge number={10} title="Run Two Replicas">
@@ -588,13 +588,13 @@ realtimeHub := realtime.NewHub(realtimeOptions...)`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">WebSocket protocol</strong>: a persistent, two-way connection instead of polling</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">The scaffolded hub</strong>: one socket per app, authenticated with the same JWT as the REST API</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Channels</strong>: rooms, with an authorizer that runs on every subscribe</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">REST in, channel out</strong>: the database is the record, the socket is the hint</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Presence</strong>: a member list that survives a tab, a browser and a replica dying</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Client events</strong>: typing indicators that never touch the database</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Replicas and health</strong>: the Redis backplane, and the numbers that say it is working</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">WebSocket protocol</strong>: a persistent, two-way connection instead of polling</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">The scaffolded hub</strong>: one socket per app, authenticated with the same JWT as the REST API</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Channels</strong>: rooms, with an authorizer that runs on every subscribe</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">REST in, channel out</strong>: the database is the record, the socket is the hint</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Presence</strong>: a member list that survives a tab, a browser and a replica dying</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Client events</strong>: typing indicators that never touch the database</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Replicas and health</strong>: the Redis backplane, and the numbers that say it is working</span></li>
           </ul>
 
           <Challenge number={11} title="Final Challenge: A Room Switcher">

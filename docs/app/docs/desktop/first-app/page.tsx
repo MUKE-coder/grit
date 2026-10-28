@@ -21,7 +21,7 @@ export default function DesktopFirstAppPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop (Wails)
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -34,11 +34,11 @@ export default function DesktopFirstAppPage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-10">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Prefer a narrative walkthrough?</strong> This build has a
                 story-form companion on the blog &mdash; an offline-first POS:{' '}
-                <Link href="/blog/build-desktop-app-with-grit" className="text-primary hover:underline">Build a desktop app with Grit &rarr;</Link>
+                <Link href="/blog/build-desktop-app-with-grit" className="text-accent hover:underline">Build a desktop app with Grit &rarr;</Link>
               </p>
             </div>
 
@@ -98,7 +98,7 @@ export default function DesktopFirstAppPage() {
                       <span className="text-[15px] font-semibold">
                         {tool.name}
                       </span>
-                      <span className="text-sm font-mono text-primary/60">
+                      <span className="text-sm font-mono text-accent/60">
                         {tool.version}
                       </span>
                     </div>
@@ -292,7 +292,7 @@ wails dev`}
                     key={i}
                     className="flex items-start gap-3 rounded-lg border border-border/30 bg-card/30 px-4 py-2.5"
                   >
-                    <span className="text-sm font-mono text-primary/60 shrink-0 mt-0.5">
+                    <span className="text-sm font-mono text-accent/60 shrink-0 mt-0.5">
                       {i + 1}.
                     </span>
                     <span className="text-sm text-muted-foreground">
@@ -329,11 +329,11 @@ wails dev`}
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-muted-foreground/60">Email:</span>{" "}
-                    <code className="text-primary/80">admin@example.com</code>
+                    <code className="text-accent/80">admin@example.com</code>
                   </div>
                   <div>
                     <span className="text-muted-foreground/60">Password:</span>{" "}
-                    <code className="text-primary/80">password</code>
+                    <code className="text-accent/80">password</code>
                   </div>
                 </div>
               </div>
@@ -430,7 +430,7 @@ wails dev`}
                     key={item.file}
                     className="rounded-lg border border-border bg-card p-4"
                   >
-                    <code className="text-sm font-semibold text-primary">
+                    <code className="text-sm font-semibold text-accent">
                       {item.file}
                     </code>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -506,7 +506,7 @@ wails dev`}
                 <h3>Understanding the Generated Route Files</h3>
                 <p>
                   The three frontend files are{" "}
-                  <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{" "}
+                  <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">TanStack Router</a>{" "}
                   route files. Each file exports a <code>Route</code> constant
                   created with <code>createFileRoute()</code>. The TanStack Router
                   Vite plugin auto-discovers these files — no import or route
@@ -756,7 +756,7 @@ function EditTaskPage() {
                     key={i}
                     className="flex items-start gap-3 rounded-lg border border-border/30 bg-card/30 px-4 py-2.5"
                   >
-                    <span className="text-sm font-mono text-primary/60 shrink-0 mt-0.5">
+                    <span className="text-sm font-mono text-accent/60 shrink-0 mt-0.5">
                       {i + 1}.
                     </span>
                     <span className="text-sm text-muted-foreground">
@@ -873,7 +873,7 @@ function EditTaskPage() {
                   and auto-detects <code>makensis</code> on your PATH. See the{" "}
                   <Link
                     href="/docs/desktop/building"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     Building & Distribution
                   </Link>{" "}
@@ -919,9 +919,9 @@ function EditTaskPage() {
                   <Link
                     key={card.href}
                     href={card.href}
-                    className="group rounded-lg border border-border/30 bg-card/30 px-4 py-4 hover:border-primary/30 hover:bg-card/50 transition-colors"
+                    className="group rounded-lg border border-border/30 bg-card/30 px-4 py-4 hover:border-accent/30 hover:bg-card/50 transition-colors"
                   >
-                    <h3 className="text-[15px] font-semibold mb-1 group-hover:text-primary transition-colors">
+                    <h3 className="text-[15px] font-semibold mb-1 group-hover:text-accent transition-colors">
                       {card.title}
                     </h3>
                     <p className="text-sm text-muted-foreground/60">
@@ -939,9 +939,9 @@ function EditTaskPage() {
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

@@ -20,7 +20,7 @@ export default function ContactsSingleTutorialPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Tutorial</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Contacts: one binary</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">One folder that looks like the web project it is, with the Go API in <code>api/</code> beside it and the admin panel at <code>/admin</code>. The build puts the frontend inside the binary, so what you deploy is a single file with no runtime to install next to it. Both frontends work this way: TanStack by default, Next.js with <code>--next</code>, which builds a static export into the same place.</p>
             </div>
@@ -89,35 +89,35 @@ pnpm install`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">atlas</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">atlas</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Split-screen sign-in, Inter. The default: sharp and neutral, for a team tool.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">aurora</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">aurora</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Centered sign-in, Geist. Pastel and friendly, for consumer software.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">pulse</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">pulse</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Split-screen with a carousel, Onest and DM Serif. Warm and bold, for a brand.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">coral</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">coral</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A sign-in modal over the page. Soft, close up.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">amber</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">amber</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A boxed sign-in card. Warm neutrals.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">sky</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">sky</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A banner above the form. Open and light.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">mono</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">mono</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A showcase panel beside the form. Monochrome and typographic.</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">emerald</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">emerald</td>
                     <td className="px-4 py-2.5 text-muted-foreground">A quote beside the form. Green and calm: the one the commands above use.</td>
                   </tr>
                 </tbody>
@@ -139,19 +139,19 @@ pnpm install`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">src</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">src</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The Vite app: routes, components, and the admin panel under admin-panel/</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">api</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">api</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The Go module: main.go, internal/, cmd/</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">api/web</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">api/web</td>
                     <td className="px-4 py-2.5 text-muted-foreground">Where the frontend build lands, so the binary can embed it</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">packages</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">packages</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The upload client the frontend shares with the API</td>
                   </tr>
                 </tbody>
@@ -197,15 +197,15 @@ grit seed`} />
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:5173</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:5173</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The app, with the admin panel at /admin</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:8080/api/v1</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:8080/api/v1</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The API</td>
                   </tr>
                   <tr className="border-b border-border/30">
-                    <td className="px-4 py-2.5 font-mono text-xs text-primary">http://localhost:8080/docs</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-accent">http://localhost:8080/docs</td>
                     <td className="px-4 py-2.5 text-muted-foreground">The reference</td>
                   </tr>
                 </tbody>

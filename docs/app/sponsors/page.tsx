@@ -51,14 +51,14 @@ export default function SponsorsPage() {
       {/* Header */}
       <section className="relative overflow-hidden border-b border-border/30">
         <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-0 h-[360px] w-[680px] -translate-x-1/2 rounded-full bg-primary/[0.06] blur-[120px]" />
+          <div className="absolute left-1/2 top-0 h-[360px] w-[680px] -translate-x-1/2 rounded-full bg-accent/[0.06] blur-[120px]" />
           <div className="absolute inset-0 bg-grit-grid-sm mask-fade-y opacity-[0.35]" />
         </div>
         <div className="container max-w-screen-xl px-6 py-16 md:py-20">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="mb-4 flex items-center gap-2">
-                <Heart className="h-5 w-5 text-primary" />
+                <Heart className="h-5 w-5 text-accent" />
                 <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
                   Sponsors
                 </span>
@@ -77,7 +77,7 @@ export default function SponsorsPage() {
               </span>
               <Link
                 href="/sponsor"
-                className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+                className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
               >
                 <Heart className="h-4 w-4" />
                 Become a sponsor
@@ -144,7 +144,7 @@ export default function SponsorsPage() {
                           {tier.blurb}
                         </p>
                       </div>
-                      <span className="shrink-0 font-mono text-sm font-semibold text-primary">
+                      <span className="shrink-0 font-mono text-sm font-semibold text-accent">
                         ${tier.price}/mo
                       </span>
                     </Link>
@@ -203,7 +203,7 @@ export default function SponsorsPage() {
                 </p>
                 <Link
                   href="/sponsor"
-                  className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline"
                 >
                   See the tiers
                   <ArrowRight className="h-4 w-4" />

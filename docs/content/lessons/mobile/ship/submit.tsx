@@ -168,7 +168,7 @@ eas submit --platform android                   # upload to Play Console`}
         hint={
           <>
             For solo devs, the missing piece is usually the privacy policy.
-            Use <a href="https://www.iubenda.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Iubenda</a> or write a basic one yourself.
+            Use <a href="https://www.iubenda.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Iubenda</a> or write a basic one yourself.
           </>
         }
         solution={

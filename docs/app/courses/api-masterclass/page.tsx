@@ -28,7 +28,7 @@ export default function APIMasterclassCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -53,10 +53,10 @@ export default function APIMasterclassCourse() {
             caption="Scaffold a pure Go API, generate resources, secure it, and deploy — no frontend needed" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/concepts/architecture-modes/api-only" className="text-primary hover:underline">API-Only Architecture →</a>
+            <a href="/docs/concepts/architecture-modes/api-only" className="text-accent hover:underline">API-Only Architecture →</a>
           </p>
         </div>
 
@@ -83,11 +83,11 @@ export default function APIMasterclassCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Mobile app backend</strong> — your iOS/Android app needs an API, but the frontend is native code, not React</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Microservice</strong> — one service in a larger architecture that handles a specific domain (payments, notifications, search)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Third-party integrations</strong> — building a public API that other developers consume (like Stripe or Twilio)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Separate frontend team</strong> — the frontend is built by a different team using their own stack (Vue, Svelte, Flutter)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Data pipeline</strong> — an API that ingests, transforms, and serves data with no user-facing UI</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Mobile app backend</strong> — your iOS/Android app needs an API, but the frontend is native code, not React</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Microservice</strong> — one service in a larger architecture that handles a specific domain (payments, notifications, search)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Third-party integrations</strong> — building a public API that other developers consume (like Stripe or Twilio)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Separate frontend team</strong> — the frontend is built by a different team using their own stack (Vue, Svelte, Flutter)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Data pipeline</strong> — an API that ingests, transforms, and serves data with no user-facing UI</li>
           </ul>
 
           <Tip>
@@ -309,11 +309,11 @@ grit generate resource Category --fields "name:string:unique,color:string"`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Model</strong> — <Code>internal/model/task.go</Code> with GORM struct and field tags</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Service</strong> — <Code>internal/service/task_service.go</Code> with CRUD operations + pagination + filtering</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Handler</strong> — <Code>internal/handler/task_handler.go</Code> with HTTP endpoints</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Routes</strong> — injected into <Code>internal/router/router.go</Code></li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Migration</strong> — auto-migrated by GORM on startup</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Model</strong> — <Code>internal/model/task.go</Code> with GORM struct and field tags</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Service</strong> — <Code>internal/service/task_service.go</Code> with CRUD operations + pagination + filtering</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Handler</strong> — <Code>internal/handler/task_handler.go</Code> with HTTP endpoints</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Routes</strong> — injected into <Code>internal/router/router.go</Code></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Migration</strong> — auto-migrated by GORM on startup</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -441,9 +441,9 @@ GET /api/tasks?sort=due_date&order=asc`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Add a <Code>category_id</Code> column (foreign key) to the tasks table</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Add a <Code>Category</Code> field to the Task struct for preloading</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Include the Category data when fetching Tasks (GORM Preload)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Add a <Code>category_id</Code> column (foreign key) to the tasks table</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Add a <Code>Category</Code> field to the Task struct for preloading</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Include the Category data when fetching Tasks (GORM Preload)</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -631,14 +631,14 @@ grit generate resource AuditLog --fields "action:string,user_id:int,details:text
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> Connects to your server via SSH</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> Uploads your project files</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> Builds the Go binary on the server (<Code>go build</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">4.</span> Creates a systemd service for auto-restart</li>
-            <li className="flex gap-2"><span className="text-primary">5.</span> Configures Caddy reverse proxy with automatic HTTPS</li>
-            <li className="flex gap-2"><span className="text-primary">6.</span> Starts PostgreSQL and Redis via Docker Compose</li>
-            <li className="flex gap-2"><span className="text-primary">7.</span> Runs database migrations</li>
-            <li className="flex gap-2"><span className="text-primary">8.</span> Starts the API</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> Connects to your server via SSH</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> Uploads your project files</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> Builds the Go binary on the server (<Code>go build</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">4.</span> Creates a systemd service for auto-restart</li>
+            <li className="flex gap-2"><span className="text-accent">5.</span> Configures Caddy reverse proxy with automatic HTTPS</li>
+            <li className="flex gap-2"><span className="text-accent">6.</span> Starts PostgreSQL and Redis via Docker Compose</li>
+            <li className="flex gap-2"><span className="text-accent">7.</span> Runs database migrations</li>
+            <li className="flex gap-2"><span className="text-accent">8.</span> Starts the API</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -681,7 +681,7 @@ grit generate resource AuditLog --fields "action:string,user_id:int,details:text
               'grit deploy ships your API to production in under 2 minutes',
             ].map((item, i) => (
               <li key={i} className="flex gap-3 text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}

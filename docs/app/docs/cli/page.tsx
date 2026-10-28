@@ -22,7 +22,7 @@ export default function CliExplorerPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-5xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Reference</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Reference</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Command explorer</h1>
               <div className="mb-6">
                 <CopyPromptButton />

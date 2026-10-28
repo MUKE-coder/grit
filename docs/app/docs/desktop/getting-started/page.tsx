@@ -20,7 +20,7 @@ export default function DesktopGettingStartedPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop (Wails)
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -71,7 +71,7 @@ export default function DesktopGettingStartedPage() {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[15px] font-semibold">{tool.name}</span>
-                    <span className="text-sm font-mono text-primary/60">
+                    <span className="text-sm font-mono text-accent/60">
                       {tool.version}
                     </span>
                   </div>
@@ -99,7 +99,7 @@ export default function DesktopGettingStartedPage() {
             {/* Step 1 */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   1
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -119,7 +119,7 @@ export default function DesktopGettingStartedPage() {
             {/* Step 2: What you get */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   2
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -190,7 +190,7 @@ export default function DesktopGettingStartedPage() {
               </h2>
               <div className="prose-grit mb-4">
                 <p>
-                  Grit Desktop uses <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a> with
+                  Grit Desktop uses <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">TanStack Router</a> with
                   file-based routing. Instead of a centralized route configuration, each page
                   is a route file in <code>routes/</code>. The TanStack Router Vite plugin
                   auto-discovers these files and generates a type-safe route tree.
@@ -219,7 +219,7 @@ export default function DesktopGettingStartedPage() {
                     ].map(([file, url, purpose]) => (
                       <tr key={file}>
                         <td className="p-3 font-mono text-xs">{file}</td>
-                        <td className="p-3 font-mono text-xs text-primary">{url}</td>
+                        <td className="p-3 font-mono text-xs text-accent">{url}</td>
                         <td className="p-3">{purpose}</td>
                       </tr>
                     ))}
@@ -245,7 +245,7 @@ export default function DesktopGettingStartedPage() {
                     key={i}
                     className="flex items-start gap-3 rounded-lg border border-border/30 bg-card/30 px-4 py-2.5"
                   >
-                    <span className="text-sm font-mono text-primary/60 shrink-0 mt-0.5">
+                    <span className="text-sm font-mono text-accent/60 shrink-0 mt-0.5">
                       {i + 1}.
                     </span>
                     <span className="text-sm text-muted-foreground">
@@ -267,7 +267,7 @@ export default function DesktopGettingStartedPage() {
             {/* Step 3: Development */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   3
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -304,7 +304,7 @@ wails dev`} className="mb-0 glow-purple-sm" />
             {/* Step 4: Studio */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   4
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -360,7 +360,7 @@ wails dev`} className="mb-0 glow-purple-sm" />
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[15px] font-semibold">{item.name}</span>
                     </div>
-                    <code className="text-sm font-mono text-primary/60 block mb-1">
+                    <code className="text-sm font-mono text-accent/60 block mb-1">
                       {item.url}
                     </code>
                     <span className="text-sm text-muted-foreground/50">
@@ -377,9 +377,9 @@ wails dev`} className="mb-0 glow-purple-sm" />
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

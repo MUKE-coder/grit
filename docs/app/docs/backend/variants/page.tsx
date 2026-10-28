@@ -22,7 +22,7 @@ export default function VariantsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Product Variants</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 One shirt in four colours and four sizes is one product and sixteen buyable

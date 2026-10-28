@@ -20,7 +20,7 @@ export default function MultiClientArchitecturePage() {
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Architecture Modes
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -649,7 +649,7 @@ wails build -platform linux/amd64
                 </li>
                 <li>
                   <strong className="text-foreground">Read the style guide.</strong>{' '}
-                  <Link href="https://github.com/MUKE-coder/grit/blob/main/GRIT_STYLE_GUIDE.md" className="text-primary hover:underline">
+                  <Link href="https://github.com/MUKE-coder/grit/blob/main/GRIT_STYLE_GUIDE.md" className="text-accent hover:underline">
                     GRIT_STYLE_GUIDE.md §14.5
                   </Link>{' '}
                   covers desktop-specific patterns: no breadcrumbs, no collapsible sidebar, 32px content
@@ -665,25 +665,25 @@ wails build -platform linux/amd64
               </h2>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>
-                  <Link href="/docs/concepts/architecture-modes/triple" className="text-primary hover:underline">
+                  <Link href="/docs/concepts/architecture-modes/triple" className="text-accent hover:underline">
                     Triple architecture
                   </Link>
                   {' '}-- the base you&apos;ll usually combine <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--desktop</code> with
                 </li>
                 <li>
-                  <Link href="/docs/concepts/architecture-modes/mobile" className="text-primary hover:underline">
+                  <Link href="/docs/concepts/architecture-modes/mobile" className="text-accent hover:underline">
                     Mobile architecture
                   </Link>
                   {' '}-- details on the Expo app
                 </li>
                 <li>
-                  <Link href="/docs/concepts/architecture-modes/api-only" className="text-primary hover:underline">
+                  <Link href="/docs/concepts/architecture-modes/api-only" className="text-accent hover:underline">
                     API-only architecture
                   </Link>
                   {' '}-- for minimal API + desktop setups
                 </li>
                 <li>
-                  <Link href="/docs/concepts/cli" className="text-primary hover:underline">
+                  <Link href="/docs/concepts/cli" className="text-accent hover:underline">
                     CLI reference
                   </Link>
                   {' '}-- full flag list

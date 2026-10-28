@@ -96,7 +96,7 @@ Save-Bmp 'build/windows/icon.ico' 164 314 'build/windows/installer/welcome.bmp'"
         Your <code>icon.ico</code> is a multi-resolution file — typically
         16, 32, 48, 256 px embedded. Generate from a square PNG with
         an online icon generator (e.g.,{' '}
-        <a href="https://icoconvert.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">icoconvert.com</a>).
+        <a href="https://icoconvert.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">icoconvert.com</a>).
       </p>
       <p>This icon ends up in:</p>
       <ul>
@@ -213,7 +213,7 @@ Save-Bmp 'build/windows/icon.ico' 164 314 'build/windows/installer/welcome.bmp'"
       </ul>
       <p>
         From here: try{' '}
-        <a href="/courses/multiplatform" className="text-primary hover:underline">
+        <a href="/courses/multiplatform" className="text-accent hover:underline">
           Building Web + Desktop + Mobile
         </a>{' '}
         to add a web + admin + mobile companion to the same Go API.

@@ -18,7 +18,7 @@ export default function DeployCommandPage() {
       <main className="lg:pl-64">
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Infrastructure
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -26,7 +26,7 @@ export default function DeployCommandPage() {
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
               One-command production deployment. Build, upload, and configure your server with{' '}
-              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[15px]">grit deploy</code>.
+              <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[15px]">grit deploy</code>.
             </p>
             <LaneFlow
               id="infra-deploycmd"
@@ -60,8 +60,8 @@ export default function DeployCommandPage() {
               title="Build"
               description={
                 <p>
-                  Cross-compiles your Go binary for Linux (<code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">GOOS=linux GOARCH=amd64 CGO_ENABLED=0</code>).
-                  If a <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">frontend/</code> directory
+                  Cross-compiles your Go binary for Linux (<code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">GOOS=linux GOARCH=amd64 CGO_ENABLED=0</code>).
+                  If a <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">frontend/</code> directory
                   exists, builds the frontend first.
                 </p>
               }
@@ -83,7 +83,7 @@ export default function DeployCommandPage() {
             <StepWithCode
               number="03"
               title="Systemd service"
-              description={<p>Creates and enables a systemd service unit. The service auto-restarts on failure and reads environment variables from your <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> file.</p>}
+              description={<p>Creates and enables a systemd service unit. The service auto-restarts on failure and reads environment variables from your <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> file.</p>}
               code={`[Unit]
 Description=my-app
 After=network.target
@@ -105,7 +105,7 @@ WantedBy=multi-user.target`}
             <StepWithCode
               number="04"
               title="Caddy reverse proxy"
-              description={<p>If <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">--domain</code> is provided, configures Caddy as a reverse proxy with automatic HTTPS via Let{"'"}s Encrypt.</p>}
+              description={<p>If <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">--domain</code> is provided, configures Caddy as a reverse proxy with automatic HTTPS via Let{"'"}s Encrypt.</p>}
               code={`myapp.com {
     reverse_proxy localhost:8080
     encode gzip
@@ -141,7 +141,7 @@ WantedBy=multi-user.target`}
                     { flag: '--app-port', env: '-', desc: 'Port the app runs on (default: 8080)' },
                   ].map((row) => (
                     <tr key={row.flag} className="hover:bg-accent/20 transition-colors">
-                      <td className="px-4 py-3 font-mono text-sm text-primary">{row.flag}</td>
+                      <td className="px-4 py-3 font-mono text-sm text-accent">{row.flag}</td>
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground/70">{row.env}</td>
                       <td className="px-4 py-3 text-muted-foreground">{row.desc}</td>
                     </tr>

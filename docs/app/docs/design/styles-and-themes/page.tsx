@@ -54,7 +54,7 @@ export default function StylesAndThemesPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Design System</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Design System</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Styles and themes</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Two flags decide how a generated admin looks, and they are easy to confuse
@@ -66,13 +66,13 @@ export default function StylesAndThemesPage() {
             <div className="prose-grit">
               <div className="rounded-xl border border-border/40 bg-card/40 p-5 mb-10">
                 <p className="text-sm text-muted-foreground leading-relaxed m-0">
-                  <code className="text-primary">--theme</code> is{' '}
+                  <code className="text-accent">--theme</code> is{' '}
                   <strong className="text-foreground">the whole look</strong>: colours, fonts,
                   and the shape of the sign-in screen. Eight of them. Changeable after the fact
                   by editing one line of <code>.env</code>.
                 </p>
                 <p className="text-sm text-muted-foreground leading-relaxed mt-3 mb-0">
-                  <code className="text-primary">--style</code> is{' '}
+                  <code className="text-accent">--style</code> is{' '}
                   <strong className="text-foreground">the dashboard layout</strong>, and only
                   that. Four of them. Fixed at <code>grit new</code>, because it decides which
                   source file is written.
@@ -114,7 +114,7 @@ export default function StylesAndThemesPage() {
                         style={{ background: t.accent }}
                         aria-hidden
                       />
-                      <code className="text-sm font-semibold text-primary">{t.name}</code>
+                      <code className="text-sm font-semibold text-accent">{t.name}</code>
                       <span className="text-xs text-muted-foreground/70 font-mono">{t.accent}</span>
                       <span className="text-xs text-muted-foreground/70">
                         sign-in: {t.shell}
@@ -152,7 +152,7 @@ export default function StylesAndThemesPage() {
               <div className="space-y-8 mb-8">
                 {STYLES.map((s) => (
                   <div key={s.name}>
-                    <code className="text-sm font-semibold text-primary">{s.name}</code>
+                    <code className="text-sm font-semibold text-accent">{s.name}</code>
                     <p className="text-sm text-muted-foreground leading-relaxed mt-1 mb-3">
                       {s.what}
                     </p>
@@ -216,8 +216,8 @@ grit swap --revert        # restore the last backup`}
                   <thead>
                     <tr className="border-b border-border/40 text-left">
                       <th className="px-3 py-2 font-medium" />
-                      <th className="px-3 py-2 font-medium text-primary">--theme</th>
-                      <th className="px-3 py-2 font-medium text-primary">--style</th>
+                      <th className="px-3 py-2 font-medium text-accent">--theme</th>
+                      <th className="px-3 py-2 font-medium text-accent">--style</th>
                     </tr>
                   </thead>
                   <tbody>

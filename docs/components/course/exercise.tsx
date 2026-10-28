@@ -24,9 +24,9 @@ export function Exercise({ prompt, hint, solution }: Props) {
   const [hintShown, setHintShown] = useState(false)
 
   return (
-    <div className="not-prose my-8 rounded-2xl border border-primary/30 bg-primary/[0.04] overflow-hidden">
-      <div className="px-5 py-4 border-b border-primary/20 bg-primary/[0.06]">
-        <p className="text-[10px] uppercase tracking-wider text-primary font-mono mb-1 inline-flex items-center gap-1.5">
+    <div className="not-prose my-8 rounded-2xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
+      <div className="px-5 py-4 border-b border-accent/20 bg-accent/[0.06]">
+        <p className="text-[10px] uppercase tracking-wider text-accent font-mono mb-1 inline-flex items-center gap-1.5">
           <Target className="h-3 w-3" />
           Try it
         </p>
@@ -34,7 +34,7 @@ export function Exercise({ prompt, hint, solution }: Props) {
       </div>
 
       {hint && (
-        <div className="px-5 py-3 border-b border-primary/10">
+        <div className="px-5 py-3 border-b border-accent/10">
           <button
             type="button"
             onClick={() => setHintShown((v) => !v)}
@@ -57,7 +57,7 @@ export function Exercise({ prompt, hint, solution }: Props) {
             'inline-flex items-center gap-1.5 text-sm font-medium rounded-md px-3 py-1.5 transition-colors',
             revealed
               ? 'text-muted-foreground hover:text-foreground'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90',
+              : 'bg-primary text-primary-foreground hover:bg-accent/90',
           )}
         >
           {revealed ? (

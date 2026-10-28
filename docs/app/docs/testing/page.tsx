@@ -18,7 +18,7 @@ export default function TestingPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Testing</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Testing</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Performance &amp; Security Testing
               </h1>
@@ -46,10 +46,10 @@ export default function TestingPage() {
               />
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-8">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Go deeper:</strong> the{' '}
-                <Link href="/courses/testing" className="text-primary hover:underline">Testing Your Grit App</Link>{' '}
+                <Link href="/courses/testing" className="text-accent hover:underline">Testing Your Grit App</Link>{' '}
                 course walks through Go, Vitest and Playwright suites end to end.
               </p>
             </div>
@@ -57,7 +57,7 @@ export default function TestingPage() {
             <div className="prose-grit">
               {/* ── 1. PERFORMANCE TESTING ─────────────────────────────────── */}
               <h2 id="performance-testing" className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
+                <Activity className="h-5 w-5 text-accent" />
                 Performance testing with k6
               </h2>
               <p>
@@ -184,7 +184,7 @@ jobs:
 
               {/* ── 2. SECURITY / PENTEST ──────────────────────────────────── */}
               <h2 id="security-testing" className="flex items-center gap-2 mt-12">
-                <Bug className="h-5 w-5 text-primary" />
+                <Bug className="h-5 w-5 text-accent" />
                 Security testing — the pentest methodology
               </h2>
 
@@ -254,7 +254,7 @@ jobs:
               <p>
                 Map each OWASP Top 10:2025 category to a concrete test against the
                 generated API. Cross-reference defences on the
-                {' '}<Link href="/docs/security" className="text-primary hover:underline">Security Guide</Link>{' '}
+                {' '}<Link href="/docs/security" className="text-accent hover:underline">Security Guide</Link>{' '}
                 page.
               </p>
 
@@ -333,7 +333,7 @@ curl -I http://localhost:8080/api/health | grep -iE 'x-frame|x-content|content-s
 
               {/* ── 3. AUDIT REPORT ─────────────────────────────────────────── */}
               <h2 id="audit-report" className="flex items-center gap-2 mt-12">
-                <FileCheck className="h-5 w-5 text-primary" />
+                <FileCheck className="h-5 w-5 text-accent" />
                 The audit report — what to deliver
               </h2>
               <p>
@@ -489,12 +489,12 @@ grit migrate down --yes\`}
 
               <h2 id="resources" className="mt-10">Resources</h2>
               <ul className="list-disc pl-6 my-3">
-                <li><a className="text-primary hover:underline" href="https://portswigger.net/web-security" target="_blank" rel="noreferrer">PortSwigger Web Security Academy</a> — the best free pentest labs anywhere.</li>
-                <li><a className="text-primary hover:underline" href="https://owasp.org/www-project-juice-shop/" target="_blank" rel="noreferrer">OWASP Juice Shop</a> — the deliberately vulnerable practice app.</li>
-                <li><a className="text-primary hover:underline" href="https://owasp.org/Top10/" target="_blank" rel="noreferrer">OWASP Top 10:2025</a> — the canonical risk map.</li>
-                <li><a className="text-primary hover:underline" href="https://owasp.org/www-project-web-security-testing-guide/" target="_blank" rel="noreferrer">OWASP WSTG</a> — 90+ web-app test cases mapped to the Top 10.</li>
-                <li><a className="text-primary hover:underline" href="https://grafana.com/docs/k6/latest/" target="_blank" rel="noreferrer">k6 docs</a> — load-testing reference.</li>
-                <li><a className="text-primary hover:underline" href="https://first.org/cvss/" target="_blank" rel="noreferrer">FIRST CVSS</a> — official scoring spec + calculator.</li>
+                <li><a className="text-accent hover:underline" href="https://portswigger.net/web-security" target="_blank" rel="noreferrer">PortSwigger Web Security Academy</a> — the best free pentest labs anywhere.</li>
+                <li><a className="text-accent hover:underline" href="https://owasp.org/www-project-juice-shop/" target="_blank" rel="noreferrer">OWASP Juice Shop</a> — the deliberately vulnerable practice app.</li>
+                <li><a className="text-accent hover:underline" href="https://owasp.org/Top10/" target="_blank" rel="noreferrer">OWASP Top 10:2025</a> — the canonical risk map.</li>
+                <li><a className="text-accent hover:underline" href="https://owasp.org/www-project-web-security-testing-guide/" target="_blank" rel="noreferrer">OWASP WSTG</a> — 90+ web-app test cases mapped to the Top 10.</li>
+                <li><a className="text-accent hover:underline" href="https://grafana.com/docs/k6/latest/" target="_blank" rel="noreferrer">k6 docs</a> — load-testing reference.</li>
+                <li><a className="text-accent hover:underline" href="https://first.org/cvss/" target="_blank" rel="noreferrer">FIRST CVSS</a> — official scoring spec + calculator.</li>
               </ul>
             </div>
 

@@ -19,7 +19,7 @@ export default function TroubleshootingPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Troubleshooting
               </h1>
@@ -183,9 +183,9 @@ APP_PORT=8081`} className="mb-0" />
 
             {/* Nuclear option */}
             <div className="mb-12">
-              <div className="rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
-                <div className="px-5 py-3 border-b border-primary/20 bg-primary/10">
-                  <span className="text-sm font-semibold text-primary">Nuclear option: stop ALL Docker containers</span>
+              <div className="rounded-xl border border-accent/30 bg-accent/5 overflow-hidden">
+                <div className="px-5 py-3 border-b border-accent/20 bg-accent/10">
+                  <span className="text-sm font-semibold text-accent">Nuclear option: stop ALL Docker containers</span>
                 </div>
                 <div className="p-5">
                   <div className="prose-grit mb-3">
@@ -525,7 +525,7 @@ grit generate resource Post --fields "title:string"`} className="mb-0" />
 
             {/* Still stuck */}
             <div className="mb-8">
-              <div className="rounded-xl border border-primary/30 bg-primary/5 p-6">
+              <div className="rounded-xl border border-accent/30 bg-accent/5 p-6">
                 <h3 className="text-lg font-semibold mb-2">Still stuck?</h3>
                 <div className="prose-grit">
                   <p>

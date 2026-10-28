@@ -63,7 +63,7 @@ export function GuideText({ text }: { text: string }) {
           href={href}
           target={external ? '_blank' : undefined}
           rel={external ? 'noreferrer' : undefined}
-          className="inline-flex items-center gap-1 text-primary hover:underline"
+          className="inline-flex items-center gap-1 text-accent hover:underline"
         >
           <GuideText text={label} />
           {external && <ExternalLink className="h-3 w-3" />}

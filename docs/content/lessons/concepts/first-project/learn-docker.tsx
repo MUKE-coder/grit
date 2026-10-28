@@ -65,7 +65,7 @@ export default function Lesson() {
       <ul>
         <li>
           <strong>Mac / Windows:</strong> Install{' '}
-          <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
             Docker Desktop
           </a>
           . It bundles the Docker engine + a GUI + Compose. After install,
@@ -74,7 +74,7 @@ export default function Lesson() {
         </li>
         <li>
           <strong>Linux:</strong> Use{' '}
-          <a href="https://docs.docker.com/engine/install/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <a href="https://docs.docker.com/engine/install/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
             Docker Engine
           </a>{' '}
           (apt / yum / dnf). No GUI, just the daemon. Add yourself to the{' '}
@@ -390,7 +390,7 @@ grit seed                # re-seed dev data`}
             <tr className="border-b border-border/20">
               <td className="px-4 py-2 font-medium text-foreground">Postgres</td>
               <td className="px-4 py-2">
-                <a href="https://neon.tech" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Neon</a>
+                <a href="https://neon.tech" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Neon</a>
               </td>
               <td className="px-4 py-2">Yes — 0.5 GB</td>
               <td className="px-4 py-2 font-mono text-xs">DATABASE_URL</td>
@@ -398,7 +398,7 @@ grit seed                # re-seed dev data`}
             <tr className="border-b border-border/20">
               <td className="px-4 py-2 font-medium text-foreground">Redis</td>
               <td className="px-4 py-2">
-                <a href="https://upstash.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Upstash</a>
+                <a href="https://upstash.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Upstash</a>
               </td>
               <td className="px-4 py-2">Yes — 10k commands/day</td>
               <td className="px-4 py-2 font-mono text-xs">REDIS_URL</td>
@@ -406,7 +406,7 @@ grit seed                # re-seed dev data`}
             <tr className="border-b border-border/20">
               <td className="px-4 py-2 font-medium text-foreground">Object storage</td>
               <td className="px-4 py-2">
-                <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Cloudflare R2</a>
+                <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Cloudflare R2</a>
               </td>
               <td className="px-4 py-2">Yes — 10 GB, no egress fees</td>
               <td className="px-4 py-2 font-mono text-xs">STORAGE_*</td>
@@ -414,7 +414,7 @@ grit seed                # re-seed dev data`}
             <tr>
               <td className="px-4 py-2 font-medium text-foreground">Email</td>
               <td className="px-4 py-2">
-                <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Resend</a>
+                <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Resend</a>
               </td>
               <td className="px-4 py-2">Yes — 3k/month, 1 domain</td>
               <td className="px-4 py-2 font-mono text-xs">RESEND_API_KEY</td>

@@ -144,7 +144,7 @@ const MATRIX: { capability: string; cells: Cell[] }[] = [
 function CellMark({ v }: { v: Cell }) {
   if (v === 'yes')
     return (
-      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold">
+      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent/15 text-accent text-xs font-bold">
         ✓
       </span>
     )
@@ -172,7 +172,7 @@ export default function PerformanceBenchmarksPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Performance &amp; Benchmarks
               </h1>
@@ -213,8 +213,8 @@ export default function PerformanceBenchmarksPage() {
               {/* ── PART 1: Why Grit is fast ─────────────────────── */}
               <div className="mb-16">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                    <Zap className="h-5 w-5 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
+                    <Zap className="h-5 w-5 text-accent" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold tracking-tight m-0">Why Grit is fast</h2>
@@ -230,7 +230,7 @@ export default function PerformanceBenchmarksPage() {
                 </p>
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 flex items-center gap-2">
-                  <Server className="h-4 w-4 text-primary/70" /> Backend (Go — Gin + GORM)
+                  <Server className="h-4 w-4 text-accent/70" /> Backend (Go — Gin + GORM)
                 </h3>
                 <div className="overflow-x-auto mb-6">
                   <table className="w-full text-sm border border-border rounded-lg">
@@ -315,15 +315,15 @@ export default function PerformanceBenchmarksPage() {
                     <Link
                       key={b.name}
                       href={b.href}
-                      className="group flex gap-3 rounded-lg border border-border bg-card/40 p-3.5 transition-colors hover:border-primary/40 hover:bg-card/70"
+                      className="group flex gap-3 rounded-lg border border-border bg-card/40 p-3.5 transition-colors hover:border-accent/40 hover:bg-card/70"
                     >
-                      <div className="shrink-0 mt-0.5 h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
-                        <b.icon className="h-4 w-4 text-primary" />
+                      <div className="shrink-0 mt-0.5 h-8 w-8 rounded-md bg-accent/10 flex items-center justify-center">
+                        <b.icon className="h-4 w-4 text-accent" />
                       </div>
                       <div className="min-w-0">
                         <div className="text-[13px] font-semibold text-foreground mb-0.5 flex items-center gap-1">
                           {b.name}
-                          <ArrowRight className="h-3 w-3 text-muted-foreground/0 -translate-x-1 transition-all group-hover:text-primary group-hover:translate-x-0" />
+                          <ArrowRight className="h-3 w-3 text-muted-foreground/0 -translate-x-1 transition-all group-hover:text-accent group-hover:translate-x-0" />
                         </div>
                         <p className="text-[12px] text-muted-foreground leading-relaxed m-0">{b.desc}</p>
                       </div>
@@ -342,8 +342,8 @@ export default function PerformanceBenchmarksPage() {
               {/* ── PART 3: How Grit compares ────────────────────── */}
               <div className="mb-12">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                    <Server className="h-5 w-5 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
+                    <Server className="h-5 w-5 text-accent" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold tracking-tight m-0">How Grit compares</h2>
@@ -372,7 +372,7 @@ export default function PerformanceBenchmarksPage() {
                         {FRAMEWORKS.map((f) => (
                           <th
                             key={f}
-                            className={`px-3 py-3 text-center font-semibold text-xs whitespace-nowrap ${f === 'Grit' ? 'text-primary' : 'text-muted-foreground'}`}
+                            className={`px-3 py-3 text-center font-semibold text-xs whitespace-nowrap ${f === 'Grit' ? 'text-accent' : 'text-muted-foreground'}`}
                           >
                             {f}
                           </th>

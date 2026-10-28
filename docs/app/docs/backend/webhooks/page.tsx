@@ -20,7 +20,7 @@ export default function WebhooksPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Webhooks
               </h1>
@@ -76,7 +76,7 @@ export default function WebhooksPage() {
                   caption="Verified + stored → always 200 so the provider stops retrying; handler failures replay from admin"
                 />
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Why always 200?</strong> Once
                     a webhook is verified and stored, the provider&apos;s job is
@@ -324,7 +324,7 @@ func init() {
 }`}
                 />
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Extractors decide idempotency.</strong>{' '}
                     <code>ExtractFunc</code> returns <code>(eventType, externalID)</code>.
@@ -339,7 +339,7 @@ func init() {
 
               {/* Go deeper callout */}
               <div className="mb-12">
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
                   <h3 className="text-base font-semibold text-foreground mb-2">
                     Go deeper
                   </h3>
@@ -350,7 +350,7 @@ func init() {
                   </p>
                   <Link
                     href="/courses/webhook-receiver"
-                    className="text-sm text-primary hover:underline font-medium"
+                    className="text-sm text-accent hover:underline font-medium"
                   >
                     Course: Building a Webhook Receiver &rarr;
                   </Link>

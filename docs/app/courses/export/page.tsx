@@ -34,7 +34,7 @@ export default function ExportCourse() {
 
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">4 challenges</span>
@@ -60,17 +60,17 @@ export default function ExportCourse() {
             caption="Every resource exports as a stream — constant memory even for millions of rows" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/admin/datatable" className="text-primary hover:underline">DataTable & Export →</a>
+            <a href="/docs/admin/datatable" className="text-accent hover:underline">DataTable & Export →</a>
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 rounded-xl border border-foreground/15 overflow-hidden mb-12">
           {learn.map(({ icon: Icon, title, body }) => (
             <div key={title} className="border-b border-r border-foreground/15 p-5">
-              <Icon className="h-5 w-5 text-primary mb-3" />
+              <Icon className="h-5 w-5 text-accent mb-3" />
               <h3 className="font-semibold text-foreground text-sm mb-1">{title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
             </div>

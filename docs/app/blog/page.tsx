@@ -32,7 +32,7 @@ export default function BlogPage() {
       <main className="max-w-6xl mx-auto px-6 py-16 md:py-20">
         {/* Hero */}
         <div className="mb-14 md:mb-16">
-          <span className="tag-mono text-primary mb-4 block">The Daily Grit · Blog</span>
+          <span className="tag-mono text-accent mb-4 block">The Daily Grit · Blog</span>
           <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.05]">
             What we ship.
             <br />

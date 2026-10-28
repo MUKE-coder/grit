@@ -11,60 +11,92 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-ubuntu)', 'var(--font-geist)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-jetbrains-mono)', 'ui-monospace', 'monospace'],
+        // One family pair, per the design system: Geist and Geist Mono.
+        // `display` is kept as a name because the docs use it in dozens of
+        // places, but it resolves to Geist now rather than Ubuntu.
+        sans: ['var(--font-geist-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-geist-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+        // Grit design system. The shadcn names below are aliases kept so
+        // every existing components/ui/ file keeps working.
+        bg: 'rgb(from var(--bg) r g b / <alpha-value>)',
+        surface: {
+          1: 'rgb(from var(--surface-1) r g b / <alpha-value>)',
+          2: 'rgb(from var(--surface-2) r g b / <alpha-value>)',
+          3: 'rgb(from var(--surface-3) r g b / <alpha-value>)',
         },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+        fg: {
+          DEFAULT: 'rgb(from var(--fg) r g b / <alpha-value>)',
+          muted: 'rgb(from var(--fg-muted) r g b / <alpha-value>)',
+          subtle: 'rgb(from var(--fg-subtle) r g b / <alpha-value>)',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'rgb(from var(--accent) r g b / <alpha-value>)',
+          fg: 'rgb(from var(--accent-fg) r g b / <alpha-value>)',
+          soft: 'var(--accent-soft)',
+          line: 'var(--accent-line)',
+        },
+        // shadcn's `accent` means hover surface, not brand colour. It keeps
+        // its own name so `bg-accent` is unambiguously the violet.
+        'accent-surface': {
+          DEFAULT: 'rgb(from var(--accent-surface) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--accent-foreground) r g b / <alpha-value>)',
+        },
+        success: 'rgb(from var(--success) r g b / <alpha-value>)',
+        warning: 'rgb(from var(--warning) r g b / <alpha-value>)',
+        danger: 'rgb(from var(--danger) r g b / <alpha-value>)',
+        code: 'rgb(from var(--code-bg) r g b / <alpha-value>)',
+        chart: {
+          // Grit carries colour; every rival is one neutral grey, so a chart
+          // never reads as a traffic light.
+          grit: 'rgb(from var(--chart-grit) r g b / <alpha-value>)',
+          rival: 'rgb(from var(--chart-rival) r g b / <alpha-value>)',
+          '1': 'rgb(from var(--chart-1) r g b / <alpha-value>)',
+          '2': 'rgb(from var(--chart-2) r g b / <alpha-value>)',
+          '3': 'rgb(from var(--chart-3) r g b / <alpha-value>)',
+          '4': 'rgb(from var(--chart-4) r g b / <alpha-value>)',
+          '5': 'rgb(from var(--chart-5) r g b / <alpha-value>)',
+        },
+        background: 'rgb(from var(--background) r g b / <alpha-value>)',
+        foreground: 'rgb(from var(--foreground) r g b / <alpha-value>)',
+        card: {
+          DEFAULT: 'rgb(from var(--card) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--card-foreground) r g b / <alpha-value>)',
+        },
+        popover: {
+          DEFAULT: 'rgb(from var(--popover) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--popover-foreground) r g b / <alpha-value>)',
+        },
+        primary: {
+          DEFAULT: 'rgb(from var(--primary) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--primary-foreground) r g b / <alpha-value>)',
+        },
+        secondary: {
+          DEFAULT: 'rgb(from var(--secondary) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--secondary-foreground) r g b / <alpha-value>)',
+        },
+        muted: {
+          DEFAULT: 'rgb(from var(--muted) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--muted-foreground) r g b / <alpha-value>)',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: 'rgb(from var(--destructive) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--destructive-foreground) r g b / <alpha-value>)',
         },
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
-        },
+        border: 'rgb(from var(--border) r g b / <alpha-value>)',
+        input: 'rgb(from var(--input) r g b / <alpha-value>)',
+        ring: 'rgb(from var(--ring) r g b / <alpha-value>)',
         sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
+          DEFAULT: 'rgb(from var(--sidebar-background) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--sidebar-foreground) r g b / <alpha-value>)',
+          primary: 'rgb(from var(--sidebar-primary) r g b / <alpha-value>)',
+          'primary-foreground': 'rgb(from var(--sidebar-primary-foreground) r g b / <alpha-value>)',
+          accent: 'rgb(from var(--sidebar-accent) r g b / <alpha-value>)',
+          'accent-foreground': 'rgb(from var(--sidebar-accent-foreground) r g b / <alpha-value>)',
+          border: 'rgb(from var(--sidebar-border) r g b / <alpha-value>)',
+          ring: 'rgb(from var(--sidebar-ring) r g b / <alpha-value>)',
         },
       },
       // DESIGN.md section 4 allows three radii plus full: 6, 10 and 16.

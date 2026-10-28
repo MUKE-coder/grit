@@ -222,7 +222,7 @@ export function ResourceDefinitionShowcase() {
               onClick={() => setActive(t.key)}
               className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? 'border-primary/40 bg-primary/10 text-foreground'
+                  ? 'border-accent/40 bg-accent/10 text-foreground'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >

@@ -35,8 +35,8 @@ export default function MobileKitPage() {
                   <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Good morning</p>
                   <p className="text-sm font-semibold">My App</p>
                 </div>
-                <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center">
-                  <Bell className="h-3 w-3 text-primary" />
+                <div className="h-7 w-7 rounded-full bg-accent/15 flex items-center justify-center">
+                  <Bell className="h-3 w-3 text-accent" />
                 </div>
               </div>
               <div className="space-y-2 mb-3">

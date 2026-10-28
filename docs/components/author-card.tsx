@@ -16,7 +16,7 @@ export function AuthorCard() {
       <img
         src={AVATAR}
         alt="JB, Creator of Grit"
-        className="h-16 w-16 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+        className="h-16 w-16 rounded-full object-cover ring-2 ring-accent/20 shrink-0"
       />
 
       <div className="flex-1 min-w-0">
@@ -49,7 +49,7 @@ export function AuthorCard() {
         href={LINKEDIN}
         target="_blank"
         rel="noreferrer"
-        className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
+        className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors"
       >
         Subscribe
       </a>

@@ -31,15 +31,15 @@ export default function HirePage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-primary/[0.06] blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-accent/[0.06] blur-[120px]" />
         </div>
         <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
         <span className="crosshair absolute top-20 left-[15%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
-        <span className="crosshair absolute top-32 right-[17%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute top-32 right-[17%] text-accent/30 hidden md:block" style={{ width: 14, height: 14 }} />
         <div className="max-w-6xl mx-auto py-24 md:py-36 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 rounded-full border border-border/60 bg-accent/40 px-4 py-1.5 mb-6 mx-auto w-fit">
-              <Users className="h-3.5 w-3.5 text-primary" />
+              <Users className="h-3.5 w-3.5 text-accent" />
               <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
                 Professional Development Services
               </span>
@@ -118,9 +118,9 @@ export default function HirePage() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="card-grit group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-primary/40 hover:bg-card/80"
+                className="card-grit group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-accent/40 hover:bg-card/80"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/15 text-primary mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/15 text-accent mb-4">
                   {item.icon}
                 </div>
                 <h3 className="text-base font-semibold mb-2">{item.title}</h3>
@@ -161,7 +161,7 @@ export default function HirePage() {
                 key={point}
                 className="flex items-start gap-3 rounded-lg border border-border/30 bg-card/30 px-4 py-3"
               >
-                <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
                 <span className="text-sm text-foreground/80">{point}</span>
               </div>
             ))}
@@ -214,9 +214,9 @@ export default function HirePage() {
       {/* CTA */}
       <section className="border-t border-border/30">
         <div className="max-w-6xl mx-auto py-20 md:py-28 px-6">
-          <div className="relative rounded-2xl border border-primary/20 bg-primary/[0.04] overflow-hidden">
+          <div className="relative rounded-2xl border border-accent/20 bg-accent/[0.04] overflow-hidden">
             <div className="absolute inset-0 -z-10">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-primary/[0.08] blur-[100px]" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-accent/[0.08] blur-[100px]" />
             </div>
             <div className="text-center py-16 md:py-24 px-6">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
@@ -240,7 +240,7 @@ export default function HirePage() {
                   href="https://www.linkedin.com/company/grit-framework"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-primary/70 hover:underline"
+                  className="text-accent/70 hover:underline"
                 >
                   LinkedIn
                 </Link>{" "}
@@ -249,7 +249,7 @@ export default function HirePage() {
                   href="https://github.com/MUKE-coder"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-primary/70 hover:underline"
+                  className="text-accent/70 hover:underline"
                 >
                   GitHub
                 </Link>

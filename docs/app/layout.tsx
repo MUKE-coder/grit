@@ -1,7 +1,8 @@
 import React from "react";
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Geist, Ubuntu, JetBrains_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OrganizationSchema } from "@/components/structured-data";
 import { NexoraChat } from "@/components/nexora-chat";
@@ -11,24 +12,13 @@ import { ZENITH_PUBLIC } from "@/config/zenith";
 
 import "./globals.css";
 
-// Geist — primary UI/body typeface (variable weight). Ubuntu — display accent
-// used for big headings via the `font-display` utility. JetBrains Mono — code.
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
-});
-
-const ubuntu = Ubuntu({
-  subsets: ["latin"],
-  variable: "--font-ubuntu",
-  weight: ["400", "500", "700"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  weight: ["400", "500", "600"],
-});
+// One family pair: Geist for everything, Geist Mono for anything a developer
+// would type. This replaces Ubuntu headings plus JetBrains Mono code, which
+// was three voices for one brand.
+//
+// From the `geist` package rather than next/font/google: it ships the variable
+// fonts locally, so there is no request to Google and no layout shift while
+// one resolves.
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -88,7 +78,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geist.variable} ${ubuntu.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <OrganizationSchema />

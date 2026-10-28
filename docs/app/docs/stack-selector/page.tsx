@@ -19,7 +19,7 @@ export default function StackSelectorPage() {
           <div className="max-w-4xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Stack Selector
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -75,8 +75,8 @@ export default function StackSelectorPage() {
                   { icon: Server, title: 'GORM Studio + gin-docs', desc: 'Visual DB browser at /studio + auto OpenAPI at /docs.' },
                 ].map((feature) => (
                   <div key={feature.title} className="flex gap-3 rounded-lg border border-border bg-card/40 p-3">
-                    <div className="shrink-0 mt-0.5 h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center">
-                      <feature.icon className="h-3.5 w-3.5 text-primary" />
+                    <div className="shrink-0 mt-0.5 h-7 w-7 rounded-md bg-accent/10 flex items-center justify-center">
+                      <feature.icon className="h-3.5 w-3.5 text-accent" />
                     </div>
                     <div>
                       <div className="text-[13px] font-semibold text-foreground mb-0.5">
@@ -106,14 +106,14 @@ export default function StackSelectorPage() {
                 <strong>trade-offs</strong>.
               </p>
               <ol className="text-muted-foreground">
-                <li><a href="#web-portal" className="text-primary hover:underline">A web portal / SaaS product</a></li>
-                <li><a href="#internal-tool" className="text-primary hover:underline">An internal admin tool / dashboard</a></li>
-                <li><a href="#desktop-offline" className="text-primary hover:underline">A desktop app with offline capability</a></li>
-                <li><a href="#desktop-online" className="text-primary hover:underline">A desktop app that&apos;s always online</a></li>
-                <li><a href="#mobile-app" className="text-primary hover:underline">A mobile app</a></li>
-                <li><a href="#multi-platform" className="text-primary hover:underline">A multi-platform product (web + mobile + desktop)</a></li>
-                <li><a href="#api-only" className="text-primary hover:underline">An API to back an existing frontend</a></li>
-                <li><a href="#unsure" className="text-primary hover:underline">I&apos;m not sure yet — start simple</a></li>
+                <li><a href="#web-portal" className="text-accent hover:underline">A web portal / SaaS product</a></li>
+                <li><a href="#internal-tool" className="text-accent hover:underline">An internal admin tool / dashboard</a></li>
+                <li><a href="#desktop-offline" className="text-accent hover:underline">A desktop app with offline capability</a></li>
+                <li><a href="#desktop-online" className="text-accent hover:underline">A desktop app that&apos;s always online</a></li>
+                <li><a href="#mobile-app" className="text-accent hover:underline">A mobile app</a></li>
+                <li><a href="#multi-platform" className="text-accent hover:underline">A multi-platform product (web + mobile + desktop)</a></li>
+                <li><a href="#api-only" className="text-accent hover:underline">An API to back an existing frontend</a></li>
+                <li><a href="#unsure" className="text-accent hover:underline">I&apos;m not sure yet — start simple</a></li>
               </ol>
             </div>
 
@@ -219,7 +219,7 @@ export default function StackSelectorPage() {
                 </p>
               </div>
 
-              <div className="rounded-lg border border-primary/30 bg-primary/[0.04] p-5 mb-4">
+              <div className="rounded-lg border border-accent/30 bg-accent/[0.04] p-5 mb-4">
                 <h4 className="font-semibold text-foreground mb-1">Path B: Multi-user offline with cloud sync (most common)</h4>
                 <CodeBlock terminal code="grit new my-app --triple --vite --desktop" className="my-3 glow-purple-sm" />
                 <p className="text-sm text-muted-foreground leading-relaxed mb-3">
@@ -227,7 +227,7 @@ export default function StackSelectorPage() {
                   via Grit&apos;s built-in offline engine (v3.14+). Local SQLite mirror, outbox
                   with squash semantics, manual <strong>Sync</strong> button, field-level conflict
                   dialog when the server moved on. Read{' '}
-                  <Link href="/docs/desktop/offline" className="text-primary hover:underline">
+                  <Link href="/docs/desktop/offline" className="text-accent hover:underline">
                     the offline-first guide
                   </Link>{' '}
                   for the full mental model.
@@ -398,14 +398,14 @@ export default function StackSelectorPage() {
                 <thead>
                   <tr className="border-b border-border/40 bg-card/80">
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground sticky left-0 bg-card/80 z-10 min-w-[220px]">Capability</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">--single (vite)</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">--single (next)</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">--double</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">--triple</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">--api</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">--mobile</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">+ --desktop</th>
-                    <th className="px-3 py-3 text-center font-semibold text-primary text-xs whitespace-nowrap">new-desktop</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">--single (vite)</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">--single (next)</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">--double</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">--triple</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">--api</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">--mobile</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">+ --desktop</th>
+                    <th className="px-3 py-3 text-center font-semibold text-accent text-xs whitespace-nowrap">new-desktop</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
@@ -507,15 +507,15 @@ export default function StackSelectorPage() {
               </p>
               <p>
                 For deeper reading on each architecture mode, see{' '}
-                <Link href="/docs/concepts/architecture-modes" className="text-primary hover:underline">
+                <Link href="/docs/concepts/architecture-modes" className="text-accent hover:underline">
                   Architecture Modes
                 </Link>
                 . For the offline-first specifics, see{' '}
-                <Link href="/docs/desktop/offline" className="text-primary hover:underline">
+                <Link href="/docs/desktop/offline" className="text-accent hover:underline">
                   Offline-First Desktop Apps
                 </Link>
                 . For the desktop scaffold itself, see{' '}
-                <Link href="/docs/desktop" className="text-primary hover:underline">
+                <Link href="/docs/desktop" className="text-accent hover:underline">
                   Desktop Overview
                 </Link>
                 .
@@ -578,7 +578,7 @@ function Variant({
   return (
     <div className="rounded-lg border border-border/50 bg-background/40 p-4">
       <div className="font-semibold text-foreground text-sm mb-1">{title}</div>
-      <code className="text-xs text-primary/80 font-mono bg-primary/5 px-2 py-1 rounded inline-block mb-2">
+      <code className="text-xs text-accent/80 font-mono bg-accent/5 px-2 py-1 rounded inline-block mb-2">
         {command}
       </code>
       <p className="text-sm text-muted-foreground leading-relaxed">{detail}</p>
@@ -601,7 +601,7 @@ function CapRow({
       {cells.map((val, i) => (
         <td key={i} className="px-3 py-2.5 text-center">
           {val === true ? (
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent/15 text-accent">
               <Check className="h-3 w-3" strokeWidth={3} />
             </span>
           ) : val === false ? (
@@ -624,7 +624,7 @@ function Recommend({ says, run }: { says: string; run: string }) {
     <tr className="hover:bg-accent/20 transition-colors">
       <td className="text-muted-foreground">{says}</td>
       <td>
-        <code className="text-xs text-primary/80 font-mono bg-primary/5 px-2 py-1 rounded">
+        <code className="text-xs text-accent/80 font-mono bg-accent/5 px-2 py-1 rounded">
           {run}
         </code>
       </td>

@@ -20,7 +20,7 @@ export default function MobileArchitecturePage() {
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Architecture Modes
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -224,7 +224,7 @@ export default function MobileArchitecturePage() {
               <div className="space-y-6">
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">apps/api/</code> -- Go Backend
+                    <code className="text-sm font-mono text-accent">apps/api/</code> -- Go Backend
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     Identical to every other Grit architecture. The full Go backend with Gin router,
@@ -236,7 +236,7 @@ export default function MobileArchitecturePage() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">apps/expo/</code> -- Expo React Native App
+                    <code className="text-sm font-mono text-accent">apps/expo/</code> -- Expo React Native App
                   </h3>
                   <p className="text-muted-foreground leading-relaxed mb-3">
                     The Expo app uses the managed workflow with Expo Router for file-based navigation.
@@ -254,7 +254,7 @@ export default function MobileArchitecturePage() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">apps/expo/app/(tabs)/</code> -- Tab Navigation
+                    <code className="text-sm font-mono text-accent">apps/expo/app/(tabs)/</code> -- Tab Navigation
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     The tab group provides the main navigation structure. The{' '}
@@ -269,7 +269,7 @@ export default function MobileArchitecturePage() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">packages/shared/</code> -- Shared Types
+                    <code className="text-sm font-mono text-accent">packages/shared/</code> -- Shared Types
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">
                     Zod schemas and TypeScript interfaces shared between the API types (via{' '}
@@ -283,7 +283,7 @@ export default function MobileArchitecturePage() {
 
                 <div className="rounded-lg border border-border/30 bg-card/30 p-5">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    <code className="text-sm font-mono text-primary">grit.json</code> -- Project Config
+                    <code className="text-sm font-mono text-accent">grit.json</code> -- Project Config
                   </h3>
                   <CodeBlock language="json" filename="grit.json" code={`{
   "architecture": "mobile",
@@ -571,7 +571,7 @@ export default function TabLayout() {
                 </table>
               </div>
 
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 mt-6">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-5 mt-6">
                 <h4 className="text-sm font-semibold text-foreground mb-2">Working screens, then make them yours</h4>
                 <p className="text-sm text-muted-foreground">
                   The generated Expo screens are real, navigable, and wired to the API through the typed
@@ -641,27 +641,27 @@ docker push myapp-api:latest`} />
                 When to Choose Mobile
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
                   <h4 className="text-sm font-semibold text-foreground mb-3">Good fit</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Mobile-first products (social, delivery, fitness, etc.)
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Cross-platform apps (one codebase for iOS + Android)
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Apps that need push notifications, camera, GPS
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Teams that know React and want to build native apps
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">-</span>
+                      <span className="text-accent mt-0.5">-</span>
                       Apps where the primary interface is a phone
                     </li>
                   </ul>
@@ -704,7 +704,7 @@ docker push myapp-api:latest`} />
                   href="https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-mobile-expo"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
                 >
                   View Job Portal (Mobile + Expo) on GitHub &rarr;
                 </a>

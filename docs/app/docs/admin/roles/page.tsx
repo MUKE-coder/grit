@@ -21,13 +21,13 @@ export default function AdminRolesPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Admin Panel</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Admin Panel</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Roles &amp; Permissions UI
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Every scaffolded admin ships a permission editor at{' '}
-                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-sm font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   /system/roles
                 </code>
                 . It lists roles, edits their grants through a CRUD matrix, and hides
@@ -53,12 +53,12 @@ export default function AdminRolesPage() {
             <Callout type="warning" title="The UI is a courtesy, not the boundary">
               Hiding a button only stops it from being clicked. Every route is enforced
               server-side by{' '}
-              <code className="text-xs font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+              <code className="text-xs font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                 RequireRole
               </code>
               , and the API rejects a request whether or not the button was rendered.
               Treat the admin screen as a convenience layer over{' '}
-              <Link href="/docs/security/authorization" className="text-primary hover:underline">
+              <Link href="/docs/security/authorization" className="text-accent hover:underline">
                 the authorization model
               </Link>
               .
@@ -96,11 +96,11 @@ export default function AdminRolesPage() {
               <Callout type="tip" title="Wildcards survive a round trip">
                 Selection is seeded from the server&apos;s expanded permission list, then
                 collapsed back to wildcards on save. A role granted{' '}
-                <code className="text-xs font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-xs font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   products.*
                 </code>{' '}
                 keeps that wildcard, so it automatically inherits any action added to{' '}
-                <code className="text-xs font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-xs font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   products
                 </code>{' '}
                 later &mdash; editing a role in the UI never silently freezes it to
@@ -115,7 +115,7 @@ export default function AdminRolesPage() {
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 The{' '}
-                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-sm font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   usePermissions()
                 </code>{' '}
                 hook reads the current user&apos;s effective grants once and caches them.
@@ -143,7 +143,7 @@ export default function ProductsPage() {
 }`}
               />
               <p className="text-muted-foreground leading-relaxed mt-4">
-                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-sm font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   can()
                 </code>{' '}
                 returns <strong className="text-foreground">false while permissions are
@@ -172,15 +172,15 @@ export default function ProductsPage() {
               />
               <p className="text-muted-foreground leading-relaxed mt-4">
                 Generated resources register their own entry and their own{' '}
-                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-sm font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   &lt;resource&gt;.&lt;action&gt;
                 </code>{' '}
                 permissions when you run{' '}
-                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-sm font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   grit generate resource
                 </code>
                 , and both are removed again by{' '}
-                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-sm font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   grit remove resource
                 </code>
                 .
@@ -213,13 +213,13 @@ export default function ProductsPage() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-card/30 hover:bg-card/60 hover:border-primary/20 transition-all group"
+                    className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-card/30 hover:bg-card/60 hover:border-accent/20 transition-all group"
                   >
                     <div>
-                      <p className="text-sm font-medium group-hover:text-primary transition-colors">{item.label}</p>
+                      <p className="text-sm font-medium group-hover:text-accent transition-colors">{item.label}</p>
                       <p className="text-xs text-muted-foreground/60 mt-0.5">{item.desc}</p>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-accent transition-colors" />
                   </Link>
                 ))}
               </div>

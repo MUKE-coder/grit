@@ -18,7 +18,7 @@ export default function OfflineSyncPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Offline Sync</h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Works offline is a property of a resource, not of a client. One engine, one

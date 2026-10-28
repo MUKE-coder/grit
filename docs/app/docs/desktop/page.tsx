@@ -20,7 +20,7 @@ export default function DesktopOverviewPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop (Wails)
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -41,7 +41,7 @@ export default function DesktopOverviewPage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Grit Desktop extends the framework beyond web applications. Using{' '}
-                  <a href="https://wails.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Wails</a>,
+                  <a href="https://wails.io" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Wails</a>,
                   it combines a Go backend with a React frontend (Vite + TanStack Router + TanStack Query)
                   to produce native desktop apps for Windows, macOS, and Linux.
                 </p>
@@ -61,7 +61,7 @@ export default function DesktopOverviewPage() {
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   You need <strong className="text-foreground/80">Go 1.26.6+</strong>,{' '}
                   <strong className="text-foreground/80">Node.js 18+</strong>, and{' '}
-                  <a href="https://wails.io/docs/gettingstarted/installation" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Wails v2</a>{' '}
+                  <a href="https://wails.io/docs/gettingstarted/installation" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Wails v2</a>{' '}
                   installed. Then install the Grit CLI:
                 </p>
                 <CodeBlock
@@ -122,7 +122,7 @@ wails dev`} className="mb-0 glow-purple-sm" />
                     { step: '4', title: 'Single Binary Output', desc: 'The entire application -- Go backend, React frontend, and all assets -- compiles into a single executable that you distribute.' },
                   ].map((item) => (
                     <div key={item.step} className="flex gap-3 p-3 rounded-lg border border-border/30 bg-card/30">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                         {item.step}
                       </div>
                       <div>
@@ -141,7 +141,7 @@ wails dev`} className="mb-0 glow-purple-sm" />
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Grit Desktop uses{' '}
-                  <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{' '}
+                  <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">TanStack Router</a>{' '}
                   with <strong className="text-foreground/80">file-based routing</strong>. Instead of declaring
                   routes in a centralized file, each page is a self-contained route file in the{' '}
                   <code>routes/</code> directory. The TanStack Router Vite plugin automatically discovers
@@ -155,7 +155,7 @@ wails dev`} className="mb-0 glow-purple-sm" />
                     { step: '4', title: 'Zero-Config for Generation', desc: 'When grit generate resource creates a new resource, it simply creates route files. No imports to add, no route registry to update. Deleting a resource just deletes the files.' },
                   ].map((item) => (
                     <div key={item.step} className="flex gap-3 p-3 rounded-lg border border-border/30 bg-card/30">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                         {item.step}
                       </div>
                       <div>
@@ -295,8 +295,8 @@ wails dev`} className="mb-0 glow-purple-sm" />
                   },
                 ].map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-primary/20 hover:bg-card/80 transition-all duration-200">
-                      <h3 className="text-[15px] font-semibold mb-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                    <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-accent/20 hover:bg-card/80 transition-all duration-200">
+                      <h3 className="text-[15px] font-semibold mb-1 group-hover:text-accent transition-colors flex items-center gap-1.5">
                         {item.title}
                         <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                       </h3>
@@ -315,9 +315,9 @@ wails dev`} className="mb-0 glow-purple-sm" />
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

@@ -18,7 +18,7 @@ function WhatYouGet({ rows }: { rows: [string, string][] }) {
       {rows.map(([name, url]) => (
         <div key={name} className="rounded-lg border border-border/40 bg-card/40 px-4 py-2.5">
           <div className="text-[13px] font-semibold">{name}</div>
-          <code className="text-xs font-mono text-primary/70">{url}</code>
+          <code className="text-xs font-mono text-accent/70">{url}</code>
         </div>
       ))}
     </div>
@@ -128,7 +128,7 @@ grit start expo                  # second terminal — Expo dev server`}
             Expo runs in its own terminal on purpose &mdash; its dev server wants the
             foreground for the QR code and the keyboard shortcuts. On a physical device, point
             the app at your machine&apos;s LAN IP: see{' '}
-            <Link href="/docs/mobile/getting-started" className="text-primary hover:underline">
+            <Link href="/docs/mobile/getting-started" className="text-accent hover:underline">
               Mobile &middot; Getting Started
             </Link>
             .
@@ -166,7 +166,7 @@ grit start                          # api + web + admin + desktop`}
           />
           <p className="text-sm text-muted-foreground/70 mt-3">
             Wails needs a C toolchain and a WebView runtime on your machine &mdash; see{' '}
-            <Link href="/docs/desktop" className="text-primary hover:underline">
+            <Link href="/docs/desktop" className="text-accent hover:underline">
               Desktop
             </Link>{' '}
             for the per-OS prerequisites. Build an installer later with{' '}
@@ -233,7 +233,7 @@ grit start expo            # terminal 2 — the Expo dev server (scan the QR)`}
           />
           <p className="text-sm text-muted-foreground/70 mt-3">
             On a physical device, point the app at your machine&apos;s LAN IP &mdash; see{' '}
-            <Link href="/docs/mobile/getting-started" className="text-primary hover:underline">Mobile · Getting Started</Link>.
+            <Link href="/docs/mobile/getting-started" className="text-accent hover:underline">Mobile · Getting Started</Link>.
           </p>
         </div>
       ),
@@ -257,7 +257,7 @@ grit start                 # launches the desktop window`}
           <p className="text-sm text-muted-foreground/70 mt-3">
             The local database is created automatically on first run. To build a distributable
             installer, see{' '}
-            <Link href="/docs/desktop/building" className="text-primary hover:underline">Desktop · Building &amp; Distribution</Link>.
+            <Link href="/docs/desktop/building" className="text-accent hover:underline">Desktop · Building &amp; Distribution</Link>.
           </p>
         </div>
       ),
@@ -273,7 +273,7 @@ grit start                 # launches the desktop window`}
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Create a project</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Everything you need to scaffold and run your first Grit app. Install the CLI once,

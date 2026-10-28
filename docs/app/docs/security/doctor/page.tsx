@@ -91,7 +91,7 @@ export default function DoctorPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Security &amp; Testing</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Security &amp; Testing</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Project audit: grit doctor</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 <code>grit doctor</code> reads your project and reports the mistakes that do not
@@ -166,7 +166,7 @@ export default function DoctorPage() {
                   <tbody className="text-muted-foreground">
                     {checks.map((c) => (
                       <tr key={c.name} className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary/60 align-top whitespace-nowrap">{c.name}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent/60 align-top whitespace-nowrap">{c.name}</td>
                         <td className="px-4 py-2.5 text-xs align-top whitespace-nowrap">{c.level}</td>
                         <td className="px-4 py-2.5">{c.what}</td>
                       </tr>

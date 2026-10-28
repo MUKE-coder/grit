@@ -20,7 +20,7 @@ export default function TripleArchitecturePage() {
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Architecture Modes
             </p>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -58,11 +58,11 @@ grit new myapp --triple --vite`} />
             <div className="mt-6 rounded-lg border border-border/40 bg-accent/20 p-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">Best suited for</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> SaaS products with distinct admin operations (user management, billing, analytics)</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Marketplaces where sellers/admins need a separate interface from buyers</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Content platforms (CMS, LMS, blog networks) where editors manage content separately</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Multi-tenant applications requiring tenant administration</li>
-                <li className="flex items-start gap-2"><span className="text-primary mt-0.5">-</span> Any project that benefits from a dedicated admin panel with DataTable, FormBuilder, and dashboard widgets</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> SaaS products with distinct admin operations (user management, billing, analytics)</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Marketplaces where sellers/admins need a separate interface from buyers</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Content platforms (CMS, LMS, blog networks) where editors manage content separately</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Multi-tenant applications requiring tenant administration</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">-</span> Any project that benefits from a dedicated admin panel with DataTable, FormBuilder, and dashboard widgets</li>
               </ul>
             </div>
           </section>
@@ -433,34 +433,34 @@ grit new myapp --triple --vite`} />
               <h3 className="text-lg font-semibold text-foreground">Files Created</h3>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">Go Backend (apps/api/)</h4>
+                <h4 className="text-sm font-mono text-accent mb-3">Go Backend (apps/api/)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/models/product.go</code> — GORM model with struct tags, belongs_to relationship to Category</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/services/product_service.go</code> — CRUD operations with pagination, preloaded relationships</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/handlers/product.go</code> — Gin handlers: Create, GetAll, GetByID, Update, Delete</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/models/product.go</code> — GORM model with struct tags, belongs_to relationship to Category</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/services/product_service.go</code> — CRUD operations with pagination, preloaded relationships</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">internal/handlers/product.go</code> — Gin handlers: Create, GetAll, GetByID, Update, Delete</li>
                 </ul>
               </div>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">Shared Package (packages/shared/)</h4>
+                <h4 className="text-sm font-mono text-accent mb-3">Shared Package (packages/shared/)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">schemas/product.ts</code> — Zod schemas: <code className="text-xs font-mono bg-accent/30 px-1 rounded">CreateProductSchema</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">UpdateProductSchema</code></li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">types/product.ts</code> — TypeScript interface: <code className="text-xs font-mono bg-accent/30 px-1 rounded">Product</code></li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">schemas/product.ts</code> — Zod schemas: <code className="text-xs font-mono bg-accent/30 px-1 rounded">CreateProductSchema</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">UpdateProductSchema</code></li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">types/product.ts</code> — TypeScript interface: <code className="text-xs font-mono bg-accent/30 px-1 rounded">Product</code></li>
                 </ul>
               </div>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">Admin Panel (apps/admin/)</h4>
+                <h4 className="text-sm font-mono text-accent mb-3">Admin Panel (apps/admin/)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">resources/products.ts</code> — Resource definition with columns, filters, search config, form fields</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/(dashboard)/products/page.tsx</code> — Admin page with DataTable and FormBuilder, ready to use</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">resources/products.ts</code> — Resource definition with columns, filters, search config, form fields</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">app/(dashboard)/products/page.tsx</code> — Admin page with DataTable and FormBuilder, ready to use</li>
                 </ul>
               </div>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5">
-                <h4 className="text-sm font-mono text-primary mb-3">Web App (apps/web/)</h4>
+                <h4 className="text-sm font-mono text-accent mb-3">Web App (apps/web/)</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">hooks/use-products.ts</code> — React Query hooks: <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProducts()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProduct(id)</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useCreateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useUpdateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useDeleteProduct()</code></li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> <code className="text-xs font-mono bg-accent/30 px-1 rounded">hooks/use-products.ts</code> — React Query hooks: <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProducts()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useProduct(id)</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useCreateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useUpdateProduct()</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">useDeleteProduct()</code></li>
                 </ul>
               </div>
             </div>
@@ -585,15 +585,15 @@ grit deploy`} />
               Here are the decision criteria:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-6">
                 <h3 className="text-sm font-semibold text-foreground mb-3">Choose Triple when...</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You need a dedicated admin panel separate from the user-facing app</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> Your admin needs DataTable, FormBuilder, dashboard widgets</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You have non-technical admins who need a polished management UI</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You want <code className="text-xs font-mono bg-accent/30 px-1 rounded">grit generate</code> to create admin pages automatically</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> You are building a SaaS, marketplace, CMS, or LMS</li>
-                  <li className="flex items-start gap-2"><span className="text-primary">-</span> Your team has separate frontend developers for admin and public UI</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You need a dedicated admin panel separate from the user-facing app</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> Your admin needs DataTable, FormBuilder, dashboard widgets</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You have non-technical admins who need a polished management UI</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You want <code className="text-xs font-mono bg-accent/30 px-1 rounded">grit generate</code> to create admin pages automatically</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> You are building a SaaS, marketplace, CMS, or LMS</li>
+                  <li className="flex items-start gap-2"><span className="text-accent">-</span> Your team has separate frontend developers for admin and public UI</li>
                 </ul>
               </div>
               <div className="rounded-lg border border-border/40 bg-accent/20 p-6">
@@ -631,7 +631,7 @@ grit deploy`} />
                   href="https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-triple-next"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors whitespace-nowrap"
                 >
                   View on GitHub &rarr;
                 </a>

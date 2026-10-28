@@ -50,12 +50,12 @@ export function useUpdateChecker() {
 
   return (
     <>
-      <div className="flex items-center gap-3 px-4 py-2 border-b bg-primary/5">
-        <Download className="h-3.5 w-3.5 text-primary" />
+      <div className="flex items-center gap-3 px-4 py-2 border-b bg-accent/5">
+        <Download className="h-3.5 w-3.5 text-accent" />
         <span className="flex-1 text-sm">
           Update available: <strong>v{update.version}</strong>
         </span>
-        <button onClick={() => setModalOpen(true)} className="text-xs text-primary">
+        <button onClick={() => setModalOpen(true)} className="text-xs text-accent">
           Update now
         </button>
         <button onClick={() => setDismissed(true)} className="text-muted-foreground">

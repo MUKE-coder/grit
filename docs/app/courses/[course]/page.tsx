@@ -71,7 +71,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
         <div className="absolute inset-0 bg-background/50" />
         <div className="relative p-8 md:p-12">
           <div className="flex items-center gap-2.5 mb-4 flex-wrap">
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-primary uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-accent uppercase tracking-wider">
               <BookOpen className="h-3 w-3" />
               Learning Path
             </span>
@@ -109,7 +109,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
 
           {/* CTA */}
           <div className="flex flex-wrap gap-2.5">
-            <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={course.status === 'coming-soon'}>
+            <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground" disabled={course.status === 'coming-soon'}>
               <Link href={startHref}>
                 {course.status === 'coming-soon' ? 'Preview the outline' : 'Start course'}
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -128,7 +128,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
       {/* What you'll build */}
       <div className="mb-12">
         <h2 className="text-2xl font-semibold tracking-tight mb-2 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
+          <Sparkles className="h-5 w-5 text-accent" />
           What you&apos;ll build
         </h2>
         <p className="text-foreground/85 leading-relaxed">{course.whatYoullBuild}</p>
@@ -137,7 +137,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
       {/* What you'll learn */}
       <div className="mb-12">
         <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-primary" />
+          <GraduationCap className="h-5 w-5 text-accent" />
           What you&apos;ll learn
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5">
@@ -153,7 +153,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
       {/* Chapter outline */}
       <div className="mb-12">
         <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-primary" />
+          <BookOpen className="h-5 w-5 text-accent" />
           Course outline
         </h2>
         <div className="space-y-3">
@@ -164,14 +164,14 @@ export default async function CourseLandingPage({ params }: PageProps) {
               <Link
                 key={ch.slug}
                 href={`/courses/${course.slug}/${ch.slug}`}
-                className="group block rounded-2xl border border-border/50 bg-card/30 p-5 hover:border-primary/40 hover:bg-card/60 transition-all"
+                className="group block rounded-2xl border border-border/50 bg-card/30 p-5 hover:border-accent/40 hover:bg-card/60 transition-all"
               >
                 <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-mono text-sm font-semibold shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-mono text-sm font-semibold shrink-0">
                     {ch.number}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
+                    <h3 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors mb-1">
                       {ch.title}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{ch.tagline}</p>
@@ -192,7 +192,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
                       )}
                     </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-3" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0 mt-3" />
                 </div>
               </Link>
             )
@@ -204,13 +204,13 @@ export default async function CourseLandingPage({ params }: PageProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <div className="rounded-2xl border border-border/50 bg-card/30 p-5">
           <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <ListChecks className="h-4 w-4 text-primary" />
+            <ListChecks className="h-4 w-4 text-accent" />
             Prerequisites
           </h3>
           <ul className="space-y-2 text-sm text-foreground/85">
             {course.prerequisites.map((p) => (
               <li key={p} className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">›</span>
+                <span className="text-accent mt-0.5">›</span>
                 <span>{p}</span>
               </li>
             ))}
@@ -218,13 +218,13 @@ export default async function CourseLandingPage({ params }: PageProps) {
         </div>
         <div className="rounded-2xl border border-border/50 bg-card/30 p-5">
           <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-accent" />
             Who this is for
           </h3>
           <ul className="space-y-2 text-sm text-foreground/85">
             {course.whoThisIsFor.map((p) => (
               <li key={p} className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">›</span>
+                <span className="text-accent mt-0.5">›</span>
                 <span>{p}</span>
               </li>
             ))}
@@ -233,7 +233,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
       </div>
 
       {/* Start CTA */}
-      <div className="rounded-2xl border border-primary/20 bg-primary/[0.05] p-6 text-center">
+      <div className="rounded-2xl border border-accent/20 bg-accent/[0.05] p-6 text-center">
         <h3 className="text-xl font-semibold mb-2">Ready to start?</h3>
         <p className="text-sm text-muted-foreground mb-5 max-w-xl mx-auto">
           {course.status === 'coming-soon'
@@ -241,7 +241,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
             : "Lesson 1 takes ~6 minutes. By the end of this hour you'll be writing real code."}
         </p>
         <div className="flex flex-wrap justify-center gap-2.5">
-          <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
             <Link href={startHref}>
               {course.status === 'coming-soon' ? 'Preview outline' : 'Start course'}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

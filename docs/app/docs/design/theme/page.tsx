@@ -19,7 +19,7 @@ export default function ThemePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Design System</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Design System</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Theme &amp; Colors
               </h1>
@@ -94,7 +94,7 @@ export default function ThemePage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <code className="text-xs font-mono text-primary/80">{color.token}</code>
+                          <code className="text-xs font-mono text-accent/80">{color.token}</code>
                           <code className="text-[10px] font-mono text-muted-foreground/50">{color.hex}</code>
                         </div>
                         <p className="text-xs text-muted-foreground/60">{color.desc}</p>
@@ -112,7 +112,7 @@ export default function ThemePage() {
                 </p>
                 <div className="space-y-2 mb-6">
                   {[
-                    { token: '--text-primary', hex: '#e8e8f0', desc: 'Headings, primary content, important text' },
+                    { token: '--text-accent', hex: '#e8e8f0', desc: 'Headings, primary content, important text' },
                     { token: '--text-secondary', hex: '#9090a8', desc: 'Body text, descriptions, labels' },
                     { token: '--text-muted', hex: '#606078', desc: 'Timestamps, placeholders, subtle info' },
                   ].map((color) => (
@@ -125,7 +125,7 @@ export default function ThemePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <code className="text-xs font-mono text-primary/80">{color.token}</code>
+                          <code className="text-xs font-mono text-accent/80">{color.token}</code>
                           <code className="text-[10px] font-mono text-muted-foreground/50">{color.hex}</code>
                         </div>
                         <p className="text-xs text-muted-foreground/60">{color.desc}</p>
@@ -153,7 +153,7 @@ export default function ThemePage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <code className="text-xs font-mono text-primary/80">{color.token}</code>
+                          <code className="text-xs font-mono text-accent/80">{color.token}</code>
                           <code className="text-[10px] font-mono text-muted-foreground/50">{color.hex}</code>
                         </div>
                         <p className="text-xs text-muted-foreground/60">{color.desc}</p>
@@ -183,7 +183,7 @@ export default function ThemePage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <code className="text-xs font-mono text-primary/80">{color.token}</code>
+                          <code className="text-xs font-mono text-accent/80">{color.token}</code>
                           <code className="text-[10px] font-mono text-muted-foreground/50">{color.hex}</code>
                         </div>
                         <p className="text-xs text-muted-foreground/60">{color.desc}</p>
@@ -305,12 +305,12 @@ const jetbrainsMono = JetBrains_Mono({
 <div className="bg-accent">           {/* --bg-tertiary */}
 
 {/* Text colors */}
-<h1 className="text-foreground">      {/* --text-primary */}
+<h1 className="text-foreground">      {/* --text-accent */}
 <p className="text-muted-foreground"> {/* --text-secondary */}
 
 {/* Accent / primary color */}
 <button className="bg-primary text-primary-foreground">
-<a className="text-primary hover:text-primary/80">
+<a className="text-accent hover:text-accent/80">
 
 {/* Borders */}
 <div className="border border-border">
@@ -398,10 +398,10 @@ export function ThemeToggle() {
     --primary: 217 91% 60%;   /* #3b82f6 — Tailwind blue-500 */
 }`} />
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Tip:</strong> Use the{' '}
-                    <Link href="https://ui.shadcn.com/themes" target="_blank" className="text-primary hover:underline">
+                    <strong className="text-accent/90">Tip:</strong> Use the{' '}
+                    <Link href="https://ui.shadcn.com/themes" target="_blank" className="text-accent hover:underline">
                       shadcn/ui theme builder
                     </Link>{' '}
                     to visually design your custom theme, then paste the generated CSS into your{' '}
@@ -430,7 +430,7 @@ export function ThemeToggle() {
                         { token: 'Background', hex: '#0a0a0f', tw: 'bg-background' },
                         { token: 'Card', hex: '#111118', tw: 'bg-card' },
                         { token: 'Accent surface', hex: '#1a1a24', tw: 'bg-accent' },
-                        { token: 'Primary (purple)', hex: '#6c5ce7', tw: 'bg-primary / text-primary' },
+                        { token: 'Primary (purple)', hex: '#6c5ce7', tw: 'bg-primary / text-accent' },
                         { token: 'Foreground', hex: '#e8e8f0', tw: 'text-foreground' },
                         { token: 'Muted foreground', hex: '#9090a8', tw: 'text-muted-foreground' },
                         { token: 'Border', hex: '#2a2a3a', tw: 'border-border' },
@@ -447,7 +447,7 @@ export function ThemeToggle() {
                               <code className="font-mono text-xs">{item.hex}</code>
                             </div>
                           </td>
-                          <td className="px-4 py-2.5 font-mono text-xs text-primary/70">{item.tw}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-accent/70">{item.tw}</td>
                         </tr>
                       ))}
                     </tbody>

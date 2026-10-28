@@ -57,13 +57,13 @@ export default function DemoPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Demo</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Demo</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Demo Application
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 A live, working full-stack Grit app — kitchen-sink edition. Built with
-                {' '}<code className="text-primary text-sm bg-primary/5 px-1.5 py-0.5 rounded">grit new --single --vite</code>{' '}
+                {' '}<code className="text-accent text-sm bg-accent/5 px-1.5 py-0.5 rounded">grit new --single --vite</code>{' '}
                 then extended into a real motorcycle dealership management system with
                 POS, loans, inventory, multi-tenant RBAC, and live Security + Observability
                 dashboards. Source code lives next to the framework so you can copy the
@@ -75,7 +75,7 @@ export default function DemoPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 text-base rounded-xl"
+                className="bg-primary hover:bg-accent/90 text-primary-foreground h-12 text-base rounded-xl"
                 asChild
               >
                 <Link href="https://demo.gritframework.dev" target="_blank" rel="noopener noreferrer">
@@ -104,8 +104,8 @@ export default function DemoPage() {
               </Button>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-12 flex gap-3 items-start">
-              <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-12 flex gap-3 items-start">
+              <ShieldCheck className="h-5 w-5 text-accent mt-0.5 shrink-0" />
               <div className="text-sm text-foreground/85">
                 <p className="mb-1"><strong>The login form is pre-filled.</strong> Credentials:</p>
                 <p className="font-mono text-xs">
@@ -135,7 +135,7 @@ export default function DemoPage() {
                 {FEATURE_TOURS.map(({ icon: Icon, title, body, href }) => (
                   <div key={title} className="rounded-xl border border-border/50 bg-card/50 p-4">
                     <div className="flex items-center gap-2.5 mb-2">
-                      <Icon className="h-4 w-4 text-primary" />
+                      <Icon className="h-4 w-4 text-accent" />
                       <h3 className="font-semibold text-foreground text-sm">{title}</h3>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-3">{body}</p>
@@ -143,7 +143,7 @@ export default function DemoPage() {
                       href={`https://demo.gritframework.dev${href}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-mono text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-mono text-accent hover:underline"
                     >
                       {href} <ExternalLink className="h-3 w-3" />
                     </a>

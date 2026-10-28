@@ -20,7 +20,7 @@ export default function SharedPackagePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Frontend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Frontend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Shared Package
               </h1>
@@ -412,7 +412,7 @@ export type {
 export type { Upload } from "./upload";
 // grit:types  <-- new type exports are injected here`} />
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-foreground/80">
                     <strong>Marker-based injection:</strong> When you run <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource Invoice</code>,
                     the CLI finds the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">// grit:schemas</code> marker and inserts the new

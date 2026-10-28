@@ -26,25 +26,25 @@ export function StarterPromptCard({ kitLabel, command, prompt }: StarterPromptCa
       <div className="mb-5 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="inline-flex items-center gap-2 mb-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="tag-mono text-primary/80">Starter prompt for claude.ai</span>
+            <Sparkles className="h-4 w-4 text-accent" />
+            <span className="tag-mono text-accent/80">Starter prompt for claude.ai</span>
           </div>
           <h2 className="text-2xl font-semibold tracking-tight">
             Plan this kit with an AI
           </h2>
           <p className="text-muted-foreground max-w-2xl mt-1.5 leading-relaxed">
-            Paste this into <Link href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">claude.ai</Link> with
+            Paste this into <Link href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">claude.ai</Link> with
             your idea. Claude returns four planning files
-            (<code className="text-[0.85em] bg-primary/5 px-1 py-0.5 rounded text-primary/90">project-description.md</code>,
-            <code className="text-[0.85em] bg-primary/5 px-1 py-0.5 rounded text-primary/90"> project-phases.md</code>,
-            <code className="text-[0.85em] bg-primary/5 px-1 py-0.5 rounded text-primary/90"> design-style-guide.md</code>,
-            <code className="text-[0.85em] bg-primary/5 px-1 py-0.5 rounded text-primary/90"> prompt.md</code>)
-            that you feed to Claude Code with the <code className="text-[0.85em] bg-primary/5 px-1 py-0.5 rounded text-primary/90">{command}</code> command.
+            (<code className="text-[0.85em] bg-accent/5 px-1 py-0.5 rounded text-accent/90">project-description.md</code>,
+            <code className="text-[0.85em] bg-accent/5 px-1 py-0.5 rounded text-accent/90"> project-phases.md</code>,
+            <code className="text-[0.85em] bg-accent/5 px-1 py-0.5 rounded text-accent/90"> design-style-guide.md</code>,
+            <code className="text-[0.85em] bg-accent/5 px-1 py-0.5 rounded text-accent/90"> prompt.md</code>)
+            that you feed to Claude Code with the <code className="text-[0.85em] bg-accent/5 px-1 py-0.5 rounded text-accent/90">{command}</code> command.
           </p>
         </div>
         <Link
           href="/docs/ai-integration"
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.06] text-primary text-xs font-medium px-3.5 py-2 hover:bg-primary/[0.12] hover:border-primary/50 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[0.06] text-accent text-xs font-medium px-3.5 py-2 hover:bg-accent/[0.12] hover:border-accent/50 transition-colors"
         >
           Customize with the wizard
           <ArrowRight className="h-3.5 w-3.5" />
@@ -88,7 +88,7 @@ export function StarterPromptCard({ kitLabel, command, prompt }: StarterPromptCa
         ].map((s) => (
           <div key={s.n} className="rounded-xl border border-border/40 bg-card/30 p-3">
             <div className="flex items-center gap-2 mb-1">
-              <span className="h-5 w-5 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-semibold flex items-center justify-center">
+              <span className="h-5 w-5 rounded-full bg-accent/10 text-accent text-[10px] font-mono font-semibold flex items-center justify-center">
                 {s.n}
               </span>
               <p className="text-xs font-semibold">{s.t}</p>

@@ -19,7 +19,7 @@ export default function PhilosophyPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Philosophy</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Why Grit exists, what it borrows from the frameworks that came before it, and
@@ -28,19 +28,19 @@ export default function PhilosophyPage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-8">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Related reading.</strong> The{' '}
-                <Link href="/pitch" className="text-primary hover:underline">
+                <Link href="/pitch" className="text-accent hover:underline">
                   pitch
                 </Link>{' '}
                 states the trade-offs in short form, and{' '}
-                <Link href="/talk" className="text-primary hover:underline">
+                <Link href="/talk" className="text-accent hover:underline">
                   the GopherCon Africa talk
                 </Link>{' '}
                 argues the whole case, slide by slide, with the speaker notes attached. The
                 long-form founder story is on the blog:{' '}
-                <Link href="/blog/why-i-built-grit" className="text-primary hover:underline">
+                <Link href="/blog/why-i-built-grit" className="text-accent hover:underline">
                   Why I built Grit &rarr;
                 </Link>
               </p>
@@ -147,7 +147,7 @@ export default function PhilosophyPage() {
                 <strong>Filament</strong>: define a resource, get a real dashboard with tables,
                 filters, forms and widgets. The Go and React world has no equivalent, so every team
                 rebuilds the same screens.{' '}
-                <Link href="/talk" className="text-primary hover:underline">
+                <Link href="/talk" className="text-accent hover:underline">
                   The talk
                 </Link>{' '}
                 walks all twenty-six problems one at a time.

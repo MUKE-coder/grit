@@ -41,7 +41,7 @@ export function HomepageBenchmarks() {
     <section className="py-16 md:py-20 px-6 border-b border-border/40">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
-          <span className="tag-mono text-primary/80 mb-3 block">Benchmarks</span>
+          <span className="tag-mono text-accent/80 mb-3 block">Benchmarks</span>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
             The same CRUD API, built in every framework
           </h2>
@@ -61,7 +61,7 @@ export function HomepageBenchmarks() {
             <Link
               key={f.slug}
               href={`/docs/benchmarks/${f.slug}`}
-              className="inline-flex items-center gap-2 rounded-full border border-border/40 px-3.5 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-border/40 px-3.5 py-1.5 text-xs text-muted-foreground hover:border-accent/40 hover:text-foreground transition-colors"
             >
               <FrameworkLogo
                 src={f.logo}
@@ -83,7 +83,7 @@ export function HomepageBenchmarks() {
             <Link
               key={f.slug}
               href={`/docs/benchmarks/${f.slug}`}
-              className="inline-flex items-center gap-2 rounded-full border border-dashed border-border/40 px-3.5 py-1.5 text-xs text-muted-foreground/60 hover:border-primary/40 hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-dashed border-border/40 px-3.5 py-1.5 text-xs text-muted-foreground/60 hover:border-accent/40 hover:text-foreground transition-colors"
               title={`Grit vs ${f.name} — method published, numbers pending`}
             >
               <span className="opacity-60">

@@ -20,7 +20,7 @@ export default function MigrationsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Migrations
               </h1>
@@ -67,7 +67,7 @@ export default function MigrationsPage() {
                   This page covers the left two boxes &mdash; the model registry and the
                   migrate command. For the third box (filling tables with data, faker,
                   and relationships) see{' '}
-                  <Link href="/docs/backend/seeders" className="text-primary hover:underline">Seeders</Link>.
+                  <Link href="/docs/backend/seeders" className="text-accent hover:underline">Seeders</Link>.
                 </p>
               </div>
 
@@ -290,7 +290,7 @@ func main() {
                     'You want to re-seed with fresh test data',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       {item}
                     </li>
                   ))}
@@ -419,9 +419,9 @@ Migration done — 1 created, 0 altered (+0 column(s)), 2 unchanged.`}
                   as the last line.
                 </p>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Tip:</strong> If you see a
+                    <strong className="text-accent/90">Tip:</strong> If you see a
                     &quot;foreign key constraint&quot; error during migration, check that
                     the parent model appears before the child model in{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Models()</code>.
@@ -446,7 +446,7 @@ Migration done — 1 created, 0 altered (+0 column(s)), 2 unchanged.`}
                     { step: '4', title: 'Start the server', cmd: 'grit start server' },
                   ].map((item) => (
                     <div key={item.step} className="flex gap-4 items-start">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-medium text-primary">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent/30 bg-accent/10 text-xs font-medium text-accent">
                         {item.step}
                       </div>
                       <div className="flex-1">
@@ -560,7 +560,7 @@ grit migrate down --yes       # the table goes; the rest of the schema stays`}
                     'Never change existing column types automatically',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       {item}
                     </li>
                   ))}

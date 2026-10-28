@@ -30,7 +30,7 @@ export default function ComparePage() {
       <GridFrame />
 
       <main className="mx-auto max-w-4xl px-6 py-16">
-        <span className="font-mono text-xs uppercase tracking-wider text-primary">Compare</span>
+        <span className="font-mono text-xs uppercase tracking-wider text-accent">Compare</span>
         <h1 className="mb-4 mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl">
           How Grit compares
         </h1>
@@ -44,15 +44,15 @@ export default function ComparePage() {
             <Link
               key={c.slug}
               href={`/compare/${c.slug}`}
-              className="group flex items-start justify-between gap-3 rounded-2xl border border-border bg-card/40 p-5 transition-colors hover:border-primary/40"
+              className="group flex items-start justify-between gap-3 rounded-2xl border border-border bg-card/40 p-5 transition-colors hover:border-accent/40"
             >
               <div>
-                <div className="mb-1 font-semibold text-foreground group-hover:text-primary">
+                <div className="mb-1 font-semibold text-foreground group-hover:text-accent">
                   Grit vs {c.name}
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground" dangerouslySetInnerHTML={{ __html: c.blurb }} />
               </div>
-              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-accent" />
             </Link>
           ))}
         </div>

@@ -20,13 +20,13 @@ export default function PulsePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Pulse (Observability)
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Every Grit project ships with{' '}
-                <a href="https://github.com/MUKE-coder/pulse" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Pulse</a>,
+                <a href="https://github.com/MUKE-coder/pulse" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">Pulse</a>,
                 a self-hosted observability and performance monitoring SDK. It provides request tracing,
                 database monitoring, runtime metrics, error tracking, health checks, alerting, and a
                 real-time dashboard &mdash; all with a single <code>Mount()</code> call.
@@ -74,35 +74,35 @@ export default function PulsePage() {
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#tracing" className="hover:text-primary transition-colors">Request Tracing</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#tracing" className="hover:text-accent transition-colors">Request Tracing</a></td>
                         <td className="py-2 text-muted-foreground">Automatic trace IDs, slow request detection, latency tracking</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#database" className="hover:text-primary transition-colors">Database Monitoring</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#database" className="hover:text-accent transition-colors">Database Monitoring</a></td>
                         <td className="py-2 text-muted-foreground">GORM query capture, N+1 detection, connection pool stats</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#runtime" className="hover:text-primary transition-colors">Runtime Metrics</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#runtime" className="hover:text-accent transition-colors">Runtime Metrics</a></td>
                         <td className="py-2 text-muted-foreground">Heap memory, goroutines, GC pauses, leak detection</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#errors" className="hover:text-primary transition-colors">Error Tracking</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#errors" className="hover:text-accent transition-colors">Error Tracking</a></td>
                         <td className="py-2 text-muted-foreground">Panic recovery, stack traces, request body capture, error fingerprinting</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#health" className="hover:text-primary transition-colors">Health Checks</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#health" className="hover:text-accent transition-colors">Health Checks</a></td>
                         <td className="py-2 text-muted-foreground">Kubernetes-compatible <code>/live</code> and <code>/ready</code> endpoints</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#alerting-detail" className="hover:text-primary transition-colors">Alerting</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#alerting-detail" className="hover:text-accent transition-colors">Alerting</a></td>
                         <td className="py-2 text-muted-foreground">Threshold-based rules with Slack, Discord, email, and webhook notifications</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#prometheus-detail" className="hover:text-primary transition-colors">Prometheus</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#prometheus-detail" className="hover:text-accent transition-colors">Prometheus</a></td>
                         <td className="py-2 text-muted-foreground">18+ metrics at <code>/pulse/metrics</code></td>
                       </tr>
                       <tr>
-                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#dashboard-detail" className="hover:text-primary transition-colors">Dashboard</a></td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#dashboard-detail" className="hover:text-accent transition-colors">Dashboard</a></td>
                         <td className="py-2 text-muted-foreground">React UI, embedded in the binary. Twelve pages: Overview, Routes, Database, Errors, Runtime, Health, Alerts, SLOs, USE, Test Runs, Flame Graph, Settings</td>
                       </tr>
                     </tbody>
@@ -461,14 +461,14 @@ p.AddHealthCheck(pulse.HealthCheck{
                   surface in the dashboard.
                 </p>
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-6">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Custom rules &amp; channels.</strong> The
                     scaffold enables the built-in rules and doesn&apos;t wire any notification
                     channel by default. To add your own rules or a Slack/Discord/webhook channel,
                     pass the matching Pulse option when you build <code>pulseOpts</code> in
                     routes.go &mdash; see the{' '}
-                    <a href="https://github.com/MUKE-coder" className="text-primary hover:underline">Pulse package docs</a>{' '}
+                    <a href="https://github.com/MUKE-coder" className="text-accent hover:underline">Pulse package docs</a>{' '}
                     for the current option set, since these evolve with the library.
                   </p>
                 </div>

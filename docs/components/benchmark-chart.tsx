@@ -113,7 +113,7 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
             className={
               'rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ' +
               (s.id === scenario.id
-                ? 'bg-primary/15 text-primary'
+                ? 'bg-accent/15 text-accent'
                 : 'text-muted-foreground hover:text-foreground hover:bg-white/5')
             }
           >
@@ -198,7 +198,7 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
                         ? 'text-muted-foreground'
                         : behind
                           ? 'text-[#f5a623]'
-                          : 'text-primary')
+                          : 'text-accent')
                     }
                   >
                     {row.inconclusive
@@ -207,7 +207,7 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
                         ? `${(1 / row.ratio).toFixed(2)}× slower`
                         : `${row.ratio.toFixed(2)}× faster`}
                   </div>
-                  <div className="text-[11px] font-medium leading-tight text-muted-foreground group-hover:text-primary transition-colors mt-1">
+                  <div className="text-[11px] font-medium leading-tight text-muted-foreground group-hover:text-accent transition-colors mt-1">
                     vs {row.framework}
                   </div>
                   <div className="text-[10px] font-mono text-muted-foreground/60 leading-tight mt-0.5">
@@ -233,7 +233,7 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
         </p>
         <Link
           href="/docs/benchmarks"
-          className="shrink-0 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          className="shrink-0 inline-flex items-center gap-1 text-sm text-accent hover:underline"
         >
           Methodology
           <ArrowRight className="h-3.5 w-3.5" />

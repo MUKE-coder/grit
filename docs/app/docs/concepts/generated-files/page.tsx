@@ -24,7 +24,7 @@ function FileTable({ rows }: { rows: [string, string][] }) {
         <tbody>
           {rows.map(([path, desc]) => (
             <tr key={path} className="border-b border-border/50 align-top">
-              <td className="px-3 py-2 font-mono text-[12px] text-primary whitespace-nowrap">{path}</td>
+              <td className="px-3 py-2 font-mono text-[12px] text-accent whitespace-nowrap">{path}</td>
               <td className="px-3 py-2 text-muted-foreground text-[13px]">{desc}</td>
             </tr>
           ))}
@@ -44,7 +44,7 @@ export default function GeneratedFilesPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts · Reference</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts · Reference</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Generated File Map</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Exactly what <code>grit generate resource</code> writes, for every app in your

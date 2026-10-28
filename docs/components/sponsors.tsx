@@ -97,7 +97,7 @@ export function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
           <h3 className="truncate font-display text-base font-bold text-foreground">
             {sponsor.name}
           </h3>
-          <p className="mt-0.5 font-mono text-sm text-primary">
+          <p className="mt-0.5 font-mono text-sm text-accent">
             {formatContribution(sponsor)}
           </p>
           <div className="mt-2 space-y-1">
@@ -223,12 +223,12 @@ export function FoundingSponsorCTA({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl border border-dashed border-primary/30 bg-primary/[0.03] px-6 py-10 text-center',
+        'relative overflow-hidden rounded-xl border border-dashed border-accent/30 bg-accent/[0.03] px-6 py-10 text-center',
         className
       )}
     >
       <div className="pointer-events-none absolute inset-0 -z-10 bg-grit-dots mask-fade-center opacity-40" />
-      <Heart className="mx-auto mb-3 h-5 w-5 text-primary" />
+      <Heart className="mx-auto mb-3 h-5 w-5 text-accent" />
       <h3 className="font-display text-lg font-bold text-foreground">
         This spot is open
       </h3>

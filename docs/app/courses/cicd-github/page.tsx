@@ -28,7 +28,7 @@ export default function CICDGitHubCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -53,10 +53,10 @@ export default function CICDGitHubCourse() {
             caption="Every push runs tests and builds; merges to main deploy automatically" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/deployment/vps" className="text-primary hover:underline">Deployment →</a>
+            <a href="/docs/deployment/vps" className="text-accent hover:underline">Deployment →</a>
           </p>
         </div>
 
@@ -94,11 +94,11 @@ export default function CICDGitHubCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> Developer pushes code to GitHub</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> CI runs Go tests (<Code>go test -race ./...</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> CI runs frontend tests (<Code>pnpm test</Code>)</li>
-            <li className="flex gap-2"><span className="text-primary">4.</span> If all tests pass, CD deploys to staging</li>
-            <li className="flex gap-2"><span className="text-primary">5.</span> On tag push (v1.0.0), CD deploys to production</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> Developer pushes code to GitHub</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> CI runs Go tests (<Code>go test -race ./...</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> CI runs frontend tests (<Code>pnpm test</Code>)</li>
+            <li className="flex gap-2"><span className="text-accent">4.</span> If all tests pass, CD deploys to staging</li>
+            <li className="flex gap-2"><span className="text-accent">5.</span> On tag push (v1.0.0), CD deploys to production</li>
           </ul>
 
           <Challenge number={1} title="Explain CI/CD">
@@ -142,9 +142,9 @@ jobs:
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Checks out your code</strong> — downloads the repo to the runner</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Sets up Go</strong> — installs the specified Go version</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Runs tests</strong> — executes all Go tests with race detection enabled</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Checks out your code</strong> — downloads the repo to the runner</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Sets up Go</strong> — installs the specified Go version</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Runs tests</strong> — executes all Go tests with race detection enabled</li>
           </ul>
 
           <Tip>
@@ -202,10 +202,10 @@ jobs:
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Jobs run in parallel</strong> by default — unless you use <Code>needs</Code> to create dependencies</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Steps run sequentially</strong> within a job — if one fails, the rest are skipped</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Each job gets a fresh VM</strong> — nothing persists between jobs unless you use artifacts</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Actions are reusable</strong> — <Code>actions/checkout@v4</Code> is maintained by GitHub</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Jobs run in parallel</strong> by default — unless you use <Code>needs</Code> to create dependencies</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Steps run sequentially</strong> within a job — if one fails, the rest are skipped</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Each job gets a fresh VM</strong> — nothing persists between jobs unless you use artifacts</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Actions are reusable</strong> — <Code>actions/checkout@v4</Code> is maintained by GitHub</li>
           </ul>
 
           <Challenge number={3} title="Read the CI Workflow">
@@ -359,9 +359,9 @@ git push origin v1.0.0
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>needs: [test]</Code> — only runs after tests pass</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>if: github.ref == {"'"}refs/heads/main{"'"}</Code> — only deploys from the main branch (not PRs or feature branches)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Secrets store sensitive values like server addresses and SSH keys</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>needs: [test]</Code> — only runs after tests pass</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>if: github.ref == {"'"}refs/heads/main{"'"}</Code> — only deploys from the main branch (not PRs or feature branches)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Secrets store sensitive values like server addresses and SSH keys</li>
           </ul>
 
           <Definition term="GitHub Secrets">
@@ -397,12 +397,12 @@ git push origin v1.0.0
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> Go to Repository Settings</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> Click Branches in the sidebar</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> Add a branch protection rule for <Code>main</Code></li>
-            <li className="flex gap-2"><span className="text-primary">4.</span> Enable {'"'}Require status checks to pass before merging{'"'}</li>
-            <li className="flex gap-2"><span className="text-primary">5.</span> Select the CI jobs (test, test-frontend) as required checks</li>
-            <li className="flex gap-2"><span className="text-primary">6.</span> Optionally require pull request reviews</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> Go to Repository Settings</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> Click Branches in the sidebar</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> Add a branch protection rule for <Code>main</Code></li>
+            <li className="flex gap-2"><span className="text-accent">4.</span> Enable {'"'}Require status checks to pass before merging{'"'}</li>
+            <li className="flex gap-2"><span className="text-accent">5.</span> Select the CI jobs (test, test-frontend) as required checks</li>
+            <li className="flex gap-2"><span className="text-accent">6.</span> Optionally require pull request reviews</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -464,9 +464,9 @@ git push origin feature/add-comments
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Feature branches</strong> — where you write code. CI runs tests.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">staging branch</strong> — merge features here first. Auto-deploys to staging.myapp.com for testing.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">main branch</strong> — merge from staging when ready. Auto-deploys to myapp.com (production).</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Feature branches</strong> — where you write code. CI runs tests.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">staging branch</strong> — merge features here first. Auto-deploys to staging.myapp.com for testing.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">main branch</strong> — merge from staging when ready. Auto-deploys to myapp.com (production).</li>
           </ul>
 
           <Note>
@@ -505,10 +505,10 @@ git push origin feature/add-comments
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Test failure</strong> — urgent notification to Slack/Discord with the failing branch and commit</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Successful deploy</strong> — info notification: {'"'}v1.2.0 deployed to production{'"'}</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">New release</strong> — announcement: {'"'}Release v1.2.0 published with 5 new features{'"'}</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Deploy failure</strong> — critical alert: {'"'}Production deploy failed — rollback may be needed{'"'}</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Test failure</strong> — urgent notification to Slack/Discord with the failing branch and commit</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Successful deploy</strong> — info notification: {'"'}v1.2.0 deployed to production{'"'}</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">New release</strong> — announcement: {'"'}Release v1.2.0 published with 5 new features{'"'}</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Deploy failure</strong> — critical alert: {'"'}Production deploy failed — rollback may be needed{'"'}</li>
           </ul>
 
           <Tip>
@@ -547,7 +547,7 @@ git push origin feature/add-comments
               'Notifications keep the team informed of failures, deploys, and releases',
             ].map((item, i) => (
               <li key={i} className="flex gap-3 text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}

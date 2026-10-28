@@ -19,7 +19,7 @@ export default function ModelsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend (Go API)</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend (Go API)</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Models & Database
               </h1>
@@ -485,9 +485,9 @@ func Migrate(db *gorm.DB) error {
               </p>
               <CodeBlock terminal code="grit migrate" />
               <p>
-                See <a href="/docs/backend/migrations" className="text-primary hover:underline">Migrations</a> for
+                See <a href="/docs/backend/migrations" className="text-accent hover:underline">Migrations</a> for
                 the full runner (column diffing, <code>--fresh</code>) and{' '}
-                <a href="/docs/backend/seeders" className="text-primary hover:underline">Seeders</a> for filling
+                <a href="/docs/backend/seeders" className="text-accent hover:underline">Seeders</a> for filling
                 the tables afterwards.
               </p>
 

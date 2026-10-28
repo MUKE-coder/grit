@@ -46,7 +46,7 @@ export default function SingleKitPage() {
             <div className="rounded border border-border/40 bg-card/40 p-2 mt-auto">
               <div className="flex items-end gap-[2px] h-8">
                 {[40, 55, 48, 62, 70, 65, 80, 72, 88, 84].map((h, i) => (
-                  <div key={i} className="flex-1 rounded-sm bg-primary/40" style={{ height: `${h}%` }} />
+                  <div key={i} className="flex-1 rounded-sm bg-accent/40" style={{ height: `${h}%` }} />
                 ))}
               </div>
             </div>

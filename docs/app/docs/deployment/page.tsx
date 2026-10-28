@@ -35,7 +35,7 @@ export default function DeploymentIndexPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Deployment</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Deployment</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Where to deploy Grit</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit produces an ordinary Docker image and an ordinary Go binary. Anything
@@ -51,18 +51,18 @@ export default function DeploymentIndexPage() {
               <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
                 <li>
                   <strong className="text-foreground">Shipping something today, alone or in a small team →</strong>{' '}
-                  <Link href="/docs/deployment/railway" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/railway" className="text-accent hover:underline">
                     Railway
                   </Link>{' '}
                   or{' '}
-                  <Link href="/docs/deployment/render" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/render" className="text-accent hover:underline">
                     Render
                   </Link>
                   . Managed database, no server to patch, running in under an hour.
                 </li>
                 <li>
                   <strong className="text-foreground">You want a config file in the repo rather than a dashboard →</strong>{' '}
-                  <Link href="/docs/deployment/fly-io" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/fly-io" className="text-accent hover:underline">
                     Fly.io
                   </Link>
                   . One <code className="text-xs">fly.toml</code> per app, deployed with{' '}
@@ -70,18 +70,18 @@ export default function DeploymentIndexPage() {
                 </li>
                 <li>
                   <strong className="text-foreground">Several apps, one bill →</strong>{' '}
-                  <Link href="/docs/deployment/dokploy" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/dokploy" className="text-accent hover:underline">
                     Dokploy
                   </Link>{' '}
                   or{' '}
-                  <Link href="/docs/deployment/coolify" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/coolify" className="text-accent hover:underline">
                     Coolify
                   </Link>
                   . A platform you own, on one box.
                 </li>
                 <li>
                   <strong className="text-foreground">On-premise, or the customer owns the hardware →</strong>{' '}
-                  <Link href="/docs/deployment/dokploy" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/dokploy" className="text-accent hover:underline">
                     Dokploy
                   </Link>{' '}
                   on their box. It runs your real{' '}
@@ -151,7 +151,7 @@ export default function DeploymentIndexPage() {
                   {DEPLOYMENT_PROVIDERS.map((p) => (
                     <tr key={p.slug} className="hover:bg-card/40">
                       <td className="px-4 py-3">
-                        <Link href={`/docs/deployment/${p.slug}`} className="font-medium text-primary hover:underline">
+                        <Link href={`/docs/deployment/${p.slug}`} className="font-medium text-accent hover:underline">
                           {p.name}
                         </Link>
                       </td>
@@ -210,7 +210,7 @@ export default function DeploymentIndexPage() {
                           {c === 0 ? (
                             <Link
                               href={`/docs/deployment/${GUIDE_SLUG_BY_NAME[cell] ?? ''}`}
-                              className="text-primary hover:underline"
+                              className="text-accent hover:underline"
                             >
                               {cell}
                             </Link>
@@ -231,7 +231,7 @@ export default function DeploymentIndexPage() {
               if (group.length === 0) return null
               return (
                 <div key={kind} className="mb-10">
-                  <h3 className="tag-mono text-primary/80 mb-4">{PROVIDER_KIND_LABEL[kind]}</h3>
+                  <h3 className="tag-mono text-accent/80 mb-4">{PROVIDER_KIND_LABEL[kind]}</h3>
                   <div className="space-y-3">
                     {group.map((p) => (
                       <Link

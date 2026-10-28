@@ -111,7 +111,7 @@ export function AIIntegrationWizard() {
                 (i < step
                   ? 'bg-primary text-primary-foreground'
                   : i === step
-                    ? 'border border-primary text-primary'
+                    ? 'border border-accent text-accent'
                     : 'border border-border text-muted-foreground')
               }
             >
@@ -144,20 +144,20 @@ export function AIIntegrationWizard() {
                     onClick={() => toggleClient(c.id)}
                     className={
                       'flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ' +
-                      (on ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40')
+                      (on ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/40')
                     }
                   >
                     <span
                       className={
                         'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ' +
-                        (on ? 'border-primary bg-primary text-primary-foreground' : 'border-border')
+                        (on ? 'border-accent bg-primary text-primary-foreground' : 'border-border')
                       }
                     >
                       {on && <Check className="h-3.5 w-3.5" />}
                     </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-primary" />
+                        <Icon className="h-4 w-4 text-accent" />
                         <span className="font-medium text-foreground">{c.label}</span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">{c.desc}</p>
@@ -184,7 +184,7 @@ export function AIIntegrationWizard() {
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value.replace(/[^a-zA-Z0-9-_]/g, ''))}
                   placeholder="my-app"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
                 />
               </label>
               {hasWebUI && (
@@ -197,7 +197,7 @@ export function AIIntegrationWizard() {
                         onClick={() => setFrontend(f)}
                         className={
                           'flex-1 rounded-lg border px-3 py-2 text-sm ' +
-                          (frontend === f ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground')
+                          (frontend === f ? 'border-accent bg-accent/5 text-foreground' : 'border-border text-muted-foreground')
                         }
                       >
                         {f === 'next' ? 'Next.js' : 'Vite / TanStack'}
@@ -218,7 +218,7 @@ export function AIIntegrationWizard() {
                       onClick={() => setTheme(t)}
                       className={
                         'rounded-lg border px-3 py-1.5 text-sm capitalize ' +
-                        (theme === t ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground')
+                        (theme === t ? 'border-accent bg-accent/5 text-foreground' : 'border-border text-muted-foreground')
                       }
                     >
                       {t}
@@ -244,7 +244,7 @@ export function AIIntegrationWizard() {
                     key={o.id}
                     className={
                       'flex items-start gap-2 rounded-xl border p-2 pr-2 transition-colors ' +
-                      (selected ? 'border-primary bg-primary/5' : 'border-border')
+                      (selected ? 'border-accent bg-accent/5' : 'border-border')
                     }
                   >
                     <button
@@ -256,7 +256,7 @@ export function AIIntegrationWizard() {
                       <span
                         className={
                           'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ' +
-                          (selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border')
+                          (selected ? 'border-accent bg-primary text-primary-foreground' : 'border-border')
                         }
                       >
                         {selected && <Check className="h-3 w-3" />}
@@ -264,7 +264,7 @@ export function AIIntegrationWizard() {
                       <span className="min-w-0 flex-1">
                         <span className="mb-1 flex flex-wrap items-center gap-2">
                           {i === 0 && (
-                            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                            <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
                               Recommended
                             </span>
                           )}
@@ -296,7 +296,7 @@ export function AIIntegrationWizard() {
                   onClick={() => setPluginMode(m)}
                   className={
                     'rounded-lg border px-4 py-2 text-sm ' +
-                    (pluginMode === m ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground')
+                    (pluginMode === m ? 'border-accent bg-accent/5 text-foreground' : 'border-border text-muted-foreground')
                   }
                 >
                   {m === 'none' ? 'None' : m === 'all' ? 'All' : 'Pick each'}
@@ -315,20 +315,20 @@ export function AIIntegrationWizard() {
                       onClick={() => togglePlugin(p.id)}
                       className={
                         'flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ' +
-                        (on ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40')
+                        (on ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/40')
                       }
                     >
                       <span
                         className={
                           'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ' +
-                          (on ? 'border-primary bg-primary text-primary-foreground' : 'border-border')
+                          (on ? 'border-accent bg-primary text-primary-foreground' : 'border-border')
                         }
                       >
                         {on && <Check className="h-3.5 w-3.5" />}
                       </span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <Puzzle className="h-4 w-4 text-primary" />
+                          <Puzzle className="h-4 w-4 text-accent" />
                           <span className="font-mono text-sm font-medium text-foreground">{p.id}</span>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
@@ -356,13 +356,13 @@ export function AIIntegrationWizard() {
                 <CopyButton
                   text={prompt}
                   variant="default"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="bg-primary text-primary-foreground hover:bg-accent/90"
                 >
                   Copy prompt
                 </CopyButton>
                 <button
                   onClick={download}
-                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:border-primary/40"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:border-accent/40"
                 >
                   <Download className="h-4 w-4" />
                   Download .md
@@ -407,7 +407,7 @@ export function AIIntegrationWizard() {
               setStep(next)
             }}
             disabled={!canNext}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-accent/90 disabled:opacity-40"
           >
             Next
             <ArrowRight className="h-4 w-4" />

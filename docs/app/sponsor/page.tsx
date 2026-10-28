@@ -79,13 +79,13 @@ export default function SponsorPage() {
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border/30">
         <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-primary/[0.07] blur-[120px]" />
+          <div className="absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-accent/[0.07] blur-[120px]" />
           <div className="absolute inset-0 bg-grit-grid-sm mask-fade-y opacity-[0.35]" />
         </div>
         <div className="container max-w-screen-xl px-6 py-20 md:py-28">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-border/60 bg-primary/10 px-4 py-1.5">
-              <Heart className="h-3.5 w-3.5 text-primary" />
+            <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-border/60 bg-accent/10 px-4 py-1.5">
+              <Heart className="h-3.5 w-3.5 text-accent" />
               <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
                 Become a sponsor
               </span>
@@ -153,8 +153,8 @@ export default function SponsorPage() {
                     className={cn(
                       'card-grit relative flex flex-col rounded-xl border p-5 text-left transition-all',
                       selected
-                        ? 'border-primary/50 bg-primary/[0.06] ring-1 ring-primary/25'
-                        : 'border-border/40 bg-card/50 hover:border-primary/25'
+                        ? 'border-accent/50 bg-accent/[0.06] ring-1 ring-accent/25'
+                        : 'border-border/40 bg-card/50 hover:border-accent/25'
                     )}
                   >
                     {tier.featured && (
@@ -178,7 +178,7 @@ export default function SponsorPage() {
                     <ul className="mt-4 flex-1 space-y-2 border-t border-border/30 pt-4">
                       {tier.perks.map((perk) => (
                         <li key={perk} className="flex items-start gap-2">
-                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
                           <span className="text-xs text-foreground/80">{perk}</span>
                         </li>
                       ))}
@@ -211,8 +211,8 @@ export default function SponsorPage() {
                     className={cn(
                       'rounded-xl border p-5 text-center transition-all',
                       !isCustom && oneTime === amount
-                        ? 'border-primary/50 bg-primary/[0.06] ring-1 ring-primary/25'
-                        : 'border-border/40 bg-card/50 hover:border-primary/25'
+                        ? 'border-accent/50 bg-accent/[0.06] ring-1 ring-accent/25'
+                        : 'border-border/40 bg-card/50 hover:border-accent/25'
                     )}
                   >
                     <span className="font-display text-2xl font-bold text-foreground">
@@ -229,8 +229,8 @@ export default function SponsorPage() {
                 className={cn(
                   'w-full rounded-xl border p-4 text-left transition-all',
                   isCustom
-                    ? 'border-primary/50 bg-primary/[0.06] ring-1 ring-primary/25'
-                    : 'border-border/40 bg-card/50 hover:border-primary/25'
+                    ? 'border-accent/50 bg-accent/[0.06] ring-1 ring-accent/25'
+                    : 'border-border/40 bg-card/50 hover:border-accent/25'
                 )}
               >
                 <span className="text-sm font-semibold text-foreground">Custom amount</span>
@@ -254,7 +254,7 @@ export default function SponsorPage() {
               </button>
               <p className="mt-4 text-center text-xs text-muted-foreground">
                 One-time sponsors are listed on the{' '}
-                <Link href="/sponsors" className="text-primary hover:underline">
+                <Link href="/sponsors" className="text-accent hover:underline">
                   Sponsors page
                 </Link>{' '}
                 too.
@@ -322,7 +322,7 @@ export default function SponsorPage() {
                 key={point}
                 className="flex items-start gap-3 rounded-lg border border-border/30 bg-card/30 px-4 py-3"
               >
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                 <span className="text-sm text-foreground/80">{point}</span>
               </div>
             ))}
@@ -330,7 +330,7 @@ export default function SponsorPage() {
           <div className="mt-10 text-center">
             <Link
               href="/sponsors"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline"
             >
               See everyone who sponsors Grit
               <ArrowRight className="h-4 w-4" />

@@ -9,7 +9,7 @@ export default function Lesson() {
       <p>
         Some work shouldn&apos;t block the HTTP request — sending an email,
         resizing an image, calling an LLM. Grit uses{' '}
-        <a href="https://github.com/hibiken/asynq" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Asynq</a>{' '}
+        <a href="https://github.com/hibiken/asynq" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Asynq</a>{' '}
         for background jobs: enqueue from anywhere, a worker process consumes
         them. This lesson covers the pattern + the four primitives you&apos;ll
         actually use.

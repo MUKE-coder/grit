@@ -39,14 +39,14 @@ export default function TripleKitPage() {
                 { l: 'Sales', sel: false },
                 { l: 'Settings', sel: false },
               ].map((r) => (
-                <div key={r.l} className={`text-[9px] rounded px-1.5 py-0.5 mb-0.5 ${r.sel ? 'bg-primary/15 text-primary' : 'text-muted-foreground'}`}>
+                <div key={r.l} className={`text-[9px] rounded px-1.5 py-0.5 mb-0.5 ${r.sel ? 'bg-accent/15 text-accent' : 'text-muted-foreground'}`}>
                   {r.l}
                 </div>
               ))}
             </div>
             <div className="flex-1 p-3">
               <div className="flex items-center gap-1.5 mb-2">
-                <Users className="h-3 w-3 text-primary" />
+                <Users className="h-3 w-3 text-accent" />
                 <span className="text-xs font-semibold">Users · 1,284</span>
               </div>
               <div className="space-y-1">

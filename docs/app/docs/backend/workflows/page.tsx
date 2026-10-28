@@ -21,7 +21,7 @@ export default function WorkflowsPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Workflows</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 A status column that anything can set to anything is not a status. It is a text

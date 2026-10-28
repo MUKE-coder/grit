@@ -17,7 +17,7 @@ export default function SystemsIndexPage() {
         <div className="container max-w-screen-xl px-6 py-10">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono mb-3 block text-primary/80">System Design</span>
+              <span className="tag-mono mb-3 block text-accent/80">System Design</span>
               <h1 className="mb-4 text-4xl font-bold tracking-tight">Systems</h1>
               <p className="text-lg leading-relaxed text-muted-foreground">
                 Grit is not one system. It is around thirty of them sharing a process: the thing
@@ -52,7 +52,7 @@ export default function SystemsIndexPage() {
                       <Link
                         key={s.slug}
                         href={`/docs/systems/${s.slug}`}
-                        className="group rounded-xl border border-border/50 bg-card/30 p-4 transition-colors hover:border-primary/40 hover:bg-card/60"
+                        className="group rounded-xl border border-border/50 bg-card/30 p-4 transition-colors hover:border-accent/40 hover:bg-card/60"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-semibold">{s.name}</span>

@@ -19,7 +19,7 @@ export default function SagasPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Sagas</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 A transaction is the right tool when every write is in one database. It is no help
@@ -377,8 +377,8 @@ func Checkout() saga.Definition {
                   <thead>
                     <tr className="border-b border-border/40 text-left">
                       <th className="px-3 py-2 font-medium" />
-                      <th className="px-3 py-2 font-medium text-primary">internal/saga</th>
-                      <th className="px-3 py-2 font-medium text-primary">Temporal</th>
+                      <th className="px-3 py-2 font-medium text-accent">internal/saga</th>
+                      <th className="px-3 py-2 font-medium text-accent">Temporal</th>
                     </tr>
                   </thead>
                   <tbody>

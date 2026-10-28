@@ -28,7 +28,7 @@ export default function BatteriesIncludedCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -55,10 +55,10 @@ export default function BatteriesIncludedCourse() {
             caption="Seventeen production features come pre-configured and wired together in every project" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/batteries/storage" className="text-primary hover:underline">Batteries →</a>
+            <a href="/docs/batteries/storage" className="text-accent hover:underline">Batteries →</a>
           </p>
         </div>
 
@@ -306,10 +306,10 @@ STORAGE_REGION=us-east-1`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Welcome</strong> — sent when a user registers</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Password Reset</strong> — sent when a user requests a password reset</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Email Verification</strong> — sent to verify a user{"'"}s email address</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Notification</strong> — a generic template for system notifications</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Welcome</strong> — sent when a user registers</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Password Reset</strong> — sent when a user requests a password reset</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Email Verification</strong> — sent to verify a user{"'"}s email address</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Notification</strong> — a generic template for system notifications</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -377,9 +377,9 @@ SMTP_PORT=1025`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Email Worker</strong> — sends transactional emails asynchronously</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Image Worker</strong> — processes uploaded images (resize, thumbnails)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Cleanup Worker</strong> — removes expired tokens, old sessions, temp files</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Email Worker</strong> — sends transactional emails asynchronously</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Image Worker</strong> — processes uploaded images (resize, thumbnails)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Cleanup Worker</strong> — removes expired tokens, old sessions, temp files</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -506,9 +506,9 @@ err := jobs.DispatchWithOptions("cleanup:tokens", nil, asynq.ProcessIn(1*time.Ho
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">POST /api/ai/complete</strong> — single prompt in, single response out</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">POST /api/ai/chat</strong> — multi-turn conversation with message history</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">POST /api/ai/stream</strong> — streaming response (tokens arrive in real-time)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">POST /api/ai/complete</strong> — single prompt in, single response out</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">POST /api/ai/chat</strong> — multi-turn conversation with message history</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">POST /api/ai/stream</strong> — streaming response (tokens arrive in real-time)</li>
           </ul>
 
           <CodeBlock filename=".env">
@@ -560,10 +560,10 @@ AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Authenticator app support</strong> — works with Google Authenticator, Authy, 1Password, Bitwarden</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">10 backup codes</strong> — one-time-use codes in case the user loses their device</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Trusted devices</strong> — skip 2FA on recognized devices for 30 days</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Zero external dependencies</strong> — the TOTP algorithm runs in pure Go, no third-party services</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Authenticator app support</strong> — works with Google Authenticator, Authy, 1Password, Bitwarden</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">10 backup codes</strong> — one-time-use codes in case the user loses their device</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Trusted devices</strong> — skip 2FA on recognized devices for 30 days</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Zero external dependencies</strong> — the TOTP algorithm runs in pure Go, no third-party services</li>
           </ul>
 
           <CodeBlock filename="2FA Setup Flow">
@@ -617,10 +617,10 @@ AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Browse tables</strong> — see all tables, columns, types, and relationships</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">View and edit data</strong> — click any row to view details, edit fields inline</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Run SQL queries</strong> — execute raw SQL and see results in a table</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Export schemas</strong> — download your database schema as SQL</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Browse tables</strong> — see all tables, columns, types, and relationships</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">View and edit data</strong> — click any row to view details, edit fields inline</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Run SQL queries</strong> — execute raw SQL and see results in a table</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Export schemas</strong> — download your database schema as SQL</li>
           </ul>
 
           <CodeBlock filename="Accessing GORM Studio">
@@ -712,11 +712,11 @@ http://localhost:8080/docs/openapi.json`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">SQL Injection</strong> — malicious SQL in query parameters or request bodies</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">XSS (Cross-Site Scripting)</strong> — injecting JavaScript into your pages</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Brute-force login</strong> — repeated login attempts are throttled and blocked</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Path traversal</strong> — attempts to access files outside allowed directories</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Missing security headers</strong> — auto-adds CSP, HSTS, X-Frame-Options, and more</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">SQL Injection</strong> — malicious SQL in query parameters or request bodies</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">XSS (Cross-Site Scripting)</strong> — injecting JavaScript into your pages</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Brute-force login</strong> — repeated login attempts are throttled and blocked</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Path traversal</strong> — attempts to access files outside allowed directories</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Missing security headers</strong> — auto-adds CSP, HSTS, X-Frame-Options, and more</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -753,10 +753,10 @@ http://localhost:8080/docs/openapi.json`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Request tracing</strong> — every request is logged with timing, status code, and unique request ID</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Database monitoring</strong> — query count, average duration, slowest queries</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Metrics</strong> — requests per second, error rate, response time percentiles (p50, p95, p99)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Health checks</strong> — database connectivity, Redis connectivity, disk space, memory usage</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Request tracing</strong> — every request is logged with timing, status code, and unique request ID</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Database monitoring</strong> — query count, average duration, slowest queries</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Metrics</strong> — requests per second, error rate, response time percentiles (p50, p95, p99)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Health checks</strong> — database connectivity, Redis connectivity, disk space, memory usage</li>
           </ul>
 
           <CodeBlock filename="Accessing Pulse">
@@ -799,10 +799,10 @@ http://localhost:8080/pulse/metrics`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">PostgreSQL</strong> — the primary database (port 5434)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Redis</strong> — caching and job queue (port 6380)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MinIO</strong> — S3-compatible file storage (port 9002, console on 9003)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Mailhog</strong> — email capture for testing (SMTP on 1025, UI on 8025)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">PostgreSQL</strong> — the primary database (port 5434)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Redis</strong> — caching and job queue (port 6380)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">MinIO</strong> — S3-compatible file storage (port 9002, console on 9003)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Mailhog</strong> — email capture for testing (SMTP on 1025, UI on 8025)</li>
           </ul>
 
           <CodeBlock filename="Docker Commands">
@@ -865,7 +865,7 @@ docker compose down -v`}
               'Connection Pooling — optimized database connection management',
             ].map((item, i) => (
               <li key={i} className="flex gap-3 text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}

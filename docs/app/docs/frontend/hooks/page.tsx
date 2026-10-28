@@ -20,7 +20,7 @@ export default function HooksPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Frontend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Frontend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 React Query Hooks
               </h1>
@@ -486,7 +486,7 @@ export function useBulkPublish() {
   });
 }`} />
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-foreground/80">
                     <strong>Convention:</strong> Always place hooks in the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">hooks/</code> directory,
                     name them with the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">use-</code> prefix

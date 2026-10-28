@@ -31,7 +31,7 @@ export default function CompareDjangoPage() {
       <GridFrame />
 
       <main className="mx-auto max-w-4xl px-6 py-16">
-        <span className="font-mono text-xs uppercase tracking-wider text-primary">Compare</span>
+        <span className="font-mono text-xs uppercase tracking-wider text-accent">Compare</span>
         <h1 className="mb-4 mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl">
           Grit vs Django
         </h1>

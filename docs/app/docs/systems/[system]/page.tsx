@@ -63,7 +63,7 @@ export default async function SystemPage({
             </Link>
 
             <div className="mb-8">
-              <span className="tag-mono mb-3 block text-primary/80">{s.group}</span>
+              <span className="tag-mono mb-3 block text-accent/80">{s.group}</span>
               <h1 className="mb-4 text-4xl font-bold tracking-tight">
                 {s.name} <span className="text-muted-foreground">System Design</span>
               </h1>
@@ -90,7 +90,7 @@ export default async function SystemPage({
                     <li key={l.href}>
                       <Link
                         href={l.href}
-                        className="inline-flex items-center gap-1.5 text-[15px] text-primary hover:underline"
+                        className="inline-flex items-center gap-1.5 text-[15px] text-accent hover:underline"
                       >
                         {l.title}
                         <ArrowRight className="h-3.5 w-3.5" />

@@ -37,7 +37,7 @@ export function CodeTabs({ files, className = 'mb-6' }: CodeTabsProps) {
               onClick={() => setActive(i)}
               className={`whitespace-nowrap px-3 py-2 text-[12px] font-mono transition-colors border-b-2 -mb-px ${
                 i === active
-                  ? 'border-primary text-foreground'
+                  ? 'border-accent text-foreground'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-foreground'
               }`}
             >

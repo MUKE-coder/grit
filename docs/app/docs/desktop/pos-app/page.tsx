@@ -20,7 +20,7 @@ export default function DesktopPosAppPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop Tutorial
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -138,7 +138,7 @@ export default function DesktopPosAppPage() {
               </ul>
               <blockquote>
                 This tutorial assumes you have completed the{" "}
-                <Link href="/docs/desktop/getting-started" className="text-primary hover:underline">
+                <Link href="/docs/desktop/getting-started" className="text-accent hover:underline">
                   Getting Started
                 </Link>{" "}
                 guide and have Go, Node.js, and the Wails CLI installed.
@@ -179,7 +179,7 @@ export default function DesktopPosAppPage() {
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   1
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -219,7 +219,7 @@ cd pos-system`}
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   2
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -272,7 +272,7 @@ cd pos-system`}
                       ],
                     ].map(([resource, fields, purpose]) => (
                       <tr key={resource}>
-                        <td className="p-3 font-mono text-xs text-primary">
+                        <td className="p-3 font-mono text-xs text-accent">
                           {resource}
                         </td>
                         <td className="p-3 text-xs">{fields}</td>
@@ -300,7 +300,7 @@ cd pos-system`}
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   3
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -346,7 +346,7 @@ grit generate resource Expense --fields "description:string,amount:money,categor
                     key={stat.label}
                     className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 text-center"
                   >
-                    <span className="text-2xl font-bold text-primary block">
+                    <span className="text-2xl font-bold text-accent block">
                       {stat.count}
                     </span>
                     <span className="text-sm text-muted-foreground/50">
@@ -367,7 +367,7 @@ grit generate resource Expense --fields "description:string,amount:money,categor
                 </p>
                 <blockquote>
                   If you want to review what each injection does, see the{" "}
-                  <Link href="/docs/desktop/resource-generation" className="text-primary hover:underline">
+                  <Link href="/docs/desktop/resource-generation" className="text-accent hover:underline">
                     Resource Generation
                   </Link>{" "}
                   reference page for the complete 10-marker table.
@@ -380,7 +380,7 @@ grit generate resource Expense --fields "description:string,amount:money,categor
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   4
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -473,7 +473,7 @@ type Sale struct {
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   5
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -557,7 +557,7 @@ func (a *App) GetProductsByCategory(category string) ([]models.Product, error) {
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   6
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -709,7 +709,7 @@ func (a *App) ProcessSale(input types.ProcessSaleInput) (*models.Sale, error) {
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   7
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -912,7 +912,7 @@ export const Route = createFileRoute("/_layout/pos/")({
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   8
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -1033,7 +1033,7 @@ const receipt = await GenerateReceipt(sale.id);
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   9
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -1159,7 +1159,7 @@ func (a *App) GetDailyReport(date string) (*types.DailyReport, error) {
             {/* ========================================================= */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                   10
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -1456,7 +1456,7 @@ wails build -platform linux/amd64`}
                   <Link
                     key={card.title}
                     href={card.href}
-                    className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 hover:border-primary/30 transition-colors"
+                    className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 hover:border-accent/30 transition-colors"
                   >
                     <span className="text-[15px] font-semibold block mb-1 text-foreground">
                       {card.title}
@@ -1475,9 +1475,9 @@ wails build -platform linux/amd64`}
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

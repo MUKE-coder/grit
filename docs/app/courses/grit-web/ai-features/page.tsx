@@ -30,7 +30,7 @@ export default function AIFeaturesCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 7 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 7 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">10 challenges</span>
@@ -56,10 +56,10 @@ export default function AIFeaturesCourse() {
             caption="One key and one endpoint — switch models without writing provider-specific code" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/batteries/ai" className="text-primary hover:underline">AI Integration →</a>
+            <a href="/docs/batteries/ai" className="text-accent hover:underline">AI Integration →</a>
           </p>
         </div>
 
@@ -98,10 +98,10 @@ export default function AIFeaturesCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">One API key</strong> — a single key gives you access to hundreds of models from dozens of providers</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">No provider-specific code</strong> — the same request format works for Claude, GPT, Gemini, Llama, and more</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Automatic fallbacks</strong> — if one provider is down, the gateway can route to another</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Switch models instantly</strong> — change one environment variable, no code changes needed</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">One API key</strong> — a single key gives you access to hundreds of models from dozens of providers</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">No provider-specific code</strong> — the same request format works for Claude, GPT, Gemini, Llama, and more</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Automatic fallbacks</strong> — if one provider is down, the gateway can route to another</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Switch models instantly</strong> — change one environment variable, no code changes needed</li>
           </ul>
 
           <Challenge number={1} title="Name 3 AI Providers">
@@ -187,7 +187,7 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`}
 
           <ul className="space-y-3 text-muted-foreground mb-4">
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <div>
                 <strong className="text-foreground">AI_GATEWAY_API_KEY</strong> — Your single API key from Vercel AI Gateway.
                 One key unlocks all providers. You get this from <Code>vercel.com/ai-gateway</Code> after
@@ -196,7 +196,7 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`}
               </div>
             </li>
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <div>
                 <strong className="text-foreground">AI_GATEWAY_MODEL</strong> — The model to use, in <Code>provider/model-name</Code> format.
                 For example, <Code>anthropic/claude-sonnet-4-6</Code> routes to Anthropic{"'"}s Claude Sonnet model.
@@ -204,7 +204,7 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`}
               </div>
             </li>
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <div>
                 <strong className="text-foreground">AI_GATEWAY_URL</strong> — The gateway endpoint URL. This is always{' '}
                 <Code>https://ai-gateway.vercel.sh/v1</Code> for Vercel{"'"}s hosted gateway. The <Code>/v1</Code> suffix
@@ -257,13 +257,13 @@ func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHa
 
           <ul className="space-y-2 text-muted-foreground mb-4">
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <strong className="text-foreground">Complete</strong> — sends a request and waits for the
               entire response. Good for short tasks where you need the full answer before proceeding
               (e.g., generating a title, classifying text, extracting data).
             </li>
             <li className="flex gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-accent">•</span>
               <strong className="text-foreground">Stream</strong> — sends a request and receives the response
               in chunks as it{"'"}s generated. Good for long responses where you want the user to see text
               appearing in real-time (e.g., chat conversations, long-form content).
@@ -495,10 +495,10 @@ AI_GATEWAY_MODEL=meta/llama-4-scout`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Test different models</strong> — try Claude, GPT, and Gemini for the same prompt and compare quality</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Optimize costs</strong> — use a cheaper model for simple tasks and a premium model for complex ones</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Stay current</strong> — when a new model launches, just update the env var</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Avoid vendor lock-in</strong> — you{"'"}re never tied to one provider</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Test different models</strong> — try Claude, GPT, and Gemini for the same prompt and compare quality</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Optimize costs</strong> — use a cheaper model for simple tasks and a premium model for complex ones</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Stay current</strong> — when a new model launches, just update the env var</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Avoid vendor lock-in</strong> — you{"'"}re never tied to one provider</li>
           </ul>
 
           <Note>
@@ -570,10 +570,10 @@ async function sendMessage() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> The user types a message. We add it to the <Code>messages</Code> array with <Code>role: {'"'}user{'"'}</Code>.</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> We send the full messages array to <Code>/api/ai/stream</Code>. The AI needs the full history to understand context.</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> We use the Fetch API{"'"}s <Code>ReadableStream</Code> to read SSE chunks as they arrive.</li>
-            <li className="flex gap-2"><span className="text-primary">4.</span> Each chunk is appended to <Code>assistantMessage</Code>, and we update React state so the UI re-renders with each new word.</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> The user types a message. We add it to the <Code>messages</Code> array with <Code>role: {'"'}user{'"'}</Code>.</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> We send the full messages array to <Code>/api/ai/stream</Code>. The AI needs the full history to understand context.</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> We use the Fetch API{"'"}s <Code>ReadableStream</Code> to read SSE chunks as they arrive.</li>
+            <li className="flex gap-2"><span className="text-accent">4.</span> Each chunk is appended to <Code>assistantMessage</Code>, and we update React state so the UI re-renders with each new word.</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

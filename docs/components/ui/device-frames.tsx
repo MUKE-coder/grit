@@ -29,7 +29,7 @@ export function BrowserFrame({
       className={cn(
         'relative rounded-xl border-2 border-border/60 bg-card overflow-hidden',
         'shadow-[0_2px_0_rgba(0,0,0,0.04),0_24px_64px_-16px_rgba(0,0,0,0.4)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_64px_-16px_rgba(0,0,0,0.6)]',
-        glow && 'ring-1 ring-primary/15',
+        glow && 'ring-1 ring-accent/15',
         className,
       )}
     >
@@ -81,7 +81,7 @@ export function DesktopFrame({
       className={cn(
         'relative rounded-xl border-2 border-border/60 bg-card overflow-hidden',
         'shadow-[0_2px_0_rgba(0,0,0,0.04),0_24px_64px_-16px_rgba(0,0,0,0.4)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_64px_-16px_rgba(0,0,0,0.6)]',
-        glow && 'ring-1 ring-primary/15',
+        glow && 'ring-1 ring-accent/15',
         className,
       )}
     >
@@ -124,7 +124,7 @@ export function MobileFrame({
       className={cn(
         'relative rounded-[28px] bg-[#0b0b0d] p-[6px]',
         'shadow-[0_24px_64px_-16px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.2)] dark:shadow-[0_24px_64px_-16px_rgba(0,0,0,0.8)]',
-        glow && 'ring-1 ring-primary/30',
+        glow && 'ring-1 ring-accent/30',
         className,
       )}
     >

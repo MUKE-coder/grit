@@ -50,13 +50,13 @@ export default function PrerequisitesPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-4xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Prerequisites</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit assumes you know Go and can read React/TypeScript &mdash; it teaches{' '}
                 <em>Grit&apos;s</em> conventions on top, not the languages themselves. If any of
                 these are new, start with the matching primer. Otherwise, jump straight to{' '}
-                <Link href="/docs/getting-started/create-a-project" className="text-primary hover:underline">Create a project</Link>.
+                <Link href="/docs/getting-started/create-a-project" className="text-accent hover:underline">Create a project</Link>.
               </p>
             </div>
 
@@ -65,19 +65,19 @@ export default function PrerequisitesPage() {
                 <Link
                   key={t.href}
                   href={t.href}
-                  className="group rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-primary/30 transition-colors"
+                  className="group rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-accent/30 transition-colors"
                 >
                   {/* Mockup art */}
                   <div className="relative border-b border-border/40 bg-[#0d1117] px-4 py-3.5 overflow-hidden">
                     <div className="flex items-center gap-1.5 mb-2">
                       <WindowDots />
-                      <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-primary/50">{t.tag}</span>
+                      <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-accent/50">{t.tag}</span>
                     </div>
                     <pre className="text-[11px] leading-5 font-mono text-slate-300/80 whitespace-pre-wrap">{t.art}</pre>
                   </div>
                   {/* Body */}
                   <div className="p-5">
-                    <h2 className="text-base font-semibold mb-1.5 flex items-center gap-1.5 group-hover:text-primary transition-colors">
+                    <h2 className="text-base font-semibold mb-1.5 flex items-center gap-1.5 group-hover:text-accent transition-colors">
                       {t.title}
                       <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                     </h2>

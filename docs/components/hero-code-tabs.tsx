@@ -147,7 +147,7 @@ export function HeroCodeTabs() {
               onClick={() => setActive(t.key)}
               className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors ${
                 selected
-                  ? 'border-primary bg-white text-foreground dark:bg-[#0d1117] dark:text-slate-100'
+                  ? 'border-accent bg-white text-foreground dark:bg-[#0d1117] dark:text-slate-100'
                   : 'border-transparent text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-slate-300'
               }`}
             >
@@ -233,7 +233,7 @@ export function InstallTabs() {
             aria-pressed={i.key === active}
             className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors ${
               i.key === active
-                ? 'bg-primary/15 text-primary'
+                ? 'bg-accent/15 text-accent'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >

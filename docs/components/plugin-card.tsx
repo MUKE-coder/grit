@@ -58,7 +58,7 @@ export function PluginCard({ plugin }: { plugin: PluginEntry }) {
   return (
     <Link
       href={plugin.href}
-      className="group relative flex flex-col rounded-lg border border-border bg-card transition-colors duration-150 hover:border-primary/50"
+      className="group relative flex flex-col rounded-lg border border-border bg-card transition-colors duration-150 hover:border-accent/50"
     >
       <CornerTicks />
 
@@ -72,7 +72,7 @@ export function PluginCard({ plugin }: { plugin: PluginEntry }) {
             backgroundSize: '16px 16px',
           }}
         />
-        <span className="relative text-primary [&>svg]:h-8 [&>svg]:w-8">{plugin.icon}</span>
+        <span className="relative text-accent [&>svg]:h-8 [&>svg]:w-8">{plugin.icon}</span>
       </div>
 
       {/* Body */}
@@ -115,7 +115,7 @@ export function PluginCard({ plugin }: { plugin: PluginEntry }) {
             <span className="truncate text-xs text-muted-foreground">{plugin.author}</span>
           </>
         )}
-        <ArrowUpRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-primary" />
+        <ArrowUpRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-accent" />
       </div>
     </Link>
   )
@@ -131,7 +131,7 @@ export function PluginCard({ plugin }: { plugin: PluginEntry }) {
 export function ModuleRow({ name, summary }: { name: string; summary: string }) {
   return (
     <div className="flex items-start gap-4 border-b border-border py-3.5 last:border-0">
-      <code className="w-36 shrink-0 font-mono text-sm text-primary">{name}</code>
+      <code className="w-36 shrink-0 font-mono text-sm text-accent">{name}</code>
       <p className="flex-1 text-sm text-muted-foreground">{summary}</p>
     </div>
   )
@@ -161,7 +161,7 @@ export function CommunityEmpty() {
       </p>
       <Link
         href="/docs/plugins/authoring"
-        className="mt-5 inline-flex h-10 items-center gap-2 rounded-full border border-border px-5 text-sm font-medium text-foreground transition-colors duration-150 hover:border-primary/50"
+        className="mt-5 inline-flex h-10 items-center gap-2 rounded-full border border-border px-5 text-sm font-medium text-foreground transition-colors duration-150 hover:border-accent/50"
       >
         Write a plugin
         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />

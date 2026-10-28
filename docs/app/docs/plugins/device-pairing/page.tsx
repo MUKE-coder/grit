@@ -54,7 +54,7 @@ export default function DevicePairingPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <QrCode className="h-5 w-5 text-primary" />
+            <QrCode className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Plugin
             </span>
@@ -164,9 +164,9 @@ grit migrate`} />
               </p>
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
               <div className="mb-2 flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary" />
+                <ShieldCheck className="h-4 w-4 text-accent" />
                 <strong className="text-sm text-foreground">Single use, enforced by the database</strong>
               </div>
               <p className="text-sm leading-relaxed text-muted-foreground">
@@ -210,7 +210,7 @@ grit migrate`} />
             Revoking that session closes its realtime socket immediately, so a device
             you sign out stops receiving pushed events as well as losing its API
             access. See{' '}
-            <Link href="/docs/backend/realtime" className="text-primary hover:underline">
+            <Link href="/docs/backend/realtime" className="text-accent hover:underline">
               Realtime
             </Link>
             .

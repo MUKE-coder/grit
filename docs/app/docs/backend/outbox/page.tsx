@@ -19,7 +19,7 @@ export default function OutboxPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">The transactional outbox</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 A webhook that fires for an order the database rolled back is worse than one that

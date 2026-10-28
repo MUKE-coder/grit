@@ -24,7 +24,7 @@ export default function DocsIntroductionPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Introduction</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Introduction</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 The Full-Stack Framework for Builders Who Ship
               </h1>
@@ -49,7 +49,7 @@ export default function DocsIntroductionPage() {
             {/* Value proposition pills */}
             <div className="flex flex-wrap gap-2 mb-10">
               {[
-                { label: 'Ship in hours, not weeks', color: 'bg-primary/10 text-primary border-primary/20' },
+                { label: 'Ship in hours, not weeks', color: 'bg-accent/10 text-accent border-accent/20' },
                 { label: 'Self-host everything', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
                 { label: 'Go performance', color: 'bg-sky-500/10 text-sky-400 border-sky-500/20' },
                 { label: 'CRM-ready', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
@@ -64,9 +64,9 @@ export default function DocsIntroductionPage() {
             </div>
 
             {/* Start here — the first action, above the fold (Expo-style) */}
-            <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-5 mb-10">
+            <div className="rounded-xl border border-accent/20 bg-accent/[0.04] p-5 mb-10">
               <div className="flex items-center gap-2 mb-3">
-                <Terminal className="h-4 w-4 text-primary" />
+                <Terminal className="h-4 w-4 text-accent" />
                 <span className="text-sm font-semibold text-foreground">Start here</span>
               </div>
               <CodeBlock
@@ -102,12 +102,12 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { name: 'Triple — Web + Admin + API', href: '/docs/tech-kits/triple', cmd: 'grit new myapp --triple', icon: <LayoutDashboard className="h-5 w-5 text-primary" />, tint: 'bg-primary/15 border-primary/20', desc: 'The full monorepo: a Next.js web app, a Filament-like admin panel, and a Go API with shared types. The default for SaaS and internal tools.', featured: true },
+                  { name: 'Triple — Web + Admin + API', href: '/docs/tech-kits/triple', cmd: 'grit new myapp --triple', icon: <LayoutDashboard className="h-5 w-5 text-accent" />, tint: 'bg-accent/15 border-accent/20', desc: 'The full monorepo: a Next.js web app, a Filament-like admin panel, and a Go API with shared types. The default for SaaS and internal tools.', featured: true },
                   { name: 'Multi-Client — Everything at once', href: '/docs/concepts/architecture-modes/multi-client', cmd: 'grit new myapp --triple --mobile --desktop', icon: <Boxes className="h-5 w-5 text-fuchsia-400" />, tint: 'bg-fuchsia-500/10 border-fuchsia-500/15', desc: 'Web, admin, API, mobile (Expo) and desktop (Wails) — one Go backend, every client, scaffolded together.', featured: true },
                   { name: 'Single (Next.js)', href: '/docs/tech-kits/single', cmd: 'grit new myapp --single', icon: <Globe className="h-4.5 w-4.5 text-sky-400" />, tint: 'bg-sky-500/10 border-sky-500/10', desc: 'One Next.js app with API routes — a fast, self-contained full-stack app.' },
                   { name: 'Single + Vite', href: '/docs/tech-kits/single-vite', cmd: 'grit new myapp --single --vite', icon: <Zap className="h-4.5 w-4.5 text-amber-400" />, tint: 'bg-amber-500/10 border-amber-500/10', desc: 'A single-page app on Vite + TanStack Router, backed by its own lightweight API.' },
                   { name: 'Double — Web + API', href: '/docs/tech-kits/double', cmd: 'grit new myapp --double', icon: <Layers className="h-4.5 w-4.5 text-emerald-400" />, tint: 'bg-emerald-500/10 border-emerald-500/10', desc: 'A Next.js frontend and a standalone Go API with shared TypeScript types.' },
-                  { name: 'API only', href: '/docs/tech-kits/api', cmd: 'grit new myapp --api', icon: <Server className="h-4.5 w-4.5 text-primary" />, tint: 'bg-primary/10 border-primary/10', desc: 'Just the Go API — Gin, GORM, auth, and GORM Studio, no frontend.' },
+                  { name: 'API only', href: '/docs/tech-kits/api', cmd: 'grit new myapp --api', icon: <Server className="h-4.5 w-4.5 text-accent" />, tint: 'bg-accent/10 border-accent/10', desc: 'Just the Go API — Gin, GORM, auth, and GORM Studio, no frontend.' },
                   { name: 'Mobile (Expo)', href: '/docs/tech-kits/mobile', cmd: 'grit new myapp --mobile', icon: <Smartphone className="h-4.5 w-4.5 text-violet-400" />, tint: 'bg-violet-500/10 border-violet-500/10', desc: 'A React Native app on Expo wired to a Go API — iOS and Android from one codebase.' },
                   { name: 'Desktop (Wails)', href: '/docs/tech-kits/desktop', cmd: 'grit new-desktop myapp', icon: <Monitor className="h-4.5 w-4.5 text-rose-400" />, tint: 'bg-rose-500/10 border-rose-500/10', desc: 'A native, offline-first desktop app built with Wails and a bundled Go backend.' },
                 ].map((s) => (
@@ -116,8 +116,8 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                     href={s.href}
                     className={`group flex flex-col rounded-xl border transition-colors ${
                       s.featured
-                        ? 'sm:col-span-2 border-primary/25 bg-primary/[0.05] hover:border-primary/40'
-                        : 'border-border/40 bg-card/50 hover:border-primary/25'
+                        ? 'sm:col-span-2 border-accent/25 bg-accent/[0.05] hover:border-accent/40'
+                        : 'border-border/40 bg-card/50 hover:border-accent/25'
                     }`}
                   >
                     <div className="p-5 pb-3">
@@ -126,12 +126,12 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                           {s.icon}
                         </div>
                         {s.featured && (
-                          <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary uppercase tracking-wide">
+                          <span className="inline-flex items-center rounded-full border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium text-accent uppercase tracking-wide">
                             Recommended
                           </span>
                         )}
                       </div>
-                      <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">{s.name}</h3>
+                      <h3 className="text-sm font-semibold mb-1 group-hover:text-accent transition-colors">{s.name}</h3>
                       <p className="text-[13px] text-muted-foreground/70 leading-relaxed">{s.desc}</p>
                     </div>
                     {/* Code snippet */}
@@ -142,7 +142,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                     </div>
                     {/* CTA */}
                     <div className="px-5 py-3.5 mt-auto">
-                      <span className="text-[13px] font-medium text-primary inline-flex items-center gap-1">
+                      <span className="text-[13px] font-medium text-accent inline-flex items-center gap-1">
                         Read the guide
                         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                       </span>
@@ -181,14 +181,14 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   <Link
                     key={post.href}
                     href={post.href}
-                    className="group flex flex-col rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 hover:bg-card/80 transition-all"
+                    className="group flex flex-col rounded-xl border border-border/40 bg-card/50 p-5 hover:border-accent/20 hover:bg-card/80 transition-all"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/10 mb-3">
-                      <Newspaper className="h-4 w-4 text-primary" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/10 mb-3">
+                      <Newspaper className="h-4 w-4 text-accent" />
                     </div>
-                    <h3 className="text-sm font-semibold mb-1.5 group-hover:text-primary transition-colors">{post.title}</h3>
+                    <h3 className="text-sm font-semibold mb-1.5 group-hover:text-accent transition-colors">{post.title}</h3>
                     <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4 flex-1">{post.desc}</p>
-                    <span className="text-xs font-medium text-primary inline-flex items-center gap-1">
+                    <span className="text-xs font-medium text-accent inline-flex items-center gap-1">
                       Read
                       <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                     </span>
@@ -229,7 +229,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                       ].map((row) => (
                         <tr key={row.cmd} className="hover:bg-accent/10 transition-colors">
                           <td className="px-4 py-2.5 align-top">
-                            <code className="text-xs font-mono text-primary/80">{row.cmd}</code>
+                            <code className="text-xs font-mono text-accent/80">{row.cmd}</code>
                           </td>
                           <td className="px-4 py-2.5 text-xs text-muted-foreground/70 leading-relaxed">{row.desc}</td>
                         </tr>
@@ -258,10 +258,10 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
             </div>
 
             {/* Handbook download banner */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 rounded-xl border border-primary/20 bg-primary/5 mb-10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 rounded-xl border border-accent/20 bg-accent/5 mb-10">
               <div className="flex items-center gap-3 flex-1">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                  <BookOpen className="h-4 w-4 text-primary/70" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                  <BookOpen className="h-4 w-4 text-accent/70" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground/80">Grit Developer Handbook</p>
@@ -286,9 +286,9 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 Built for Builders
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 border border-primary/10 mb-3">
-                    <Rocket className="h-4.5 w-4.5 text-primary" />
+                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-accent/20 transition-colors">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 border border-accent/10 mb-3">
+                    <Rocket className="h-4.5 w-4.5 text-accent" />
                   </div>
                   <h3 className="text-sm font-semibold mb-1.5">Ship Fast</h3>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
@@ -298,7 +298,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors">
+                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-accent/20 transition-colors">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/10 mb-3">
                     <Server className="h-4.5 w-4.5 text-emerald-400" />
                   </div>
@@ -310,7 +310,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors">
+                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-accent/20 transition-colors">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 border border-sky-500/10 mb-3">
                     <Gauge className="h-4.5 w-4.5 text-sky-400" />
                   </div>
@@ -322,7 +322,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors">
+                <div className="rounded-xl border border-border/40 bg-card/50 p-5 hover:border-accent/20 transition-colors">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/10 mb-3">
                     <Shield className="h-4.5 w-4.5 text-amber-400" />
                   </div>
@@ -376,7 +376,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                     <thead>
                       <tr className="border-b border-border/40 bg-accent/20">
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground/70 w-[180px]">Feature</th>
-                        <th className="text-center px-3 py-3 text-xs font-semibold text-primary">Grit</th>
+                        <th className="text-center px-3 py-3 text-xs font-semibold text-accent">Grit</th>
                         <th className="text-center px-3 py-3 text-xs font-semibold text-muted-foreground/70">Laravel</th>
                         <th className="text-center px-3 py-3 text-xs font-semibold text-muted-foreground/70">Django</th>
                         <th className="text-center px-3 py-3 text-xs font-semibold text-muted-foreground/70">Rails</th>
@@ -523,11 +523,11 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                             return (
                               <td key={fw} className="text-center px-3 py-2.5">
                                 {row.type === 'text' ? (
-                                  <span className={`text-xs ${fw === 'grit' ? 'text-primary font-medium' : 'text-muted-foreground/60'}`}>
+                                  <span className={`text-xs ${fw === 'grit' ? 'text-accent font-medium' : 'text-muted-foreground/60'}`}>
                                     {val as string}
                                   </span>
                                 ) : val === true ? (
-                                  <CheckCircle2 className={`h-4 w-4 mx-auto ${fw === 'grit' ? 'text-primary' : 'text-emerald-500/70'}`} />
+                                  <CheckCircle2 className={`h-4 w-4 mx-auto ${fw === 'grit' ? 'text-accent' : 'text-emerald-500/70'}`} />
                                 ) : val === false ? (
                                   <X className="h-4 w-4 mx-auto text-muted-foreground/25" />
                                 ) : (
@@ -593,10 +593,10 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                     desc: 'A visual database browser embedded at /studio. Browse tables, inspect data, and manage your database without leaving the browser.',
                   },
                 ].map((feature) => (
-                  <Card key={feature.title} className="border-border/40 bg-card/50 hover:border-primary/20 transition-colors">
+                  <Card key={feature.title} className="border-border/40 bg-card/50 hover:border-accent/20 transition-colors">
                     <CardHeader className="space-y-2 pb-4">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/10">
-                        <feature.icon className="h-4 w-4 text-primary" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/10">
+                        <feature.icon className="h-4 w-4 text-accent" />
                       </div>
                       <CardTitle className="text-sm font-semibold">{feature.title}</CardTitle>
                       <CardDescription className="text-[13px] leading-relaxed">{feature.desc}</CardDescription>
@@ -635,7 +635,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   },
                 ].map((item) => (
                   <div key={item.step} className="relative pl-10">
-                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       {item.step}
                     </div>
                     <div>
@@ -664,23 +664,23 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 </div>
                 <div className="p-5 font-mono text-sm space-y-2">
                   <div>
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">grit new myapp</span>
                   </div>
                   <div>
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">cd myapp</span>
                   </div>
                   <div>
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">docker compose up -d</span>
                   </div>
                   <div>
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">grit generate resource Post --fields &quot;title:string,content:text,published:bool&quot;</span>
                   </div>
                   <div>
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">grit start</span>
                   </div>
                 </div>
@@ -698,7 +698,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 What Gets Generated
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                When you run <code className="text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">grit generate resource Post</code>, the CLI creates:
+                When you run <code className="text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">grit generate resource Post</code>, the CLI creates:
               </p>
               <div className="space-y-3">
                 {[
@@ -712,7 +712,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   { file: 'apps/admin/app/resources/posts/page.tsx', desc: 'Admin page with data table, search, filters, and form actions' },
                 ].map((item) => (
                   <div key={item.file} className="flex items-start gap-3 rounded-lg border border-border/30 bg-card/30 px-4 py-3">
-                    <code className="text-xs font-mono text-primary/70 shrink-0 mt-0.5">{item.file}</code>
+                    <code className="text-xs font-mono text-accent/70 shrink-0 mt-0.5">{item.file}</code>
                     <span className="text-xs text-muted-foreground/60">{item.desc}</span>
                   </div>
                 ))}
@@ -745,8 +745,8 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   { title: 'Tutorials', desc: 'Step-by-step guides to build real apps', href: '/docs/tutorials/learn' },
                 ].map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-primary/20 hover:bg-card/80 transition-all duration-200">
-                      <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                    <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-accent/20 hover:bg-card/80 transition-all duration-200">
+                      <h3 className="text-sm font-semibold mb-1 group-hover:text-accent transition-colors flex items-center gap-1.5">
                         {item.title}
                         <ArrowRight className="h-3 w-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                       </h3>

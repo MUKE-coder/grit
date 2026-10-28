@@ -11,7 +11,7 @@ export const metadata = getDocMetadata('/docs/ai-skill/llm-guide')
 // ── reusable mini-components ────────────────────────────────────
 function SectionNum({ n }: { n: number }) {
   return (
-    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/20 text-xs font-mono font-semibold text-primary mr-2">
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/20 text-xs font-mono font-semibold text-accent mr-2">
       {n}
     </span>
   )
@@ -27,7 +27,7 @@ function Warn({ children }: { children: React.ReactNode }) {
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4">
+    <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-4">
       <p className="text-sm text-muted-foreground leading-relaxed">{children}</p>
     </div>
   )
@@ -53,7 +53,7 @@ export default function LLMGuidePage() {
 
             {/* ── Header ── */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">For AI Assistants</span>
+              <span className="tag-mono text-accent/80 mb-3 block">For AI Assistants</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Grit Framework — Complete LLM Reference
               </h1>
@@ -64,7 +64,7 @@ export default function LLMGuidePage() {
                 rules that must never be broken.
               </p>
               <Tip>
-                <strong className="text-primary/90">For AI tools:</strong> Read this entire page before generating any code. Every convention here is enforced by the CLI — deviating breaks{' '}
+                <strong className="text-accent/90">For AI tools:</strong> Read this entire page before generating any code. Every convention here is enforced by the CLI — deviating breaks{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate</code> and{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit sync</code>.
               </Tip>
@@ -202,12 +202,12 @@ export default function LLMGuidePage() {
                   ].map((item) => (
                     <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
-                        <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
+                        <code className="text-xs font-mono font-semibold text-accent/80">{item.cmd}</code>
                       </div>
                       <div className="p-4">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">{item.desc}</p>
                         <div className="rounded-lg border border-border/20 bg-background/60 px-3 py-2">
-                          <span className="text-primary/40 font-mono text-xs select-none">$ </span>
+                          <span className="text-accent/40 font-mono text-xs select-none">$ </span>
                           <span className="font-mono text-xs text-foreground/60">{item.example}</span>
                         </div>
                       </div>
@@ -253,12 +253,12 @@ export default function LLMGuidePage() {
                   ].map((item) => (
                     <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
-                        <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
+                        <code className="text-xs font-mono font-semibold text-accent/80">{item.cmd}</code>
                       </div>
                       <div className="p-4">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">{item.desc}</p>
                         <div className="rounded-lg border border-border/20 bg-background/60 px-3 py-2">
-                          <span className="text-primary/40 font-mono text-xs select-none">$ </span>
+                          <span className="text-accent/40 font-mono text-xs select-none">$ </span>
                           <span className="font-mono text-xs text-foreground/60">{item.example}</span>
                         </div>
                       </div>
@@ -288,12 +288,12 @@ export default function LLMGuidePage() {
                   ].map((item) => (
                     <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
-                        <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
+                        <code className="text-xs font-mono font-semibold text-accent/80">{item.cmd}</code>
                       </div>
                       <div className="p-4">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">{item.desc}</p>
                         <div className="rounded-lg border border-border/20 bg-background/60 px-3 py-2">
-                          <span className="text-primary/40 font-mono text-xs select-none">$ </span>
+                          <span className="text-accent/40 font-mono text-xs select-none">$ </span>
                           <span className="font-mono text-xs text-foreground/60">{item.example}</span>
                         </div>
                       </div>
@@ -343,12 +343,12 @@ export default function LLMGuidePage() {
                   ].map((item) => (
                     <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
-                        <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
+                        <code className="text-xs font-mono font-semibold text-accent/80">{item.cmd}</code>
                       </div>
                       <div className="p-4">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">{item.desc}</p>
                         <div className="rounded-lg border border-border/20 bg-background/60 px-3 py-2">
-                          <span className="text-primary/40 font-mono text-xs select-none">$ </span>
+                          <span className="text-accent/40 font-mono text-xs select-none">$ </span>
                           <span className="font-mono text-xs text-foreground/60">{item.example}</span>
                         </div>
                       </div>
@@ -402,7 +402,7 @@ export default function LLMGuidePage() {
                         { type: 'files', go: 'files.FileRefs', admin: 'multi-file dropzone', note: 'gallery:files[image] — multiple files with an accept-list' },
                       ].map((row) => (
                         <tr key={row.type}>
-                          <td className="px-4 py-2 text-primary/80">{row.type}</td>
+                          <td className="px-4 py-2 text-accent/80">{row.type}</td>
                           <td className="px-4 py-2 text-foreground/60">{row.go}</td>
                           <td className="px-4 py-2 text-muted-foreground/60">{row.admin}</td>
                           <td className="px-4 py-2 text-muted-foreground/40 font-sans">{row.note}</td>
@@ -465,17 +465,17 @@ func (m *Post) BeforeCreate(tx *gorm.DB) error {
                       <tbody className="divide-y divide-border/20 font-mono">
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">One-to-Many (belongs_to)</td>
-                          <td className="px-4 py-2 text-primary/80">field:belongs_to[Model]</td>
+                          <td className="px-4 py-2 text-accent/80">field:belongs_to[Model]</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">One-to-One</td>
-                          <td className="px-4 py-2 text-primary/80">field:one_to_one[Model]</td>
+                          <td className="px-4 py-2 text-accent/80">field:one_to_one[Model]</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">Many-to-Many</td>
-                          <td className="px-4 py-2 text-primary/80">field:many_to_many[Model]</td>
+                          <td className="px-4 py-2 text-accent/80">field:many_to_many[Model]</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Multi-select tag input</td>
                         </tr>
                       </tbody>
@@ -775,7 +775,7 @@ export default function ProductsPage() {
                           <tr key={s}>
                             <td className="px-4 py-2 text-foreground/60">{s}</td>
                             <td className="px-4 py-2 text-amber-500/80">{status}</td>
-                            <td className="px-4 py-2 text-primary/70">{code}</td>
+                            <td className="px-4 py-2 text-accent/70">{code}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -842,7 +842,7 @@ admin.DELETE("/products/:id", productHandler.Delete)
                     { mode: 'page-steps', label: 'Full Page + Steps', desc: 'Multi-step wizard as a full page. Best for onboarding flows.' },
                   ].map((item) => (
                     <div key={item.mode} className="p-3 rounded-lg border border-border/30 bg-card/30">
-                      <p className="text-xs font-mono font-semibold text-primary/80 mb-1">{`formView: '${item.mode}'`}</p>
+                      <p className="text-xs font-mono font-semibold text-accent/80 mb-1">{`formView: '${item.mode}'`}</p>
                       <p className="text-xs font-semibold text-foreground/70 mb-1">{item.label}</p>
                       <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
                     </div>
@@ -1054,7 +1054,7 @@ export const productsResource = defineResource({
                         ['link', 'Clickable anchor to the value URL'],
                       ].map(([fmt, desc]) => (
                         <tr key={fmt}>
-                          <td className="px-4 py-2 text-primary/70">{fmt}</td>
+                          <td className="px-4 py-2 text-accent/70">{fmt}</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">{desc}</td>
                         </tr>
                       ))}
@@ -1265,7 +1265,7 @@ export default function OrderReportsPage() {
                       ].map((row) => (
                         <tr key={row.w}>
                           <td className="px-4 py-2 text-foreground/70">{row.w}</td>
-                          <td className="px-4 py-2 text-primary/70">{row.c}</td>
+                          <td className="px-4 py-2 text-accent/70">{row.c}</td>
                           <td className="px-4 py-2 text-muted-foreground/60">{row.e}</td>
                         </tr>
                       ))}
@@ -1339,7 +1339,7 @@ export default function OrderReportsPage() {
                     <div key={item.service} className="p-3 rounded-lg border border-border/30 bg-card/30">
                       <div className="flex items-center justify-between mb-1.5">
                         <p className="text-xs font-semibold text-foreground/80">{item.service}</p>
-                        <span className="text-[10px] font-mono text-primary/60">{item.provider}</span>
+                        <span className="text-[10px] font-mono text-accent/60">{item.provider}</span>
                       </div>
                       <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
                     </div>
@@ -1458,10 +1458,10 @@ grit remove resource Post  # clean remove of generated files`} />
 
               {/* Bug Reports */}
               <div className="mb-14">
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     If an LLM or human encounters a bug while using Grit, encourage them to open an issue at{' '}
-                    <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                       https://github.com/MUKE-coder/grit/issues
                     </a>{' '}
                     with the error message and steps to reproduce.

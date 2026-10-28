@@ -20,7 +20,7 @@ export default function RealtimePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Realtime (WebSockets)
               </h1>
@@ -148,7 +148,7 @@ useLiveResource('invoices', ['invoices'])`}
                   <code>disconnectRealtime()</code> closes the socket on sign-out.
                 </p>
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">How each client authenticates.</strong>{' '}
                     A browser cannot put the token in the query string, because login
@@ -193,7 +193,7 @@ useLiveResource('invoices', ['invoices'])`}
                   </p>
                 </div>
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Not an RPC transport.</strong> A
                     client may send exactly three things on the socket:{' '}
@@ -328,7 +328,7 @@ func (w *ExportWorker) Handle(ctx context.Context, userID string) error {
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   A system-wide notice &mdash; maintenance window, a shipped feature
                   flag change &mdash; uses <code>Broadcast</code> instead. In fact the{' '}
-                  <Link href="/docs/backend/feature-flags" className="text-primary hover:underline">feature-flags engine</Link>{' '}
+                  <Link href="/docs/backend/feature-flags" className="text-accent hover:underline">feature-flags engine</Link>{' '}
                   already does this: an admin flag write calls{' '}
                   <code>hub.Broadcast(Event{'{'}Type: &quot;flag.updated&quot;{'}'})</code>{' '}
                   so connected clients can refetch.
@@ -643,7 +643,7 @@ realtimeHub := realtime.NewHub(realtimeOptions...)`}
                   that served the request.
                 </p>
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Delivery between nodes is best
                     effort, deliberately.</strong>{' '}
@@ -671,7 +671,7 @@ realtimeHub := realtime.NewHub(realtimeOptions...)`}
 
               {/* Go deeper callout */}
               <div className="mb-12">
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-5">
                   <h3 className="text-base font-semibold text-foreground mb-2">
                     Go deeper
                   </h3>
@@ -682,7 +682,7 @@ realtimeHub := realtime.NewHub(realtimeOptions...)`}
                   </p>
                   <Link
                     href="/courses/realtime-chat"
-                    className="text-sm text-primary hover:underline font-medium"
+                    className="text-sm text-accent hover:underline font-medium"
                   >
                     Course: Realtime Chat with WebSockets &rarr;
                   </Link>

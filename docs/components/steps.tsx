@@ -28,7 +28,7 @@ export function Step({ title, children }: { title?: ReactNode; children: ReactNo
       {title && (
         <div className="mb-2 text-lg font-semibold tracking-tight text-foreground">{title}</div>
       )}
-      <div className="text-[15px] leading-relaxed text-muted-foreground [&_a]:text-primary [&_a:hover]:underline">
+      <div className="text-[15px] leading-relaxed text-muted-foreground [&_a]:text-accent [&_a:hover]:underline">
         {children}
       </div>
     </div>

@@ -30,7 +30,7 @@ export default function IntroductionToGritCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 0 of 9</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 0 of 9</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -57,10 +57,10 @@ export default function IntroductionToGritCourse() {
             caption="Grit gives you a Go API, a React frontend, an admin panel, and a CLI that generates it all" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs" className="text-primary hover:underline">Introduction →</a>
+            <a href="/docs" className="text-accent hover:underline">Introduction →</a>
           </p>
         </div>
 
@@ -115,9 +115,9 @@ export default function IntroductionToGritCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Not a boilerplate</strong> — it{"'"}s a living framework with a CLI that keeps helping you after the initial scaffold. Generate resources, sync types, deploy — all from the same tool.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Not a template</strong> — it generates real, customizable code you own. Every file is yours to modify, extend, or delete.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Not locked in</strong> — you can stop using Grit tomorrow and your code still works. It{"'"}s standard Go, standard React, standard PostgreSQL. No proprietary runtime.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Not a boilerplate</strong> — it{"'"}s a living framework with a CLI that keeps helping you after the initial scaffold. Generate resources, sync types, deploy — all from the same tool.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Not a template</strong> — it generates real, customizable code you own. Every file is yours to modify, extend, or delete.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Not locked in</strong> — you can stop using Grit tomorrow and your code still works. It{"'"}s standard Go, standard React, standard PostgreSQL. No proprietary runtime.</li>
           </ul>
 
           <Challenge number={1} title="Boilerplate vs Framework">
@@ -477,49 +477,49 @@ export default function IntroductionToGritCourse() {
 
           <div className="space-y-4 mb-6">
             <div className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">1.</span>
+              <span className="text-accent font-bold shrink-0">1.</span>
               <div>
                 <strong className="text-foreground">Go Developers</strong>
                 <p className="text-muted-foreground">Who want a batteries-included framework like Laravel or Rails, but in Go. No more gluing together 15 libraries for every project.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">2.</span>
+              <span className="text-accent font-bold shrink-0">2.</span>
               <div>
                 <strong className="text-foreground">Laravel Developers</strong>
                 <p className="text-muted-foreground">Migrating to Go and wanting familiar patterns — single-app mode, artisan-like CLI, convention-driven structure.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">3.</span>
+              <span className="text-accent font-bold shrink-0">3.</span>
               <div>
                 <strong className="text-foreground">Next.js Developers</strong>
                 <p className="text-muted-foreground">Who want a proper backend instead of serverless functions. Real database connections, real background jobs, real performance.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">4.</span>
+              <span className="text-accent font-bold shrink-0">4.</span>
               <div>
                 <strong className="text-foreground">MERN Stack Developers</strong>
                 <p className="text-muted-foreground">Who want a structured monorepo with type safety instead of loosely connected services.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">5.</span>
+              <span className="text-accent font-bold shrink-0">5.</span>
               <div>
                 <strong className="text-foreground">Solo Developers</strong>
                 <p className="text-muted-foreground">Building SaaS products who need to ship fast without cutting corners on quality or security.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">6.</span>
+              <span className="text-accent font-bold shrink-0">6.</span>
               <div>
                 <strong className="text-foreground">Agencies</strong>
                 <p className="text-muted-foreground">Building client projects who need consistent, production-ready scaffolding for every engagement.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">7.</span>
+              <span className="text-accent font-bold shrink-0">7.</span>
               <div>
                 <strong className="text-foreground">Students and Beginners</strong>
                 <p className="text-muted-foreground">Learning full-stack development with a guided framework that teaches best practices by example.</p>
@@ -614,7 +614,7 @@ export default function IntroductionToGritCourse() {
               'Type Sync (Go → TS)',
             ].map((feature) => (
               <div key={feature} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/10 border border-border/30 rounded-lg px-3 py-2">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
                 <span>{feature}</span>
               </div>
             ))}
@@ -813,8 +813,8 @@ export default function IntroductionToGritCourse() {
               { num: 7, title: 'AI-Powered Features', desc: 'Vercel AI Gateway, streaming responses, multi-provider support' },
               { num: 8, title: 'Deploy to Production', desc: 'grit deploy, systemd, Caddy reverse proxy, Docker, auto-HTTPS' },
             ].map((course) => (
-              <div key={course.num} className={`flex gap-3 items-start border border-border/30 rounded-lg px-4 py-3 ${course.num === 0 ? 'bg-primary/10 border-primary/30' : 'bg-muted/10'}`}>
-                <span className={`text-xs font-mono font-bold shrink-0 mt-0.5 ${course.num === 0 ? 'text-primary' : 'text-muted-foreground'}`}>{course.num}.</span>
+              <div key={course.num} className={`flex gap-3 items-start border border-border/30 rounded-lg px-4 py-3 ${course.num === 0 ? 'bg-accent/10 border-accent/30' : 'bg-muted/10'}`}>
+                <span className={`text-xs font-mono font-bold shrink-0 mt-0.5 ${course.num === 0 ? 'text-accent' : 'text-muted-foreground'}`}>{course.num}.</span>
                 <div>
                   <span className="font-semibold text-foreground text-sm">{course.title}</span>
                   <p className="text-muted-foreground text-xs mt-0.5">{course.desc}</p>
@@ -858,7 +858,7 @@ export default function IntroductionToGritCourse() {
               'The course series covers 9 courses from introduction to production deployment',
             ].map((item, i) => (
               <li key={i} className="flex gap-3 text-muted-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}
@@ -867,10 +867,10 @@ export default function IntroductionToGritCourse() {
           <Challenge number={12} title="Prepare for Course 1">
             <p>Before starting Course 1, prepare your development environment. Visit these links and bookmark them:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Grit Docs: <a href="https://gritframework.dev/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://gritframework.dev/</a></li>
-              <li>GitHub: <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://github.com/MUKE-coder/grit</a></li>
-              <li>YouTube: <a href="https://www.youtube.com/@GritFramework" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://www.youtube.com/@GritFramework</a></li>
-              <li>LinkedIn: <a href="https://www.linkedin.com/company/grit-framework" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://www.linkedin.com/company/grit-framework</a></li>
+              <li>Grit Docs: <a href="https://gritframework.dev/" target="_blank" rel="noreferrer" className="text-accent hover:underline">https://gritframework.dev/</a></li>
+              <li>GitHub: <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-accent hover:underline">https://github.com/MUKE-coder/grit</a></li>
+              <li>YouTube: <a href="https://www.youtube.com/@GritFramework" target="_blank" rel="noreferrer" className="text-accent hover:underline">https://www.youtube.com/@GritFramework</a></li>
+              <li>LinkedIn: <a href="https://www.linkedin.com/company/grit-framework" target="_blank" rel="noreferrer" className="text-accent hover:underline">https://www.linkedin.com/company/grit-framework</a></li>
             </ul>
             <p className="mt-2">Star the GitHub repo, subscribe to YouTube, follow on LinkedIn. You{"'"}re ready to start building.</p>
           </Challenge>

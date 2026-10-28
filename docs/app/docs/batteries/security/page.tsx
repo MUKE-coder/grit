@@ -20,7 +20,7 @@ export default function SecurityPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Batteries</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Batteries</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Security (Sentinel)
               </h1>
@@ -78,7 +78,7 @@ export default function SecurityPage() {
                     <a
                       key={item.title}
                       href={item.href}
-                      className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 block hover:border-primary/40 transition-colors"
+                      className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 block hover:border-accent/40 transition-colors"
                     >
                       <h3 className="text-sm font-semibold text-foreground mb-1">{item.title}</h3>
                       <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -126,7 +126,7 @@ export default function SecurityPage() {
                     ['CSPViolation', 'Reported by the browser, back to your own endpoint'],
                   ].map(([name, what]) => (
                     <div key={name} className="rounded-lg border border-border/30 bg-card/20 px-3 py-2">
-                      <code className="text-xs text-primary">{name}</code>
+                      <code className="text-xs text-accent">{name}</code>
                       <p className="text-xs text-muted-foreground/70 leading-relaxed mt-1">{what}</p>
                     </div>
                   ))}
@@ -135,10 +135,10 @@ export default function SecurityPage() {
                   Each rule has a sensitivity of <code>off</code>, <code>low</code>,{' '}
                   <code>medium</code> or <code>strict</code>, so a rule that costs you false
                   positives can be loosened or turned off without turning off the WAF. What
-                  happens on a match is the <a href="#waf-modes" className="text-primary hover:underline">WAF mode</a>:
+                  happens on a match is the <a href="#waf-modes" className="text-accent hover:underline">WAF mode</a>:
                   log it, block it, or challenge the caller. Your own patterns go in{' '}
-                  <a href="#custom-rules" className="text-primary hover:underline">custom rules</a>, and{' '}
-                  <a href="#waf-blind-spots" className="text-primary hover:underline">what the WAF does not inspect</a>{' '}
+                  <a href="#custom-rules" className="text-accent hover:underline">custom rules</a>, and{' '}
+                  <a href="#waf-blind-spots" className="text-accent hover:underline">what the WAF does not inspect</a>{' '}
                   is worth reading before you rely on it.
                 </p>
 
@@ -378,7 +378,7 @@ SECURITY_AUTO_BAN_PERMANENT=true`} />
                     ['credential_stuffing', 'One password tried across many accounts, seen across the whole application'],
                   ].map(([name, what]) => (
                     <div key={name} className="rounded-lg border border-border/30 bg-card/20 px-3 py-2">
-                      <code className="text-xs text-primary">{name}</code>
+                      <code className="text-xs text-accent">{name}</code>
                       <p className="text-xs text-muted-foreground/70 leading-relaxed mt-1">{what}</p>
                     </div>
                   ))}
@@ -431,7 +431,7 @@ SECURITY_AUTO_BAN_PERMANENT=true`} />
                   Per-route latency as p50, p95 and p99. It is here because the WAF is already in
                   the request path and already knows which route this was, so the measurement is
                   free; it is not a replacement for{' '}
-                  <Link href="/docs/backend/pulse" className="text-primary hover:underline">Pulse</Link>,
+                  <Link href="/docs/backend/pulse" className="text-accent hover:underline">Pulse</Link>,
                   which traces a request through its queries and tells you which line issued
                   them. Use these numbers to notice that something got slower, and Pulse to find
                   out why.
@@ -473,7 +473,7 @@ SENTINEL_AUDIT_KEY=change-me-in-production`} />
                         { name: 'SENTINEL_AUDIT_KEY', def: '(generated)', desc: 'Keys the audit log hash chain, so an entry edited with database access alone fails verification' },
                       ].map((row) => (
                         <tr key={row.name} className="border-b border-border/50">
-                          <td className="py-2 pr-4 font-mono text-xs text-primary/60">{row.name}</td>
+                          <td className="py-2 pr-4 font-mono text-xs text-accent/60">{row.name}</td>
                           <td className="py-2 pr-4 font-mono text-xs text-muted-foreground">{row.def}</td>
                           <td className="py-2 text-muted-foreground">{row.desc}</td>
                         </tr>
@@ -715,7 +715,7 @@ if cfg.SentinelEnabled {
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2 mb-4">
                   <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
-                    <code className="text-sm font-mono text-primary/70 font-medium">ModeLog</code>
+                    <code className="text-sm font-mono text-accent/70 font-medium">ModeLog</code>
                     <span className="ml-2 text-xs text-warning bg-warning/10 px-1.5 py-0.5 rounded-full">dev default</span>
                     <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">
                       Detects and logs threats but does not block requests. Use during development and initial
@@ -723,7 +723,7 @@ if cfg.SentinelEnabled {
                     </p>
                   </div>
                   <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
-                    <code className="text-sm font-mono text-primary/70 font-medium">ModeBlock</code>
+                    <code className="text-sm font-mono text-accent/70 font-medium">ModeBlock</code>
                     <span className="ml-2 text-xs text-success bg-success/10 px-1.5 py-0.5 rounded-full">production</span>
                     <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">
                       Detects threats and blocks malicious requests with a 403 response. Switch to this
@@ -755,7 +755,7 @@ if cfg.SentinelEnabled {
                     'Open Redirect',
                   ].map((attack) => (
                     <div key={attack} className="text-sm text-muted-foreground flex items-center gap-2">
-                      <span className="text-primary/50">&#10003;</span>
+                      <span className="text-accent/50">&#10003;</span>
                       {attack}
                     </div>
                   ))}

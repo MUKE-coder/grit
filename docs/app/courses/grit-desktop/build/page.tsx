@@ -30,7 +30,7 @@ export default function BuildCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 5 of 5</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 5 of 5</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">10 challenges</span>
@@ -55,10 +55,10 @@ export default function BuildCourse() {
             caption="Compile to a native binary per platform — custom icon, optimized size — and distribute to users" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/desktop/building" className="text-primary hover:underline">Building & Distribution →</a>
+            <a href="/docs/desktop/building" className="text-accent hover:underline">Building & Distribution →</a>
           </p>
         </div>
 
@@ -151,9 +151,9 @@ export default function BuildCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> <strong className="text-foreground">Vite builds React</strong> — bundles, minifies, and optimizes all JavaScript, CSS, and assets</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> <strong className="text-foreground">Go embeds the frontend</strong> — the built React files are embedded into the Go binary using <Code>go:embed</Code></li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> <strong className="text-foreground">Go compiles to native code</strong> — the entire application (backend + embedded frontend) becomes a single executable</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> <strong className="text-foreground">Vite builds React</strong> — bundles, minifies, and optimizes all JavaScript, CSS, and assets</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> <strong className="text-foreground">Go embeds the frontend</strong> — the built React files are embedded into the Go binary using <Code>go:embed</Code></li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> <strong className="text-foreground">Go compiles to native code</strong> — the entire application (backend + embedded frontend) becomes a single executable</li>
           </ul>
 
           <Definition term="Native Binary">
@@ -247,9 +247,9 @@ wails build -platform linux/amd64`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">1.</span> Create a 1024x1024 pixel PNG image for your app icon</li>
-            <li className="flex gap-2"><span className="text-primary">2.</span> Replace <Code>build/appicon.png</Code> with your new image</li>
-            <li className="flex gap-2"><span className="text-primary">3.</span> Rebuild with <Code>grit compile</Code> — Wails converts it to platform-specific formats</li>
+            <li className="flex gap-2"><span className="text-accent">1.</span> Create a 1024x1024 pixel PNG image for your app icon</li>
+            <li className="flex gap-2"><span className="text-accent">2.</span> Replace <Code>build/appicon.png</Code> with your new image</li>
+            <li className="flex gap-2"><span className="text-accent">3.</span> Rebuild with <Code>grit compile</Code> — Wails converts it to platform-specific formats</li>
           </ul>
 
           <Tip>
@@ -410,9 +410,9 @@ upx --best build/bin/myapp.exe`}
           </Definition>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Windows</strong> — requires a code signing certificate ($200-400/year) from a Certificate Authority</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">macOS</strong> — requires an Apple Developer account ($99/year) and notarization through Apple{"'"}s servers</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Linux</strong> — code signing is optional; most Linux users install from package managers or trust direct downloads</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Windows</strong> — requires a code signing certificate ($200-400/year) from a Certificate Authority</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">macOS</strong> — requires an Apple Developer account ($99/year) and notarization through Apple{"'"}s servers</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Linux</strong> — code signing is optional; most Linux users install from package managers or trust direct downloads</li>
           </ul>
 
           <Note>
@@ -496,11 +496,11 @@ gh release create v1.0.0 \
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Scaffold a desktop app with <Code>grit new-desktop</Code></li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Generate full CRUD resources with Wails bindings</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Customize the UI with frameless windows, themes, and shadcn/ui</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Export data to PDF, Excel, and CSV</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Compile and distribute a native binary</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Scaffold a desktop app with <Code>grit new-desktop</Code></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Generate full CRUD resources with Wails bindings</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Customize the UI with frameless windows, themes, and shadcn/ui</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Export data to PDF, Excel, and CSV</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Compile and distribute a native binary</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

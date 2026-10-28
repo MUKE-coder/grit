@@ -79,7 +79,7 @@ export default async function ChapterLandingPage({ params }: PageProps) {
 
       {/* Hero */}
       <div className="mb-10">
-        <p className="text-[11px] uppercase tracking-wider text-primary font-mono mb-2 inline-flex items-center gap-1.5">
+        <p className="text-[11px] uppercase tracking-wider text-accent font-mono mb-2 inline-flex items-center gap-1.5">
           <BookOpen className="h-3 w-3" />
           Chapter {chapter.number}
         </p>
@@ -107,8 +107,8 @@ export default async function ChapterLandingPage({ params }: PageProps) {
       </div>
 
       {/* Learning goals */}
-      <div className="mb-10 rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
-        <h2 className="text-sm font-semibold mb-3 flex items-center gap-2 text-primary">
+      <div className="mb-10 rounded-2xl border border-accent/20 bg-accent/[0.04] p-5">
+        <h2 className="text-sm font-semibold mb-3 flex items-center gap-2 text-accent">
           <Target className="h-4 w-4" />
           By the end of this chapter you&apos;ll be able to
         </h2>
@@ -125,7 +125,7 @@ export default async function ChapterLandingPage({ params }: PageProps) {
       {/* Modules + lessons */}
       <div className="mb-10">
         <h2 className="text-xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
+          <Sparkles className="h-5 w-5 text-accent" />
           Lessons
         </h2>
         <div className="space-y-5">
@@ -145,14 +145,14 @@ export default async function ChapterLandingPage({ params }: PageProps) {
                     <Link
                       key={l.slug}
                       href={`/courses/${course.slug}/${chapter.slug}/${l.slug}`}
-                      className="group block rounded-xl border border-border/50 bg-card/30 p-4 hover:border-primary/40 hover:bg-card/60 transition-all"
+                      className="group block rounded-xl border border-border/50 bg-card/30 p-4 hover:border-accent/40 hover:bg-card/60 transition-all"
                     >
                       <div className="flex items-start gap-3">
                         <span className="text-[10px] font-mono text-muted-foreground/70 mt-1 w-6 shrink-0">
                           {String(i + 1).padStart(2, '0')}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
+                          <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors mb-0.5">
                             {l.title}
                           </h3>
                           <p className="text-xs text-muted-foreground leading-relaxed">
@@ -169,7 +169,7 @@ export default async function ChapterLandingPage({ params }: PageProps) {
                             </span>
                           </div>
                         </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
                       </div>
                     </Link>
                   )
@@ -205,9 +205,9 @@ export default async function ChapterLandingPage({ params }: PageProps) {
 
       {/* Start CTA */}
       {firstLesson && (
-        <div className="rounded-2xl border border-primary/20 bg-primary/[0.05] p-5 mb-10 text-center">
+        <div className="rounded-2xl border border-accent/20 bg-accent/[0.05] p-5 mb-10 text-center">
           <p className="text-sm text-muted-foreground mb-4">Lesson 1 takes ~{firstLesson.minutes} min.</p>
-          <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
             <Link href={`/courses/${course.slug}/${chapter.slug}/${firstLesson.slug}`}>
               Start chapter
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -219,8 +219,8 @@ export default async function ChapterLandingPage({ params }: PageProps) {
       {/* Suggest improvement — one-click GitHub issue with the chapter URL pre-filled. */}
       <div className="my-10 rounded-2xl border border-border/60 bg-card/30 p-5">
         <div className="flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-            <MessageSquarePlus className="h-5 w-5 text-primary" />
+          <div className="h-10 w-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+            <MessageSquarePlus className="h-5 w-5 text-accent" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold mb-1">
@@ -240,7 +240,7 @@ export default async function ChapterLandingPage({ params }: PageProps) {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium px-4 py-2 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-accent/90 text-xs font-medium px-4 py-2 transition-colors"
             >
               <Github className="h-3.5 w-3.5" />
               Suggest an improvement on GitHub

@@ -210,7 +210,7 @@ export default function PluginsPage() {
           <div className="max-w-4xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Extend Grit</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Extend Grit</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Optional Go Modules
               </h1>
@@ -218,23 +218,23 @@ export default function PluginsPage() {
                 Standalone Go packages that add specific functionality to your project.
                 Each one is a drop-in module with Gin handlers, GORM models, and a Claude Code skill file
                 so AI assistants know how to use it. You install them with{' '}
-                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-sm font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   go get
                 </code>
                 .
               </p>
               <Callout type="note" title="Not the same as grit plugin add">
                 These are ordinary Go dependencies you wire up yourself. Grit&apos;s{' '}
-                <Link href="/docs/plugins/authoring" className="text-primary hover:underline">
+                <Link href="/docs/plugins/authoring" className="text-accent hover:underline">
                   plugin system
                 </Link>{' '}
                 is a different thing: it generates code into your repo and records the
                 install in{' '}
-                <code className="text-xs font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                <code className="text-xs font-mono text-accent bg-accent/10 rounded px-1.5 py-0.5">
                   .grit/plugins.lock.json
                 </code>{' '}
                 so it can be reversed. The{' '}
-                <Link href="/docs/plugins/multitenant" className="text-primary hover:underline">
+                <Link href="/docs/plugins/multitenant" className="text-accent hover:underline">
                   multi-tenancy plugin
                 </Link>{' '}
                 is one of those.
@@ -290,7 +290,7 @@ plugin.RegisterRoutes(router.Group("/api"), svc)`} />
                   <p className="text-sm text-muted-foreground">
                     <strong className="text-foreground">Source Code:</strong>{' '}
                     All plugins are open source at{' '}
-                    <a href="https://github.com/MUKE-coder/grit-plugins" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                    <a href="https://github.com/MUKE-coder/grit-plugins" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline inline-flex items-center gap-1">
                       github.com/MUKE-coder/grit-plugins <ExternalLink className="h-3 w-3" />
                     </a>
                   </p>
@@ -313,7 +313,7 @@ plugin.RegisterRoutes(router.Group("/api"), svc)`} />
                       href={`https://github.com/MUKE-coder/grit-plugins/tree/main/${plugin.name}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors border border-border/40 rounded-md px-2.5 py-1.5"
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors border border-border/40 rounded-md px-2.5 py-1.5"
                     >
                       GitHub <ExternalLink className="h-3 w-3" />
                     </a>
@@ -329,7 +329,7 @@ plugin.RegisterRoutes(router.Group("/api"), svc)`} />
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {plugin.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <span className="text-primary mt-0.5">&#x2022;</span>
+                          <span className="text-accent mt-0.5">&#x2022;</span>
                           {feature}
                         </li>
                       ))}
@@ -341,7 +341,7 @@ plugin.RegisterRoutes(router.Group("/api"), svc)`} />
                     <h4 className="text-sm font-semibold text-foreground/80 mb-2">Use Cases</h4>
                     <div className="flex flex-wrap gap-2">
                       {plugin.useCases.map((uc) => (
-                        <span key={uc} className="inline-flex items-center rounded-md bg-accent/10 px-2.5 py-1 text-xs text-primary/80">
+                        <span key={uc} className="inline-flex items-center rounded-md bg-accent/10 px-2.5 py-1 text-xs text-accent/80">
                           {uc}
                         </span>
                       ))}

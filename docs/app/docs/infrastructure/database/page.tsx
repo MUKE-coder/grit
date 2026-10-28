@@ -21,7 +21,7 @@ export default function DatabasePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Infrastructure</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Infrastructure</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Database &amp; Migrations
               </h1>
@@ -49,12 +49,12 @@ export default function DatabasePage() {
               />
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-8">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Go deeper:</strong>{' '}
-                <Link href="/courses/gorm-mastery" className="text-primary hover:underline">Database Mastery</Link>{' '}
+                <Link href="/courses/gorm-mastery" className="text-accent hover:underline">Database Mastery</Link>{' '}
                 covers GORM models, migrations and queries in depth, and{' '}
-                <Link href="/courses/gorm-studio" className="text-primary hover:underline">GORM Studio</Link>{' '}
+                <Link href="/courses/gorm-studio" className="text-accent hover:underline">GORM Studio</Link>{' '}
                 is a full tour of the visual database browser at <code>/studio</code>.
               </p>
             </div>
@@ -75,7 +75,7 @@ export default function DatabasePage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">docker compose up -d postgres</span>
                   </div>
                 </div>
@@ -356,14 +356,14 @@ func Connect(dsn string) (*gorm.DB, error) {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">grit migrate</span>
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   For full details on how migrations work, fresh migrations, foreign key ordering,
                   and the typical workflow, see the{' '}
-                  <Link href="/docs/backend/migrations" className="text-primary hover:underline">
+                  <Link href="/docs/backend/migrations" className="text-accent hover:underline">
                     Migrations guide
                   </Link>.
                 </p>
@@ -452,7 +452,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
                         { tag: 'foreignKey', example: 'gorm:"foreignKey:UserID"', effect: 'Defines foreign key relationship' },
                       ].map((item) => (
                         <tr key={item.tag} className="border-b border-border/20 last:border-b-0">
-                          <td className="px-4 py-2.5 font-mono text-xs text-primary/80">{item.tag}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-accent/80">{item.tag}</td>
                           <td className="px-4 py-2.5 font-mono text-xs">{item.example}</td>
                           <td className="px-4 py-2.5">{item.effect}</td>
                         </tr>
@@ -626,7 +626,7 @@ func ConnectSQLite(dbPath string) (*gorm.DB, error) {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Every Grit project includes{' '}
-                  <Link href="https://github.com/MUKE-coder/gorm-studio" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://github.com/MUKE-coder/gorm-studio" target="_blank" className="text-accent hover:underline">
                     GORM Studio
                   </Link>{' '}
                   &mdash; a full-featured visual database browser and editor embedded directly into your API at{' '}

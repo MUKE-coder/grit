@@ -19,7 +19,7 @@ export default function TrashPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Admin Panel</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Admin Panel</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Trash &amp; Deleted Accounts</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Every generated resource soft-deletes, which means a deleted row is still on

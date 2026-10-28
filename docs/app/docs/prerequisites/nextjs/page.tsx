@@ -205,7 +205,7 @@ function ProductCard({ product }: { product: Product }) {
       <p className="text-sm text-muted-foreground mt-2">
         {product.description}
       </p>
-      <span className="text-primary font-bold text-xl mt-4 block">
+      <span className="text-accent font-bold text-xl mt-4 block">
         \${product.price}
       </span>
     </div>
@@ -493,7 +493,7 @@ export default function NextjsForGritPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Prerequisites</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Prerequisites</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Next.js &amp; React for Grit Developers</h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 A focused guide to the React and Next.js concepts you need to build with Grit.
@@ -522,8 +522,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="tsx" filename="components/Greeting.tsx" code={reactBasicsCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     Every file in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">app/</code> and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">components/</code> is
                     a React component. Pages like <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">page.tsx</code> export
@@ -552,8 +552,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="tsx" filename="types.ts" code={typescriptCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     All Grit code is TypeScript. Shared types live
                     in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/types/</code> and
@@ -579,8 +579,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="tsx" filename="components/UserProfile.tsx" code={useStateEffectCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     Grit uses <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">useState</code> throughout
                     the admin panel for local UI state (search filters, pagination, modal visibility) and
@@ -609,8 +609,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock filename="app/ folder structure" code={appRouterCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     Both <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/web</code> and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/admin</code> use
                     the App Router exclusively. The admin app uses a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">(dashboard)</code> route
@@ -639,8 +639,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="tsx" filename="server-vs-client.tsx" code={serverClientCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     In Grit, page-level components are typically server components that render the page shell.
                     Interactive parts like DataTable, FormBuilder, and any component using React Query hooks
@@ -668,8 +668,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="tsx" filename="components/ProductCard.tsx" code={tailwindCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     All styling in Grit is Tailwind -- there are no custom CSS files except for the
                     base <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">globals.css</code> which
@@ -698,8 +698,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="typescript" filename="hooks/use-posts.ts" code={reactQueryCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     All data fetching in Grit goes through React Query hooks stored
                     in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">hooks/</code>. When you
@@ -727,8 +727,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="typescript" filename="schemas/user.ts" code={zodCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     Zod schemas live in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/schemas/</code> and
                     are shared across the admin panel and web app. When you run <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>,
@@ -756,8 +756,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="tsx" filename="components/LoginForm.tsx" code={reactHookFormCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     Grit&apos;s admin panel includes a FormBuilder component that wraps React Hook Form with Zod
                     validation, supporting 8 field types (text, textarea, number, select, date, toggle, checkbox,
@@ -783,8 +783,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="typescript" filename="hooks/use-users.ts" code={customHooksCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     Grit generates resource-specific hooks
                     like <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">hooks/use-users.ts</code> and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">hooks/use-posts.ts</code>.
@@ -813,8 +813,8 @@ export default function NextjsForGritPage() {
 
                 <CodeBlock language="typescript" filename="lib/api-client.ts" code={apiClientCode} />
 
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-                  <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+                <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+                  <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     When you run <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit new</code>,
                     the API client is scaffolded

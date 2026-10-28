@@ -3,79 +3,143 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Light mode: clean white with strong contrast */
-    --background: 210 20% 98%;     /* very light cool gray, not pure white */
-    --foreground: 222 47% 11%;     /* near-black with blue tint */
-    --card: 0 0% 100%;             /* pure white cards for contrast against bg */
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 247 63% 57%;        /* #5b4bd6 — the product's accent, 6.07:1 with white */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 20% 95%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 20% 95%;
-    --muted-foreground: 215 16% 47%;  /* slate-500 — good contrast on white */
-    --accent: 210 20% 94%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 214 20% 88%;         /* visible but subtle borders */
-    --input: 214 20% 88%;
-    --ring: 247 63% 57%;
-    --chart-1: 247 63% 57%;
-    --chart-2: 160 52% 36%;
-    --chart-3: 36 100% 50%;
-    --chart-4: 340 75% 55%;
-    --chart-5: 217 91% 60%;
-    --radius: 0.625rem;
-    --sidebar-background: 222 30% 96%;  /* cooler gray — visual split from bg */
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 247 63% 57%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 92%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 20% 88%;
-    --sidebar-ring: 247 63% 57%;
+  /* Grit design system tokens.
+   *
+   * Raw hex, not HSL triplets. The site stored colour as `255 92% 76%` read
+   * through `var(--accent)`; the design system is hex. The two cannot
+   * be mixed, because a hex value inside hsl() produces nothing and fails
+   * silently, so the switch is whole-file and the shadcn names below are
+   * kept as aliases pointing at these.
+   *
+   * Dark is the primary theme. :root IS dark so an unthemed render is the
+   * intended one rather than a flash of the wrong palette. */
+  :root,
+  .dark,
+  [data-theme="dark"] {
+    --bg: #08090b;
+    --surface-1: #0f1114;
+    --surface-2: #15181c;
+    --surface-3: #1c2025;
+    --border: #23272d;
+    --border-strong: #343a42;
+    --fg: #edeef0;
+    --fg-muted: #a1a7b0;
+    --fg-subtle: #7d848e;
+    --accent: #a99bff;
+    --accent-fg: #08090b;
+    --accent-soft: rgba(169, 155, 255, 0.1);
+    --accent-line: rgba(169, 155, 255, 0.32);
+    --success: #3dd68c;
+    --warning: #f5a524;
+    --danger: #ff6b6b;
+
+    /* Code stays dark in BOTH themes, so a terminal looks the same
+     * everywhere and a screenshot of one is stable. */
+    --code-bg: #0f1114;
+    --code-fg: #e4e6ea;
+    --code-comment: #7d848e;
+    --code-keyword: #c4b8ff;
+    --code-string: #9fe3b8;
+    --code-fn: #8fc7ff;
+    --code-number: #f5c27a;
+
+    --chart-grit: var(--accent);
+    --chart-rival: #3a4049;
+
+    --shadow-pop: 0 24px 48px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--border);
+    --shadow-focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+
+    color-scheme: dark;
   }
 
-  .dark {
-    /* Tailwind-inspired dark theme: deep navy blue */
-    --background: 222 47% 7%;      /* #0b1120 */
-    --foreground: 213 31% 91%;     /* #e2e8f0 (slate-200) */
-    --card: 222 47% 9%;            /* slightly lighter than bg */
-    --card-foreground: 213 31% 91%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 213 31% 91%;
-    /* #a78bfa. 6.89:1 as text on the page, and 7.05:1 under the near-black
-     * label below. One hue, both jobs. See DESIGN.md section 1. */
-    --primary: 255 92% 76%;
-    --primary-foreground: 240 20% 5%;
-    --secondary: 217 33% 12%;
-    --secondary-foreground: 213 31% 91%;
-    --muted: 217 33% 12%;
-    --muted-foreground: 215 18% 62%;  /* 4.5:1 on a raised surface, not just on the page */
-    --accent: 217 33% 14%;
-    --accent-foreground: 213 31% 91%;
-    --destructive: 0 63% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 217 33% 14%;         /* subtle white/[0.06] feel */
-    --input: 217 33% 14%;
-    --ring: 255 92% 76%;
-    --chart-1: 255 92% 76%;
-    --chart-2: 160 52% 36%;
-    --chart-3: 36 100% 50%;
-    --chart-4: 340 75% 55%;
-    --chart-5: 217 91% 60%;
-    --sidebar-background: 222 47% 3.5%;  /* noticeably darker than bg */
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 255 92% 76%;
-    --sidebar-primary-foreground: 240 20% 5%;
-    --sidebar-accent: 217 33% 10%;
-    --sidebar-accent-foreground: 213 31% 91%;
-    --sidebar-border: 217 33% 12%;
-    --sidebar-ring: 255 92% 76%;
+  .light,
+  [data-theme="light"] {
+    --bg: #ffffff;
+    --surface-1: #f7f7f8;
+    --surface-2: #f0f0f2;
+    --surface-3: #e8e8eb;
+    --border: #e4e4e7;
+    --border-strong: #c8cad0;
+    --fg: #0b0c0e;
+    --fg-muted: #555b64;
+    --fg-subtle: #6b717a;
+    --accent: #5b47e0;
+    --accent-fg: #ffffff;
+    --accent-soft: rgba(91, 71, 224, 0.07);
+    --accent-line: rgba(91, 71, 224, 0.3);
+    --success: #0b7a45;
+    --warning: #a35f00;
+    --danger: #c93636;
+    --chart-rival: #c8cad0;
+    --shadow-pop: 0 24px 48px -16px rgb(16 18 24 / 0.18), 0 0 0 1px var(--border);
+
+    color-scheme: light;
+  }
+
+  /* shadcn aliases, so every existing components/ui/ file keeps working.
+   *
+   * One of these is a trap: shadcn's --accent means "hover surface", not
+   * brand colour. Pointing it at our violet would turn every hover state
+   * purple, so it gets --surface-2 and the brand lives on --accent. */
+  :root,
+  .dark,
+  .light,
+  [data-theme="dark"],
+  [data-theme="light"] {
+    --background: var(--bg);
+    --foreground: var(--fg);
+    --card: var(--surface-1);
+    --card-foreground: var(--fg);
+    --popover: var(--surface-1);
+    --popover-foreground: var(--fg);
+    --primary: var(--fg);
+    --primary-foreground: var(--bg);
+    --secondary: var(--surface-2);
+    --secondary-foreground: var(--fg);
+    --muted: var(--surface-2);
+    --muted-foreground: var(--fg-muted);
+    --accent-surface: var(--surface-2);
+    --accent-foreground: var(--fg);
+    --destructive: var(--danger);
+    --destructive-foreground: #ffffff;
+    --input: var(--border-strong);
+    --ring: var(--accent);
+    --radius: 10px;
+
+    --sidebar-background: var(--surface-1);
+    --sidebar-foreground: var(--fg-muted);
+    --sidebar-primary: var(--accent);
+    --sidebar-primary-foreground: var(--accent-fg);
+    --sidebar-accent: var(--surface-2);
+    --sidebar-accent-foreground: var(--fg);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--accent);
+
+    --chart-1: var(--accent);
+    --chart-2: var(--chart-rival);
+    --chart-3: var(--fg-subtle);
+    --chart-4: var(--border-strong);
+    --chart-5: var(--surface-3);
+  }
+
+  html {
+    background: var(--bg);
+  }
+
+  body {
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--fg);
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+    border-radius: 6px;
   }
 }
 
@@ -149,16 +213,16 @@ article {
  * 39 files use it; what changed is that it can no longer disagree with the
  * accent it is glowing around. */
 .glow-purple {
-  box-shadow: 0 0 60px -12px hsl(var(--primary) / 0.3);
+  box-shadow: 0 0 60px -12px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .glow-purple-sm {
-  box-shadow: 0 0 30px -8px hsl(var(--primary) / 0.25);
+  box-shadow: 0 0 30px -8px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 /* Monospace style tags */
 .tag-mono {
-  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.75rem;
@@ -205,14 +269,14 @@ article {
 /* Premium grid pattern for cards */
 .grid-pattern {
   background-image:
-    linear-gradient(to right, hsl(var(--border) / 0.15) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--border) / 0.15) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, var(--border) 15%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--border) 15%, transparent) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 /* Card gradient overlay */
 .card-gradient {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.03) 0%, transparent 50%, hsl(var(--primary) / 0.02) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 3%, transparent) 0%, transparent 50%, color-mix(in srgb, var(--accent) 2%, transparent) 100%);
 }
 
 /* Animated typing cursor */
@@ -223,7 +287,7 @@ article {
 .cursor-blink::after {
   content: '▊';
   animation: blink 1s step-end infinite;
-  color: hsl(var(--primary));
+  color: var(--accent);
   margin-left: 2px;
 }
 
@@ -292,7 +356,7 @@ article {
 }
 
 .prose-grit code {
-  @apply text-[13px] font-mono bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded text-primary;
+  @apply text-[13px] font-mono bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded text-accent;
 }
 
 .prose-grit pre {
@@ -304,11 +368,11 @@ article {
 }
 
 .prose-grit a {
-  @apply text-base text-primary hover:underline;
+  @apply text-base text-accent hover:underline;
 }
 
 .prose-grit blockquote {
-  @apply border-l-2 border-primary/40 pl-4 italic text-base text-muted-foreground my-4;
+  @apply border-l-2 border-accent/40 pl-4 italic text-base text-muted-foreground my-4;
 }
 
 .prose-grit table {
@@ -350,8 +414,8 @@ article {
 /* ═══ Hero ASCII-grid corner decoration ═══ */
 .hero-corner-grid {
   background-image:
-    linear-gradient(to right, hsl(var(--primary) / 0.18) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--primary) / 0.18) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, var(--accent) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--accent) 18%, transparent) 1px, transparent 1px);
   background-size: 24px 24px;
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at center, black 0%, transparent 70%);
           mask-image: radial-gradient(ellipse 80% 60% at center, black 0%, transparent 70%);
@@ -359,8 +423,8 @@ article {
 
 /* ═══ Animated glow pulse for hero pills ═══ */
 @keyframes pill-glow {
-  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3), 0 8px 24px -4px hsl(var(--primary) / 0.4); }
-  50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0.0), 0 12px 32px -4px hsl(var(--primary) / 0.6); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent), 0 8px 24px -4px color-mix(in srgb, var(--accent) 40%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent), 0 12px 32px -4px color-mix(in srgb, var(--accent) 60%, transparent); }
 }
 .pill-pulse {
   animation: pill-glow 3s ease-in-out infinite;
@@ -391,14 +455,14 @@ article {
   /* Fine grid lines (Livewire). Use on an absolute inset-0 overlay layer. */
   .bg-grit-grid {
     background-image:
-      linear-gradient(to right, hsl(var(--foreground) / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--foreground) / 0.05) 1px, transparent 1px);
+      linear-gradient(to right, color-mix(in srgb, var(--fg) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--fg) 5%, transparent) 1px, transparent 1px);
     background-size: 56px 56px;
   }
   .bg-grit-grid-sm {
     background-image:
-      linear-gradient(to right, hsl(var(--foreground) / 0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
+      linear-gradient(to right, color-mix(in srgb, var(--fg) 4.5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--fg) 4.5%, transparent) 1px, transparent 1px);
     background-size: 32px 32px;
   }
   /* Brighter grid for saturated hero blocks (reads on a colored backdrop). */
@@ -410,7 +474,7 @@ article {
   }
   /* Dotted grid (Firecrawl). */
   .bg-grit-dots {
-    background-image: radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.10) 1px, transparent 0);
+    background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--fg) 10%, transparent) 1px, transparent 0);
     background-size: 28px 28px;
   }
 
@@ -433,8 +497,8 @@ article {
   }
 
   /* ── Glows — brand-blue, theme-aware ─────────────────────────────── */
-  .glow-primary    { box-shadow: 0 0 60px -12px hsl(var(--primary) / 0.45); }
-  .glow-primary-sm { box-shadow: 0 0 30px -8px hsl(var(--primary) / 0.35); }
+  .glow-primary    { box-shadow: 0 0 60px -12px color-mix(in srgb, var(--accent) 45%, transparent); }
+  .glow-primary-sm { box-shadow: 0 0 30px -8px color-mix(in srgb, var(--accent) 35%, transparent); }
 }
 
 /* ── Crosshair "+" accent marker (Firecrawl). Colour via text-* utils. ─ */
@@ -458,8 +522,8 @@ article {
 }
 .card-grit:hover {
   transform: translateY(-3px);
-  border-color: hsl(var(--primary) / 0.40);
-  box-shadow: 0 16px 40px -16px hsl(var(--primary) / 0.25), 0 4px 12px -6px rgba(0,0,0,.3);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 16px 40px -16px color-mix(in srgb, var(--accent) 25%, transparent), 0 4px 12px -6px rgba(0,0,0,.3);
 }
 
 /* ── Small motion helpers ─────────────────────────────────────────── */
@@ -475,8 +539,8 @@ article {
 .bg-grit-stripes {
   background-image: repeating-linear-gradient(
     45deg,
-    hsl(var(--foreground) / 0.035) 0,
-    hsl(var(--foreground) / 0.035) 1px,
+    color-mix(in srgb, var(--fg) 3.5%, transparent) 0,
+    color-mix(in srgb, var(--fg) 3.5%, transparent) 1px,
     transparent 1px,
     transparent 9px
   );

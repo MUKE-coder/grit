@@ -20,7 +20,7 @@ export default function ResourceDefinitionsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Admin Panel</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Admin Panel</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Resource Definitions
               </h1>
@@ -236,7 +236,7 @@ interface BadgeConfig {
                       ['image', '"https://..."', '32x32 rounded thumbnail'],
                     ].map(([format, input, output]) => (
                       <tr key={format} className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{format}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{format}</td>
                         <td className="px-4 py-2.5 font-mono text-xs">{input}</td>
                         <td className="px-4 py-2.5">{output}</td>
                       </tr>
@@ -382,7 +382,7 @@ type FieldType =
                       ['multi-relationship-select', 'Resource multi-select', 'relatedEndpoint, displayField, relationshipKey'],
                     ].map(([type, component, props]) => (
                       <tr key={type} className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{type}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent">{type}</td>
                         <td className="px-4 py-2.5">{component}</td>
                         <td className="px-4 py-2.5 font-mono text-xs">{props}</td>
                       </tr>

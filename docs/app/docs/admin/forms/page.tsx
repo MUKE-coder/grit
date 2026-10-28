@@ -20,7 +20,7 @@ export default function FormBuilderPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Admin Panel</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Admin Panel</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Form Builder
               </h1>
@@ -74,7 +74,7 @@ export default function FormBuilderPage() {
                 For resources with many fields, <strong>multi-step forms</strong> break the form into
                 a guided wizard with per-step validation. Use <code>formView: &apos;modal-steps&apos;</code> or{' '}
                 <code>formView: &apos;page-steps&apos;</code>. See the{' '}
-                <Link href="/docs/admin/multi-step-forms" className="text-primary hover:underline">
+                <Link href="/docs/admin/multi-step-forms" className="text-accent hover:underline">
                   Multi-Step Forms
                 </Link>{' '}
                 guide for full documentation.
@@ -188,7 +188,7 @@ export default defineResource({
               </p>
               <p>
                 This is the visible counterpart to an{' '}
-                <Link href="/docs/concepts/field-types#auto" className="text-primary hover:underline">
+                <Link href="/docs/concepts/field-types#auto" className="text-accent hover:underline">
                   <code>auto</code>
                 </Link>{' '}
                 field: use <code>auto</code> when the value should be assigned silently on the
@@ -523,7 +523,7 @@ Cycle string \`json:"cycle" requiredif:"kind=recurring"\``}
                 and are saved atomically with the parent. This is what{" "}
                 <code>grit generate resource Invoice --items &quot;InvoiceItem:&hellip;&quot;</code>{" "}
                 scaffolds; see{" "}
-                <a href="/docs/admin/relationships#inline-items" className="text-primary hover:underline">Inline items</a>{" "}
+                <a href="/docs/admin/relationships#inline-items" className="text-accent hover:underline">Inline items</a>{" "}
                 for the full relationship. Number columns thousands-separate as you type
                 (1000 → 1,000).
               </p>

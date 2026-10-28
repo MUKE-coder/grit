@@ -206,20 +206,20 @@ export default function PitchPage() {
               'radial-gradient(ellipse 60% 60% at 50% -10%, hsl(var(--primary) / 0.14), transparent 60%)',
           }}
         />
-        <GlowOrb className="-top-32 left-1/3 h-[420px] w-[420px] bg-primary/[0.10]" duration={20} />
+        <GlowOrb className="-top-32 left-1/3 h-[420px] w-[420px] bg-accent/[0.10]" duration={20} />
 
         <span className="crosshair absolute top-28 left-[14%] text-foreground/20 hidden md:block" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute top-40 right-[16%] text-primary/30 hidden md:block" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute top-40 right-[16%] text-accent/30 hidden md:block" style={{ width: 16, height: 16 }} />
 
         <div className="relative max-w-3xl mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-24">
           <FadeIn>
-            <span className="tag-mono text-primary mb-6 block">The Pitch</span>
+            <span className="tag-mono text-accent mb-6 block">The Pitch</span>
           </FadeIn>
           <FadeIn delay={0.08}>
             <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.05] mb-7">
               Build the product once.
               <br />
-              <span className="bg-gradient-to-r from-primary via-sky-400 to-primary bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-accent via-sky-400 to-accent bg-clip-text text-transparent">
                 Ship it to every screen.
               </span>
             </h1>
@@ -237,7 +237,7 @@ export default function PitchPage() {
             <div className="mt-9 flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <Link
                 href="/docs/getting-started/quick-start"
-                className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors glow-primary-sm"
+                className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors glow-primary-sm"
               >
                 Start building
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -256,7 +256,7 @@ export default function PitchPage() {
       {/* ═══ WHY GRIT EXISTS ═══ */}
       <PitchSection className="py-20 md:py-24 border-b border-border/40">
         <div id="why" className="scroll-mt-24" />
-        <p className="tag-mono text-primary mb-4">Why Grit exists</p>
+        <p className="tag-mono text-accent mb-4">Why Grit exists</p>
         <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-6 leading-tight">
           Every product rebuilt the same machinery
         </h2>
@@ -296,7 +296,7 @@ export default function PitchPage() {
         <div className="grid gap-8 lg:grid-cols-2">
           <div>
             <div className="mb-4 flex items-baseline gap-3">
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-accent">
                 D1 &ndash; D12
               </span>
               <span className="text-sm font-medium text-foreground">
@@ -327,7 +327,7 @@ export default function PitchPage() {
 
           <div>
             <div className="mb-4 flex items-baseline gap-3">
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-accent">
                 B1 &ndash; B14
               </span>
               <span className="text-sm font-medium text-foreground">What the client asks</span>
@@ -358,7 +358,7 @@ export default function PitchPage() {
           That is months of work that produces <span className="text-foreground font-medium">zero</span>{' '}
           product differentiation. Grit treats all of it as solved: generated, wired, and hardened
           the moment you scaffold.{' '}
-          <Link href="/talk" className="text-primary hover:underline">
+          <Link href="/talk" className="text-accent hover:underline">
             The talk walks all twenty-six
           </Link>
           , and is honest about the one it cannot close for you.
@@ -371,14 +371,14 @@ export default function PitchPage() {
         <div className="max-w-5xl mx-auto">
           <GSAPSection>
             <div className="max-w-2xl mb-10" data-gsap-reveal>
-              <p className="tag-mono text-primary mb-4">What sets it apart</p>
+              <p className="tag-mono text-accent mb-4">What sets it apart</p>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight mb-5">
                 One definition, every surface
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 One command writes the resource everywhere it needs to exist, and every piece agrees
                 with every other, because they all come from the same fields. Add a field later with{' '}
-                <code className="text-primary bg-primary/5 px-1.5 py-0.5 rounded text-base">grit generate field</code>{' '}
+                <code className="text-accent bg-accent/5 px-1.5 py-0.5 rounded text-base">grit generate field</code>{' '}
                 and it reaches the model, the validation, the types and the admin form and table in one
                 step.
               </p>
@@ -401,7 +401,7 @@ export default function PitchPage() {
                   data-gsap-reveal
                   className="card-grit rounded-2xl border border-border/40 bg-card/40 p-5"
                 >
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent mb-3">
                     <s.icon className="h-[18px] w-[18px]" />
                   </span>
                   <h3 className="font-semibold text-foreground text-[15px] mb-1.5">{s.title}</h3>
@@ -415,7 +415,7 @@ export default function PitchPage() {
 
       {/* ═══ WHERE THE DATABASE FITS ═══ */}
       <PitchSection className="py-20 md:py-24 border-b border-border/40">
-        <p className="tag-mono text-primary mb-4">Where the database fits</p>
+        <p className="tag-mono text-accent mb-4">Where the database fits</p>
         <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-6 leading-tight">
           Not a new ORM. What surrounds it.
         </h2>
@@ -440,7 +440,7 @@ export default function PitchPage() {
             },
           ].map((item) => (
             <div key={item.title} className="flex items-start gap-3">
-              <Sprout className="h-4 w-4 text-primary mt-1 shrink-0" />
+              <Sprout className="h-4 w-4 text-accent mt-1 shrink-0" />
               <p className="text-base text-muted-foreground leading-relaxed">
                 <span className="text-foreground font-medium">{item.title}</span> {item.body}
               </p>
@@ -458,7 +458,7 @@ export default function PitchPage() {
         <div className="max-w-5xl mx-auto">
           <GSAPSection>
             <div className="max-w-2xl mb-10" data-gsap-reveal>
-              <p className="tag-mono text-primary mb-4">How it compares</p>
+              <p className="tag-mono text-accent mb-4">How it compares</p>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
                 Batteries included, on every client
               </h2>
@@ -471,10 +471,10 @@ export default function PitchPage() {
                     key={c.name}
                     data-gsap-reveal
                     className={`rounded-2xl border p-6 flex flex-col ${
-                      isGrit ? 'border-primary/30 bg-card/60 glow-primary-sm' : 'border-border/40 bg-card/30'
+                      isGrit ? 'border-accent/30 bg-card/60 glow-primary-sm' : 'border-border/40 bg-card/30'
                     }`}
                   >
-                    <h3 className={`font-semibold text-[17px] ${isGrit ? 'text-primary' : 'text-foreground'}`}>
+                    <h3 className={`font-semibold text-[17px] ${isGrit ? 'text-accent' : 'text-foreground'}`}>
                       {c.name}
                     </h3>
                     <p className="text-xs font-mono text-muted-foreground mb-4">{c.examples}</p>
@@ -503,7 +503,7 @@ export default function PitchPage() {
         <div className="max-w-5xl mx-auto">
           <GSAPSection>
             <div className="text-center mb-12" data-gsap-reveal>
-              <p className="tag-mono text-primary mb-4">Compress the work</p>
+              <p className="tag-mono text-accent mb-4">Compress the work</p>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
                 The same outcome, two timelines
               </h2>
@@ -539,7 +539,7 @@ export default function PitchPage() {
 
               <div
                 data-gsap-reveal
-                className="relative rounded-2xl border border-primary/30 bg-card/60 p-6 flex flex-col glow-primary-sm"
+                className="relative rounded-2xl border border-accent/30 bg-card/60 p-6 flex flex-col glow-primary-sm"
               >
                 <div className="flex items-center gap-2 mb-4">
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-400">
@@ -570,7 +570,7 @@ grit generate resource Product \\
         <div className="max-w-5xl mx-auto">
           <GSAPSection>
             <div className="max-w-2xl mb-12" data-gsap-reveal>
-              <p className="tag-mono text-primary mb-4">What Grit stands for</p>
+              <p className="tag-mono text-accent mb-4">What Grit stands for</p>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight mb-5">
                 Six trades, stated plainly
               </h2>
@@ -588,11 +588,11 @@ grit generate resource Product \\
                   className="card-grit rounded-2xl border border-border/40 bg-card/40 p-6 flex flex-col"
                 >
                   <div className="flex items-baseline gap-2.5 mb-3">
-                    <span className="font-mono text-sm font-semibold text-primary">{i + 1}.</span>
+                    <span className="font-mono text-sm font-semibold text-accent">{i + 1}.</span>
                     <h3 className="font-semibold text-foreground text-[17px] leading-snug">{p.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-4">{p.body}</p>
-                  <p className="text-sm leading-relaxed text-foreground/70 border-l-2 border-primary/30 pl-4 mt-auto">
+                  <p className="text-sm leading-relaxed text-foreground/70 border-l-2 border-accent/30 pl-4 mt-auto">
                     {p.gives}
                   </p>
                 </div>
@@ -606,7 +606,7 @@ grit generate resource Product \\
       <PitchSection className="py-20 md:py-24 border-b border-border/40 max-w-5xl">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12" data-gsap-reveal>
-            <p className="tag-mono text-primary mb-4">What the trades buy you</p>
+            <p className="tag-mono text-accent mb-4">What the trades buy you</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
               The compounding return on a narrow set of opinions
             </h2>
@@ -630,7 +630,7 @@ grit generate resource Product \\
               },
             ].map((p) => (
               <div key={p.title} className="card-grit rounded-2xl border border-border/40 bg-card/40 p-6">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary mb-4">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent mb-4">
                   <p.icon className="h-5 w-5" />
                 </span>
                 <h3 className="font-semibold text-foreground mb-2">{p.title}</h3>
@@ -646,7 +646,7 @@ grit generate resource Product \\
         <div className="max-w-5xl mx-auto">
           <GSAPSection>
             <div className="max-w-2xl mb-10" data-gsap-reveal>
-              <p className="tag-mono text-primary mb-4">Your next project</p>
+              <p className="tag-mono text-accent mb-4">Your next project</p>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight mb-5">
                 When to start it in Grit
               </h2>
@@ -660,7 +660,7 @@ grit generate resource Product \\
               {RIGHT_FOR.map((r) => (
                 <div
                   key={r}
-                  className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/[0.03] px-4 py-3 text-sm text-foreground/85"
+                  className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/[0.03] px-4 py-3 text-sm text-foreground/85"
                 >
                   <Check className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" strokeWidth={2.5} />
                   {r}
@@ -702,12 +702,12 @@ grit generate resource Product \\
         </p>
         <p className="text-lg text-muted-foreground leading-relaxed">
           It is MIT licensed, developed in the open, and supported by{' '}
-          <Link href="/sponsor" className="text-primary hover:underline underline-offset-4">
+          <Link href="/sponsor" className="text-accent hover:underline underline-offset-4">
             sponsors
           </Link>{' '}
           rather than a sales team. Releases are public, versioned, and shipped weekly. For the
           longer story, why Go, why React, and what Grit borrows from Laravel and Rails, read{' '}
-          <Link href="/docs/getting-started/philosophy" className="text-primary hover:underline underline-offset-4">
+          <Link href="/docs/getting-started/philosophy" className="text-accent hover:underline underline-offset-4">
             the philosophy doc
           </Link>
           .
@@ -728,10 +728,10 @@ grit generate resource Product \\
       {/* ═══ CLOSING CTA ═══ */}
       <section className="relative py-24 md:py-32 px-6 overflow-hidden">
         <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center opacity-70" />
-        <GlowOrb className="top-0 left-1/2 -translate-x-1/2 h-[500px] w-[500px] bg-primary/[0.08]" duration={22} />
+        <GlowOrb className="top-0 left-1/2 -translate-x-1/2 h-[500px] w-[500px] bg-accent/[0.08]" duration={22} />
         <div className="relative max-w-2xl mx-auto text-center">
           <FadeIn>
-            <Sparkles className="h-6 w-6 text-primary mx-auto mb-5" />
+            <Sparkles className="h-6 w-6 text-accent mx-auto mb-5" />
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5 leading-tight">
               Your next product is one
               <br />
@@ -755,7 +755,7 @@ grit generate resource Product \\
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/docs/getting-started/quick-start"
-                className="group inline-flex items-center gap-2 h-11 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
+                className="group inline-flex items-center gap-2 h-11 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors"
               >
                 Get started
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

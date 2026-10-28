@@ -165,7 +165,7 @@ export default function Lesson() {
           <>
             If <code>wails doctor</code> complains on Windows about
             WebView2, install it from{' '}
-            <a href="https://developer.microsoft.com/microsoft-edge/webview2/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">developer.microsoft.com/microsoft-edge/webview2</a>.
+            <a href="https://developer.microsoft.com/microsoft-edge/webview2/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">developer.microsoft.com/microsoft-edge/webview2</a>.
           </>
         }
         solution={

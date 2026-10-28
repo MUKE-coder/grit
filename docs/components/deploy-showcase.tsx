@@ -61,7 +61,7 @@ export function DeployShowcase() {
               onClick={() => setActive(p.slug)}
               className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? 'border-primary/40 bg-primary/10 text-foreground'
+                  ? 'border-accent/40 bg-accent/10 text-foreground'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
@@ -81,7 +81,7 @@ export function DeployShowcase() {
           <ol className="space-y-4">
             {shown.map((step, i) => (
               <li key={step.title} className="flex gap-3">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-mono font-medium text-primary">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-mono font-medium text-accent">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -104,7 +104,7 @@ export function DeployShowcase() {
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <Link
               href={`/docs/deployment/${provider.slug}`}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
             >
               {hidden > 0
                 ? `The remaining ${hidden} step${hidden === 1 ? '' : 's'}`

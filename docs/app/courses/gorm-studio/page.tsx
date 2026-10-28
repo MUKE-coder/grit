@@ -28,7 +28,7 @@ export default function GormStudioCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -55,10 +55,10 @@ export default function GormStudioCourse() {
             caption="Studio turns your database from a black box into a visual browser you can read and edit" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/infrastructure/database" className="text-primary hover:underline">Database & GORM Studio →</a>
+            <a href="/docs/infrastructure/database" className="text-accent hover:underline">Database & GORM Studio →</a>
           </p>
         </div>
 
@@ -91,11 +91,11 @@ export default function GormStudioCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Zero installation</strong> — runs inside your Grit API, accessible in the browser</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">GORM-aware</strong> — understands GORM conventions (soft delete, relationships, auto-migrate)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Go model generation</strong> — can generate Go struct code from existing tables</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Multi-format export</strong> — SQL, JSON, CSV, XLSX, YAML, DBML, ERD diagrams</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Password-protected</strong> — secured with its own credentials, separate from your app{"'"}s auth</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Zero installation</strong> — runs inside your Grit API, accessible in the browser</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">GORM-aware</strong> — understands GORM conventions (soft delete, relationships, auto-migrate)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Go model generation</strong> — can generate Go struct code from existing tables</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Multi-format export</strong> — SQL, JSON, CSV, XLSX, YAML, DBML, ERD diagrams</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Password-protected</strong> — secured with its own credentials, separate from your app{"'"}s auth</li>
           </ul>
 
           <Challenge number={1} title="Open GORM Studio">
@@ -119,10 +119,10 @@ export default function GormStudioCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Column headers</strong> — with the column name and data type (varchar, integer, boolean, timestamp)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Records as rows</strong> — each row is one record in the table</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Pagination</strong> — for tables with many records, navigate between pages</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Row count</strong> — total number of records in the table</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Column headers</strong> — with the column name and data type (varchar, integer, boolean, timestamp)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Records as rows</strong> — each row is one record in the table</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Pagination</strong> — for tables with many records, navigate between pages</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Row count</strong> — total number of records in the table</li>
           </ul>
 
           <CodeBlock filename="What You See">
@@ -170,9 +170,9 @@ export default function GormStudioCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> The post{"'"}s own fields (title, content, published, created_at)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> The <strong className="text-foreground">category_id</strong> foreign key — and which category it points to</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> The <strong className="text-foreground">user_id</strong> — the author of the post</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The post{"'"}s own fields (title, content, published, created_at)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The <strong className="text-foreground">category_id</strong> foreign key — and which category it points to</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The <strong className="text-foreground">user_id</strong> — the author of the post</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -203,10 +203,10 @@ export default function GormStudioCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Debugging</strong> — quickly change a value to test how the frontend handles it</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Fixing data</strong> — correct a typo or wrong value without writing a migration</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Testing roles</strong> — change a user{"'"}s role from USER to ADMIN to test admin features</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Seeding data</strong> — quickly add test data without writing API requests</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Debugging</strong> — quickly change a value to test how the frontend handles it</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Fixing data</strong> — correct a typo or wrong value without writing a migration</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Testing roles</strong> — change a user{"'"}s role from USER to ADMIN to test admin features</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Seeding data</strong> — quickly add test data without writing API requests</li>
           </ul>
 
           <Note>
@@ -238,10 +238,10 @@ export default function GormStudioCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">ID</strong> — auto-incremented by the database</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">CreatedAt</strong> — set automatically by GORM</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">UpdatedAt</strong> — set automatically by GORM</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">DeletedAt</strong> — null for active records</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">ID</strong> — auto-incremented by the database</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">CreatedAt</strong> — set automatically by GORM</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">UpdatedAt</strong> — set automatically by GORM</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">DeletedAt</strong> — null for active records</li>
           </ul>
 
           <Tip>
@@ -447,10 +447,10 @@ CREATE UNIQUE INDEX idx_users_email ON users(email);`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Backups</strong> — export all data before a risky migration</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Reporting</strong> — export to CSV or XLSX for analysis in Excel or Google Sheets</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Seeding</strong> — import data from a CSV to populate a table with test data</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Migration</strong> — export from one database and import into another</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Backups</strong> — export all data before a risky migration</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Reporting</strong> — export to CSV or XLSX for analysis in Excel or Google Sheets</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Seeding</strong> — import data from a CSV to populate a table with test data</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Migration</strong> — export from one database and import into another</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -515,9 +515,9 @@ CREATE UNIQUE INDEX idx_users_email ON users(email);`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Working with existing databases</strong> — you inherit a database and need Go models for it</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Database-first development</strong> — your DBA designs the schema, you generate the code</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Verification</strong> — compare the generated model with your written model to check for drift</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Working with existing databases</strong> — you inherit a database and need Go models for it</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Database-first development</strong> — your DBA designs the schema, you generate the code</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Verification</strong> — compare the generated model with your written model to check for drift</li>
           </ul>
 
           <CodeBlock filename="Generated Go Model">

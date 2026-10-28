@@ -25,7 +25,7 @@ export default function BuildLocallyPage() {
             </Link>
 
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Deployment</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Deployment</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Test the production build locally</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">Reproduce the deploy on your own machine first. Most deployment failures are visible here, two minutes in, instead of ten minutes into someone else&apos;s build log.</p>
             </div>
@@ -116,7 +116,7 @@ curl -s localhost:8080/api/health`}
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Environment variables
               </Link>
-              <Link href="/docs/deployment/checklist" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+              <Link href="/docs/deployment/checklist" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
                 Go-live checklist
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>

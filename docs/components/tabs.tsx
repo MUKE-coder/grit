@@ -38,7 +38,7 @@ export function Tabs({ items, defaultId, className }: TabsProps) {
             className={cn(
               'inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
               t.id === active
-                ? 'border-primary text-foreground'
+                ? 'border-accent text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >

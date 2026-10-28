@@ -30,7 +30,7 @@ export default function CustomUICourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 3 of 5</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 3 of 5</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">10 challenges</span>
@@ -56,10 +56,10 @@ export default function CustomUICourse() {
             caption="Frameless windows, custom title bars, sidebar navigation, dark theme, and shadcn/ui — fully yours" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/desktop" className="text-primary hover:underline">Desktop Overview →</a>
+            <a href="/docs/desktop" className="text-accent hover:underline">Desktop Overview →</a>
           </p>
         </div>
 
@@ -159,10 +159,10 @@ export function TitleBar() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>WindowMinimise()</Code> — minimize the window to the taskbar</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>WindowToggleMaximise()</Code> — toggle between maximized and normal size</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>WindowClose()</Code> — close the application</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>WindowSetTitle(title)</Code> — change the window title programmatically</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>WindowMinimise()</Code> — minimize the window to the taskbar</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>WindowToggleMaximise()</Code> — toggle between maximized and normal size</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>WindowClose()</Code> — close the application</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>WindowSetTitle(title)</Code> — change the window title programmatically</li>
           </ul>
 
           <Challenge number={2} title="Explore the Title Bar">
@@ -265,11 +265,11 @@ export function TitleBar() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>bg-background</Code> — the darkest background (#0a0a0f)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>bg-bg-elevated</Code> — card and panel surfaces (#22222e)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>text-foreground</Code> — primary white text (#e8e8f0)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>text-primary</Code> — accent purple (#6c5ce7)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>border-border</Code> — subtle borders (#2a2a3a)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>bg-background</Code> — the darkest background (#0a0a0f)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>bg-bg-elevated</Code> — card and panel surfaces (#22222e)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>text-foreground</Code> — primary white text (#e8e8f0)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>text-accent</Code> — accent purple (#6c5ce7)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>border-border</Code> — subtle borders (#2a2a3a)</li>
           </ul>
 
           <Tip>
@@ -288,7 +288,7 @@ export function TitleBar() {
           <h2 className="text-2xl font-bold text-foreground mb-4">shadcn/ui in Desktop</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit desktop apps use the same <a href="https://ui.shadcn.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">shadcn/ui</a> components
+            Grit desktop apps use the same <a href="https://ui.shadcn.com" target="_blank" rel="noreferrer" className="text-accent hover:underline">shadcn/ui</a> components
             as web projects. These are unstyled, accessible React components that you can customize:
           </p>
 

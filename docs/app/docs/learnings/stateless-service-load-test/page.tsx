@@ -19,7 +19,7 @@ export default function StatelessServiceLoadTestPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 inline-flex items-center gap-1.5">
+              <span className="tag-mono text-accent/80 mb-3 inline-flex items-center gap-1.5">
                 <Activity className="h-3.5 w-3.5" />
                 Learnings · Challenge #1
               </span>
@@ -49,18 +49,18 @@ export default function StatelessServiceLoadTestPage() {
             </div>
 
             {/* The brief */}
-            <div className="mb-12 rounded-2xl border border-primary/20 bg-primary/[0.04] p-6">
+            <div className="mb-12 rounded-2xl border border-accent/20 bg-accent/[0.04] p-6">
               <div className="flex items-start gap-3 mb-3">
-                <Target className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <Target className="h-5 w-5 text-accent mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs font-mono uppercase tracking-wider text-primary mb-1">The challenge</p>
+                  <p className="text-xs font-mono uppercase tracking-wider text-accent mb-1">The challenge</p>
                   <p className="text-foreground leading-relaxed">
                     Scaffold the repo; a stateless HTTP service + health-check endpoint;
                     load-test it (k6 or autocannon); record p50 / p95 / p99.
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 pl-8 pt-2 border-t border-primary/10 mt-3">
+              <div className="flex items-start gap-3 pl-8 pt-2 border-t border-accent/10 mt-3">
                 <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
                 <p className="text-sm text-foreground/80">
                   <span className="font-semibold">Milestone:</span>{' '}
@@ -678,25 +678,25 @@ git push`} className="mb-4" />
               <h2 className="text-2xl font-semibold tracking-tight mb-3">Where to go next</h2>
               <ul className="space-y-2.5 text-sm text-muted-foreground leading-relaxed">
                 <li className="flex items-start gap-2.5">
-                  <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <ArrowRight className="h-4 w-4 text-accent mt-0.5 shrink-0" />
                   Bench an endpoint that hits the DB. <code>/api/users</code> with seeded
                   data shows you how GORM + Postgres add to the tail.
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <ArrowRight className="h-4 w-4 text-accent mt-0.5 shrink-0" />
                   Add Sentinel rate limiting and re-run. See where p99 starts climbing as the
                   limiter sheds requests.
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <ArrowRight className="h-4 w-4 text-accent mt-0.5 shrink-0" />
                   Move to a <strong>spike test</strong> — same setup, 5s ramp to 500 VUs. The
                   full k6 testing catalogue lives at{' '}
-                  <Link href="/docs/testing" className="text-primary hover:underline">/docs/testing</Link>{' '}
+                  <Link href="/docs/testing" className="text-accent hover:underline">/docs/testing</Link>{' '}
                   — six pre-written tests for smoke, average, stress, spike, soak, and
                   breakpoint.
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <ArrowRight className="h-4 w-4 text-accent mt-0.5 shrink-0" />
                   Run the test against the deployed instance instead of localhost. Numbers on
                   your VPS are the numbers that matter.
                 </li>
@@ -729,7 +729,7 @@ git push`} className="mb-4" />
 function Step({ n, title, children }: { n: number; title: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="relative pl-10 mb-14">
-      <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+      <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
         {n}
       </div>
       <h3 className="text-xl font-semibold mb-3 leading-snug">{title}</h3>
@@ -758,7 +758,7 @@ function Callout({ tone, children }: { tone: 'info' | 'warning'; children: React
 function Row({ m, mean, good }: { m: string; mean: string; good: string }) {
   return (
     <tr className="hover:bg-card/40 transition-colors">
-      <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-primary/90">{m}</td>
+      <td className="px-4 py-2.5 align-top font-mono text-[12.5px] text-accent/90">{m}</td>
       <td className="px-4 py-2.5 align-top text-[13px] text-foreground/80">{mean}</td>
       <td className="px-4 py-2.5 align-top text-[13px] text-muted-foreground">{good}</td>
     </tr>

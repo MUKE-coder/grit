@@ -103,7 +103,7 @@ function buttonClass(variant: Variant): string {
   const base =
     'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
   if (variant === 'hero') {
-    return cn(base, 'h-12 px-6 text-[15px] border border-border bg-card text-foreground hover:border-primary/50')
+    return cn(base, 'h-12 px-6 text-[15px] border border-border bg-card text-foreground hover:border-accent/50')
   }
   return cn(
     base,
@@ -116,7 +116,7 @@ function Failed({ show }: { show: boolean }) {
   return (
     <p role="status" className="text-xs text-muted-foreground">
       Your browser blocked the clipboard.{' '}
-      <Link href="/prompt" className="text-primary underline" target="_blank" rel="noopener noreferrer">
+      <Link href="/prompt" className="text-accent underline" target="_blank" rel="noopener noreferrer">
         Open the prompt
       </Link>{' '}
       and copy it by hand.

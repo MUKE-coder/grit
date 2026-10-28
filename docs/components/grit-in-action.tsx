@@ -185,7 +185,7 @@ export function GritInAction() {
     <section className="border-t border-border/40 py-20 sm:py-28">
       <div className="container max-w-screen-xl px-6">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <span className="tag-mono mb-3 block text-primary/80">Grit in action</span>
+          <span className="tag-mono mb-3 block text-accent/80">Grit in action</span>
           <h2 className="mb-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
             Seven commands.
             <br className="hidden sm:block" /> A working application.
@@ -230,7 +230,7 @@ export function GritInAction() {
 
             <div className="min-h-[300px] p-5 font-mono text-[13px] leading-relaxed sm:min-h-[340px]">
               <div className="flex gap-2">
-                <span className="shrink-0 text-primary">$</span>
+                <span className="shrink-0 text-accent">$</span>
                 <span className="break-all text-white/90">
                   {typed}
                   {!reduced && typed.length < current.command.length && (

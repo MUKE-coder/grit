@@ -17,7 +17,7 @@ export default function GovernancePage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Project</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Project</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Governance &amp; risk</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Who maintains this, what happens if they stop, and what you are actually
@@ -95,7 +95,7 @@ export default function GovernancePage() {
               </li>
               <li className="leading-relaxed">
                 &mdash; <strong className="text-foreground">There is no support SLA.</strong> See{' '}
-                <Link href="/docs/versioning" className="text-primary hover:underline">
+                <Link href="/docs/versioning" className="text-accent hover:underline">
                   versioning
                 </Link>
                 . Issues get answered because someone cares, not because someone is contractually

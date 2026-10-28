@@ -19,7 +19,7 @@ export default function MiddlewarePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend (Go API)</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend (Go API)</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Middleware
               </h1>
@@ -96,7 +96,7 @@ export default function MiddlewarePage() {
     return r
 }`} />
 
-              <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+              <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                 <p className="text-sm text-foreground/80 mb-0">
                   <strong>Execution order:</strong> Logger runs first, then Recovery, then CORS,
                   then Auth (if on a protected route), then RequireRole (if on an admin route),

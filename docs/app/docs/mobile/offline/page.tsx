@@ -20,7 +20,7 @@ export default function MobileOfflinePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Mobile</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Mobile</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Offline &amp; Caching
               </h1>
@@ -50,7 +50,7 @@ export default function MobileOfflinePage() {
             </div>
 
             {/* Honest framing */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 mb-10">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-5 mb-10">
               <h4 className="text-sm font-semibold text-foreground mb-2">The short version</h4>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                 Out of the box the Expo scaffold is <strong>online-first</strong>: React
@@ -62,9 +62,9 @@ export default function MobileOfflinePage() {
                 Offline writes are one command away.{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit add offline</code>{' '}
                 installs the local mirror, the outbox and the version-checked conflict handling
-                that <Link href="/docs/desktop/offline" className="text-primary hover:underline">Grit Desktop</Link>{' '}
+                that <Link href="/docs/desktop/offline" className="text-accent hover:underline">Grit Desktop</Link>{' '}
                 has had since v3.60, as a package the mobile, web and admin apps share. See{' '}
-                <Link href="/docs/concepts/offline-sync" className="text-primary hover:underline">Offline Sync</Link>.
+                <Link href="/docs/concepts/offline-sync" className="text-accent hover:underline">Offline Sync</Link>.
               </p>
             </div>
 
@@ -201,7 +201,7 @@ Writes (create / update / delete)
                 <li>
                   <strong>Or go desktop.</strong> If offline-first is central, Grit Desktop ships
                   a full sync engine (local SQLite mirror + outbox) today — see{' '}
-                  <Link href="/docs/desktop/offline" className="text-primary hover:underline">Building an Offline-First Desktop App</Link>.
+                  <Link href="/docs/desktop/offline" className="text-accent hover:underline">Building an Offline-First Desktop App</Link>.
                 </li>
               </ul>
             </div>

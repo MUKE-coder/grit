@@ -33,7 +33,7 @@ export default function EmailPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Batteries
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -218,7 +218,7 @@ if err := mail.Queue(ctx, svc.Jobs, &mail.Message{
     return fmt.Errorf("queueing the confirmation: %w", err)
 }`} />
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mt-4">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mt-4">
                   <p className="text-sm text-foreground/80">
                     <strong>Attachments are capped at 256 KB when queued.</strong>{" "}
                     The message waits in Redis and is stored again for every retry,
@@ -329,7 +329,7 @@ fake.AssertNothingSent(t)`} />
                   <code className={code}>SUPPORT_EMAIL</code>, without a deploy.
                   The in-app notifications still arrive. Account mail, password
                   resets and verification, is not affected. See{" "}
-                  <Link href="/docs/batteries/jobs" className="text-primary hover:underline">
+                  <Link href="/docs/batteries/jobs" className="text-accent hover:underline">
                     Background Jobs
                   </Link>{" "}
                   for the queue itself.

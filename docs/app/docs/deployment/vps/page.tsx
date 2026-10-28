@@ -21,7 +21,7 @@ export default function DeploymentPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Infrastructure</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Infrastructure</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Deployment
               </h1>
@@ -52,12 +52,12 @@ export default function DeploymentPage() {
               />
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-8">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Go deeper:</strong> the{' '}
-                <Link href="/courses/deployment-guide" className="text-primary hover:underline">Deployment Guide</Link>{' '}
+                <Link href="/courses/deployment-guide" className="text-accent hover:underline">Deployment Guide</Link>{' '}
                 course covers Dokploy, VPS and Vercel targets, and{' '}
-                <Link href="/courses/cicd-github" className="text-primary hover:underline">CI/CD with GitHub Actions</Link>{' '}
+                <Link href="/courses/cicd-github" className="text-accent hover:underline">CI/CD with GitHub Actions</Link>{' '}
                 automates the whole pipeline.
               </p>
             </div>
@@ -82,7 +82,7 @@ export default function DeploymentPage() {
                     { label: '11. Zero-Downtime Updates', id: '#updates' },
                     { label: '12. Production Checklist', id: '#checklist' },
                   ].map((item) => (
-                    <a key={item.id} href={item.id} className="text-[13px] text-muted-foreground/70 hover:text-primary transition-colors py-0.5">
+                    <a key={item.id} href={item.id} className="text-[13px] text-muted-foreground/70 hover:text-accent transition-colors py-0.5">
                       {item.label}
                     </a>
                   ))}
@@ -92,7 +92,7 @@ export default function DeploymentPage() {
               {/* Step 1: Choose a VPS */}
               <div id="providers" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     1
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -143,11 +143,11 @@ export default function DeploymentPage() {
                   </table>
                 </div>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-foreground/80 leading-relaxed">
-                    <span className="font-semibold text-primary/90">Recommendation:</span>{' '}
+                    <span className="font-semibold text-accent/90">Recommendation:</span>{' '}
                     For a Grit monorepo (Go API + 2 Next.js apps + PostgreSQL + Redis), we recommend at least
-                    <span className="font-mono text-primary/80"> 2 vCPU / 4GB RAM</span>.
+                    <span className="font-mono text-accent/80"> 2 vCPU / 4GB RAM</span>.
                     Hetzner&apos;s CX22 ($4/mo) or DigitalOcean&apos;s Basic ($24/mo for 2 vCPU / 4GB) are solid choices.
                   </p>
                 </div>
@@ -156,7 +156,7 @@ export default function DeploymentPage() {
               {/* Step 2: Initial Server Setup */}
               <div id="server-setup" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     2
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -178,7 +178,7 @@ export default function DeploymentPage() {
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">ssh root@your-server-ip</span>
                     </div>
                   </div>
@@ -198,21 +198,21 @@ export default function DeploymentPage() {
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Create user and add to sudo group</div>
                     <div>
-                      <span className="text-primary/50 select-none"># </span>
+                      <span className="text-accent/50 select-none"># </span>
                       <span className="text-foreground/80">adduser deploy</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none"># </span>
+                      <span className="text-accent/50 select-none"># </span>
                       <span className="text-foreground/80">usermod -aG sudo deploy</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Copy SSH keys to the new user</div>
                     <div>
-                      <span className="text-primary/50 select-none"># </span>
+                      <span className="text-accent/50 select-none"># </span>
                       <span className="text-foreground/80">rsync --archive --chown=deploy:deploy ~/.ssh /home/deploy</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Now log out and SSH as deploy</div>
                     <div>
-                      <span className="text-primary/50 select-none"># </span>
+                      <span className="text-accent/50 select-none"># </span>
                       <span className="text-foreground/80">exit</span>
                     </div>
                   </div>
@@ -224,7 +224,7 @@ export default function DeploymentPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">local machine</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">ssh deploy@your-server-ip</span>
                   </div>
                 </div>
@@ -239,11 +239,11 @@ export default function DeploymentPage() {
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo apt update &amp;&amp; sudo apt upgrade -y</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo timedatectl set-timezone UTC</span>
                     </div>
                   </div>
@@ -253,7 +253,7 @@ export default function DeploymentPage() {
               {/* Step 3: Install Docker */}
               <div id="docker" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     3
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -272,26 +272,26 @@ export default function DeploymentPage() {
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Install Docker using the official convenience script</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">curl -fsSL https://get.docker.com | sh</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Add your user to the docker group (no more sudo for docker)</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo usermod -aG docker $USER</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Apply group changes (or log out and back in)</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">newgrp docker</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Verify installation</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker --version</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose version</span>
                     </div>
                   </div>
@@ -301,7 +301,7 @@ export default function DeploymentPage() {
               {/* Step 4: Clone & Configure */}
               <div id="clone" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     4
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -321,24 +321,24 @@ export default function DeploymentPage() {
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Clone your project</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo mkdir -p /opt/myapp &amp;&amp; sudo chown deploy:deploy /opt/myapp</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">git clone https://github.com/you/myapp.git /opt/myapp</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">cd /opt/myapp</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Create production .env from example</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">cp .env.example .env</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">nano .env</span>
                     </div>
                   </div>
@@ -424,7 +424,7 @@ GORM_STUDIO_ENABLED=false`} />
                         { var: 'GORM_STUDIO_ENABLED', req: 'No', note: 'Set to "false" in production' },
                       ].map((item) => (
                         <tr key={item.var} className="border-b border-border/20 last:border-b-0">
-                          <td className="px-4 py-2.5 font-mono text-xs text-primary/80">{item.var}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-accent/80">{item.var}</td>
                           <td className="px-4 py-2.5 font-mono text-xs">{item.req}</td>
                           <td className="px-4 py-2.5 text-xs">{item.note}</td>
                         </tr>
@@ -437,7 +437,7 @@ GORM_STUDIO_ENABLED=false`} />
               {/* Step 5: Deploy */}
               <div id="deploy" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     5
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -457,17 +457,17 @@ GORM_STUDIO_ENABLED=false`} />
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Build and start everything</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose -f docker-compose.prod.yml up -d --build</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Check that all services are running</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose -f docker-compose.prod.yml ps</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Test the API</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">curl http://localhost:8080/api/auth/me</span>
                     </div>
                   </div>
@@ -478,9 +478,9 @@ GORM_STUDIO_ENABLED=false`} />
                   The first build may take a few minutes as Docker builds the Go binary and Next.js apps.
                 </p>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-foreground/80 leading-relaxed">
-                    <span className="font-semibold text-primary/90">Expose-only, no host ports:</span>{' '}
+                    <span className="font-semibold text-accent/90">Expose-only, no host ports:</span>{' '}
                     The scaffolded <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">docker-compose.prod.yml</code> uses{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">expose</code> (not host{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">ports</code>) &mdash; the API listens on{' '}
@@ -504,7 +504,7 @@ GORM_STUDIO_ENABLED=false`} />
                     { label: 'Redis', desc: 'In-memory cache and job queue, configured with maxmemory and eviction policy' },
                   ].map((item) => (
                     <div key={item.label} className="flex gap-3 text-[13px]">
-                      <span className="font-mono text-primary/70 shrink-0 w-24">{item.label}</span>
+                      <span className="font-mono text-accent/70 shrink-0 w-24">{item.label}</span>
                       <span className="text-muted-foreground">{item.desc}</span>
                     </div>
                   ))}
@@ -521,12 +521,12 @@ GORM_STUDIO_ENABLED=false`} />
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Follow all logs</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose -f docker-compose.prod.yml logs -f</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Follow only API logs</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose -f docker-compose.prod.yml logs -f api</span>
                     </div>
                   </div>
@@ -536,7 +536,7 @@ GORM_STUDIO_ENABLED=false`} />
               {/* Step 6: SSL/TLS */}
               <div id="ssl" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     6
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -558,19 +558,19 @@ GORM_STUDIO_ENABLED=false`} />
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">curl -1sLf &apos;https://dl.cloudsmith.io/public/caddy/stable/gpg.key&apos; | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">curl -1sLf &apos;https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt&apos; | sudo tee /etc/apt/sources.list.d/caddy-stable.list</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo apt update &amp;&amp; sudo apt install caddy</span>
                     </div>
                   </div>
@@ -608,15 +608,15 @@ admin.yourdomain.com {
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo nano /etc/caddy/Caddyfile  # paste config above</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo systemctl reload caddy</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo systemctl enable caddy     # auto-start on boot</span>
                     </div>
                   </div>
@@ -665,7 +665,7 @@ admin.yourdomain.com {
               {/* Step 7: Firewall */}
               <div id="firewall" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     7
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -685,25 +685,25 @@ admin.yourdomain.com {
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Allow SSH (don&apos;t lock yourself out!)</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo ufw allow OpenSSH</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Allow HTTP and HTTPS (for Caddy)</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo ufw allow 80/tcp</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo ufw allow 443/tcp</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Enable the firewall</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo ufw enable</span>
                     </div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo ufw status</span>
                     </div>
                   </div>
@@ -717,7 +717,7 @@ admin.yourdomain.com {
               {/* Step 8: CI/CD */}
               <div id="cicd" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     8
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -767,20 +767,20 @@ jobs:
                     </thead>
                     <tbody className="text-muted-foreground">
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary/80">VPS_HOST</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent/80">VPS_HOST</td>
                         <td className="px-4 py-2.5 text-xs">Your server IP (e.g., 164.90.131.42)</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary/80">VPS_SSH_KEY</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-accent/80">VPS_SSH_KEY</td>
                         <td className="px-4 py-2.5 text-xs">The deploy user&apos;s private SSH key (contents of ~/.ssh/id_ed25519)</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-foreground/80 leading-relaxed">
-                    <span className="font-semibold text-primary/90">Tip:</span>{' '}
+                    <span className="font-semibold text-accent/90">Tip:</span>{' '}
                     Generate a dedicated deploy key for CI/CD instead of using your personal SSH key:
                     <code className="text-xs bg-card/50 px-1.5 py-0.5 rounded ml-1">ssh-keygen -t ed25519 -f deploy_key -C &quot;github-actions&quot;</code>.
                     Add the public key to <code>~/.ssh/authorized_keys</code> on the server.
@@ -791,7 +791,7 @@ jobs:
               {/* Step 9: Database Backup */}
               <div id="backups" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     9
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -813,12 +813,12 @@ jobs:
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Create a backup</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose -f docker-compose.prod.yml exec postgres pg_dump -U grit myapp &gt; backup.sql</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Restore from backup</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose -f docker-compose.prod.yml exec -T postgres psql -U grit myapp &lt; backup.sql</span>
                     </div>
                   </div>
@@ -838,12 +838,12 @@ jobs:
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Create backup directory</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">sudo mkdir -p /backups &amp;&amp; sudo chown deploy:deploy /backups</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Add to crontab</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">crontab -e</span>
                     </div>
                   </div>
@@ -863,7 +863,7 @@ jobs:
               {/* Step 10: Monitoring */}
               <div id="monitoring" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     10
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -887,7 +887,7 @@ jobs:
                         <h3 className="text-sm font-semibold mb-1.5">{item.name}</h3>
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">{item.desc}</p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium text-primary/70">{item.tier}</span>
+                      <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium text-accent/70">{item.tier}</span>
                     </div>
                   ))}
                 </div>
@@ -896,7 +896,7 @@ jobs:
               {/* Step 11: Zero-Downtime Updates */}
               <div id="updates" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     11
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -915,17 +915,17 @@ jobs:
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div className="text-muted-foreground/50 text-xs mb-2"># Pull latest code</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">git pull origin main</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Rebuild and restart only changed services</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker compose -f docker-compose.prod.yml up -d --build</span>
                     </div>
                     <div className="mt-3 text-muted-foreground/50 text-xs mb-2"># Clean up old images to save disk space</div>
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">docker image prune -f</span>
                     </div>
                   </div>
@@ -936,9 +936,9 @@ jobs:
                   PostgreSQL and Redis keep running throughout. The typical downtime for an API update is under 5 seconds.
                 </p>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-foreground/80 leading-relaxed">
-                    <span className="font-semibold text-primary/90">For true zero-downtime:</span>{' '}
+                    <span className="font-semibold text-accent/90">For true zero-downtime:</span>{' '}
                     Use Docker Compose&apos;s health checks combined with Caddy. Caddy will only route traffic to
                     healthy containers, so the old container serves requests until the new one is ready.
                   </p>
@@ -948,7 +948,7 @@ jobs:
               {/* Step 12: Checklist */}
               <div id="checklist" className="mb-12 scroll-mt-20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-sm font-mono font-semibold text-accent shrink-0">
                     12
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">
@@ -1044,11 +1044,11 @@ jobs:
                     <div key={platform.name} className="p-4 rounded-lg border border-border/30 bg-card/30">
                       <h3 className="text-sm font-semibold mb-1.5">{platform.name}</h3>
                       <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">{platform.desc}</p>
-                      <p className="text-xs text-primary/70 leading-relaxed">
+                      <p className="text-xs text-accent/70 leading-relaxed">
                         {platform.fit}
                         {platform.link && (
                           <>
-                            {' '}<Link href={platform.link} className="text-primary hover:underline font-medium">Read the guide &rarr;</Link>
+                            {' '}<Link href={platform.link} className="text-accent hover:underline font-medium">Read the guide &rarr;</Link>
                           </>
                         )}
                       </p>

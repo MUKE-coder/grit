@@ -64,7 +64,7 @@ export default function TalkPage() {
               <li key={section.start} className="flex gap-5 py-3">
                 <Link
                   href={`#${section.start}`}
-                  className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary"
+                  className="font-mono text-xs text-muted-foreground transition-colors hover:text-accent"
                   aria-label={`Jump to slide ${section.number}`}
                 >
                   {String(section.number).padStart(2, '0')}
@@ -88,7 +88,7 @@ export default function TalkPage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href="/docs/getting-started/quick-start"
-              className="group inline-flex h-11 items-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="group inline-flex h-11 items-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent/90"
             >
               Build one yourself
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

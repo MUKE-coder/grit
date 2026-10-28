@@ -26,7 +26,7 @@ export function PageHelp({ faqs, title = 'Frequently asked questions' }: PageHel
             {faqs.map((f, i) => (
               <details
                 key={i}
-                className="group rounded-lg border border-border/50 bg-card/30 px-4 py-3 [&_a]:text-primary [&_a:hover]:underline"
+                className="group rounded-lg border border-border/50 bg-card/30 px-4 py-3 [&_a]:text-accent [&_a:hover]:underline"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-medium text-foreground">
                   {f.q}
@@ -52,7 +52,7 @@ export function PageHelp({ faqs, title = 'Frequently asked questions' }: PageHel
           href="https://github.com/MUKE-coder/grit/issues/new"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-accent/25 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/15"
         >
           <Github className="h-4 w-4" />
           Raise an issue on GitHub

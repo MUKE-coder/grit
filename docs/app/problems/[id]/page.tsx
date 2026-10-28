@@ -61,7 +61,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
         </Link>
 
         <div className="mt-8 flex items-center gap-3">
-          <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 font-mono text-sm font-semibold text-primary">
+          <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 font-mono text-sm font-semibold text-accent">
             {problem.id}
           </span>
           <span className="text-sm text-muted-foreground">{groupLabel}</span>
@@ -120,7 +120,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
                 <Link
                   key={doc.href}
                   href={doc.href}
-                  className="inline-flex items-center gap-2 text-primary transition-opacity hover:opacity-80"
+                  className="inline-flex items-center gap-2 text-accent transition-opacity hover:opacity-80"
                 >
                   {doc.label}
                   <ArrowRight className="h-4 w-4" />

@@ -30,7 +30,7 @@ export default function ApiOfflineCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 3 of 5</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 3 of 5</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">10 challenges</span>
@@ -55,10 +55,10 @@ export default function ApiOfflineCourse() {
             caption="TanStack Query drives fetching, pull-to-refresh, and infinite scroll — with a persistent offline cache" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/mobile/offline" className="text-primary hover:underline">Mobile Offline & Sync →</a>
+            <a href="/docs/mobile/offline" className="text-accent hover:underline">Mobile Offline & Sync →</a>
           </p>
         </div>
 

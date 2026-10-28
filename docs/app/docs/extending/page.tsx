@@ -67,7 +67,7 @@ export default function ExtendingPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" />
+            <Package className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Extending
             </span>
@@ -97,7 +97,7 @@ export default function ExtendingPage() {
                 {MECHANISMS.map((m) => (
                   <tr key={m.name} className="border-b border-border/60 last:border-0 align-top">
                     <td className="px-4 py-3">
-                      <Link href={m.href} className="font-medium text-primary hover:underline">
+                      <Link href={m.href} className="font-medium text-accent hover:underline">
                         {m.name}
                       </Link>
                     </td>
@@ -157,10 +157,10 @@ export default function ExtendingPage() {
             project with half a feature in it.
           </p>
           <p className="mb-4 leading-relaxed text-muted-foreground">
-            The <Link href="/docs/plugins/kanban" className="text-primary hover:underline">kanban plugin</Link>{' '}
+            The <Link href="/docs/plugins/kanban" className="text-accent hover:underline">kanban plugin</Link>{' '}
             is the worked example: it is the smallest feature that needs every part of the system at
             once, so the{' '}
-            <Link href="/docs/plugins/authoring" className="text-primary hover:underline">
+            <Link href="/docs/plugins/authoring" className="text-accent hover:underline">
               authoring guide
             </Link>{' '}
             is written around it.
@@ -294,7 +294,7 @@ export default function ExtendingPage() {
             If you hit something in that first category, that is worth{' '}
             <Link
               href="https://github.com/MUKE-coder/grit/issues/new/choose"
-              className="text-primary hover:underline"
+              className="text-accent hover:underline"
             >
               saying so
             </Link>
@@ -309,9 +309,9 @@ export default function ExtendingPage() {
                 <Link
                   key={m.name}
                   href={m.href}
-                  className="group flex items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+                  className="group flex items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
                 >
-                  <Icon className="h-5 w-5 shrink-0 text-primary" />
+                  <Icon className="h-5 w-5 shrink-0 text-accent" />
                   <span className="flex-1 font-medium">{m.name}</span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </Link>

@@ -64,7 +64,7 @@ export default function MultitenantPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
+            <Building2 className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Plugin
             </span>
@@ -126,9 +126,9 @@ db.WithContext(ctx).Find(&invoices)
 // OrgID is stamped on insert; you never set it.
 db.WithContext(ctx).Create(&Invoice{Amount: 100})`} />
 
-            <div className="my-8 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <div className="my-8 rounded-xl border border-accent/30 bg-accent/5 p-5">
               <div className="mb-2 flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary" />
+                <ShieldCheck className="h-4 w-4 text-accent" />
                 <strong className="text-foreground">Scoping fails closed</strong>
               </div>
               <p className="mb-0 text-sm text-muted-foreground">

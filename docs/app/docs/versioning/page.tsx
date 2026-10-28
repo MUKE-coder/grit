@@ -18,7 +18,7 @@ export default function VersioningPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Project</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Project</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Versioning &amp; breaking changes
               </h1>
@@ -188,7 +188,7 @@ export default function VersioningPage() {
                 href="https://github.com/MUKE-coder/grit/issues"
                 target="_blank"
                 rel="noreferrer"
-                className="text-primary hover:underline"
+                className="text-accent hover:underline"
               >
                 the issue tracker
               </Link>{' '}
@@ -208,14 +208,14 @@ go install github.com/MUKE-coder/grit/v3/cmd/grit@v${GRIT_VERSION}`}
             <div className="flex flex-wrap items-center gap-6 border-t border-border/40 pt-8 mt-12">
               <Link
                 href="/docs/changelog"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
                 Changelog
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
                 href="/docs/governance"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
                 Governance &amp; roadmap
                 <ArrowRight className="h-3.5 w-3.5" />

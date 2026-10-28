@@ -30,7 +30,7 @@ export default function FirstMobileAppCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 1 of 5</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 1 of 5</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">12 challenges</span>
@@ -55,10 +55,10 @@ export default function FirstMobileAppCourse() {
             caption="Scaffold the API and Expo app, run both, and connect a real device or emulator" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/mobile/first-app" className="text-primary hover:underline">Your First Mobile App →</a>
+            <a href="/docs/mobile/first-app" className="text-accent hover:underline">Your First Mobile App →</a>
           </p>
         </div>
 
@@ -88,10 +88,10 @@ export default function FirstMobileAppCourse() {
           </Definition>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> The <strong className="text-foreground">Go API</strong> runs on your server — same as a web project</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> The <strong className="text-foreground">Expo app</strong> runs on a phone (or emulator) and calls the API over HTTP</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Shared types</strong> keep the API and app in sync</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> One codebase, two platforms (iOS + Android)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The <strong className="text-foreground">Go API</strong> runs on your server — same as a web project</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The <strong className="text-foreground">Expo app</strong> runs on a phone (or emulator) and calls the API over HTTP</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Shared types</strong> keep the API and app in sync</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> One codebase, two platforms (iOS + Android)</li>
           </ul>
         </section>
 
@@ -292,10 +292,10 @@ grit start server`}</CodeBlock>
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>_layout.tsx</Code> — Wraps child screens. Defines navigation structure (stack, tabs).</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>index.tsx</Code> — The default screen for a directory (like <Code>/</Code> in a URL).</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <Code>(tabs)/</Code> — A route group. The parentheses mean it doesn{"'"}t appear in the URL.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Any <Code>.tsx</Code> file in <Code>app/</Code> becomes a screen automatically.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>_layout.tsx</Code> — Wraps child screens. Defines navigation structure (stack, tabs).</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>index.tsx</Code> — The default screen for a directory (like <Code>/</Code> in a URL).</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <Code>(tabs)/</Code> — A route group. The parentheses mean it doesn{"'"}t appear in the URL.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Any <Code>.tsx</Code> file in <Code>app/</Code> becomes a screen automatically.</li>
           </ul>
 
           <Challenge number={6} title="Explore the Structure">

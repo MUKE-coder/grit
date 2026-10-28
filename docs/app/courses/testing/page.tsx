@@ -28,7 +28,7 @@ export default function TestingCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -54,10 +54,10 @@ export default function TestingCourse() {
             caption="Test every layer — Go unit tests, React component tests, and end-to-end user flows" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/testing" className="text-primary hover:underline">Testing →</a>
+            <a href="/docs/testing" className="text-accent hover:underline">Testing →</a>
           </p>
         </div>
 
@@ -270,9 +270,9 @@ func TestCreateUserValidation(t *testing.T) {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">auth_test.go</strong> — 6 tests covering registration (success, validation, duplicate email), login (success, wrong password, unknown email)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">user_test.go</strong> — 4 tests covering auth guard (unauthenticated access blocked), admin list users, user not found (404), get user by ID</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">bench_test.go</strong> — benchmarks for health check, auth login, and auth register endpoints</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">auth_test.go</strong> — 6 tests covering registration (success, validation, duplicate email), login (success, wrong password, unknown email)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">user_test.go</strong> — 4 tests covering auth guard (unauthenticated access blocked), admin list users, user not found (404), get user by ID</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">bench_test.go</strong> — benchmarks for health check, auth login, and auth register endpoints</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -331,27 +331,27 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span><strong className="text-foreground">Register success</strong> — valid name, email, password returns 201 + access token</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span><strong className="text-foreground">Register validation</strong> — missing fields return 422 with error details</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span><strong className="text-foreground">Register duplicate</strong> — same email twice returns 409 conflict</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">4.</span>
+              <span className="text-accent font-mono font-bold shrink-0">4.</span>
               <span><strong className="text-foreground">Login success</strong> — correct credentials return 200 + tokens</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">5.</span>
+              <span className="text-accent font-mono font-bold shrink-0">5.</span>
               <span><strong className="text-foreground">Login wrong password</strong> — returns 401 unauthorized</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">6.</span>
+              <span className="text-accent font-mono font-bold shrink-0">6.</span>
               <span><strong className="text-foreground">Login unknown email</strong> — returns 401 unauthorized (same error as wrong password for security)</span>
             </li>
           </ol>
@@ -789,14 +789,14 @@ func TestCalculateDiscountEdgeCases(t *testing.T) {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Go unit tests</strong> with <Code>testing.T</Code> and testify assertions</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">In-memory SQLite</strong> for fast, isolated database tests</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Auth endpoint tests</strong> covering registration, login, and error cases</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">CRUD resource tests</strong> for generated resources (create, list, get, update, delete)</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Benchmarks</strong> to measure endpoint performance with <Code>testing.B</Code></span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Vitest</strong> for React component testing with React Testing Library</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">Playwright</strong> for end-to-end browser automation tests</span></li>
-            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /> <span><strong className="text-foreground">TDD</strong> — write the test first, then the code</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Go unit tests</strong> with <Code>testing.T</Code> and testify assertions</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">In-memory SQLite</strong> for fast, isolated database tests</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Auth endpoint tests</strong> covering registration, login, and error cases</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">CRUD resource tests</strong> for generated resources (create, list, get, update, delete)</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Benchmarks</strong> to measure endpoint performance with <Code>testing.B</Code></span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Vitest</strong> for React component testing with React Testing Library</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">Playwright</strong> for end-to-end browser automation tests</span></li>
+            <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" /> <span><strong className="text-foreground">TDD</strong> — write the test first, then the code</span></li>
           </ul>
 
           <Challenge number={12} title="Final Challenge: Go API Tests">

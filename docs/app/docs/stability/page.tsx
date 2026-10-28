@@ -280,7 +280,7 @@ export default function StabilityPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-4xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Security &amp; Testing</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Security &amp; Testing</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Stability and hardening</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 What is proven, what is young, and where the line runs between what Grit guarantees

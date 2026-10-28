@@ -19,7 +19,7 @@ export default function MCPServerPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">AI Workflows</span>
+              <span className="tag-mono text-accent/80 mb-3 block">AI Workflows</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">MCP Server</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Let your AI coding agent ask Grit about your project instead of guessing from a

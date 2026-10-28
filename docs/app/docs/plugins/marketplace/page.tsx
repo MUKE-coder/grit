@@ -220,7 +220,7 @@ export default function MarketplacePage() {
               </Link>
               <Link
                 href="/docs/extending"
-                className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-6 text-sm font-medium text-foreground transition-colors duration-150 hover:border-primary/50"
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-6 text-sm font-medium text-foreground transition-colors duration-150 hover:border-accent/50"
               >
                 Is a plugin the right tool?
               </Link>
@@ -265,7 +265,7 @@ export default function MarketplacePage() {
               Larger pieces that ship as Go modules from{' '}
               <Link
                 href="https://github.com/MUKE-coder/grit-plugins"
-                className="text-primary hover:underline"
+                className="text-accent hover:underline"
               >
                 grit-plugins
               </Link>
@@ -350,7 +350,7 @@ export default function MarketplacePage() {
                 <li key={cmd} className="flex items-center gap-4">
                   <span
                     aria-hidden="true"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-xs font-semibold text-primary"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 font-mono text-xs font-semibold text-accent"
                   >
                     {i + 1}
                   </span>

@@ -153,7 +153,7 @@ export default function DockerForGritPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Prerequisites</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Prerequisites</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Docker for Grit Developers</h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 A practical guide to Docker for developers who want to use Grit. You don&apos;t need to be a Docker
@@ -184,8 +184,8 @@ export default function DockerForGritPage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Docker runs your database (PostgreSQL), cache and job queue (Redis), file storage (MinIO),
                 and email testing server (Mailhog). Your Go API and Next.js apps run natively on your machine
@@ -236,7 +236,7 @@ export default function DockerForGritPage() {
                   <span className="text-[11px] font-mono text-muted-foreground/40">terminal</span>
                 </div>
                 <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span>
+                  <span className="text-accent/50 select-none">$ </span>
                   <span className="text-foreground/80">brew install --cask docker</span>
                 </div>
               </div>
@@ -267,8 +267,8 @@ $ docker compose version
 Docker Compose version v2.x.x`} />
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Docker must be installed and running before you run <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit new</code>.
                 The scaffolded project includes a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">docker-compose.yml</code> that
@@ -297,8 +297,8 @@ Docker Compose version v2.x.x`} />
 
             <CodeBlock language="bash" code={dockerRunExample} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit uses official images from Docker Hub: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">postgres:16-alpine</code> for
                 PostgreSQL, <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">redis:7-alpine</code> for
@@ -335,8 +335,8 @@ Docker Compose version v2.x.x`} />
 
             <CodeBlock filename="apps/api/Dockerfile" code={dockerfileExample} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit scaffolds two Dockerfiles: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/api/Dockerfile</code> builds
                 the Go binary using a multi-stage build (final image is under 20MB),
@@ -366,8 +366,8 @@ Docker Compose version v2.x.x`} />
 
             <CodeBlock language="yaml" filename="docker-compose.yml (simplified example)" code={simpleComposeExample} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Every Grit project has a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">docker-compose.yml</code> at
                 the project root that defines all four infrastructure services. There&apos;s also
@@ -415,8 +415,8 @@ Docker Compose version v2.x.x`} />
 
             <CodeBlock language="yaml" filename="docker-compose.yml (generated by grit new)" code={gritComposeExample} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Start all four services with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">docker compose up -d</code>.
                 They&apos;ll run in the background. Your Go API connects to them via <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">localhost</code> and
@@ -473,8 +473,8 @@ $ docker compose ps
 # When you're done for the day
 $ docker compose down`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 In practice, you mainly need two commands: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">docker compose up -d</code> to
                 start your infrastructure at the beginning of a coding session,
@@ -531,8 +531,8 @@ $ docker compose down`} />
               </table>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Your PostgreSQL data persists across container restarts thanks to the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">postgres-data</code> volume.
                 If you need a completely fresh start (e.g., your schema is out of sync),
@@ -614,8 +614,8 @@ $ docker compose down`} />
               </p>
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code> file
                 generated by <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit new</code> contains
@@ -685,12 +685,12 @@ $ docker system prune
 # Nuclear option: remove everything and start fresh
 $ docker compose down -v && docker compose up -d`} />
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 For more detailed troubleshooting tips specific to Grit projects, see
                 the{" "}
-                <Link href="/docs/getting-started/troubleshooting" className="text-primary hover:underline">
+                <Link href="/docs/getting-started/troubleshooting" className="text-accent hover:underline">
                   Troubleshooting
                 </Link>{" "}
                 page in the Getting Started section. It covers API connection issues, frontend build

@@ -30,7 +30,7 @@ export default function JobsEmailCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 6 of 8</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Course 6 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -56,10 +56,10 @@ export default function JobsEmailCourse() {
             caption="Slow work runs in the background off Redis — emails, images, and reports, without blocking the request" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/batteries/jobs" className="text-primary hover:underline">Background Jobs →</a>
+            <a href="/docs/batteries/jobs" className="text-accent hover:underline">Background Jobs →</a>
           </p>
         </div>
 
@@ -99,11 +99,11 @@ export default function JobsEmailCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Sending emails</strong> — welcome emails, password resets, order confirmations</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Processing images</strong> — generating thumbnails, resizing uploads, optimizing file sizes</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Generating reports</strong> — PDF exports, CSV downloads, analytics calculations</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Cleanup tasks</strong> — removing orphaned files, purging expired sessions, archiving old data</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Third-party API calls</strong> — payment webhooks, push notifications, syncing with external services</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Sending emails</strong> — welcome emails, password resets, order confirmations</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Processing images</strong> — generating thumbnails, resizing uploads, optimizing file sizes</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Generating reports</strong> — PDF exports, CSV downloads, analytics calculations</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Cleanup tasks</strong> — removing orphaned files, purging expired sessions, archiving old data</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Third-party API calls</strong> — payment webhooks, push notifications, syncing with external services</li>
           </ul>
 
           <Note>
@@ -151,19 +151,19 @@ export default function JobsEmailCourse() {
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">1.</span>
+              <span className="text-accent font-bold shrink-0">1.</span>
               <span><strong className="text-foreground">Handler dispatches a task</strong> — Your API handler creates a task with a type and payload, then pushes it to Redis via the asynq client.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">2.</span>
+              <span className="text-accent font-bold shrink-0">2.</span>
               <span><strong className="text-foreground">Worker picks it up</strong> — The asynq worker process polls Redis, sees the new task, and dequeues it.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">3.</span>
+              <span className="text-accent font-bold shrink-0">3.</span>
               <span><strong className="text-foreground">Worker processes it</strong> — The worker matches the task type to a registered handler function and executes it.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-bold shrink-0">4.</span>
+              <span className="text-accent font-bold shrink-0">4.</span>
               <span><strong className="text-foreground">Task marked done/failed</strong> — If the handler returns <Code>nil</Code>, the task is marked as completed. If it returns an error, it{"'"}s marked as failed and may be retried.</span>
             </li>
           </ol>
@@ -532,11 +532,11 @@ scheduler.Register("0 * * * *", asynq.NewTask(TypeSessionCleanup, nil))`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Active</strong> — tasks currently being processed by a worker</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Pending</strong> — tasks waiting in the queue to be picked up</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Completed</strong> — tasks that finished successfully</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Failed</strong> — tasks that failed after all retries were exhausted</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Scheduled</strong> — tasks delayed with <Code>ProcessIn</Code>, waiting for their time</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Active</strong> — tasks currently being processed by a worker</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Pending</strong> — tasks waiting in the queue to be picked up</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Completed</strong> — tasks that finished successfully</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Failed</strong> — tasks that failed after all retries were exhausted</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Scheduled</strong> — tasks delayed with <Code>ProcessIn</Code>, waiting for their time</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -637,7 +637,7 @@ MAIL_FROM=noreply@yourapp.com`}
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             <Code>RESEND_API_KEY</Code> is your API key from{' '}
-            <Link href="https://resend.com" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">resend.com</Link>.
+            <Link href="https://resend.com" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">resend.com</Link>.
             <Code>MAIL_FROM</Code> is the {'"'}from{'"'} address that appears on all outgoing emails.
           </p>
 
@@ -680,10 +680,10 @@ MAIL_FROM=noreply@yourapp.com`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">welcome</strong> — sent when a user registers a new account</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">password-reset</strong> — sent when a user requests a password reset link</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">verify-email</strong> — sent to confirm a user{"'"}s email address</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">notification</strong> — a generic template for custom notifications</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">welcome</strong> — sent when a user registers a new account</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">password-reset</strong> — sent when a user requests a password reset link</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">verify-email</strong> — sent to confirm a user{"'"}s email address</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">notification</strong> — a generic template for custom notifications</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

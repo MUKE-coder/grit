@@ -20,7 +20,7 @@ export default function DesktopOfflinePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop (Wails)
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -71,7 +71,7 @@ export default function DesktopOfflinePage() {
             {/* What you get */}
             <div className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-6">
-                What ships in every <code className="text-primary">--desktop</code> scaffold
+                What ships in every <code className="text-accent">--desktop</code> scaffold
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
@@ -83,8 +83,8 @@ export default function DesktopOfflinePage() {
                   { icon: Database, title: 'Cursor-based pull', desc: 'Incremental pulls — only rows changed since the last sync.' },
                 ].map((feature) => (
                   <div key={feature.title} className="flex gap-3 rounded-lg border border-border bg-card/40 p-4">
-                    <div className="shrink-0 mt-0.5 h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
-                      <feature.icon className="h-3.5 w-3.5 text-primary" />
+                    <div className="shrink-0 mt-0.5 h-8 w-8 rounded-md bg-accent/10 flex items-center justify-center">
+                      <feature.icon className="h-3.5 w-3.5 text-accent" />
                     </div>
                     <div>
                       <div className="text-[14px] font-semibold text-foreground mb-0.5">
@@ -408,20 +408,20 @@ export default function BuildingsPage() {
               <ul className="space-y-2 text-sm">
                 <li>
                   <span className="text-muted-foreground">Server endpoints:</span>{' '}
-                  <code className="text-primary">POST /api/sync/push</code>,{' '}
-                  <code className="text-primary">GET /api/sync/pull?model=X&since=cursor</code>
+                  <code className="text-accent">POST /api/sync/push</code>,{' '}
+                  <code className="text-accent">GET /api/sync/pull?model=X&since=cursor</code>
                 </li>
                 <li>
                   <span className="text-muted-foreground">Wails bindings on App:</span>{' '}
-                  <code className="text-primary">LocalCreate / LocalUpdate / LocalDelete / LocalGet / LocalList / Sync / PendingCount / GetPendingChanges / ResolveConflict</code>
+                  <code className="text-accent">LocalCreate / LocalUpdate / LocalDelete / LocalGet / LocalList / Sync / PendingCount / GetPendingChanges / ResolveConflict</code>
                 </li>
                 <li>
                   <span className="text-muted-foreground">Local DB location:</span>{' '}
-                  <code className="text-primary">os.UserConfigDir() + &quot;/&lt;app&gt;/sync.db&quot;</code>
+                  <code className="text-accent">os.UserConfigDir() + &quot;/&lt;app&gt;/sync.db&quot;</code>
                 </li>
                 <li>
                   <span className="text-muted-foreground">Wire format docs:</span>{' '}
-                  <Link href="/docs/changelog" className="text-primary hover:underline">v3.14 changelog</Link>
+                  <Link href="/docs/changelog" className="text-accent hover:underline">v3.14 changelog</Link>
                 </li>
               </ul>
             </div>

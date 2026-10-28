@@ -54,7 +54,7 @@ export default function ScoutPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Security</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Security</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Scout: scanning your own app</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Scout is a security scanner that runs inside your API, the way GORM Studio and
@@ -94,7 +94,7 @@ SCOUT_DB=scout.db`}
               serve to anybody who finds the URL.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              <Link href="/docs/security/doctor" className="text-primary hover:underline">
+              <Link href="/docs/security/doctor" className="text-accent hover:underline">
                 <code>grit doctor</code>
               </Link>{' '}
               reports both ways of getting this wrong: enabled with no password, where you think
@@ -287,7 +287,7 @@ scout scan --target https://staging.example.com --mode active     # sends real p
             <p className="text-muted-foreground leading-relaxed mt-4">
               Grit already solved this for its own Routes screen: <code>grit</code> parses your
               route files, resolves each group&apos;s middleware chain, and writes{' '}
-              <code>internal/access</code>, which <Link href="/docs/security/doctor" className="text-primary hover:underline"><code>grit doctor</code></Link>{' '}
+              <code>internal/access</code>, which <Link href="/docs/security/doctor" className="text-accent hover:underline"><code>grit doctor</code></Link>{' '}
               fails on when it goes stale. <code>grit add scout</code> hands that table over, so
               Scout reads what each route requires instead of guessing:
             </p>
@@ -311,7 +311,7 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
               it. Tracked at{' '}
               <a
                 href="https://github.com/MUKE-coder/scout/issues/2"
-                className="text-primary hover:underline"
+                className="text-accent hover:underline"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -337,7 +337,7 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
                 <tbody>
                   {modes.map((m) => (
                     <tr key={m.mode} className="border-b border-border/50">
-                      <td className="py-3 pr-4 align-top font-mono text-primary">{m.mode}</td>
+                      <td className="py-3 pr-4 align-top font-mono text-accent">{m.mode}</td>
                       <td className="py-3 pr-4 align-top text-muted-foreground">{m.sends}</td>
                       <td className="py-3 align-top text-muted-foreground">{m.use}</td>
                     </tr>
@@ -356,7 +356,7 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
                 <a
                   key={c.name}
                   href={c.href}
-                  className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 block hover:border-primary/40 transition-colors"
+                  className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 block hover:border-accent/40 transition-colors"
                 >
                   <h3 className="text-sm font-semibold text-foreground mb-1">{c.name}</h3>
                   <p className="text-xs text-muted-foreground/60 leading-relaxed">{c.checks}</p>
@@ -614,7 +614,7 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
 
             <h2 className="text-2xl font-semibold mt-12 mb-4">What it is not</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Scout is not <Link href="/docs/batteries/security" className="text-primary hover:underline">Sentinel</Link>.
+              Scout is not <Link href="/docs/batteries/security" className="text-accent hover:underline">Sentinel</Link>.
               Sentinel is a WAF: it sits in the request path and blocks things as they happen.
               Scout runs on a schedule and tells you what it found. One defends, the other looks.
               They answer different questions and the answers do not substitute for each other.

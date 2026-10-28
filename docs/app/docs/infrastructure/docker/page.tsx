@@ -21,7 +21,7 @@ export default function DockerSetupPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Infrastructure</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Infrastructure</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Docker Setup
               </h1>
@@ -68,7 +68,7 @@ export default function DockerSetupPage() {
                     { file: 'docker-compose.prod.yml', desc: 'Production deployment (includes API, web, admin containers)' },
                   ].map((item) => (
                     <li key={item.file} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       <span>
                         <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">{item.file}</code>{' '}
                         &mdash; {item.desc}
@@ -98,7 +98,7 @@ export default function DockerSetupPage() {
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">docker compose up -d</span>
                   </div>
                 </div>
@@ -244,7 +244,7 @@ volumes:
                     <div key={service.title} className="p-4 rounded-lg border border-border/30 bg-card/30">
                       <div className="flex items-center justify-between mb-1.5">
                         <h3 className="text-sm font-semibold">{service.title}</h3>
-                        <code className="text-xs font-mono text-primary/70 bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10">
+                        <code className="text-xs font-mono text-accent/70 bg-accent/5 px-2 py-0.5 rounded-md border border-accent/10">
                           {service.url}
                         </code>
                       </div>
@@ -389,7 +389,7 @@ volumes:
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-accent/50 select-none">$ </span>
                     <span className="text-foreground/80">docker compose -f docker-compose.prod.yml up -d --build</span>
                   </div>
                 </div>
@@ -528,7 +528,7 @@ CMD ["node", "apps/web/server.js"]`} />
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">$ </span>
+                          <span className="text-accent/50 select-none">$ </span>
                           <span className="text-foreground/80">{item.cmd}</span>
                         </div>
                         <p className="text-xs text-muted-foreground/50 mt-1">{item.desc}</p>

@@ -94,7 +94,7 @@ export default function TechKitsIndexPage() {
 
             {/* Header */}
             <div className="mb-12">
-              <span className="tag-mono text-primary/80 mb-3 block">Tech Kits</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Tech Kits</span>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
                 The fastest way to start your<br className="hidden md:block" /> next application
               </h1>
@@ -123,12 +123,12 @@ export default function TechKitsIndexPage() {
             {/* Auth options section — Laravel cribs this from its Built-in vs WorkOS layout */}
             <div className="mb-16">
               <h2 className="text-2xl font-semibold tracking-tight mb-2 flex items-center gap-2">
-                <Cpu className="h-5 w-5 text-primary" />
+                <Cpu className="h-5 w-5 text-accent" />
                 An authenticated application out of the box
               </h2>
               <p className="text-muted-foreground mb-6">
                 Authentication options to suit your application&apos;s needs — flip a flag in
-                <code className="text-primary text-sm bg-primary/5 px-1.5 py-0.5 rounded mx-1">.env</code>
+                <code className="text-accent text-sm bg-accent/5 px-1.5 py-0.5 rounded mx-1">.env</code>
                 or compose your own.
               </p>
 
@@ -136,7 +136,7 @@ export default function TechKitsIndexPage() {
                 <div className="rounded-xl border border-border/50 bg-card/50 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <p className="text-xs font-mono text-primary uppercase tracking-wider">Default</p>
+                    <p className="text-xs font-mono text-accent uppercase tracking-wider">Default</p>
                   </div>
                   <h3 className="text-lg font-semibold mb-1.5">Built-in Grit auth</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
@@ -162,13 +162,13 @@ export default function TechKitsIndexPage() {
             </div>
 
             {/* Ready-to-build strip */}
-            <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-8 mb-12 text-center">
+            <div className="rounded-2xl border border-accent/20 bg-accent/[0.04] p-8 mb-12 text-center">
               <h3 className="text-2xl font-semibold mb-2">Ready to build?</h3>
               <p className="text-muted-foreground mb-6">
                 Create the incredible, with Grit.
               </p>
               <div className="flex flex-wrap justify-center gap-2.5">
-                <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
                   <Link href="/docs/getting-started/quick-start">
                     Quick start <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Link>
@@ -191,7 +191,7 @@ function KitCardLarge({ kit }: { kit: KitCard }) {
   return (
     <Link
       href={`/docs/tech-kits/${kit.slug}`}
-      className="group relative rounded-2xl border border-border/50 bg-card/50 p-6 hover:border-primary/40 hover:bg-card/80 transition-all overflow-hidden"
+      className="group relative rounded-2xl border border-border/50 bg-card/50 p-6 hover:border-accent/40 hover:bg-card/80 transition-all overflow-hidden"
     >
       {/* Decorative gradient blob */}
       <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${kit.accentClass} blur-2xl opacity-60 pointer-events-none`} />
@@ -201,15 +201,15 @@ function KitCardLarge({ kit }: { kit: KitCard }) {
           <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${kit.accentClass} flex items-center justify-center`}>
             <Icon className="h-5 w-5" />
           </div>
-          <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+          <h3 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors">
             {kit.name}
           </h3>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed mb-4">{kit.tagline}</p>
-        <code className="block text-[11px] font-mono text-primary/80 bg-primary/5 border border-primary/10 rounded-md px-2.5 py-1.5 mb-4">
+        <code className="block text-[11px] font-mono text-accent/80 bg-accent/5 border border-accent/10 rounded-md px-2.5 py-1.5 mb-4">
           {kit.command}
         </code>
-        <div className="inline-flex items-center gap-1 text-xs font-mono text-primary/80 group-hover:text-primary">
+        <div className="inline-flex items-center gap-1 text-xs font-mono text-accent/80 group-hover:text-accent">
           View kit <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
         </div>
       </div>
@@ -222,18 +222,18 @@ function KitCardSmall({ kit }: { kit: KitCard }) {
   return (
     <Link
       href={`/docs/tech-kits/${kit.slug}`}
-      className="group rounded-2xl border border-border/50 bg-card/40 p-5 hover:border-primary/40 hover:bg-card/80 transition-all"
+      className="group rounded-2xl border border-border/50 bg-card/40 p-5 hover:border-accent/40 hover:bg-card/80 transition-all"
     >
       <div className="flex items-center gap-2.5 mb-2">
         <div className={`h-8 w-8 rounded-md bg-gradient-to-br ${kit.accentClass} flex items-center justify-center`}>
           <Icon className="h-4 w-4" />
         </div>
-        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">
+        <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors leading-tight">
           {kit.name}
         </h3>
       </div>
       <p className="text-[13px] text-muted-foreground leading-relaxed mb-3 line-clamp-2">{kit.tagline}</p>
-      <code className="block text-[10px] font-mono text-primary/80 bg-primary/5 rounded px-2 py-1">
+      <code className="block text-[10px] font-mono text-accent/80 bg-accent/5 rounded px-2 py-1">
         {kit.command}
       </code>
     </Link>

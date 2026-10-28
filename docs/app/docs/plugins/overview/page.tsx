@@ -21,7 +21,7 @@ export default function PluginsOverviewPage() {
       <main className="lg:pl-64">
         <div className="mx-auto max-w-3xl px-6 py-12">
           <div className="mb-3 flex items-center gap-2">
-            <Puzzle className="h-5 w-5 text-primary" />
+            <Puzzle className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Plugins
             </span>
@@ -53,7 +53,7 @@ export default function PluginsOverviewPage() {
             debugger. There&apos;s no hidden runtime library deciding your app&apos;s behavior.
           </p>
           <p className="mb-4 leading-relaxed text-muted-foreground">
-            This is the same idea as <Link href="/docs/concepts/code-generation" className="text-primary hover:underline">code generation</Link>:{' '}
+            This is the same idea as <Link href="/docs/concepts/code-generation" className="text-accent hover:underline">code generation</Link>:{' '}
             <code>grit generate resource</code> gives you a model, a service, a handler and an admin
             page you own. A plugin is that, bigger and reusable — a packaged code generation.
           </p>
@@ -61,7 +61,7 @@ export default function PluginsOverviewPage() {
           {/* The lockfile */}
           <div className="my-8 rounded-xl border border-border bg-card/40 p-6">
             <div className="mb-2 flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-primary" />
+              <RotateCcw className="h-4 w-4 text-accent" />
               <span className="font-semibold">The part most systems can&apos;t do: uninstall</span>
             </div>
             <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
@@ -129,7 +129,7 @@ git diff                                # and read exactly what that did`} />
             A second set lives at{' '}
             <a
               href="https://github.com/MUKE-coder/grit-plugins"
-              className="text-primary hover:underline"
+              className="text-accent hover:underline"
               target="_blank"
               rel="noreferrer"
             >
@@ -180,19 +180,19 @@ git diff                                # and read exactly what that did`} />
           </h2>
           <ul className="mb-4 space-y-3 leading-relaxed text-muted-foreground">
             <li className="flex gap-3">
-              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
               <span><strong>No overwrite.</strong> A plugin can&apos;t clobber a file that already exists — it creates, or it fails loudly.</span>
             </li>
             <li className="flex gap-3">
-              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
               <span><strong>A missing marker is an error.</strong> If an injection&apos;s anchor isn&apos;t found, the install stops rather than silently doing nothing.</span>
             </li>
             <li className="flex gap-3">
-              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
               <span><strong>No double install.</strong> Installing an already-installed plugin is refused.</span>
             </li>
             <li className="flex gap-3">
-              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <PackageCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
               <span><strong>Requirements both ways.</strong> A plugin&apos;s dependencies must be present to install it, and can&apos;t be removed while it&apos;s still installed.</span>
             </li>
           </ul>
@@ -215,9 +215,9 @@ git diff                                # and read exactly what that did`} />
               <Link
                 key={p.href}
                 href={p.href}
-                className="group rounded-xl border border-border bg-card/40 p-4 transition-colors hover:border-primary/40"
+                className="group rounded-xl border border-border bg-card/40 p-4 transition-colors hover:border-accent/40"
               >
-                <div className="mb-1 font-mono text-sm font-semibold text-foreground group-hover:text-primary">
+                <div className="mb-1 font-mono text-sm font-semibold text-foreground group-hover:text-accent">
                   {p.name}
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">{p.desc}</p>
@@ -227,7 +227,7 @@ git diff                                # and read exactly what that did`} />
 
           <p className="mt-8 leading-relaxed text-muted-foreground">
             Want to build one? See{' '}
-            <Link href="/docs/plugins/authoring" className="text-primary hover:underline">
+            <Link href="/docs/plugins/authoring" className="text-accent hover:underline">
               Writing a plugin
             </Link>
             . Plugins are how Grit stays small at the core and still grows: the batteries every app

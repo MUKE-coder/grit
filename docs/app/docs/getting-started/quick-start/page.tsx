@@ -22,7 +22,7 @@ export default function QuickStartPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Getting Started
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -34,7 +34,7 @@ export default function QuickStartPage() {
                 installed. If not, see the{" "}
                 <Link
                   href="/docs/getting-started/installation"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   Installation guide
                 </Link>{" "}
@@ -70,7 +70,7 @@ export default function QuickStartPage() {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[15px] font-semibold">{tool.name}</span>
-                    <span className="text-sm font-mono text-primary/60">
+                    <span className="text-sm font-mono text-accent/60">
                       {tool.version}
                     </span>
                   </div>
@@ -119,7 +119,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
                 <CodeBlock terminal code="grit update" className="mb-0" />
                 <p className="text-[15px] text-muted-foreground">
-                  Run <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">grit version</code> afterwards
+                  Run <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">grit version</code> afterwards
                   to confirm you&apos;re on the latest release.
                 </p>
               </div>
@@ -160,15 +160,15 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
                 <CodeBlock terminal code="grit new myapp --triple --vite" className="mb-0" />
                 <p className="text-[15px] text-muted-foreground mt-3">
-                  Available flags: <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--single</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--double</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--triple</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--api</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--mobile</code> for architecture,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--vite</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--next</code> for frontend,
-                  and <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--desktop</code> to add a
-                  Wails desktop client (<a href="/docs/concepts/architecture-modes/multi-client" className="text-primary hover:underline">multi-client pattern</a>).
+                  Available flags: <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--single</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--double</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--triple</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--api</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--mobile</code> for architecture,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--vite</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--next</code> for frontend,
+                  and <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--desktop</code> to add a
+                  Wails desktop client (<a href="/docs/concepts/architecture-modes/multi-client" className="text-accent hover:underline">multi-client pattern</a>).
                 </p>
               </div>
 
@@ -181,7 +181,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
                 <CodeBlock terminal code="grit new . --triple --vite" className="mb-0" />
                 <p className="text-sm text-muted-foreground/60 mt-2">
-                  Use <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--force</code> to
+                  Use <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--force</code> to
                   scaffold into a non-empty directory.
                 </p>
               </div>
@@ -222,7 +222,7 @@ docker compose up -d`} className="mb-0 glow-purple-sm" />
                   Do not have Docker? See the{" "}
                   <Link
                     href="/docs/getting-started/installation"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     Installation guide
                   </Link>{" "}
@@ -314,7 +314,7 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[15px] font-semibold">{item.name}</span>
                     </div>
-                    <code className="text-sm font-mono text-primary/60 block mb-1">
+                    <code className="text-sm font-mono text-accent/60 block mb-1">
                       {item.url}
                     </code>
                     <span className="text-sm text-muted-foreground/50">
@@ -392,17 +392,17 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                   Then reload the admin panel &mdash; your <strong>Posts</strong> resource
                   is there with a working data table and create form. (Full breakdown of
                   every generated file:{" "}
-                  <Link href="/docs/concepts/generated-files" className="text-primary hover:underline">Generated File Map</Link>.)
+                  <Link href="/docs/concepts/generated-files" className="text-accent hover:underline">Generated File Map</Link>.)
                 </p>
               </div>
             </Step>
             </Steps>
 
             {/* Upgrade */}
-            <div className="mb-10 rounded-xl border border-primary/20 bg-primary/5 p-5">
+            <div className="mb-10 rounded-xl border border-accent/20 bg-accent/5 p-5">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                <span className="text-primary">Upgrading?</span>
-                <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5">v3.55.0</span>
+                <span className="text-accent">Upgrading?</span>
+                <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5">v3.55.0</span>
               </h3>
               <p className="text-[15px] text-muted-foreground mb-3">
                 If you have an existing Grit project and want to update the framework
@@ -411,7 +411,7 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
               <CodeBlock terminal code="grit upgrade" className="mb-0" />
               <p className="text-sm text-muted-foreground/50 mt-2">
                 This preserves your resource definitions and API code while updating
-                all framework-generated files. Use <code className="text-primary/60">grit upgrade --force</code> to
+                all framework-generated files. Use <code className="text-accent/60">grit upgrade --force</code> to
                 overwrite without prompting.
               </p>
             </div>
@@ -455,8 +455,8 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                   },
                 ].map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-primary/20 hover:bg-card/80 transition-all duration-200">
-                      <h3 className="text-[15px] font-semibold mb-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                    <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-accent/20 hover:bg-card/80 transition-all duration-200">
+                      <h3 className="text-[15px] font-semibold mb-1 group-hover:text-accent transition-colors flex items-center gap-1.5">
                         {item.title}
                         <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                       </h3>
@@ -470,10 +470,10 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
             </div>
 
             {/* Bug Reports */}
-            <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
+            <div className="mb-8 rounded-xl border border-accent/20 bg-accent/5 p-5">
               <p className="text-[15px] text-muted-foreground leading-relaxed">
                 Found a bug or something doesn&apos;t work? Please open an issue at{' '}
-                <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                   https://github.com/MUKE-coder/grit/issues
                 </a>{' '}
                 — your feedback helps us improve Grit for everyone.
@@ -481,12 +481,12 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
             </div>
 
             {/* Example Projects */}
-            <div className="mt-10 rounded-lg border border-primary/20 bg-primary/5 p-5">
+            <div className="mt-10 rounded-lg border border-accent/20 bg-accent/5 p-5">
               <h3 className="text-sm font-semibold text-foreground mb-2">Example Projects</h3>
               <p className="text-sm text-muted-foreground mb-3">
                 See the same Job Portal app built with every architecture — full source code, setup guide, and deployment config.
               </p>
-              <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+              <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors">
                 Browse all 6 examples on GitHub &rarr;
               </a>
             </div>

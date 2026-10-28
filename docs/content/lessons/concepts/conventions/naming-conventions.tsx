@@ -60,8 +60,8 @@ export default function Lesson() {
 
       <TipBox tone="info">
         These are the same conventions {' '}
-        <a href="https://google.github.io/styleguide/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google&apos;s style guide</a>,{' '}
-        <a href="https://airbnb.io/javascript/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Airbnb&apos;s React guide</a>, and{' '}
+        <a href="https://google.github.io/styleguide/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google&apos;s style guide</a>,{' '}
+        <a href="https://airbnb.io/javascript/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Airbnb&apos;s React guide</a>, and{' '}
         most production Go codebases use. Nothing exotic — just one place that picks all of them
         and applies them consistently.
       </TipBox>

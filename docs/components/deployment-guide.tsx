@@ -67,7 +67,7 @@ function Blocks({ blocks }: { blocks: GuideBlock[] }) {
                   <li key={item.text} className="relative pl-9">
                     <span
                       aria-hidden="true"
-                      className="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary tabular-nums"
+                      className="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent tabular-nums"
                     >
                       {n + 1}
                     </span>

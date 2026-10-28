@@ -69,7 +69,7 @@ export default async function BlogPostPage({
 
         {/* Header */}
         <header className="mb-10">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-primary mb-3">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-accent mb-3">
             {post.category} · {formatDate(post.date)} · {post.readingTime} read
           </div>
           <h1 className="font-display text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-[1.08] mb-4">
@@ -110,7 +110,7 @@ export default async function BlogPostPage({
           </p>
           <Link
             href="/docs/getting-started/quick-start"
-            className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors glow-primary-sm"
+            className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors glow-primary-sm"
           >
             Get started
           </Link>

@@ -20,13 +20,13 @@ export default function ConfigurationPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Getting Started</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Configuration
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 A complete reference for every environment variable in your Grit project. All
-                configuration is done through the <code className="text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">.env</code> file
+                configuration is done through the <code className="text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">.env</code> file
                 at the project root.
               </p>
               <LaneFlow
@@ -96,7 +96,7 @@ APP_URL=http://localhost:8080`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -145,7 +145,7 @@ POSTGRES_PORT=5434                   # host port; 5432 inside the docker network
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -177,7 +177,7 @@ JWT_REFRESH_EXPIRY=168h      # Refresh token lifetime (7 days)`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -219,7 +219,7 @@ SOCIAL_AUTH_ENABLED=true`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -244,12 +244,12 @@ REDIS_PORT=6380                  # the host port docker-compose publishes
               <div className="mt-4 space-y-3">
                 <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <code className="text-sm font-mono text-primary/70 font-medium">REDIS_URL</code>
+                    <code className="text-sm font-mono text-accent/70 font-medium">REDIS_URL</code>
                     <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">built from REDIS_PORT</span>
                   </div>
                   <p className="text-xs text-muted-foreground/60 leading-relaxed">
                     Redis connection URL. Leave it unset locally and the API connects to localhost on{' '}
-                    <code className="text-xs font-mono text-primary/50">REDIS_PORT</code>, so moving the port moves the connection with it; a URL left pointing at the old port reaches whichever project holds it now, and the API warns at startup when the two disagree. Set it to empty to run without Redis. For cloud Redis (Upstash), use the <code className="text-xs font-mono text-primary/50">rediss://</code> protocol (with double s) and include the password: <code className="text-xs font-mono text-primary/50">rediss://default:password@endpoint:6379</code>.
+                    <code className="text-xs font-mono text-accent/50">REDIS_PORT</code>, so moving the port moves the connection with it; a URL left pointing at the old port reaches whichever project holds it now, and the API warns at startup when the two disagree. Set it to empty to run without Redis. For cloud Redis (Upstash), use the <code className="text-xs font-mono text-accent/50">rediss://</code> protocol (with double s) and include the password: <code className="text-xs font-mono text-accent/50">rediss://default:password@endpoint:6379</code>.
                   </p>
                 </div>
               </div>
@@ -278,7 +278,7 @@ NEXT_PUBLIC_ADMIN_URL=http://localhost:3001`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -346,7 +346,7 @@ B2_REGION=us-west-004        # Must match your bucket region`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -381,7 +381,7 @@ SUPPORT_EMAIL=`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -406,11 +406,11 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
               <div className="mt-4 space-y-3">
                 <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <code className="text-sm font-mono text-primary/70 font-medium">CORS_ORIGINS</code>
+                    <code className="text-sm font-mono text-accent/70 font-medium">CORS_ORIGINS</code>
                     <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">http://localhost:3000,http://localhost:3001</span>
                   </div>
                   <p className="text-xs text-muted-foreground/60 leading-relaxed">
-                    Comma-separated list of allowed origins. In development, port 3000 is the web app and port 3001 is the admin panel. In production, set this to your actual domain names (e.g., <code className="text-xs font-mono text-primary/50">https://myapp.com,https://admin.myapp.com</code>).
+                    Comma-separated list of allowed origins. In development, port 3000 is the web app and port 3001 is the admin panel. In production, set this to your actual domain names (e.g., <code className="text-xs font-mono text-accent/50">https://myapp.com,https://admin.myapp.com</code>).
                   </p>
                 </div>
               </div>
@@ -443,7 +443,7 @@ GORM_STUDIO_DISABLE_SQL=false           # Turn off the raw SQL editor`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -474,7 +474,7 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`} />
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -498,7 +498,7 @@ TOTP_ISSUER=myapp`} />
               <div className="mt-4 space-y-3">
                 <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <code className="text-sm font-mono text-primary/70 font-medium">TOTP_ISSUER</code>
+                    <code className="text-sm font-mono text-accent/70 font-medium">TOTP_ISSUER</code>
                     <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">myapp</span>
                   </div>
                   <p className="text-xs text-muted-foreground/60 leading-relaxed">
@@ -532,7 +532,7 @@ PULSE_PASSWORD=pulse                 # Generated per-scaffold. Rotate: openssl r
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -569,7 +569,7 @@ SENTINEL_AUDIT_KEY=change-me         # Generated per-scaffold. Keys the audit lo
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <code className="text-sm font-mono text-primary/70 font-medium">{item.variable}</code>
+                      <code className="text-sm font-mono text-accent/70 font-medium">{item.variable}</code>
                       <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">{item.default}</span>
                     </div>
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
@@ -598,11 +598,11 @@ THEME=atlas`} />
               <div className="mt-4 space-y-3">
                 <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <code className="text-sm font-mono text-primary/70 font-medium">THEME</code>
+                    <code className="text-sm font-mono text-accent/70 font-medium">THEME</code>
                     <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">atlas</span>
                   </div>
                   <p className="text-xs text-muted-foreground/60 leading-relaxed">
-                    Chosen with <code className="text-xs font-mono text-primary/50">--theme</code> at scaffold time (defaults to atlas). Options: <code className="text-xs font-mono text-primary/50">atlas</code> (split-screen, team/organisation, Inter), <code className="text-xs font-mono text-primary/50">aurora</code> (centered Clerk-style, consumer SaaS, Geist), and <code className="text-xs font-mono text-primary/50">pulse</code> (split-screen with carousel, ecommerce/brand, Onest + DM Serif). Mirrored to the clients as NEXT_PUBLIC_THEME.
+                    Chosen with <code className="text-xs font-mono text-accent/50">--theme</code> at scaffold time (defaults to atlas). Options: <code className="text-xs font-mono text-accent/50">atlas</code> (split-screen, team/organisation, Inter), <code className="text-xs font-mono text-accent/50">aurora</code> (centered Clerk-style, consumer SaaS, Geist), and <code className="text-xs font-mono text-accent/50">pulse</code> (split-screen with carousel, ecommerce/brand, Onest + DM Serif). Mirrored to the clients as NEXT_PUBLIC_THEME.
                   </p>
                 </div>
               </div>
@@ -641,7 +641,7 @@ THEME=atlas`} />
                   ].map((row) => (
                     <tr key={row.app} className="border-b border-border/50">
                       <td className="text-sm text-foreground py-2.5 pr-4">{row.app}</td>
-                      <td className="text-sm text-muted-foreground py-2.5 pr-4 font-mono text-xs text-primary/60">{row.url}</td>
+                      <td className="text-sm text-muted-foreground py-2.5 pr-4 font-mono text-xs text-accent/60">{row.url}</td>
                       <td className="text-sm text-muted-foreground py-2.5 font-mono">{row.port}</td>
                     </tr>
                   ))}

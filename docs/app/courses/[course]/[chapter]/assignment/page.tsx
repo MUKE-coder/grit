@@ -90,7 +90,7 @@ export default async function AssignmentPage({ params }: PageProps) {
       {/* Success criteria */}
       <div className="mb-10">
         <h2 className="text-xl font-semibold tracking-tight mb-4 flex items-center gap-2">
-          <ListChecks className="h-5 w-5 text-primary" />
+          <ListChecks className="h-5 w-5 text-accent" />
           You&apos;ve completed this when
         </h2>
         <ul className="space-y-2.5">
@@ -107,13 +107,13 @@ export default async function AssignmentPage({ params }: PageProps) {
       </div>
 
       {/* Done CTA */}
-      <div className="rounded-2xl border border-primary/20 bg-primary/[0.05] p-5 mb-10 text-center">
+      <div className="rounded-2xl border border-accent/20 bg-accent/[0.05] p-5 mb-10 text-center">
         <p className="text-sm text-foreground/85 mb-2">Worked through every criterion?</p>
         <p className="text-xs text-muted-foreground mb-4">
           Push your code to GitHub, paste the link in your notes.md, and move on.
         </p>
         {nextChapter && (
-          <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
             <Link href={`/courses/${course.slug}/${nextChapter.slug}`}>
               Continue to ch.{nextChapter.number}: {nextChapter.title}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ export default async function AssignmentPage({ params }: PageProps) {
           </Button>
         )}
         {!nextChapter && (
-          <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
             <Link href={`/courses/${course.slug}`}>
               Finish course
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

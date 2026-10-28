@@ -21,7 +21,7 @@ export default function RBACPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 RBAC &amp; Roles
               </h1>
@@ -37,7 +37,7 @@ export default function RBACPage() {
                   which still work — but permissions are the model to build on
                   now, and a reader landing here shouldn't adopt the older
                   approach without knowing that. */}
-              <div className="mb-10 rounded-xl border border-primary/30 bg-primary/5 p-5">
+              <div className="mb-10 rounded-xl border border-accent/30 bg-accent/5 p-5">
                 <strong className="text-foreground">
                   Roles now carry permissions.
                 </strong>
@@ -72,17 +72,17 @@ export default function RBACPage() {
                     </thead>
                     <tbody className="divide-y divide-border/20">
                       <tr>
-                        <td className="px-4 py-3 font-mono text-primary">ADMIN</td>
+                        <td className="px-4 py-3 font-mono text-accent">ADMIN</td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">&quot;ADMIN&quot;</td>
                         <td className="px-4 py-3 text-muted-foreground">Full access. Can manage all resources, users, and system settings.</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-3 font-mono text-primary">EDITOR</td>
+                        <td className="px-4 py-3 font-mono text-accent">EDITOR</td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">&quot;EDITOR&quot;</td>
                         <td className="px-4 py-3 text-muted-foreground">Can manage content resources. Sees the full admin panel but cannot delete users or access system pages.</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-3 font-mono text-primary">USER</td>
+                        <td className="px-4 py-3 font-mono text-accent">USER</td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">&quot;USER&quot;</td>
                         <td className="px-4 py-3 text-muted-foreground">Standard user. Sees only their profile page in the admin panel.</td>
                       </tr>
@@ -354,7 +354,7 @@ postsGroup.Use(middleware.RequireRole("ADMIN", "EDITOR"))
 }`}
                 />
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-foreground/80 mb-0">
                     <strong>Without --roles:</strong> GET, GET/:id, POST, and PUT go in the protected group (any auth user),
                     and DELETE goes in the admin group (ADMIN only).
@@ -393,11 +393,11 @@ postsGroup.Use(middleware.RequireRole("ADMIN", "EDITOR"))
                     </thead>
                     <tbody className="divide-y divide-border/20">
                       <tr>
-                        <td className="px-4 py-3 font-mono text-primary">ADMIN / EDITOR</td>
+                        <td className="px-4 py-3 font-mono text-accent">ADMIN / EDITOR</td>
                         <td className="px-4 py-3 text-muted-foreground">Dashboard, Resources, System pages, Profile</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-3 font-mono text-primary">USER</td>
+                        <td className="px-4 py-3 font-mono text-accent">USER</td>
                         <td className="px-4 py-3 text-muted-foreground">Profile only</td>
                       </tr>
                     </tbody>
@@ -467,7 +467,7 @@ postsGroup.Use(middleware.RequireRole("ADMIN", "EDITOR"))
                     'Admin form select options',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-accent/50 shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}

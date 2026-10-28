@@ -359,7 +359,7 @@ export default function ArchitectureStylePage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Architecture style</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Which of the named architecture styles Grit actually is, which ones it
@@ -368,13 +368,13 @@ export default function ArchitectureStylePage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-10">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">A word with two jobs.</strong> In Grit,{' '}
                 <em>architecture</em> normally means the{' '}
                 <Link
                   href="/docs/concepts/architecture-modes"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   project shape
                 </Link>{' '}
@@ -716,7 +716,7 @@ export default function ArchitectureStylePage() {
               </p>
               <Link
                 href="/talk#sec-concepts"
-                className="group inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                className="group inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
               >
                 Watch that part of the deck
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

@@ -217,7 +217,7 @@ export default function BatteriesPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-5xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Batteries Included</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Batteries Included</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Everything, out of the box</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit is <em>batteries included</em> &mdash; auth, storage, email, jobs, AI, security
@@ -233,13 +233,13 @@ export default function BatteriesPage() {
                   <Link
                     key={b.href}
                     href={b.href}
-                    className="group flex flex-col rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-primary/30 transition-colors"
+                    className="group flex flex-col rounded-xl border border-border/50 bg-card/40 overflow-hidden hover:border-accent/30 transition-colors"
                   >
                     {/* Code mockup */}
                     <div className="relative border-b border-border/40 bg-[#0d1117] px-4 py-3.5 overflow-hidden">
                       <div className="flex items-center gap-1.5 mb-2">
                         <WindowDots />
-                        <span className="ml-2 text-[10px] font-mono tracking-wider text-primary/50">
+                        <span className="ml-2 text-[10px] font-mono tracking-wider text-accent/50">
                           {b.file}
                         </span>
                       </div>
@@ -249,12 +249,12 @@ export default function BatteriesPage() {
                     </div>
                     {/* Body */}
                     <div className="flex flex-1 flex-col p-5">
-                      <h2 className="text-base font-semibold mb-1.5 flex items-center gap-2 group-hover:text-primary transition-colors">
-                        <Icon className="h-4 w-4 text-primary/80 shrink-0" />
+                      <h2 className="text-base font-semibold mb-1.5 flex items-center gap-2 group-hover:text-accent transition-colors">
+                        <Icon className="h-4 w-4 text-accent/80 shrink-0" />
                         {b.title}
                       </h2>
                       <p className="text-sm text-muted-foreground/70 leading-relaxed">{b.blurb}</p>
-                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary/90">
+                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent/90">
                         Read the docs
                         <ArrowRight className="h-3.5 w-3.5 -translate-x-0.5 group-hover:translate-x-0 transition-transform" />
                       </span>

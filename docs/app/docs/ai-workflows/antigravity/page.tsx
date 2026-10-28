@@ -20,7 +20,7 @@ export default function UsingGritWithAntigravityPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">AI Workflows</span>
+              <span className="tag-mono text-accent/80 mb-3 block">AI Workflows</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Using Grit with Antigravity
               </h1>
@@ -67,7 +67,7 @@ export default function UsingGritWithAntigravityPage() {
                     { step: '3', title: 'Build', desc: 'Feed the spec to Antigravity and let its AI composer build your app.' },
                   ].map((item) => (
                     <div key={item.step} className="p-4 rounded-xl border border-border/40 bg-card/50 text-center">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/15 text-sm font-mono font-bold text-primary mx-auto mb-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/15 text-sm font-mono font-bold text-accent mx-auto mb-2">
                         {item.step}
                       </div>
                       <h3 className="text-sm font-semibold mb-1">{item.title}</h3>
@@ -82,9 +82,9 @@ export default function UsingGritWithAntigravityPage() {
                   before accepting it &mdash; making it an ideal companion for Grit&apos;s structured
                   code generation workflow.
                 </p>
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Why spec-driven?</strong> AI assistants
+                    <strong className="text-accent/90">Why spec-driven?</strong> AI assistants
                     produce dramatically better code when given a complete plan upfront. Instead of
                     going back and forth, you front-load the thinking in Claude Web and let
                     Antigravity execute the plan methodically.
@@ -99,7 +99,7 @@ export default function UsingGritWithAntigravityPage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Open{' '}
-                  <Link href="https://claude.ai" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://claude.ai" target="_blank" className="text-accent hover:underline">
                     claude.ai
                   </Link>{' '}
                   and describe the application you want to build. Be specific about models,
@@ -140,9 +140,9 @@ Please create these 3 files for me:
    Phase 1: scaffold + core models.
    Phase 2: relationships + complex features.
    Phase 3: frontend customization + polish.`} />
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Tip:</strong> The more detail you provide about your
+                    <strong className="text-accent/90">Tip:</strong> The more detail you provide about your
                     project, the better the spec files will be. Include specific field names, relationships
                     between models, user roles, and any business logic requirements.
                   </p>
@@ -201,7 +201,7 @@ Please create these 3 files for me:
 
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       1
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -216,7 +216,7 @@ Please create these 3 files for me:
 
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       2
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -230,21 +230,21 @@ Please create these 3 files for me:
                   </p>
                   <ul className="space-y-2 pl-10 mb-4">
                     <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       Adding it as a <strong className="text-foreground/90">rules file</strong> in Antigravity&apos;s AI settings (preferred &mdash; persists across sessions)
                     </li>
                     <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       Pinning it to the <strong className="text-foreground/90">context window</strong> so the AI always has it available
                     </li>
                     <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
+                      <span className="text-accent mt-1">&#10003;</span>
                       Placing it in the project root &mdash; Antigravity will index it as part of the workspace
                     </li>
                   </ul>
-                  <div className="pl-10 p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4">
+                  <div className="pl-10 p-4 rounded-lg border border-accent/20 bg-accent/5 mb-4">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      <strong className="text-primary/90">Tip:</strong> The GRIT_SKILL.md file teaches Antigravity&apos;s
+                      <strong className="text-accent/90">Tip:</strong> The GRIT_SKILL.md file teaches Antigravity&apos;s
                       AI everything about Grit&apos;s conventions, CLI commands, project structure, and code
                       patterns. Without it, the AI may generate code that doesn&apos;t follow Grit&apos;s standards.
                     </p>
@@ -253,7 +253,7 @@ Please create these 3 files for me:
 
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       3
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -323,7 +323,7 @@ docker compose up -d`} />
                       'Customize admin panel pages, forms, and dashboards',
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                        <span className="text-primary mt-1">&#10003;</span>
+                        <span className="text-accent mt-1">&#10003;</span>
                         {item}
                       </li>
                     ))}
@@ -340,9 +340,9 @@ docker compose up -d`} />
                     the inline chat to make quick edits to individual files without opening the
                     full composer.
                   </p>
-                  <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                  <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      <strong className="text-primary/90">Tip:</strong> Work through the phases in your{' '}
+                      <strong className="text-accent/90">Tip:</strong> Work through the phases in your{' '}
                       <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">project-phases.md</code>{' '}
                       file one at a time. Complete Phase 1 (scaffold + core models) before moving to Phase 2
                       (relationships + complex features). This keeps the AI focused and reduces errors.
@@ -507,7 +507,7 @@ project/
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Copy this prompt template and paste it into{' '}
-                  <Link href="https://claude.ai" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://claude.ai" target="_blank" className="text-accent hover:underline">
                     claude.ai
                   </Link>{' '}
                   to generate your 3 spec files. Replace the bracketed sections with your
@@ -542,9 +542,9 @@ Please create these 3 files for me:
    Phase 1: scaffold + core models.
    Phase 2: relationships + complex features.
    Phase 3: frontend customization + polish.`} />
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Tip:</strong> For a Job Board, you might describe it as:
+                    <strong className="text-accent/90">Tip:</strong> For a Job Board, you might describe it as:
                     &quot;A job board where companies can post job listings and candidates can apply.
                     Models include Company, Job, Application, and Category. Companies have a name,
                     logo, website, and description. Jobs belong to a company and a category, with

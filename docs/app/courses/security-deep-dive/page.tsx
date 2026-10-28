@@ -28,7 +28,7 @@ export default function SecurityDeepDiveCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">15 challenges</span>
@@ -58,10 +58,10 @@ export default function SecurityDeepDiveCourse() {
             caption="Every request passes rate limiting, auth, RBAC, and validation before any data is touched" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/security" className="text-primary hover:underline">Security Guide →</a>
+            <a href="/docs/security" className="text-accent hover:underline">Security Guide →</a>
           </p>
         </div>
 
@@ -77,11 +77,11 @@ export default function SecurityDeepDiveCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Brute Force:</strong> An attacker tries thousands of password combinations until one works. Without rate limiting, they can try millions of passwords per hour</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">SQL Injection:</strong> An attacker sends malicious SQL in form fields or URL parameters, tricking the database into executing unintended commands. Can dump your entire database</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">XSS (Cross-Site Scripting):</strong> An attacker injects JavaScript into your pages that runs in other users{"'"} browsers, stealing cookies, tokens, or personal data</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">CSRF (Cross-Site Request Forgery):</strong> An attacker tricks a logged-in user{"'"}s browser into making requests to your API — transferring money, changing passwords, deleting data</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Credential Stuffing:</strong> Attackers use leaked email/password combinations from other breaches to try logging into your app. Most people reuse passwords across sites</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Brute Force:</strong> An attacker tries thousands of password combinations until one works. Without rate limiting, they can try millions of passwords per hour</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">SQL Injection:</strong> An attacker sends malicious SQL in form fields or URL parameters, tricking the database into executing unintended commands. Can dump your entire database</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">XSS (Cross-Site Scripting):</strong> An attacker injects JavaScript into your pages that runs in other users{"'"} browsers, stealing cookies, tokens, or personal data</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">CSRF (Cross-Site Request Forgery):</strong> An attacker tricks a logged-in user{"'"}s browser into making requests to your API — transferring money, changing passwords, deleting data</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Credential Stuffing:</strong> Attackers use leaked email/password combinations from other breaches to try logging into your app. Most people reuse passwords across sites</li>
           </ul>
 
           <Note>
@@ -134,19 +134,19 @@ export default function SecurityDeepDiveCourse() {
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span>User submits password: <Code>myPassword123</Code></span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span>bcrypt generates a random salt: <Code>$2a$10$N9qo8uLOickgx2ZMRZoMye</Code></span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span>bcrypt hashes password + salt through 1,024 iterations</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">4.</span>
+              <span className="text-accent font-mono font-bold shrink-0">4.</span>
               <span>Result stored in database: <Code>$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy</Code></span>
             </li>
           </ol>
@@ -210,7 +210,7 @@ err := bcrypt.CompareHashAndPassword(
           </p>
 
           <Challenge number={3} title="Decode a JWT">
-            <p>Login to your Grit API and copy the access token. Go to <a href="https://jwt.io" target="_blank" rel="noreferrer" className="text-primary hover:underline">jwt.io</a> and
+            <p>Login to your Grit API and copy the access token. Go to <a href="https://jwt.io" target="_blank" rel="noreferrer" className="text-accent hover:underline">jwt.io</a> and
             paste it. What information is in the payload? What algorithm is used for signing?
             What is the expiration time (exp claim)?</p>
           </Challenge>
@@ -310,19 +310,19 @@ admin.DELETE("/users/:id", h.DeleteUser)`}
 
           <ol className="space-y-3 text-muted-foreground mb-6">
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">1.</span>
+              <span className="text-accent font-mono font-bold shrink-0">1.</span>
               <span><strong className="text-foreground">Generate secret.</strong> The API creates a random TOTP secret and returns it as a QR code URL.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">2.</span>
+              <span className="text-accent font-mono font-bold shrink-0">2.</span>
               <span><strong className="text-foreground">Scan QR code.</strong> The user scans the QR code with their authenticator app, which stores the secret.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">3.</span>
+              <span className="text-accent font-mono font-bold shrink-0">3.</span>
               <span><strong className="text-foreground">Verify code.</strong> The user enters the current 6-digit code from their app to prove it{"'"}s working.</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary font-mono font-bold shrink-0">4.</span>
+              <span className="text-accent font-mono font-bold shrink-0">4.</span>
               <span><strong className="text-foreground">2FA enabled.</strong> The secret is saved to the database. Future logins require both password and TOTP code.</span>
             </li>
           </ol>
@@ -366,10 +366,10 @@ Step 2: POST /api/auth/verify-2fa
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">10 codes</strong> generated when 2FA is enabled</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">One-time use</strong> — each code is invalidated after use</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">bcrypt-hashed</strong> in the database — if the database is compromised, the raw codes are not exposed</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Shown once</strong> — the user sees the plain text codes only at generation time and must save them</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">10 codes</strong> generated when 2FA is enabled</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">One-time use</strong> — each code is invalidated after use</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">bcrypt-hashed</strong> in the database — if the database is compromised, the raw codes are not exposed</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Shown once</strong> — the user sees the plain text codes only at generation time and must save them</li>
           </ul>
 
           <CodeBlock filename="Backup Code Format">
@@ -412,10 +412,10 @@ Store them in a password manager or print them.`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Secure</strong> — only sent over HTTPS (in production)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">HTTP-only</strong> — JavaScript cannot read it (XSS protection)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">30-day expiry</strong> — after 30 days, you{"'"}ll need to enter a 2FA code again</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Per-device</strong> — trusting your laptop does not trust your phone{"'"}s browser</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Secure</strong> — only sent over HTTPS (in production)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">HTTP-only</strong> — JavaScript cannot read it (XSS protection)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">30-day expiry</strong> — after 30 days, you{"'"}ll need to enter a 2FA code again</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Per-device</strong> — trusting your laptop does not trust your phone{"'"}s browser</li>
           </ul>
 
           <Challenge number={7} title="Inspect the Cookie">
@@ -442,10 +442,10 @@ Store them in a password manager or print them.`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">SQL injection patterns</strong> — detects <Code>{"'"} OR 1=1 --</Code>, <Code>UNION SELECT</Code>, and other injection attempts in query parameters and request bodies</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">XSS attempts</strong> — blocks <Code>{'<script>'}</Code> tags, event handlers like <Code>onerror=</Code>, and other JavaScript injection vectors</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Suspicious user agents</strong> — blocks known attack tools like sqlmap, nikto, and dirbuster</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Path traversal</strong> — blocks attempts to access files outside the web root using <Code>../../</Code></li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">SQL injection patterns</strong> — detects <Code>{"'"} OR 1=1 --</Code>, <Code>UNION SELECT</Code>, and other injection attempts in query parameters and request bodies</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">XSS attempts</strong> — blocks <Code>{'<script>'}</Code> tags, event handlers like <Code>onerror=</Code>, and other JavaScript injection vectors</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Suspicious user agents</strong> — blocks known attack tools like sqlmap, nikto, and dirbuster</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Path traversal</strong> — blocks attempts to access files outside the web root using <Code>../../</Code></li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -453,10 +453,10 @@ Store them in a password manager or print them.`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Total requests processed</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Blocked requests and the reasons they were blocked</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Top attacking IPs</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Attack type distribution</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Total requests processed</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Blocked requests and the reasons they were blocked</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Top attacking IPs</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Attack type distribution</li>
           </ul>
 
           <Challenge number={8} title="Explore the WAF Dashboard">
@@ -586,10 +586,10 @@ API:        60 requests per minute per IP
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Long</strong> — at least 32 characters (256 bits)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Random</strong> — generated by a cryptographic random number generator, not a human-chosen phrase</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Secret</strong> — stored in environment variables, never committed to Git</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Unique per environment</strong> — development, staging, and production should each have different secrets</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Long</strong> — at least 32 characters (256 bits)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Random</strong> — generated by a cryptographic random number generator, not a human-chosen phrase</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Secret</strong> — stored in environment variables, never committed to Git</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Unique per environment</strong> — development, staging, and production should each have different secrets</li>
           </ul>
 
           <CodeBlock filename="Generate a Strong JWT Secret">
@@ -627,9 +627,9 @@ JWT_SECRET=a3f8b2c1e9d7f4a6b8c2e1d3f5a7b9c1e3d5f7a9b1c3e5d7f9a1b3c5e7d9f1a3`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Password reuse attacks</strong> — if a user{"'"}s password is leaked from another site, your app is unaffected because you never stored a password</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Phishing</strong> — users authenticate on Google{"'"}s domain, not on a page you control, so fake login pages are harder to create</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Weak passwords</strong> — Google enforces its own password policies and 2FA, which are typically stronger than what most apps enforce</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Password reuse attacks</strong> — if a user{"'"}s password is leaked from another site, your app is unaffected because you never stored a password</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Phishing</strong> — users authenticate on Google{"'"}s domain, not on a page you control, so fake login pages are harder to create</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Weak passwords</strong> — Google enforces its own password policies and 2FA, which are typically stronger than what most apps enforce</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -660,52 +660,52 @@ JWT_SECRET=a3f8b2c1e9d7f4a6b8c2e1d3f5a7b9c1e3d5f7a9b1c3e5d7f9a1b3c5e7d9f1a3`}
               </thead>
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">1</td>
+                  <td className="px-4 py-3 font-mono text-accent">1</td>
                   <td className="px-4 py-3 font-medium text-foreground">bcrypt Passwords</td>
                   <td className="px-4 py-3">Database leaks, rainbow tables</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">2</td>
+                  <td className="px-4 py-3 font-mono text-accent">2</td>
                   <td className="px-4 py-3 font-medium text-foreground">JWT Tokens</td>
                   <td className="px-4 py-3">Session hijacking, token theft (short expiry)</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">3</td>
+                  <td className="px-4 py-3 font-mono text-accent">3</td>
                   <td className="px-4 py-3 font-medium text-foreground">RBAC</td>
                   <td className="px-4 py-3">Privilege escalation, unauthorized access</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">4</td>
+                  <td className="px-4 py-3 font-mono text-accent">4</td>
                   <td className="px-4 py-3 font-medium text-foreground">TOTP 2FA</td>
                   <td className="px-4 py-3">Stolen passwords, phishing</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">5</td>
+                  <td className="px-4 py-3 font-mono text-accent">5</td>
                   <td className="px-4 py-3 font-medium text-foreground">Backup Codes</td>
                   <td className="px-4 py-3">Lost device lockout</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">6</td>
+                  <td className="px-4 py-3 font-mono text-accent">6</td>
                   <td className="px-4 py-3 font-medium text-foreground">Trusted Devices</td>
                   <td className="px-4 py-3">2FA fatigue (usability without sacrificing security)</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">7</td>
+                  <td className="px-4 py-3 font-mono text-accent">7</td>
                   <td className="px-4 py-3 font-medium text-foreground">Sentinel WAF</td>
                   <td className="px-4 py-3">SQL injection, XSS, path traversal</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">8</td>
+                  <td className="px-4 py-3 font-mono text-accent">8</td>
                   <td className="px-4 py-3 font-medium text-foreground">Rate Limiting</td>
                   <td className="px-4 py-3">Brute force, DDoS, API abuse</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-primary">9</td>
+                  <td className="px-4 py-3 font-mono text-accent">9</td>
                   <td className="px-4 py-3 font-medium text-foreground">Security Headers</td>
                   <td className="px-4 py-3">Clickjacking, MIME sniffing, protocol downgrade</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 font-mono text-primary">10</td>
+                  <td className="px-4 py-3 font-mono text-accent">10</td>
                   <td className="px-4 py-3 font-medium text-foreground">JWT Secret Management</td>
                   <td className="px-4 py-3">Token forgery, session compromise</td>
                 </tr>

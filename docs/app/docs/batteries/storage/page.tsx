@@ -51,7 +51,7 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
 
 function Note({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+    <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
       <p className="text-sm text-foreground/80 leading-relaxed">{children}</p>
     </div>
   )
@@ -68,7 +68,7 @@ export default function StoragePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Batteries</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Batteries</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">File Storage</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 One <code className={code}>Disk</code> interface over a directory on your machine or any
@@ -366,7 +366,7 @@ curl -OJ "http://localhost:8080/api/v1/uploads/$ID/download" -H "Authorization: 
                   <code className={code}>storage.GenerateThumbnail</code> runs the same pipeline, so a portrait phone photo
                   gets an upright thumbnail whichever way it arrived. A decompression bomb is refused from its header before
                   any pixels are decoded, and the job does not retry it. See{' '}
-                  <Link href="/docs/batteries/jobs" className="text-primary hover:underline">Background Jobs</Link>.
+                  <Link href="/docs/batteries/jobs" className="text-accent hover:underline">Background Jobs</Link>.
                 </P>
               </Section>
 

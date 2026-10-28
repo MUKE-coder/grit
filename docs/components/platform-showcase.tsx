@@ -165,7 +165,7 @@ export function PlatformShowcase() {
               onClick={() => setActive(p.key)}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? 'border-primary/40 bg-primary/10 text-foreground'
+                  ? 'border-accent/40 bg-accent/10 text-foreground'
                   : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
@@ -200,7 +200,7 @@ export function PlatformShowcase() {
           <ol className="space-y-3">
             {platform.steps.map((step, i) => (
               <li key={step.cmd} className="flex gap-3">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-mono font-medium text-primary">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-mono font-medium text-accent">
                   {i + 1}
                 </span>
                 <div className="min-w-0">

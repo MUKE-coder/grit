@@ -42,7 +42,7 @@ export default function DesktopKitPage() {
                 { l: 'Reports', sel: false },
                 { l: 'Settings', sel: false },
               ].map((row) => (
-                <div key={row.l} className={`rounded px-1.5 py-0.5 mb-0.5 text-[9px] ${row.sel ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}>
+                <div key={row.l} className={`rounded px-1.5 py-0.5 mb-0.5 text-[9px] ${row.sel ? 'bg-accent/10 text-accent' : 'text-muted-foreground'}`}>
                   {row.l}
                 </div>
               ))}

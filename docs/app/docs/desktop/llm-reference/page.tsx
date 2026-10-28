@@ -11,7 +11,7 @@ export const metadata = getDocMetadata("/docs/desktop/llm-reference");
 // ── reusable mini-components ────────────────────────────────────
 function SectionNum({ n }: { n: number }) {
   return (
-    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/20 text-xs font-mono font-semibold text-primary mr-2">
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/20 text-xs font-mono font-semibold text-accent mr-2">
       {n}
     </span>
   );
@@ -29,7 +29,7 @@ function Warn({ children }: { children: React.ReactNode }) {
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4">
+    <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-4">
       <p className="text-sm text-muted-foreground leading-relaxed">
         {children}
       </p>
@@ -56,7 +56,7 @@ export default function DesktopLLMReferencePage() {
           <div className="max-w-3xl">
             {/* ── Header ── */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 AI Reference
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -70,7 +70,7 @@ export default function DesktopLLMReferencePage() {
                 the rules that must never be broken.
               </p>
               <Tip>
-                <strong className="text-primary/90">For AI tools:</strong> Read
+                <strong className="text-accent/90">For AI tools:</strong> Read
                 this entire page before generating any code for Grit Desktop
                 projects. Every convention here is enforced by the CLI —
                 deviating breaks{" "}
@@ -180,7 +180,7 @@ export default function DesktopLLMReferencePage() {
                     href="https://wails.io"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     Wails
                   </a>{" "}
@@ -197,7 +197,7 @@ export default function DesktopLLMReferencePage() {
                         <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">
                           Aspect
                         </th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-primary/80 uppercase">
+                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-accent/80 uppercase">
                           Wails
                         </th>
                         <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">
@@ -258,7 +258,7 @@ export default function DesktopLLMReferencePage() {
                           <td className="px-4 py-2 font-medium text-foreground/70">
                             {aspect}
                           </td>
-                          <td className="px-4 py-2 text-primary/80 font-mono">
+                          <td className="px-4 py-2 text-accent/80 font-mono">
                             {wails}
                           </td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-mono">
@@ -285,7 +285,7 @@ export default function DesktopLLMReferencePage() {
                       key={reason}
                       className="flex items-start gap-2 text-sm text-muted-foreground/70"
                     >
-                      <span className="text-primary/60 mt-0.5 shrink-0">
+                      <span className="text-accent/60 mt-0.5 shrink-0">
                         --
                       </span>
                       <span>{reason}</span>
@@ -371,7 +371,7 @@ React Component
                       key={item.step}
                       className="flex gap-3 p-3 rounded-lg border border-border/30 bg-card/30"
                     >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                         {item.step}
                       </div>
                       <div>
@@ -541,7 +541,7 @@ React Component
                         ],
                       ].map(([cmd, desc]) => (
                         <tr key={cmd}>
-                          <td className="px-4 py-2.5 font-mono text-primary/80 whitespace-nowrap">
+                          <td className="px-4 py-2.5 font-mono text-accent/80 whitespace-nowrap">
                             {cmd}
                           </td>
                           <td className="px-4 py-2.5 text-muted-foreground/70">
@@ -714,7 +714,7 @@ React Component
                         },
                       ].map((row) => (
                         <tr key={row.type}>
-                          <td className="px-4 py-2 text-primary/80">
+                          <td className="px-4 py-2 text-accent/80">
                             {row.type}
                           </td>
                           <td className="px-4 py-2 text-foreground/60">
@@ -789,7 +789,7 @@ React Component
                       key={item.file}
                       className="rounded-lg border border-border bg-card p-4"
                     >
-                      <code className="text-sm font-semibold text-primary">
+                      <code className="text-sm font-semibold text-accent">
                         {item.file}
                       </code>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -1047,7 +1047,7 @@ func (s *ProductService) Delete(id uint) error { ... }`}
                         ],
                       ].map(([type_, input, behavior]) => (
                         <tr key={type_}>
-                          <td className="px-4 py-2 text-primary/80 font-mono">
+                          <td className="px-4 py-2 text-accent/80 font-mono">
                             {type_}
                           </td>
                           <td className="px-4 py-2 text-foreground/60">
@@ -1284,7 +1284,7 @@ const excelBytes = await ExportProductsExcel();
                           <td className="px-4 py-2.5 font-medium text-foreground/70">
                             {platform}
                           </td>
-                          <td className="px-4 py-2.5 font-mono text-primary/80">
+                          <td className="px-4 py-2.5 font-mono text-accent/80">
                             {output}
                           </td>
                           <td className="px-4 py-2.5 text-muted-foreground/60">
@@ -1324,7 +1324,7 @@ wails build -platform linux/amd64`}
                     href="https://nsis.sourceforge.io/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     NSIS
                   </a>{" "}
@@ -1347,7 +1347,7 @@ wails build -platform linux/amd64`}
                       key={item}
                       className="flex items-start gap-2 text-sm text-muted-foreground/70"
                     >
-                      <span className="text-primary/60 mt-0.5 shrink-0">
+                      <span className="text-accent/60 mt-0.5 shrink-0">
                         --
                       </span>
                       <span>{item}</span>
@@ -1380,7 +1380,7 @@ wails build -platform linux/amd64`}
                         <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">
                           Web (grit new)
                         </th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-primary/80 uppercase">
+                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-accent/80 uppercase">
                           Desktop (grit new-desktop)
                         </th>
                       </tr>
@@ -1465,7 +1465,7 @@ wails build -platform linux/amd64`}
                           <td className="px-4 py-2 text-muted-foreground/60">
                             {web}
                           </td>
-                          <td className="px-4 py-2 text-primary/70">
+                          <td className="px-4 py-2 text-accent/70">
                             {desktop}
                           </td>
                         </tr>
@@ -1604,7 +1604,7 @@ wails build -platform linux/amd64`}
                           <td className="px-4 py-2 font-mono text-foreground/70">
                             {file}
                           </td>
-                          <td className="px-4 py-2 font-mono text-primary/80">
+                          <td className="px-4 py-2 font-mono text-accent/80">
                             {marker}
                           </td>
                           <td className="px-4 py-2 text-muted-foreground/60">
@@ -2178,9 +2178,9 @@ wails build -nsis  # Windows installer`}
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

@@ -130,7 +130,7 @@ export default function ChecklistPage() {
             </Link>
 
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Deployment</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Deployment</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Go-live checklist</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The things that are cheap to check now and expensive to discover later.

@@ -30,7 +30,7 @@ export default function SingleViteKitPage() {
         <BrowserFrame url="my-app.com" glow>
           <div className="h-[260px] p-4">
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/40">
-              <Sparkles className="h-4 w-4 text-primary" />
+              <Sparkles className="h-4 w-4 text-accent" />
               <span className="text-xs font-semibold">SaaS Dashboard · Vite</span>
             </div>
             <div className="grid grid-cols-4 gap-1.5 mb-3">

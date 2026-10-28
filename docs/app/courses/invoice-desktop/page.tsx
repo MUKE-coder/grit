@@ -28,7 +28,7 @@ export default function InvoiceDesktopCourse() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
+            <span className="text-xs font-mono font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">14 challenges</span>
@@ -54,10 +54,10 @@ export default function InvoiceDesktopCourse() {
             caption="Clients, invoices with line items, and PDF export — all running offline on SQLite" />
         </div>
 
-        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/desktop/first-app" className="text-primary hover:underline">Desktop Apps →</a>
+            <a href="/docs/desktop/first-app" className="text-accent hover:underline">Desktop Apps →</a>
           </p>
         </div>
 
@@ -74,12 +74,12 @@ export default function InvoiceDesktopCourse() {
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Client management</strong> — store client names, emails, addresses, companies</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Invoice creation</strong> — auto-numbered invoices with line items, tax calculation</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">PDF export</strong> — professional invoices ready to email to clients</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Payment tracking</strong> — Draft, Sent, Paid, Overdue status workflow</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Excel export</strong> — export all invoices for accounting and tax filing</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Dashboard</strong> — total revenue, outstanding balance, overdue count</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Client management</strong> — store client names, emails, addresses, companies</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Invoice creation</strong> — auto-numbered invoices with line items, tax calculation</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">PDF export</strong> — professional invoices ready to email to clients</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Payment tracking</strong> — Draft, Sent, Paid, Overdue status workflow</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Excel export</strong> — export all invoices for accounting and tax filing</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Dashboard</strong> — total revenue, outstanding balance, overdue count</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -158,9 +158,9 @@ grit generate resource LineItem \\
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Client</strong> — standalone entity. Has name, email, optional phone/address/company.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Invoice</strong> — belongs to a Client. Has dates, status, financial totals.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">LineItem</strong> — belongs to an Invoice. Each line is one product/service with qty and price.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Client</strong> — standalone entity. Has name, email, optional phone/address/company.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Invoice</strong> — belongs to a Client. Has dates, status, financial totals.</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">LineItem</strong> — belongs to an Invoice. Each line is one product/service with qty and price.</li>
           </ul>
 
           <Challenge number={3} title="Generate All 3 Resources">
@@ -258,31 +258,31 @@ const clients = await GetAllClients()`}
             <strong className="text-foreground">Step 1: Invoice Details</strong>
           </p>
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Select client from dropdown (populated from your client list)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Invoice number (auto-filled, but editable)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Issue date (defaults to today)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Due date (defaults to 30 days from today)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Select client from dropdown (populated from your client list)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Invoice number (auto-filled, but editable)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Issue date (defaults to today)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Due date (defaults to 30 days from today)</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             <strong className="text-foreground">Step 2: Line Items</strong>
           </p>
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Dynamic rows: description, quantity, unit price</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Line total auto-calculated: quantity x unit price</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> {'"'}Add Line Item{'"'} button to add more rows</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> {'"'}Remove{'"'} button on each row</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Dynamic rows: description, quantity, unit price</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Line total auto-calculated: quantity x unit price</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> {'"'}Add Line Item{'"'} button to add more rows</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> {'"'}Remove{'"'} button on each row</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             <strong className="text-foreground">Step 3: Review</strong>
           </p>
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Subtotal (sum of all line totals)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Tax rate input (percentage, e.g., 10%)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Tax amount (subtotal x tax rate)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grand total (subtotal + tax)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Optional notes field</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Subtotal (sum of all line totals)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Tax rate input (percentage, e.g., 10%)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Tax amount (subtotal x tax rate)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Grand total (subtotal + tax)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> Optional notes field</li>
           </ul>
 
           <CodeBlock filename="Line Item Calculation Logic">
@@ -310,12 +310,12 @@ const grandTotal = subtotal + taxAmount`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Header</strong> — invoice number, status badge, issue date, due date</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Client info</strong> — name, company, email, address</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Line items table</strong> — description, quantity, unit price, line total</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Totals section</strong> — subtotal, tax, grand total</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Status badge</strong> — color-coded: Draft (gray), Sent (blue), Paid (green), Overdue (red)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Action buttons</strong> — Export PDF, Mark as Sent, Mark as Paid, Edit, Delete</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Header</strong> — invoice number, status badge, issue date, due date</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Client info</strong> — name, company, email, address</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Line items table</strong> — description, quantity, unit price, line total</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Totals section</strong> — subtotal, tax, grand total</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Status badge</strong> — color-coded: Draft (gray), Sent (blue), Paid (green), Overdue (red)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Action buttons</strong> — Export PDF, Mark as Sent, Mark as Paid, Edit, Delete</li>
           </ul>
 
           <CodeBlock filename="Status Badge Colors">
@@ -346,13 +346,13 @@ const grandTotal = subtotal + taxAmount`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Company header</strong> — your business name, address, logo (optional)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Invoice number and dates</strong> — prominently displayed</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Bill To section</strong> — client name, company, address</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Line items table</strong> — with headers, alternating row colors</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Totals</strong> — subtotal, tax, grand total (bold)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Payment terms</strong> — {'"'}Payment due within 30 days{'"'}</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Notes</strong> — any additional notes from the invoice</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Company header</strong> — your business name, address, logo (optional)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Invoice number and dates</strong> — prominently displayed</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Bill To section</strong> — client name, company, address</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Line items table</strong> — with headers, alternating row colors</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Totals</strong> — subtotal, tax, grand total (bold)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Payment terms</strong> — {'"'}Payment due within 30 days{'"'}</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Notes</strong> — any additional notes from the invoice</li>
           </ul>
 
           <CodeBlock filename="Export Button (Frontend)">
@@ -403,9 +403,9 @@ Overdue: Past due date and not yet paid`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">{'"'}Mark as Sent{'"'}</strong> — visible when status is Draft</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">{'"'}Mark as Paid{'"'}</strong> — visible when status is Sent or Overdue</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Auto-Overdue</strong> — a background check: if status is Sent and due_date has passed, mark as Overdue</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">{'"'}Mark as Sent{'"'}</strong> — visible when status is Draft</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">{'"'}Mark as Paid{'"'}</strong> — visible when status is Sent or Overdue</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Auto-Overdue</strong> — a background check: if status is Sent and due_date has passed, mark as Overdue</li>
           </ul>
 
           <CodeBlock filename="internal/services/invoice_service.go">
@@ -445,10 +445,10 @@ Overdue: Past due date and not yet paid`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Total Revenue</strong> — sum of all Paid invoices</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Outstanding</strong> — sum of Sent invoices (money owed to you)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Overdue</strong> — count and total of overdue invoices (needs attention)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Recent Invoices</strong> — last 5 invoices with status, client, and amount</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Total Revenue</strong> — sum of all Paid invoices</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Outstanding</strong> — sum of Sent invoices (money owed to you)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Overdue</strong> — count and total of overdue invoices (needs attention)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Recent Invoices</strong> — last 5 invoices with status, client, and amount</li>
           </ul>
 
           <CodeBlock filename="Go Service — Dashboard Stats">
@@ -502,9 +502,9 @@ INV-002        | Globex | 2026-01-20 | 2026-02-19 | Sent | 1500.00 | 150.00 | 16
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">All invoices</strong> with key columns (number, client, dates, status, amounts)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Summary row</strong> at the bottom with total revenue and total outstanding</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Formatted headers</strong> — bold, with column width auto-fit</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">All invoices</strong> with key columns (number, client, dates, status, amounts)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Summary row</strong> at the bottom with total revenue and total outstanding</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Formatted headers</strong> — bold, with column width auto-fit</li>
           </ul>
 
           <Challenge number={11} title="Export to Excel">
@@ -529,9 +529,9 @@ INV-002        | Globex | 2026-01-20 | 2026-02-19 | Sent | 1500.00 | 150.00 | 16
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> The Go backend (compiled to native machine code)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> The React frontend (bundled, minified, and embedded)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> SQLite (embedded database, no external server needed)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The Go backend (compiled to native machine code)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> The React frontend (bundled, minified, and embedded)</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> SQLite (embedded database, no external server needed)</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

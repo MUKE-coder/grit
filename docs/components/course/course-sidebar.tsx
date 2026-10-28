@@ -50,7 +50,7 @@ export function CourseSidebar({ course }: Props) {
         </p>
         <Link
           href={`/courses/${course.slug}`}
-          className="text-sm font-semibold leading-tight hover:text-primary line-clamp-2 block"
+          className="text-sm font-semibold leading-tight hover:text-accent line-clamp-2 block"
         >
           {course.emoji} {course.shortName}
         </Link>
@@ -148,7 +148,7 @@ function CourseTreeInner({
               onClick={() => toggle(ch.slug)}
               className={cn(
                 'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[13px] font-medium hover:bg-accent/30',
-                pathname === chapterBase && 'bg-primary/10 text-primary',
+                pathname === chapterBase && 'bg-accent/10 text-accent',
               )}
             >
               {open ? (
@@ -170,7 +170,7 @@ function CourseTreeInner({
                   className={cn(
                     'block px-2 py-1 rounded text-[12px] hover:bg-accent/30',
                     pathname === chapterBase
-                      ? 'text-primary font-medium'
+                      ? 'text-accent font-medium'
                       : 'text-muted-foreground/80',
                   )}
                 >
@@ -192,7 +192,7 @@ function CourseTreeInner({
                           onClick={onLessonClick}
                           className={cn(
                             'flex items-start gap-2 px-2 py-1 rounded text-[12.5px] leading-snug hover:bg-accent/30 transition-colors',
-                            active ? 'bg-primary/10 text-primary font-medium' : 'text-foreground/85',
+                            active ? 'bg-accent/10 text-accent font-medium' : 'text-foreground/85',
                             l.status === 'coming-soon' && 'opacity-60',
                           )}
                         >

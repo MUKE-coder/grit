@@ -20,7 +20,7 @@ export default function UsingGritWithClaudePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">AI Workflows</span>
+              <span className="tag-mono text-accent/80 mb-3 block">AI Workflows</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Using Grit with Claude
               </h1>
@@ -65,7 +65,7 @@ export default function UsingGritWithClaudePage() {
                 {/* Visual flow diagram */}
                 <div className="flex flex-col md:flex-row items-stretch gap-3 mb-6">
                   <div className="flex-1 rounded-xl border border-border/40 bg-card/50 p-5 text-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/15 text-sm font-mono font-bold text-primary mx-auto mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/15 text-sm font-mono font-bold text-accent mx-auto mb-3">
                       1
                     </div>
                     <h4 className="text-sm font-semibold mb-1.5">Plan</h4>
@@ -75,7 +75,7 @@ export default function UsingGritWithClaudePage() {
                   </div>
                   <div className="hidden md:flex items-center text-muted-foreground/30 text-2xl font-light">&rarr;</div>
                   <div className="flex-1 rounded-xl border border-border/40 bg-card/50 p-5 text-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/15 text-sm font-mono font-bold text-primary mx-auto mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/15 text-sm font-mono font-bold text-accent mx-auto mb-3">
                       2
                     </div>
                     <h4 className="text-sm font-semibold mb-1.5">Spec</h4>
@@ -85,7 +85,7 @@ export default function UsingGritWithClaudePage() {
                   </div>
                   <div className="hidden md:flex items-center text-muted-foreground/30 text-2xl font-light">&rarr;</div>
                   <div className="flex-1 rounded-xl border border-border/40 bg-card/50 p-5 text-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/15 text-sm font-mono font-bold text-primary mx-auto mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/15 text-sm font-mono font-bold text-accent mx-auto mb-3">
                       3
                     </div>
                     <h4 className="text-sm font-semibold mb-1.5">Build</h4>
@@ -95,9 +95,9 @@ export default function UsingGritWithClaudePage() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Why two Claudes?</strong> Claude Web excels at
+                    <strong className="text-accent/90">Why two Claudes?</strong> Claude Web excels at
                     creative planning and writing detailed specifications. Claude Code excels at
                     executing commands, editing files, and building working software. Together, they
                     cover the full spectrum from idea to deployed application.
@@ -114,7 +114,7 @@ export default function UsingGritWithClaudePage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Open{' '}
-                  <Link href="https://claude.ai" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://claude.ai" target="_blank" className="text-accent hover:underline">
                     claude.ai
                   </Link>{' '}
                   and describe your project idea in detail. The more specific you are about your
@@ -214,7 +214,7 @@ Please create these 3 files for me:
                 {/* project-description.md */}
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       1
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -284,7 +284,7 @@ and candidates browse and apply.
                 {/* claude-code-prompt.md */}
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       2
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -343,7 +343,7 @@ Execute these steps in order:
                 {/* project-phases.md */}
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       3
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight">
@@ -406,7 +406,7 @@ Execute these steps in order:
                 <div className="space-y-6">
                   {/* Install */}
                   <div className="relative pl-10">
-                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       1
                     </div>
                     <div>
@@ -422,7 +422,7 @@ Execute these steps in order:
 
                   {/* Open terminal */}
                   <div className="relative pl-10">
-                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       2
                     </div>
                     <div>
@@ -444,7 +444,7 @@ Execute these steps in order:
 
                   {/* Start Claude Code */}
                   <div className="relative pl-10">
-                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       3
                     </div>
                     <div>
@@ -461,7 +461,7 @@ Execute these steps in order:
 
                   {/* Feed the prompt */}
                   <div className="relative pl-10">
-                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       4
                     </div>
                     <div>
@@ -481,7 +481,7 @@ before moving to the next step.`} />
 
                   {/* Review and iterate */}
                   <div className="relative pl-10">
-                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                    <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                       5
                     </div>
                     <div>
@@ -530,9 +530,9 @@ Execute Phase 3. Customize the admin resources and build the public pages.`} />
                   scaffolding begins.
                 </p>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Tip:</strong> Copy the skill file below and
+                    <strong className="text-accent/90">Tip:</strong> Copy the skill file below and
                     save it as <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">GRIT_SKILL.md</code> in
                     your project directory <em>before</em> starting Claude Code. This ensures the AI
                     understands Grit conventions from the very first message.
@@ -667,7 +667,7 @@ project/
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Here is the full, ready-to-copy prompt that you can paste directly into{' '}
-                  <Link href="https://claude.ai" target="_blank" className="text-primary hover:underline">
+                  <Link href="https://claude.ai" target="_blank" className="text-accent hover:underline">
                     claude.ai
                   </Link>.
                   Replace the bracketed sections with your own project details and Claude will
@@ -702,9 +702,9 @@ Please create these 3 files for me:
    scaffold + core models. Phase 2: relationships + complex features.
    Phase 3: frontend customization + polish.`} />
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-primary/90">Tip:</strong> The more detail you provide in
+                    <strong className="text-accent/90">Tip:</strong> The more detail you provide in
                     the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">[DESCRIBE YOUR PROJECT]</code> section,
                     the better your spec files will be. Include specific field names and types,
                     relationships between models, user roles and permissions, and any custom

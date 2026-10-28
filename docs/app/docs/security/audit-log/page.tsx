@@ -31,7 +31,7 @@ export default function AuditLogPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Security</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Security</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">The audit log</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Every authenticated write your API accepts is recorded, and each record is hashed

@@ -10,7 +10,7 @@ export default function Lesson() {
         Most apps that wrap AI need: streaming responses, multi-provider
         support, and one API key to manage. Grit&apos;s AI Gateway integration
         gives you all three via{' '}
-        <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Vercel AI Gateway</a>{' '}
+        <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Vercel AI Gateway</a>{' '}
         — Claude, GPT-4, Mistral, Llama, ~98 others.
       </p>
 

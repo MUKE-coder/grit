@@ -39,7 +39,7 @@ export default function LearningsIndexPage() {
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="mb-12">
-              <span className="tag-mono text-primary/80 mb-3 inline-flex items-center gap-1.5">
+              <span className="tag-mono text-accent/80 mb-3 inline-flex items-center gap-1.5">
                 <Lightbulb className="h-3.5 w-3.5" />
                 Learnings
               </span>
@@ -62,15 +62,15 @@ export default function LearningsIndexPage() {
                   <Link
                     key={e.slug}
                     href={`/docs/learnings/${e.slug}`}
-                    className="group block rounded-2xl border border-border/50 bg-card/40 p-5 hover:border-primary/40 hover:bg-card/70 transition-all"
+                    className="group block rounded-2xl border border-border/50 bg-card/40 p-5 hover:border-accent/40 hover:bg-card/70 transition-all"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <div className="h-10 w-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center shrink-0">
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h2 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                          <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors">
                             {e.title}
                           </h2>
                           <span className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
@@ -92,11 +92,11 @@ export default function LearningsIndexPage() {
                           ))}
                         </div>
                         <p className="text-xs text-muted-foreground/80">
-                          <span className="text-primary font-semibold mr-1.5">MILESTONE</span>
+                          <span className="text-accent font-semibold mr-1.5">MILESTONE</span>
                           {e.milestone}
                         </p>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
                     </div>
                   </Link>
                 )

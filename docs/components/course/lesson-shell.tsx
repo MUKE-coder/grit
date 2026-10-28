@@ -72,8 +72,8 @@ export function LessonShell({ course, chapter, lesson, prev, next, children }: P
       {/* Suggest improvement — GitHub issue, lesson-scoped. */}
       <div className="mt-12 rounded-2xl border border-border/60 bg-card/30 p-5">
         <div className="flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-            <MessageSquarePlus className="h-5 w-5 text-primary" />
+          <div className="h-10 w-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+            <MessageSquarePlus className="h-5 w-5 text-accent" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold mb-1">
@@ -93,7 +93,7 @@ export function LessonShell({ course, chapter, lesson, prev, next, children }: P
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium px-4 py-2 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-accent/90 text-xs font-medium px-4 py-2 transition-colors"
             >
               <Github className="h-3.5 w-3.5" />
               Suggest an improvement on GitHub
@@ -123,7 +123,7 @@ export function LessonShell({ course, chapter, lesson, prev, next, children }: P
             </Link>
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10">
+          <Button variant="ghost" size="sm" asChild className="text-accent hover:bg-accent/10">
             <Link href={`/courses/${course.slug}`} className="gap-1.5">
               Finish course
               <ArrowRight className="h-3.5 w-3.5" />

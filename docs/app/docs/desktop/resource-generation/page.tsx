@@ -19,7 +19,7 @@ export default function DesktopResourceGenerationPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Desktop (Wails)
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -99,7 +99,7 @@ export default function DesktopResourceGenerationPage() {
                   key={item.file}
                   className="rounded-lg border border-border bg-card p-4"
                 >
-                  <code className="text-sm font-semibold text-primary">
+                  <code className="text-sm font-semibold text-accent">
                     {item.file}
                   </code>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -181,7 +181,7 @@ export default function DesktopResourceGenerationPage() {
                     ["files", "[]files.FileRef", "Multi-file native upload → FileRef[] via /api/uploads"],
                   ].map(([type_, go_, form]) => (
                     <tr key={type_}>
-                      <td className="p-3 font-mono text-xs text-primary">
+                      <td className="p-3 font-mono text-xs text-accent">
                         {type_}
                       </td>
                       <td className="p-3 font-mono text-xs">{go_}</td>
@@ -235,7 +235,7 @@ export default function DesktopResourceGenerationPage() {
               <h2>How Route Files Work (TanStack Router)</h2>
               <p>
                 Grit Desktop uses{" "}
-                <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{" "}
+                <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">TanStack Router</a>{" "}
                 with file-based routing. Each generated resource creates three route
                 files that are automatically discovered by the TanStack Router Vite
                 plugin — no centralized route registry needed.
@@ -264,7 +264,7 @@ export default function DesktopResourceGenerationPage() {
                   key={item.file}
                   className="rounded-lg border border-border bg-card p-4"
                 >
-                  <code className="text-sm font-semibold text-primary">
+                  <code className="text-sm font-semibold text-accent">
                     {item.file}
                   </code>
                   <p className="text-xs font-mono text-muted-foreground/60 mt-1">
@@ -354,9 +354,9 @@ function EditProductPage() {
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
               >
-                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
                   <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>

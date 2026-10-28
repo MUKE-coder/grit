@@ -114,7 +114,7 @@ function RouteTable({ rows, caption }: { rows: Row[]; caption?: string }) {
         <tbody>
           {rows.map((r) => (
             <tr key={r.method + r.path} className="border-t border-border align-top">
-              <td className="px-4 py-2.5 font-mono text-xs text-primary whitespace-nowrap">{r.method}</td>
+              <td className="px-4 py-2.5 font-mono text-xs text-accent whitespace-nowrap">{r.method}</td>
               <td className="px-4 py-2.5 font-mono text-xs whitespace-nowrap">{r.path}</td>
               <td className="px-4 py-2.5 text-muted-foreground text-xs">{r.what}</td>
             </tr>
@@ -152,7 +152,7 @@ export default function CustomEndpointsPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial · Long read</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Tutorial · Long read</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Custom API endpoints, end to end
               </h1>
@@ -182,7 +182,7 @@ export default function CustomEndpointsPage() {
                     ['Campaign', 'Has many products, and a product can be in many campaigns. This is the relationship that changes the most.'],
                   ].map(([k, v]) => (
                     <li key={k} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-0.5 font-mono text-xs shrink-0 w-20">{k}</span>
+                      <span className="text-accent mt-0.5 font-mono text-xs shrink-0 w-20">{k}</span>
                       <span>{v}</span>
                     </li>
                   ))}
@@ -232,7 +232,7 @@ cd shop`}
                     ['--public', 'Adds a second, read-only copy of the list and detail endpoints under /api/v1/public/, outside the login. This is what a storefront reads.'],
                   ].map(([k, v]) => (
                     <li key={k} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-0.5 font-mono text-xs shrink-0">{k}</span>
+                      <span className="text-accent mt-0.5 font-mono text-xs shrink-0">{k}</span>
                       <span>{v}</span>
                     </li>
                   ))}
@@ -340,7 +340,7 @@ grit seed      # run every seeder
                     ['The admin table', 'A yes/no column.'],
                   ].map(([k, v]) => (
                     <li key={k} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-0.5 text-xs shrink-0 w-32">{k}</span>
+                      <span className="text-accent mt-0.5 text-xs shrink-0 w-32">{k}</span>
                       <span>{v}</span>
                     </li>
                   ))}
@@ -411,7 +411,7 @@ db.Preload("Category").Find(&products)`}
                     ['In the seeder', 'Grit looks up real category ids and picks one, rather than inventing a UUID that points at nothing.'],
                   ].map(([k, v]) => (
                     <li key={k} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-0.5 text-xs shrink-0 w-36">{k}</span>
+                      <span className="text-accent mt-0.5 text-xs shrink-0 w-36">{k}</span>
                       <span>{v}</span>
                     </li>
                   ))}
@@ -1205,7 +1205,7 @@ func init() {
                         ['m.V1', '/api/v1/', 'No middleware at all. You add your own.'],
                       ].map((r) => (
                         <tr key={r[0]} className="border-t border-border align-top">
-                          <td className="px-4 py-2.5 font-mono text-xs text-primary whitespace-nowrap">{r[0]}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-accent whitespace-nowrap">{r[0]}</td>
                           <td className="px-4 py-2.5 font-mono text-xs whitespace-nowrap">{r[1]}</td>
                           <td className="px-4 py-2.5 text-muted-foreground text-xs">{r[2]}</td>
                         </tr>

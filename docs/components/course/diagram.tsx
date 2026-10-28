@@ -21,7 +21,7 @@ export function Diagram({ caption, label = 'Diagram', children }: Props) {
   return (
     <figure className="not-prose my-8 rounded-2xl border border-border/60 bg-card/40 overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-2.5 border-b border-border/40 bg-muted/30">
-        <Workflow className="h-3.5 w-3.5 text-primary" />
+        <Workflow className="h-3.5 w-3.5 text-accent" />
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
           {label}
         </p>

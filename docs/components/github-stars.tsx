@@ -35,7 +35,7 @@ export function GitHubStars({ className = '' }: { className?: string }) {
       target="_blank"
       rel="noreferrer"
       aria-label={stars === null ? 'Star Grit on GitHub' : `Grit has ${stars} stars on GitHub`}
-      className={`group inline-flex items-center gap-1.5 h-8 rounded-full border border-border/60 bg-background/40 pl-2.5 pr-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-primary/40 ${className}`}
+      className={`group inline-flex items-center gap-1.5 h-8 rounded-full border border-border/60 bg-background/40 pl-2.5 pr-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-accent/40 ${className}`}
     >
       <Github className="h-4 w-4" />
       <span className="flex items-center gap-1 text-xs font-medium tabular-nums">

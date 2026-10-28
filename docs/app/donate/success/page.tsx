@@ -16,7 +16,7 @@ export default function DonateSuccessPage() {
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-primary/[0.06] blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-accent/[0.06] blur-[120px]" />
         </div>
         <div className="container max-w-screen-xl py-24 md:py-36 px-6">
           <div className="max-w-2xl mx-auto text-center">

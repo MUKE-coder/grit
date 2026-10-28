@@ -135,7 +135,7 @@ export default function Lesson() {
           <>
             <p>
               Pick three real product ideas (yours, your friend&apos;s, or pulled
-              from <a href="https://news.ycombinator.com/show" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">HN Show</a>).
+              from <a href="https://news.ycombinator.com/show" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">HN Show</a>).
               For each, write one paragraph in <code>notes.md</code>:
             </p>
             <ul>

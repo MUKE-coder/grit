@@ -19,7 +19,7 @@ export default function DockerCheatSheetPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 Infrastructure
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -85,7 +85,7 @@ export default function DockerCheatSheetPage() {
                           9002 (API), 9003 (Console)
                         </td>
                         <td className="px-4 py-2.5">
-                          <code className="text-xs font-mono text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded-md border border-primary/10">
+                          <code className="text-xs font-mono text-accent/70 bg-accent/5 px-1.5 py-0.5 rounded-md border border-accent/10">
                             http://localhost:9003
                           </code>
                         </td>
@@ -98,7 +98,7 @@ export default function DockerCheatSheetPage() {
                           1025 (SMTP), 8025 (UI)
                         </td>
                         <td className="px-4 py-2.5">
-                          <code className="text-xs font-mono text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded-md border border-primary/10">
+                          <code className="text-xs font-mono text-accent/70 bg-accent/5 px-1.5 py-0.5 rounded-md border border-accent/10">
                             http://localhost:8025
                           </code>
                         </td>
@@ -152,7 +152,7 @@ export default function DockerCheatSheetPage() {
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">
+                          <span className="text-accent/50 select-none">
                             ${" "}
                           </span>
                           <span className="text-foreground/80">{item.cmd}</span>
@@ -199,7 +199,7 @@ export default function DockerCheatSheetPage() {
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">
+                          <span className="text-accent/50 select-none">
                             ${" "}
                           </span>
                           <span className="text-foreground/80">{item.cmd}</span>
@@ -249,7 +249,7 @@ export default function DockerCheatSheetPage() {
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">
+                          <span className="text-accent/50 select-none">
                             ${" "}
                           </span>
                           <span className="text-foreground/80">{item.cmd}</span>
@@ -307,7 +307,7 @@ export default function DockerCheatSheetPage() {
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">
+                          <span className="text-accent/50 select-none">
                             ${" "}
                           </span>
                           <span className="text-foreground/80">{item.cmd}</span>
@@ -361,7 +361,7 @@ export default function DockerCheatSheetPage() {
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">
+                          <span className="text-accent/50 select-none">
                             ${" "}
                           </span>
                           <span className="text-foreground/80">{item.cmd}</span>
@@ -399,7 +399,7 @@ export default function DockerCheatSheetPage() {
                   <div className="p-4 rounded-lg border border-border/30 bg-card/30">
                     <div className="flex items-center justify-between mb-1.5">
                       <h3 className="text-sm font-semibold">MinIO Console</h3>
-                      <code className="text-xs font-mono text-primary/70 bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10">
+                      <code className="text-xs font-mono text-accent/70 bg-accent/5 px-2 py-0.5 rounded-md border border-accent/10">
                         http://localhost:9003
                       </code>
                     </div>
@@ -425,7 +425,7 @@ export default function DockerCheatSheetPage() {
                   </div>
                   <div className="px-5 py-3 font-mono text-sm">
                     <div>
-                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-accent/50 select-none">$ </span>
                       <span className="text-foreground/80">
                         docker compose exec minio mc alias set local
                         http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
@@ -487,7 +487,7 @@ export default function DockerCheatSheetPage() {
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">
+                          <span className="text-accent/50 select-none">
                             ${" "}
                           </span>
                           <span className="text-foreground/80">{item.cmd}</span>
@@ -531,7 +531,7 @@ export default function DockerCheatSheetPage() {
                     </div>
                     <div className="px-5 py-3 font-mono text-sm">
                       <div>
-                        <span className="text-primary/50 select-none">$ </span>
+                        <span className="text-accent/50 select-none">$ </span>
                         <span className="text-foreground/80">{`docker ps --format "table {{.Names}}\\t{{.Ports}}"`}</span>
                       </div>
                       <p className="text-xs text-muted-foreground/50 mt-1">
@@ -548,7 +548,7 @@ export default function DockerCheatSheetPage() {
                     </div>
                     <div className="px-5 py-3 font-mono text-sm">
                       <div>
-                        <span className="text-primary/50 select-none">$ </span>
+                        <span className="text-accent/50 select-none">$ </span>
                         <span className="text-foreground/80">
                           docker stop $(docker ps -q)
                         </span>
@@ -564,7 +564,7 @@ export default function DockerCheatSheetPage() {
                   port debugging, see the{" "}
                   <Link
                     href="/docs/getting-started/troubleshooting"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     Troubleshooting
                   </Link>{" "}
@@ -608,7 +608,7 @@ export default function DockerCheatSheetPage() {
                       </div>
                       <div className="px-5 py-3 font-mono text-sm">
                         <div>
-                          <span className="text-primary/50 select-none">
+                          <span className="text-accent/50 select-none">
                             ${" "}
                           </span>
                           <span className="text-foreground/80">{item.cmd}</span>
@@ -625,7 +625,7 @@ export default function DockerCheatSheetPage() {
                   providers and CI/CD, see the{" "}
                   <Link
                     href="/docs/deployment/vps"
-                    className="text-primary hover:underline"
+                    className="text-accent hover:underline"
                   >
                     Deployment
                   </Link>{" "}

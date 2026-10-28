@@ -30,9 +30,9 @@ export default function Lesson() {
       <h2>The 3-line provider setup</h2>
       <p>
         Get OAuth credentials from the provider once. For Google: create a
-        project in <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google Cloud Console</a>,
+        project in <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google Cloud Console</a>,
         configure the consent screen, get client ID + secret. For GitHub:
-        <a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"> Developer Settings → OAuth Apps</a> → New OAuth App.
+        <a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline"> Developer Settings → OAuth Apps</a> → New OAuth App.
       </p>
       <p>
         Then add to <code>.env</code>:

@@ -19,13 +19,13 @@ export default function OAuthPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Backend (Go API)</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Backend (Go API)</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Social Login (OAuth2)
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit includes Google and GitHub OAuth2 authentication out of the box via{' '}
-                <a href="https://github.com/markbates/goth" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                <a href="https://github.com/markbates/goth" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                   Gothic
                 </a>. Social login buttons appear on all login and register pages across
                 every admin style variant. This guide walks you through setting up both providers.
@@ -88,14 +88,14 @@ GET /api/auth/oauth/github/callback   → GitHub callback (handles redirect)`} /
 
             {/* Step 1.1 */}
             <div className="relative pl-10 mb-8 mt-6">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 1
               </div>
               <div>
                 <h3 className="text-lg font-semibold mb-2">Create a Google Cloud Project</h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Go to the{' '}
-                  <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                  <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     Google Cloud Console
                   </a>{' '}
                   and create a new project (or select an existing one).
@@ -105,7 +105,7 @@ GET /api/auth/oauth/github/callback   → GitHub callback (handles redirect)`} /
 
             {/* Step 1.2 */}
             <div className="relative pl-10 mb-8">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 2
               </div>
               <div>
@@ -114,18 +114,18 @@ GET /api/auth/oauth/github/callback   → GitHub callback (handles redirect)`} /
                   Navigate to <strong>APIs &amp; Services &rarr; OAuth consent screen</strong>:
                 </p>
                 <ul className="space-y-1.5 text-[13px] text-muted-foreground/70">
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Choose <strong>External</strong> user type</li>
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Fill in App name (e.g. &ldquo;My Grit App&rdquo;)</li>
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Add your support email</li>
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Under Scopes, add <code>email</code>, <code>profile</code>, and <code>openid</code></li>
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Add test users if the app is in &ldquo;Testing&rdquo; mode</li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Choose <strong>External</strong> user type</li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Fill in App name (e.g. &ldquo;My Grit App&rdquo;)</li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Add your support email</li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Under Scopes, add <code>email</code>, <code>profile</code>, and <code>openid</code></li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Add test users if the app is in &ldquo;Testing&rdquo; mode</li>
                 </ul>
               </div>
             </div>
 
             {/* Step 1.3 */}
             <div className="relative pl-10 mb-8">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 3
               </div>
               <div>
@@ -134,9 +134,9 @@ GET /api/auth/oauth/github/callback   → GitHub callback (handles redirect)`} /
                   Go to <strong>APIs &amp; Services &rarr; Credentials &rarr; Create Credentials &rarr; OAuth client ID</strong>:
                 </p>
                 <ul className="space-y-1.5 text-[13px] text-muted-foreground/70 mb-4">
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Application type: <strong>Web application</strong></li>
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Name: anything (e.g. &ldquo;Grit Web Client&rdquo;)</li>
-                  <li className="flex items-start gap-2"><span className="text-primary mt-0.5">&#8226;</span> Authorized redirect URIs &mdash; add both:</li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Application type: <strong>Web application</strong></li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Name: anything (e.g. &ldquo;Grit Web Client&rdquo;)</li>
+                  <li className="flex items-start gap-2"><span className="text-accent mt-0.5">&#8226;</span> Authorized redirect URIs &mdash; add both:</li>
                 </ul>
                 <CodeBlock filename="Authorized redirect URIs" code={`# Development
 http://localhost:8080/api/auth/oauth/google/callback
@@ -151,7 +151,7 @@ https://api.yourdomain.com/api/auth/oauth/google/callback`} />
 
             {/* Step 1.4 */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 4
               </div>
               <div>
@@ -174,14 +174,14 @@ GOOGLE_CLIENT_SECRET=GOCSPX-your-secret-here`} />
 
             {/* Step 2.1 */}
             <div className="relative pl-10 mb-8 mt-6">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 1
               </div>
               <div>
                 <h3 className="text-lg font-semibold mb-2">Create a GitHub OAuth App</h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Go to{' '}
-                  <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                  <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     GitHub &rarr; Settings &rarr; Developer settings &rarr; OAuth Apps
                   </a>{' '}
                   and click <strong>New OAuth App</strong>.
@@ -191,7 +191,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-your-secret-here`} />
 
             {/* Step 2.2 */}
             <div className="relative pl-10 mb-8">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 2
               </div>
               <div>
@@ -232,7 +232,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-your-secret-here`} />
 
             {/* Step 2.3 */}
             <div className="relative pl-10 mb-8">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 3
               </div>
               <div>
@@ -246,7 +246,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-your-secret-here`} />
 
             {/* Step 2.4 */}
             <div className="relative pl-10 mb-12">
-              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+              <div className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                 4
               </div>
               <div>
@@ -446,7 +446,7 @@ OAUTH_FRONTEND_URL=http://localhost:3001`} />
                     key={item}
                     className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70"
                   >
-                    <span className="text-primary mt-0.5">&#9744;</span>
+                    <span className="text-accent mt-0.5">&#9744;</span>
                     {item}
                   </div>
                 ))}

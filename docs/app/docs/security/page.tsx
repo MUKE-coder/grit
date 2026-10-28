@@ -26,7 +26,7 @@ const OWASP_2025: Row[] = [
       <>
         <p>
           <code>internal/authz</code> is the IDOR defence, and from v3.224.0 a generated
-          resource applies it in its <Link href="/docs/backend/services" className="text-primary hover:underline">service</Link>{' '}
+          resource applies it in its <Link href="/docs/backend/services" className="text-accent hover:underline">service</Link>{' '}
           rather than its handler, so every caller gets it: a route, a background job, a
           command, a test. A list and an export are scoped in SQL, a read by id is checked
           after loading, and somebody else&apos;s row is 404 rather than 403, so a wrong guess
@@ -64,7 +64,7 @@ func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
           <code>authz.RequireRoles(&quot;ADMIN&quot;)</code>. SSRF (absorbed into A01 in 2025) is
           handled by the <code>internal/safefetch</code> package, see A05 below. What is
           guaranteed here and what stays yours is listed per subsystem on the{' '}
-          <Link href="/docs/stability" className="text-primary hover:underline">stability matrix</Link>.
+          <Link href="/docs/stability" className="text-accent hover:underline">stability matrix</Link>.
         </p>
       </>
     ),
@@ -338,7 +338,7 @@ if errors.Is(err, safefetch.ErrBlocked) {
         </p>
         <p>
           <strong>SIEM export (OCSF).</strong> The semantic activity log is exposed in the{' '}
-          <a href="https://ocsf.io" className="text-primary hover:underline">Open Cybersecurity
+          <a href="https://ocsf.io" className="text-accent hover:underline">Open Cybersecurity
           Schema Framework</a> shape that Splunk, Elastic, Microsoft Sentinel, Chronicle and
           Amazon Security Lake all ingest, at{' '}
           <code>GET /api/audit/ocsf</code> (admin only). Each event is mapped to its OCSF class —
@@ -433,7 +433,7 @@ export default function SecurityGuidePage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Security</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Security</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Security Guide
               </h1>
@@ -466,19 +466,19 @@ export default function SecurityGuidePage() {
               />
             </div>
 
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 mb-8">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Go deeper:</strong> the{' '}
-                <Link href="/courses/security-deep-dive" className="text-primary hover:underline">Security Deep Dive</Link>{' '}
+                <Link href="/courses/security-deep-dive" className="text-accent hover:underline">Security Deep Dive</Link>{' '}
                 course walks through auth, 2FA, the WAF and rate limiting hands-on, and{' '}
-                <Link href="/courses/audit-log" className="text-primary hover:underline">Audit Log + Hash Chain</Link>{' '}
+                <Link href="/courses/audit-log" className="text-accent hover:underline">Audit Log + Hash Chain</Link>{' '}
                 covers tamper-evident activity tracking.
               </p>
             </div>
 
             <div className="prose-grit">
-              <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4 flex gap-3">
-                <ShieldCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-4 flex gap-3">
+                <ShieldCheck className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-foreground/90 mb-1">
                     <strong>Secure by default.</strong> Every fresh
@@ -489,8 +489,8 @@ export default function SecurityGuidePage() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg border border-primary/30 bg-primary/[0.06] mb-6 flex gap-3">
-                <ExternalLink className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="p-4 rounded-lg border border-accent/30 bg-accent/[0.06] mb-6 flex gap-3">
+                <ExternalLink className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-foreground/90 mb-2">
                     <strong>Prefer the attacker&apos;s perspective?</strong> The companion
@@ -499,7 +499,7 @@ export default function SecurityGuidePage() {
                       href="https://jb.desishub.com/blog/defenders-handbook-how-hackers-break-in"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
+                      className="text-accent hover:underline"
                     >
                       Defender&apos;s Handbook
                     </Link>{' '}
@@ -511,7 +511,7 @@ export default function SecurityGuidePage() {
                   </p>
                   <Link
                     href="/docs/security/defenders-handbook"
-                    className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+                    className="text-sm font-medium text-accent hover:underline inline-flex items-center gap-1"
                   >
                     Read Defender&apos;s Handbook ↔ Grit
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -620,7 +620,7 @@ govulncheck ./...`} />
                 Privately, through{' '}
                 <a
                   href="https://github.com/MUKE-coder/grit/security/advisories/new"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   GitHub Security Advisories
                 </a>
@@ -629,7 +629,7 @@ govulncheck ./...`} />
                 about. Scope and response targets are in{' '}
                 <a
                   href="https://github.com/MUKE-coder/grit/blob/main/SECURITY.md"
-                  className="text-primary hover:underline"
+                  className="text-accent hover:underline"
                 >
                   SECURITY.md
                 </a>
@@ -719,7 +719,7 @@ govulncheck ./...`} />
                 <div>
                   <p className="text-sm text-foreground/90 mb-0">
                     <strong>The defences above don&apos;t replace testing.</strong> See
-                    the <Link href="/docs/testing" className="text-primary hover:underline">Testing</Link>
+                    the <Link href="/docs/testing" className="text-accent hover:underline">Testing</Link>
                     {' '}page for the k6 + pentest methodology to prove they hold.
                   </p>
                 </div>

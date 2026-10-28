@@ -15,9 +15,9 @@ function ProblemRow({ problem }: { problem: Problem }) {
   return (
     <Link
       href={`/problems/${problem.slug}`}
-      className="group flex items-start gap-4 rounded-xl border border-border bg-bg-secondary p-5 transition-colors hover:border-primary/40"
+      className="group flex items-start gap-4 rounded-xl border border-border bg-bg-secondary p-5 transition-colors hover:border-accent/40"
     >
-      <span className="mt-0.5 inline-flex shrink-0 items-center rounded-lg bg-accent/15 px-2.5 py-1 font-mono text-xs font-semibold text-primary">
+      <span className="mt-0.5 inline-flex shrink-0 items-center rounded-lg bg-accent/15 px-2.5 py-1 font-mono text-xs font-semibold text-accent">
         {problem.id}
       </span>
       <span className="min-w-0 flex-1">
@@ -26,7 +26,7 @@ function ProblemRow({ problem }: { problem: Problem }) {
           {problem.headline}
         </span>
       </span>
-      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-accent" />
     </Link>
   )
 }
@@ -48,7 +48,7 @@ export default function ProblemsPage() {
         <p className="mt-4 leading-relaxed text-muted-foreground">
           Each one here says what actually goes wrong, what Grit does about it, the commands, and
           what it does not do. They are the backbone of{' '}
-          <Link href="/talk" className="text-primary hover:underline">
+          <Link href="/talk" className="text-accent hover:underline">
             the talk
           </Link>
           .

@@ -20,7 +20,7 @@ export default function NamingConventionsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Core Concepts</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Core Concepts</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Naming Conventions
               </h1>
@@ -213,7 +213,7 @@ export default function NamingConventionsPage() {
                     { step: '5', title: 'Pluralization', desc: 'The snake_case form is pluralized using English rules. "blog_post" becomes "blog_posts". This is used for API routes, table names, and hook names.' },
                   ].map((item) => (
                     <div key={item.step} className="flex gap-3 p-3 rounded-lg border border-border/30 bg-card/30">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 border border-accent/15 text-xs font-mono font-semibold text-accent">
                         {item.step}
                       </div>
                       <div>

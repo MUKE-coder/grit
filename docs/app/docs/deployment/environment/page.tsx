@@ -42,7 +42,7 @@ export default function EnvironmentPage() {
             </Link>
 
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Deployment</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Deployment</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Environment variables</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Which ones the app refuses to start without, which depend on what you have
@@ -159,7 +159,7 @@ curl -s https://your-domain.com/api/health`}
               </Link>
               <Link
                 href="/docs/deployment/build-locally"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
                 Test the build locally
                 <ArrowRight className="h-3.5 w-3.5" />

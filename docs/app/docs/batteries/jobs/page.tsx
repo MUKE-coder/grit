@@ -20,7 +20,7 @@ export default function JobsPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Batteries</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Batteries</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Background Jobs
               </h1>
@@ -408,7 +408,7 @@ for _, id := range accountIDs {
                   </table>
                 </div>
 
-                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5">
                   <p className="text-sm text-foreground/80">
                     <strong>Concurrency:</strong> The default worker concurrency is 10. This means up to 10
                     jobs can be processed simultaneously. Adjust the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Concurrency</code> setting

@@ -68,7 +68,7 @@ export default async function ProviderPage({
             </Link>
 
             <div className="mb-8">
-              <span className="tag-mono text-primary/80 mb-3 block">
+              <span className="tag-mono text-accent/80 mb-3 block">
                 {PROVIDER_KIND_LABEL[provider.kind]}
               </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -125,7 +125,7 @@ export default async function ProviderPage({
             <ol className="space-y-8 mb-14">
               {provider.steps.map((step, i) => (
                 <li key={step.title} className="relative pl-11">
-                  <span className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[13px] font-bold text-primary">
+                  <span className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-[13px] font-bold text-accent">
                     {i + 1}
                   </span>
                   <h3 className="font-semibold mb-2 leading-tight">{step.title}</h3>
@@ -157,7 +157,7 @@ export default async function ProviderPage({
                 summary is for deciding, this is for doing. */}
             {guide && (
               <div className="border-t border-border/40 pt-12 mb-14">
-                <span className="tag-mono text-primary/80 mb-3 block">Full walkthrough</span>
+                <span className="tag-mono text-accent/80 mb-3 block">Full walkthrough</span>
                 <h2 className="text-3xl font-bold tracking-tight mb-4">{guide.title}</h2>
                 <div className="rounded-xl border border-border/50 bg-card/40 p-5 mb-8">
                   <p className="text-sm text-muted-foreground leading-relaxed">
@@ -187,7 +187,7 @@ export default async function ProviderPage({
                   href={provider.docsUrl}
                   target={external ? '_blank' : undefined}
                   rel={external ? 'noreferrer' : undefined}
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                  className="inline-flex items-center gap-1 text-accent hover:underline"
                 >
                   {provider.docsUrl.replace(/^https?:\/\//, '')}
                   {external && <ExternalLink className="h-3 w-3" />}
@@ -198,7 +198,7 @@ export default async function ProviderPage({
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border/40 pt-8">
               <Link
                 href="/docs/deployment/checklist"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
                 Go-live checklist
                 <ArrowRight className="h-3.5 w-3.5" />

@@ -20,7 +20,7 @@ export default function I18nPage() {
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Frontend</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Frontend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Internationalisation</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 One cookie decides the language for the API, the web app and the admin panel, so a
