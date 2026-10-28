@@ -67,10 +67,20 @@ const config: Config = {
           ring: 'hsl(var(--sidebar-ring))',
         },
       },
+      // DESIGN.md section 4 allows three radii plus full: 6, 10 and 16.
+      //
+      // Tailwind ships five names, and the old mapping generated 6, 8 and 10
+      // from one --radius, so `rounded-md` produced an 8px that is on no
+      // scale. Collapsing all five names onto the three allowed values makes
+      // the budget unbreakable through a utility: there is no class that can
+      // produce an off-scale corner.
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 4px)', // 6
+        md: 'var(--radius)', // 10
+        lg: 'var(--radius)', // 10
+        xl: '1rem', // 16
+        '2xl': '1rem', // 16
+        '3xl': '1rem', // 16
       },
       keyframes: {
         'accordion-down': {

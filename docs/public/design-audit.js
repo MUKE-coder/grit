@@ -106,10 +106,18 @@
   }
 
   // --- 2. radii -----------------------------------------------------------
+  // A compound radius ("0px 10px 10px 0px") is one value applied to some
+  // corners, not a new one. Normalising to the distinct non-zero components
+  // means a card with a rounded top does not read as three radii.
+  const normaliseRadius = (r) => {
+    const parts = [...new Set(r.split('/')[0].trim().split(/\s+/))]
+      .filter((p) => p && p !== '0px');
+    return parts.length ? parts.sort().join(' ') : null;
+  };
   const radiusValues = tally(
     els.map((e) => {
       const r = getComputedStyle(e).borderRadius;
-      return r && r !== '0px' ? r : null;
+      return r && r !== '0px' ? normaliseRadius(r) : null;
     })
   );
   const offScale = radiusValues.filter(([v]) => {
@@ -192,13 +200,14 @@
       const r = e.getBoundingClientRect();
       if (r.top > window.innerHeight || r.bottom < 0) continue;
       const s = getComputedStyle(e);
-      if (near(rgb(s.backgroundColor)) || near(rgb(s.color))) accentInView++;
+      // Fills only. Accent-tinted text and icons are a set; an accent fill
+      // is a call to action, and two of those compete.
+      if (near(rgb(s.backgroundColor))) accentInView++;
     }
-    if (accentInView > BUDGETS.accentPerViewport * 4) {
-      // x4 because a filled button counts its own label and icon too.
-      fail('accent elements in the first viewport', accentInView,
-        BUDGETS.accentPerViewport * 4,
-        'the accent is rationed: the one action, the active nav item, one emphasis');
+    if (accentInView > BUDGETS.accentPerViewport) {
+      fail('accent-filled elements in the first viewport', accentInView,
+        BUDGETS.accentPerViewport,
+        'a fill is a call to action, and two of those compete: one primary per view');
     }
   }
 
@@ -283,7 +292,7 @@
       shadows: { found: shadows.length, limit: BUDGETS.shadows },
       sections: { found: sections.length, limit: BUDGETS.sections },
       headings: { found: headings.length, limit: BUDGETS.headings },
-      accentInFirstViewport: { found: accentInView, limit: BUDGETS.accentPerViewport * 4 },
+      accentFillsInFirstViewport: { found: accentInView, limit: BUDGETS.accentPerViewport },
       contrastFailures: { found: contrastFails.length, limit: 0 },
     },
     failures,

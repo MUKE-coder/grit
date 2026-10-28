@@ -1,49 +1,165 @@
 import Link from 'next/link'
-import { ArrowRight, Github, ShieldAlert, Store } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Bell,
+  CreditCard,
+  Download,
+  Film,
+  Globe,
+  KeyRound,
+  Languages,
+  MessageSquare,
+  QrCode,
+  Search,
+  ShieldAlert,
+  SquareKanban,
+  Table2,
+  Terminal,
+  UserCog,
+  Users,
+  Webhook,
+  Zap,
+} from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import {
+  CommunityEmpty,
+  ModuleRow,
+  PluginCard,
+  Stat,
+  type PluginEntry,
+} from '@/components/plugin-card'
 import communityIndex from '@/config/community-plugins.json'
 
 export const metadata = {
   title: 'Plugin marketplace — Grit',
   description:
-    'Every Grit plugin: the official ones built into the CLI, the Go module plugins, and the community index. How to install one and how to list your own.',
+    'Every Grit plugin: the ten built into the CLI, the nine that ship as Go modules, and the community index. What each one does, how to install it, and how to list your own.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/marketplace' },
 }
 
 // The official plugins, as `grit plugin list` reports them.
 //
-// This list is hand-maintained and the CLI's registry is authoritative, so
-// TestMarketplacePageListsEveryPlugin in internal/plugin compares the two and
-// fails when a plugin is added without reaching this page. A marketplace that
-// quietly omits a plugin is worse than no marketplace.
-const OFFICIAL = [
-  { name: 'kanban', summary: 'Boards, columns and cards with drag-and-drop ordering', href: '/docs/plugins/kanban' },
-  { name: 'multitenant', summary: 'Organizations, per-org roles, and automatic query scoping', href: '/docs/plugins/multitenant' },
-  { name: 'impersonate', summary: 'Admin signs in as another user, with an audit trail', href: '/docs/plugins/impersonate' },
-  { name: 'command-palette', summary: 'Command palette to jump anywhere in the admin', href: '/docs/plugins/command-palette' },
-  { name: 'saved-views', summary: 'Save a table’s filters, sort and columns as named views', href: '/docs/plugins/saved-views' },
-  { name: 'device-pairing', summary: 'Sign in a browser by scanning a QR code from a signed-in phone', href: '/docs/plugins/device-pairing' },
-  { name: 'push', summary: 'Push notifications to the Expo app, through Expo’s push service', href: '/docs/plugins/push' },
-  { name: 'video', summary: 'Video upload, transcode and playback', href: '/docs/plugins/video' },
-  { name: 'stripe', summary: 'Checkout and billing', href: '/docs/plugins/stripe' },
-  { name: 'webhooks', summary: 'Outbound webhooks, to the Standard Webhooks spec', href: '/docs/backend/webhooks' },
+// Hand-maintained because a Next page cannot import a Go registry, so
+// TestMarketplacePageListsEveryPlugin in internal/plugin compares the two in
+// both directions and fails when they drift.
+const OFFICIAL: PluginEntry[] = [
+  {
+    name: 'kanban',
+    title: 'Kanban boards',
+    summary: 'Boards, columns and cards, dragged with a pointer, a finger or the keyboard.',
+    href: '/docs/plugins/kanban',
+    icon: <SquareKanban />,
+    tags: ['admin', 'models', 'dnd'],
+    kind: 'official',
+    install: 'grit plugin add kanban',
+  },
+  {
+    name: 'multitenant',
+    title: 'Multi-tenancy',
+    summary: 'Organizations, per-org roles, and query scoping a forgotten WHERE cannot leak past.',
+    href: '/docs/plugins/multitenant',
+    icon: <Users />,
+    tags: ['models', 'auth', 'scoping'],
+    kind: 'official',
+    install: 'grit plugin add multitenant',
+  },
+  {
+    name: 'impersonate',
+    title: 'Impersonate',
+    summary: 'Sign in as another user to reproduce their bug, with an audit trail of every swap.',
+    href: '/docs/plugins/impersonate',
+    icon: <UserCog />,
+    tags: ['auth', 'admin', 'audit'],
+    kind: 'official',
+    install: 'grit plugin add impersonate',
+  },
+  {
+    name: 'command-palette',
+    title: 'Command palette',
+    summary: 'Ctrl+K to anywhere in the admin, built from the resource registry.',
+    href: '/docs/plugins/command-palette',
+    icon: <Terminal />,
+    tags: ['admin', 'frontend only'],
+    kind: 'official',
+    install: 'grit plugin add command-palette',
+  },
+  {
+    name: 'saved-views',
+    title: 'Saved views',
+    summary: 'A table’s filters, sort and search saved as a named view, per user.',
+    href: '/docs/plugins/saved-views',
+    icon: <Table2 />,
+    tags: ['admin', 'tables'],
+    kind: 'official',
+    install: 'grit plugin add saved-views',
+  },
+  {
+    name: 'device-pairing',
+    title: 'Device pairing',
+    summary: 'Sign in a browser by scanning a code from a phone that is already signed in.',
+    href: '/docs/plugins/device-pairing',
+    icon: <QrCode />,
+    tags: ['auth', 'web', 'admin'],
+    kind: 'official',
+    install: 'grit plugin add device-pairing',
+  },
+  {
+    name: 'push',
+    title: 'Push notifications',
+    summary: 'Notifications to the Expo app through Expo, so no certificates reach the API.',
+    href: '/docs/plugins/push',
+    icon: <Bell />,
+    tags: ['mobile', 'expo'],
+    kind: 'official',
+    install: 'grit plugin add push',
+  },
+  {
+    name: 'video',
+    title: 'Video',
+    summary: 'Clips converted by ffmpeg to an MP4 and a poster every client can play.',
+    href: '/docs/plugins/video',
+    icon: <Film />,
+    tags: ['media', 'jobs'],
+    kind: 'official',
+    install: 'grit plugin add video',
+  },
+  {
+    name: 'stripe',
+    title: 'Stripe',
+    summary: 'Checkout and billing, with webhooks that survive a redelivery.',
+    href: '/docs/plugins/stripe',
+    icon: <CreditCard />,
+    tags: ['payments', 'webhooks'],
+    kind: 'official',
+    install: 'grit plugin add stripe',
+  },
+  {
+    name: 'webhooks',
+    title: 'Webhooks',
+    summary: 'Outbound webhooks to the Standard Webhooks spec, signed and retried.',
+    href: '/docs/backend/webhooks',
+    icon: <Webhook />,
+    tags: ['api', 'integrations'],
+    kind: 'official',
+    install: 'grit plugin add webhooks',
+  },
 ]
 
 const MODULES = [
-  { name: 'websockets', summary: 'Realtime hub with rooms, presence and typing indicators' },
-  { name: 'notifications', summary: 'In-app and push notifications with a delivery log' },
-  { name: 'search', summary: 'Full-text search across resources' },
-  { name: 'stripe', summary: 'Subscriptions and billing' },
-  { name: 'oauth', summary: 'Sign in with Google, GitHub and friends' },
-  { name: 'i18n', summary: 'Translated API messages and locale negotiation' },
-  { name: 'video', summary: 'Video upload, transcode and playback' },
-  { name: 'export', summary: 'Scheduled exports to CSV and XLSX' },
-  { name: 'conference', summary: 'Audio and video rooms' },
+  { name: 'websockets', summary: 'Realtime hub with rooms, presence and typing indicators', icon: <Zap /> },
+  { name: 'notifications', summary: 'In-app and push notifications with a delivery log', icon: <Bell /> },
+  { name: 'search', summary: 'Full-text search across resources', icon: <Search /> },
+  { name: 'stripe', summary: 'Subscriptions and recurring billing', icon: <CreditCard /> },
+  { name: 'oauth', summary: 'Sign in with Google, GitHub and friends', icon: <KeyRound /> },
+  { name: 'i18n', summary: 'Translated API messages and locale negotiation', icon: <Languages /> },
+  { name: 'video', summary: 'Video upload, transcode and playback', icon: <Film /> },
+  { name: 'export', summary: 'Scheduled exports to CSV and XLSX', icon: <Download /> },
+  { name: 'conference', summary: 'Audio and video rooms', icon: <MessageSquare /> },
 ]
 
-type CommunityPlugin = {
+type CommunityRecord = {
   name: string
   author: string
   repo: string
@@ -51,7 +167,19 @@ type CommunityPlugin = {
   added: string
 }
 
-const COMMUNITY = (communityIndex.plugins ?? []) as CommunityPlugin[]
+const COMMUNITY = ((communityIndex.plugins ?? []) as CommunityRecord[]).map(
+  (p): PluginEntry => ({
+    name: p.name,
+    title: p.name,
+    summary: p.summary,
+    href: p.repo.startsWith('http') ? p.repo : `https://${p.repo}`,
+    icon: <Globe />,
+    tags: [],
+    kind: 'community',
+    author: p.author,
+    install: `grit plugin add ${p.repo}`,
+  })
+)
 
 export default function MarketplacePage() {
   return (
@@ -60,178 +188,184 @@ export default function MarketplacePage() {
       <DocsSidebar />
 
       <main className="lg:pl-64">
-        <div className="mx-auto max-w-3xl px-6 py-12">
-          <div className="mb-3 flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-              Plugins
-            </span>
-          </div>
-
-          <h1 className="mb-4 font-display text-4xl font-bold tracking-tight">Marketplace</h1>
-          <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
-            Every plugin, in three groups: the ones built into the CLI, the ones that ship as Go
-            modules, and the ones other people wrote. All of them write ordinary code into your
-            project, and all of them come back out with{' '}
-            <code>grit plugin remove</code>.
-          </p>
-
-          <CodeBlock language="bash" code={`grit plugin list`} />
-          <p className="mb-10 mt-3 text-sm text-muted-foreground">
-            The same list, for the version of Grit you have installed. That one is authoritative;
-            this page is the browsable copy.
-          </p>
-
-          <h2 className="mb-2 mt-12 text-2xl font-semibold tracking-tight">Official</h2>
-          <p className="mb-5 leading-relaxed text-muted-foreground">
-            Built into the CLI, maintained with the framework, and tested on every release.
-          </p>
-          <div className="mb-8 space-y-2">
-            {OFFICIAL.map((p) => (
-              <Link
-                key={p.name}
-                href={p.href}
-                className="group flex items-start gap-4 rounded-xl border border-border p-4 transition-colors hover:border-primary"
-              >
-                <code className="mt-0.5 shrink-0 font-mono text-sm text-primary">{p.name}</code>
-                <span className="flex-1 text-sm text-muted-foreground">{p.summary}</span>
-                <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            ))}
-          </div>
-          <CodeBlock language="bash" code={`grit plugin add kanban`} />
-
-          <h2 className="mb-2 mt-12 text-2xl font-semibold tracking-tight">Go module plugins</h2>
-          <p className="mb-5 leading-relaxed text-muted-foreground">
-            Larger pieces that ship as Go modules from{' '}
-            <Link
-              href="https://github.com/MUKE-coder/grit-plugins"
-              className="text-primary hover:underline"
-            >
-              grit-plugins
-            </Link>
-            . Installed with <code>go get</code> rather than <code>grit plugin add</code>, because
-            they are libraries your code imports rather than code generated into it.
-          </p>
-          <div className="mb-6 grid gap-2 sm:grid-cols-2">
-            {MODULES.map((p) => (
-              <div key={p.name} className="rounded-xl border border-border p-4">
-                <code className="font-mono text-sm text-primary">{p.name}</code>
-                <p className="mt-1 text-sm text-muted-foreground">{p.summary}</p>
-              </div>
-            ))}
-          </div>
-          <CodeBlock
-            language="bash"
-            code={`go get github.com/MUKE-coder/grit-plugins/grit-websockets`}
+        {/* ---------------------------------------------------------- hero */}
+        <section className="relative overflow-hidden border-b border-border">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)',
+              backgroundSize: '32px 32px',
+            }}
           />
+          <div className="relative mx-auto max-w-5xl px-6 py-16">
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              Plugins
+            </p>
+            <h1 className="mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl">
+              Marketplace
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+              Every plugin, in three groups. All of them write ordinary code into your project,
+              and all of them come back out with one command.
+            </p>
 
-          <h2 className="mb-2 mt-12 text-2xl font-semibold tracking-tight">Community</h2>
-          <p className="mb-5 leading-relaxed text-muted-foreground">
-            Written by other people and listed here on request.
-          </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/docs/plugins/authoring"
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-opacity duration-150 hover:opacity-90"
+              >
+                Write a plugin
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/docs/extending"
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-6 text-sm font-medium text-foreground transition-colors duration-150 hover:border-primary/50"
+              >
+                Is a plugin the right tool?
+              </Link>
+            </div>
 
-          <div className="mb-6 flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
-            <ShieldAlert className="h-5 w-5 shrink-0 text-amber-500" />
-            <div className="leading-relaxed text-muted-foreground">
-              <p className="mb-2 font-medium text-foreground">Listing is not endorsement</p>
-              <p>
-                The review is deliberately shallow: that the repository exists, that it installs and
-                removes cleanly on a fresh project, and that it is not obviously hostile. Nobody
-                audits the code for you. A plugin writes files into your project and patches
-                existing ones, so read what it did with <code>git diff</code>, the same as you would
-                any dependency.
-              </p>
+            {/* Stats. Hairline-divided rather than boxed: three boxes in a row
+                would be three more objects on a page that is mostly cards. */}
+            <div className="mt-10 inline-grid grid-cols-3 divide-x divide-border rounded-lg border border-border">
+              <Stat value={String(OFFICIAL.length)} label="Official" />
+              <Stat value={String(MODULES.length)} label="Go modules" />
+              <Stat value={String(COMMUNITY.length)} label="Community" />
             </div>
           </div>
+        </section>
 
-          {COMMUNITY.length === 0 ? (
-            <div className="mb-6 rounded-xl border border-dashed border-border p-8 text-center">
-              <p className="mb-2 font-medium">Nothing listed yet</p>
-              <p className="text-sm text-muted-foreground">
-                If you have written one, yours can be the first.
-              </p>
+        <div className="mx-auto max-w-5xl px-6">
+          {/* ------------------------------------------------------ official */}
+          <section className="py-16">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">Official</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Built into the CLI, maintained with the framework, tested on every release.
+                </p>
+              </div>
+              <code className="rounded-sm border border-border px-2.5 py-1.5 font-mono text-xs text-muted-foreground">
+                grit plugin list
+              </code>
             </div>
-          ) : (
-            <div className="mb-6 space-y-2">
-              {COMMUNITY.map((p) => (
-                <div key={p.name} className="rounded-xl border border-border p-4">
-                  <div className="flex items-baseline gap-3">
-                    <code className="font-mono text-sm text-primary">{p.name}</code>
-                    <span className="text-xs text-muted-foreground">by {p.author}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{p.added}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{p.summary}</p>
-                  <Link
-                    href={p.repo.startsWith('http') ? p.repo : `https://${p.repo}`}
-                    className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-                  >
-                    <Github className="h-3 w-3" />
-                    {p.repo}
-                  </Link>
-                </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {OFFICIAL.map((p) => (
+                <PluginCard key={p.name} plugin={p} />
               ))}
             </div>
-          )}
+          </section>
 
-          <p className="mb-3 leading-relaxed text-muted-foreground">
-            Installing one takes the repository directly:
-          </p>
-          <CodeBlock language="bash" code={`grit plugin add github.com/someone/grit-calendar`} />
-          <p className="mb-4 mt-3 leading-relaxed text-muted-foreground">
-            Grit confirms the source before cloning, and nothing from the repository is executed: it
-            reads the plugin&apos;s manifest and writes the files that manifest names.
-          </p>
+          {/* ------------------------------------------------------- modules */}
+          <section className="border-t border-border py-16">
+            <h2 className="text-2xl font-semibold tracking-tight">Go module plugins</h2>
+            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Larger pieces that ship as Go modules from{' '}
+              <Link
+                href="https://github.com/MUKE-coder/grit-plugins"
+                className="text-primary hover:underline"
+              >
+                grit-plugins
+              </Link>
+              . Installed with <code className="font-mono text-xs">go get</code> rather than{' '}
+              <code className="font-mono text-xs">grit plugin add</code>, because they are
+              libraries your code imports rather than code generated into it.
+            </p>
 
-          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Listing your own</h2>
-          <CodeBlock language="bash" code={`grit plugin submit`} />
-          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
-            That prints the checklist and the submission link. The checklist is three commands on a
-            freshly scaffolded project, and the third is the one people skip:
-          </p>
-          <ol className="mb-6 ml-5 list-decimal space-y-1.5 leading-relaxed text-muted-foreground">
-            <li>
-              <code>grit plugin add &lt;your repo&gt;</code> installs without errors
-            </li>
-            <li>
-              <code>go build ./...</code> compiles afterwards
-            </li>
-            <li>
-              <code>grit plugin remove &lt;name&gt;</code> leaves the project compiling again
-            </li>
-          </ol>
-          <p className="mb-4 leading-relaxed text-muted-foreground">
-            Removal replays the lockfile backwards, so it only works if every change the plugin made
-            is one the lockfile recorded. A plugin that edits a file outside the injection mechanism
-            installs fine and leaves wreckage when it is taken out.
-          </p>
-          <p className="mb-4 leading-relaxed text-muted-foreground">
-            Accepted submissions are added to <code>internal/plugin/community.json</code>, which is
-            what both <code>grit plugin list</code> and this page read.
-          </p>
+            <div className="mt-6 rounded-lg border border-border px-5">
+              {MODULES.map((m) => (
+                <ModuleRow key={m.name} name={m.name} summary={m.summary} />
+              ))}
+            </div>
 
-          <div className="mt-12 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/docs/plugins/authoring"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
-            >
-              <span className="flex-1">
-                <span className="block font-medium">Writing a plugin</span>
-                <span className="text-sm text-muted-foreground">Anatomy, rules, testing</span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              href="/docs/extending"
-              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
-            >
-              <span className="flex-1">
-                <span className="block font-medium">Is a plugin the right thing?</span>
-                <span className="text-sm text-muted-foreground">Four mechanisms compared</span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
+            <div className="mt-4">
+              <CodeBlock
+                language="bash"
+                code={`go get github.com/MUKE-coder/grit-plugins/grit-websockets`}
+              />
+            </div>
+          </section>
+
+          {/* ----------------------------------------------------- community */}
+          <section className="border-t border-border py-16">
+            <h2 className="text-2xl font-semibold tracking-tight">Community</h2>
+            <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+              Written by other people and listed here on request.
+            </p>
+
+            <div className="mt-6 flex gap-3 rounded-lg border border-border bg-card p-5">
+              <ShieldAlert className="h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+              <div className="text-sm leading-relaxed text-muted-foreground">
+                <p className="font-medium text-foreground">Listing is not endorsement</p>
+                <p className="mt-1.5">
+                  The review is deliberately shallow: that the repository exists, that it
+                  installs and removes cleanly on a fresh project, and that it is not obviously
+                  hostile. Nobody audits the code for you. A plugin writes files into your
+                  project and patches existing ones, so read what it did with{' '}
+                  <code className="font-mono text-xs">git diff</code>, the same as any
+                  dependency.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              {COMMUNITY.length === 0 ? (
+                <CommunityEmpty />
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {COMMUNITY.map((p) => (
+                    <PluginCard key={p.name} plugin={p} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <p className="mt-6 text-sm text-muted-foreground">
+              Installing one takes the repository directly. Grit names the source and confirms
+              before cloning, and nothing from the repository is executed: it reads the
+              manifest and writes the files that manifest names.
+            </p>
+            <div className="mt-3">
+              <CodeBlock language="bash" code={`grit plugin add github.com/someone/grit-calendar`} />
+            </div>
+          </section>
+
+          {/* -------------------------------------------------------- submit */}
+          <section className="border-t border-border py-16">
+            <h2 className="text-2xl font-semibold tracking-tight">Listing your own</h2>
+            <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+              <code className="font-mono text-xs">grit plugin submit</code> prints the checklist
+              and the submission link. Three commands on a freshly scaffolded project, and the
+              third is the one people skip:
+            </p>
+
+            <ol className="mt-5 space-y-2.5">
+              {[
+                ['grit plugin add <your repo>', 'installs without errors'],
+                ['go build ./...', 'compiles afterwards'],
+                ['grit plugin remove <name>', 'leaves the project compiling again'],
+              ].map(([cmd, what], i) => (
+                <li key={cmd} className="flex items-center gap-4">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-xs font-semibold text-primary"
+                  >
+                    {i + 1}
+                  </span>
+                  <code className="font-mono text-sm text-foreground">{cmd}</code>
+                  <span className="text-sm text-muted-foreground">{what}</span>
+                </li>
+              ))}
+            </ol>
+
+            <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Removal replays the lockfile backwards, so it only works if every change the
+              plugin made is one the lockfile recorded. A plugin that edits a file outside the
+              injection mechanism installs fine and leaves wreckage when it is taken out.
+            </p>
+          </section>
         </div>
       </main>
     </div>

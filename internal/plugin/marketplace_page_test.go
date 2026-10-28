@@ -52,7 +52,11 @@ func TestMarketplacePageHasNoPluginsThatDoNotExist(t *testing.T) {
 	// Go module plugins are listed on the page too, and are not in the
 	// registry because they install with `go get`. They live in their own
 	// MODULES array, so only the OFFICIAL block is checked.
-	official, found := sliceBetween(page, "const OFFICIAL = [", "\n]")
+	// Anchored on the name rather than the whole declaration: the page types
+	// the array now ("const OFFICIAL: PluginEntry[] = ["), and an anchor that
+	// pins the exact spelling makes this test refuse to run every time the
+	// page is refactored.
+	official, found := sliceBetween(page, "const OFFICIAL", "\n]")
 	if !found {
 		t.Fatalf("%s no longer has an OFFICIAL list; this test cannot check it", marketplacePage)
 	}

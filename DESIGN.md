@@ -64,9 +64,17 @@ Defined once, as CSS custom properties. Nothing hard-codes a hex.
 | `--warn` | `#fdcb6e` | `#8a6200` | |
 | `--bad` | `#ff6b6b` | `#c42b2b` | |
 
-**The accent is rationed.** At most **three** accent-coloured things per
-viewport: the primary action, the active nav item, and one emphasis. A page
-where every card has a purple border has no accent, it has a background.
+**The accent is rationed, and what counts is the fill.** At most **three
+accent-filled** elements per viewport. A fill is a call to action, and two of
+those compete for the same click.
+
+Accent-*tinted* text and icons are a different thing: a grid of ten
+accent-coloured plugin icons reads as one set, not ten calls to action, and
+is fine. The rule exists to stop two primary buttons sitting next to each
+other, which is exactly what the hero had.
+
+A page where every card has a purple border has no accent, it has a
+background.
 
 **Contrast is not negotiable.** Body text ≥ 4.5:1, large text (≥ 24px) and UI
 borders ≥ 3:1. `--ink-faint` is at the floor on purpose; anything lighter
@@ -143,13 +151,18 @@ things that genuinely float: a dropdown, a dialog, a drag preview.
 
 - **Border**: `1px solid var(--line)`. Always 1px. Never 2px for emphasis;
   use `--line-strong` instead.
-- **Radius**: four values and no others.
-  | Token | Value | For |
+- **Radius**: three values plus full, and no others.
+  | Value | Tailwind class | For |
   |---|---|---|
-  | `rounded-sm` | 6px | Badges, inputs, small controls |
-  | `rounded-md` | 10px | Cards, panels, code blocks |
-  | `rounded-lg` | 16px | Hero panels, feature slabs |
-  | `rounded-full` | 9999px | Pills, avatars, icon buttons |
+  | 6px | `rounded-sm` | Badges, inputs, small controls |
+  | 10px | `rounded-md`, `rounded-lg` | Cards, panels, code blocks |
+  | 16px | `rounded-xl`, `rounded-2xl`, `rounded-3xl` | Hero panels, feature slabs |
+  | full | `rounded-full` | Pills, avatars, icon buttons |
+
+  All five Tailwind names are mapped onto those three values in
+  `tailwind.config.ts`, so there is no utility that can produce an off-scale
+  corner. The old mapping generated 6, 8 and 10 from one `--radius`, and the
+  8px it produced was on no scale and on every button.
 - **Shadow**: exactly two, and only on floating things.
   - `shadow-pop`: `0 8px 24px -8px rgb(0 0 0 / 0.4)`
   - `shadow-lift`: `0 2px 8px -2px rgb(0 0 0 / 0.25)` for a dragged item.
@@ -298,7 +311,7 @@ What `/grit-design-review` counts. A page over budget is not shipped.
 | Distinct shadows | 2 |
 | Sections per marketing page | 12 |
 | h1 + h2 per page | 12 |
-| Accent-coloured elements per viewport | 3 |
+| Accent-FILLED elements per viewport | 3 |
 | Body line length | 72ch |
 | Contrast failures | 0 |
 | Hard-coded hex outside the token file | 0 |
