@@ -60,6 +60,30 @@ type Blueprint struct {
 // Site is where blueprints are bought and the repository invitation is sent.
 const Site = "https://gritframework.dev/blueprints"
 
+// What a blueprint costs, in whole dollars.
+//
+// Kept in step with docs/config/blueprint-plans.ts by
+// TestBlueprintPricesMatchTheWebsite. A price the CLI prints and a price the
+// checkout charges are two writers for one number, and the drift between them
+// is an argument with a customer who has a screenshot.
+const (
+	// PriceSingleUSD buys one blueprint, permanently.
+	PriceSingleUSD = 10
+	// PriceMembershipMonthlyUSD buys every blueprint, monthly.
+	PriceMembershipMonthlyUSD = 20
+	// PriceMembershipYearlyUSD is the same membership for ten months' money.
+	PriceMembershipYearlyUSD = 200
+	// PriceLifetimeUSD buys every blueprint there is and will be.
+	PriceLifetimeUSD = 400
+)
+
+// Page is this blueprint's own page: what it teaches, the screens, and the
+// commands to run it. `grit blueprint info` points here rather than at the
+// gallery, because somebody who already typed a name has chosen.
+func (b Blueprint) Page() string {
+	return Site + "/" + b.Name
+}
+
 var registry = []Blueprint{
 	{
 		Name:         "whatsapp",
@@ -138,6 +162,58 @@ var registry = []Blueprint{
 		Teaches: []string{
 			"Keyboard-first navigation across a whole application",
 			"Optimistic updates that stay correct when the write is refused",
+		},
+	},
+	{
+		Name:         "airbnb",
+		Title:        "Airbnb",
+		Summary:      "Stays, an availability calendar and bookings that cannot collide",
+		Architecture: "triple",
+		Surfaces:     []Surface{Web, Admin, Mobile},
+		Access:       Planned,
+		Teaches: []string{
+			"An availability calendar that cannot sell the same night twice",
+			"Search over dates, price and a map without scanning every listing",
+			"Money that arrives from one party and leaves to another",
+		},
+	},
+	{
+		Name:         "notion",
+		Title:        "Notion",
+		Summary:      "Nested documents, blocks and per-page sharing",
+		Architecture: "triple",
+		Surfaces:     []Surface{Web, Admin},
+		Access:       Planned,
+		Teaches: []string{
+			"A block tree that loads a deep page in one query, not one per block",
+			"Permissions that follow a page when it is moved",
+			"Two people typing in the same document",
+		},
+	},
+	{
+		Name:         "udemy",
+		Title:        "Udemy",
+		Summary:      "Courses, video lessons, progress and certificates",
+		Architecture: "triple",
+		Surfaces:     []Surface{Web, Admin, Mobile},
+		Access:       Planned,
+		Teaches: []string{
+			"Video that has been paid for, and therefore cannot be hotlinked",
+			"Progress that survives a dropped connection and a second device",
+			"A certificate that cannot be forged by editing the URL",
+		},
+	},
+	{
+		Name:         "zendesk",
+		Title:        "Zendesk",
+		Summary:      "A support inbox with SLAs, assignment and canned replies",
+		Architecture: "triple",
+		Surfaces:     []Surface{Web, Admin},
+		Access:       Planned,
+		Teaches: []string{
+			"An SLA clock that pauses out of hours, and a queue sorted by it",
+			"Email in and out of one ticket thread, including the replies above the line",
+			"Assignment that never hands the same ticket to two people",
 		},
 	},
 }

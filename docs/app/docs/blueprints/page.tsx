@@ -3,6 +3,7 @@ import { ArrowRight, Boxes, Github, Lock } from 'lucide-react'
 import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { BLUEPRINTS } from '@/config/blueprints'
+import { MEMBERSHIP_PLANS, PLANS, usd } from '@/config/blueprint-plans'
 
 export const metadata = {
   title: 'Blueprints: complete applications built with Grit — Grit',
@@ -14,7 +15,7 @@ export const metadata = {
 
 const ACCESS_LABEL = {
   open: { text: 'Open source', className: 'bg-emerald-500/10 text-emerald-500' },
-  paid: { text: 'Membership', className: 'bg-amber-500/10 text-amber-500' },
+  paid: { text: 'Paid', className: 'bg-amber-500/10 text-amber-500' },
   planned: { text: 'Planned', className: 'bg-muted text-muted-foreground' },
 }
 
@@ -67,7 +68,11 @@ export default function BlueprintsPage() {
               return (
                 <div key={b.name} className="rounded-xl border border-border p-5">
                   <div className="mb-2 flex flex-wrap items-center gap-3">
-                    <h3 className="text-lg font-semibold tracking-tight">{b.title}</h3>
+                    <h3 className="text-lg font-semibold tracking-tight">
+                      <Link href={`/blueprints/${b.name}`} className="hover:text-accent">
+                        {b.title}
+                      </Link>
+                    </h3>
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${label.className}`}>
                       {label.text}
                     </span>
@@ -91,11 +96,22 @@ export default function BlueprintsPage() {
                       <Github className="h-3.5 w-3.5" />
                       Clone it
                     </Link>
+                  ) : null}
+                  {b.access === 'open' ? (
+                    <Link
+                      href={`/blueprints/${b.name}`}
+                      className="ml-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-accent"
+                    >
+                      How to run it
+                    </Link>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Link
+                      href={`/blueprints/${b.name}`}
+                      className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
+                    >
                       <Lock className="h-3.5 w-3.5" />
-                      A membership sends an invitation to the private repository
-                    </span>
+                      {usd(PLANS.single.priceUsd)} once, or a membership
+                    </Link>
                   )}
                 </div>
               )
@@ -109,12 +125,45 @@ export default function BlueprintsPage() {
           </p>
           <div className="mb-10 grid gap-3 sm:grid-cols-3">
             {planned.map((b) => (
-              <div key={b.name} className="rounded-xl border border-dashed border-border p-4">
+              <Link
+                key={b.name}
+                href={`/blueprints/${b.name}`}
+                className="rounded-xl border border-dashed border-border p-4 transition-colors hover:border-accent"
+              >
                 <p className="font-medium">{b.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{b.summary}</p>
+              </Link>
+            ))}
+          </div>
+
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">What they cost</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            One blueprint is {usd(PLANS.single.priceUsd)}, once, and it stays yours. A
+            membership covers every paid blueprint, including the ones still on the list
+            above, for as long as it runs.
+          </p>
+          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            {MEMBERSHIP_PLANS.map((plan) => (
+              <div key={plan.id} className="rounded-xl border border-border p-4">
+                <p className="font-mono text-sm text-accent">
+                  {usd(plan.priceUsd)} <span className="text-muted-foreground">{plan.cadence}</span>
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{plan.blurb}</p>
               </div>
             ))}
           </div>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Access is a GitHub invitation. Checkout asks for your username and the
+            invitation arrives within a minute; accepting it gives you read access to the
+            repository, so you clone it like any other. A membership that ends takes that
+            access back, and anything already cloned stays on your machine. A single
+            purchase is never revoked.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            The same numbers are in the CLI, which is the point of printing them there:
+            <code> grit blueprint info instagram</code> says what it costs and links to
+            the page that sells it.
+          </p>
 
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
             Blueprints and examples are different things
@@ -142,12 +191,12 @@ export default function BlueprintsPage() {
               <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="https://gritframework.dev/blueprints"
+              href="/blueprints"
               className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">
                 <span className="block font-medium">Get access</span>
-                <span className="text-sm text-muted-foreground">Memberships and repositories</span>
+                <span className="text-sm text-muted-foreground">Screenshots, prices and the run-it steps</span>
               </span>
               <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
             </Link>

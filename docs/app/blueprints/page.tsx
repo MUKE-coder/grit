@@ -1,12 +1,15 @@
 import Link from 'next/link'
 import { Metadata } from 'next'
-import { ArrowRight, Github, Lock, Clock } from 'lucide-react'
+import { ArrowRight, Clock, Github, Lock } from 'lucide-react'
 
 import { SiteHeader } from '@/components/site-header'
 import { Button, ButtonArrow } from '@/components/grit/button'
 import { Section, SectionHeader, Highlight } from '@/components/grit/section'
 import { Reveal } from '@/components/grit/reveal'
+import { BlueprintShots } from '@/components/blueprints/shots'
+import { MembershipPlans } from '@/components/blueprints/buy'
 import { BLUEPRINTS, type Blueprint } from '@/config/blueprints'
+import { PLANS, usd } from '@/config/blueprint-plans'
 
 export const metadata: Metadata = {
   title: 'Blueprints — whole applications built with Grit',
@@ -19,13 +22,13 @@ export const metadata: Metadata = {
  * The blueprint gallery.
  *
  * This is the page `internal/blueprint/registry.go` points at: its `Site`
- * constant is this URL, and it has been pointing at a 404 since the registry
- * shipped. The list comes from config/blueprints.ts, which a Go test compares
- * with the registry in both directions.
+ * constant is this URL. The list comes from config/blueprints.ts, which a Go
+ * test compares with the registry in both directions.
  *
  * It is a gallery rather than a tutorial. Somebody arriving here is deciding
- * whether a blueprint is worth having, and what decides that is what it
- * teaches, so each card leads with that rather than with a feature list.
+ * whether a blueprint is worth having, and two things decide that: what it
+ * looks like, and what it teaches. So each card leads with three real
+ * screenshots and then with the lessons, not with a feature list.
  */
 
 const ACCESS: Record<
@@ -38,9 +41,9 @@ const ACCESS: Record<
     note: 'Clone it and run it.',
   },
   paid: {
-    label: 'Membership',
+    label: `${usd(PLANS.single.priceUsd)} once`,
     tone: 'border-accent-line text-accent',
-    note: 'A membership invites you to the repository.',
+    note: 'Or a membership, for all of them.',
   },
   planned: {
     label: 'In progress',
@@ -56,49 +59,84 @@ function AccessIcon({ access }: { access: Blueprint['access'] }) {
   return <Clock className={cls} aria-hidden="true" />
 }
 
-function Card({ blueprint }: { blueprint: Blueprint }) {
-  const access = ACCESS[blueprint.access]
+function Badge({ access }: { access: Blueprint['access'] }) {
+  const meta = ACCESS[access]
   return (
-    <article className="g-card g-card--interactive h-full">
+    <span className={`g-badge shrink-0 border font-mono text-[11px] ${meta.tone}`}>
+      <AccessIcon access={access} />
+      {meta.label}
+    </span>
+  )
+}
+
+/** A blueprint that exists: screenshots first, then what it is for. */
+function BuiltCard({ blueprint }: { blueprint: Blueprint }) {
+  return (
+    <Link
+      href={`/blueprints/${blueprint.name}`}
+      className="g-card g-card--interactive h-full gap-0 p-0"
+    >
+      <BlueprintShots blueprint={blueprint} className="rounded-b-none border-0 border-b" />
+
+      <div className="flex flex-1 flex-col gap-3 p-6">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-h3 text-fg">{blueprint.title}</h3>
+          <Badge access={blueprint.access} />
+        </div>
+
+        <p className="g-card__body">{blueprint.summary}</p>
+
+        <p className="g-eyebrow mt-2">What it teaches</p>
+        <ul className="m-0 list-none space-y-2 p-0">
+          {blueprint.teaches.slice(0, 3).map((lesson) => (
+            <li key={lesson} className="flex gap-2.5 text-body-sm text-fg-muted">
+              <span
+                aria-hidden="true"
+                className="mt-2 h-1 w-1 flex-none rounded-full bg-accent"
+              />
+              {lesson}
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-6">
+          <span className="font-mono text-caption text-fg-subtle">
+            {blueprint.surfaces}
+          </span>
+          <span className="g-card__more ml-auto text-body-sm text-accent">
+            Look at it
+            <ArrowRight className="ml-1.5 inline h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+/** One that is announced and not built. Deliberately plainer. */
+function PlannedCard({ blueprint }: { blueprint: Blueprint }) {
+  return (
+    <Link href={`/blueprints/${blueprint.name}`} className="g-card g-card--interactive h-full">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-h3 text-fg">{blueprint.title}</h3>
-        <span
-          className={`g-badge shrink-0 border font-mono text-[11px] ${access.tone}`}
-        >
-          <AccessIcon access={blueprint.access} />
-          {access.label}
-        </span>
+        <Badge access={blueprint.access} />
       </div>
-
       <p className="g-card__body">{blueprint.summary}</p>
-
-      <p className="g-eyebrow mt-4">What it teaches</p>
-      <ul className="m-0 list-none space-y-2 p-0">
-        {blueprint.teaches.map((lesson) => (
+      <ul className="m-0 mt-2 list-none space-y-2 p-0">
+        {blueprint.teaches.slice(0, 2).map((lesson) => (
           <li key={lesson} className="flex gap-2.5 text-body-sm text-fg-muted">
-            <span aria-hidden="true" className="mt-2 h-1 w-1 flex-none rounded-full bg-accent" />
+            <span
+              aria-hidden="true"
+              className="mt-2 h-1 w-1 flex-none rounded-full bg-border-strong"
+            />
             {lesson}
           </li>
         ))}
       </ul>
-
-      <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-6">
-        <span className="font-mono text-caption text-fg-subtle">{blueprint.surfaces}</span>
-        {blueprint.access === 'open' && blueprint.repo ? (
-          <a
-            href={blueprint.repo}
-            target="_blank"
-            rel="noreferrer"
-            className="g-link ml-auto text-body-sm"
-          >
-            Clone it
-            <ArrowRight className="ml-1.5 inline h-3.5 w-3.5" aria-hidden="true" />
-          </a>
-        ) : (
-          <span className="ml-auto text-body-sm text-fg-subtle">{access.note}</span>
-        )}
-      </div>
-    </article>
+      <span className="mt-auto pt-5 font-mono text-caption text-fg-subtle">
+        {blueprint.surfaces}
+      </span>
+    </Link>
   )
 }
 
@@ -127,8 +165,9 @@ export default function BlueprintsPage() {
                 See the catalogue
                 <ButtonArrow />
               </Button>
-              <Button href="/docs/blueprints" variant="secondary" size="lg">
-                What is a blueprint?
+              <Button href="#membership" variant="secondary" size="lg">
+                {usd(PLANS.single.priceUsd)} each, or {usd(PLANS.monthly.priceUsd)} a
+                month for all
               </Button>
             </div>
           </div>
@@ -144,14 +183,14 @@ export default function BlueprintsPage() {
                   Built, running, and <Highlight>upgraded with Grit.</Highlight>
                 </>
               }
-              lead="Every blueprint runs grit upgrade when the framework moves, so what you read is the current way to build it rather than the way it was built once."
+              lead="Every blueprint runs grit upgrade when the framework moves, so what you read is the current way to build it rather than the way it was built once. The screenshots are of the application you get."
             />
           </Reveal>
 
-          <ul className="mt-12 grid list-none grid-cols-1 gap-4 p-0 lg:grid-cols-3">
+          <ul className="mt-12 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2 lg:grid-cols-3">
             {shipped.map((b) => (
               <li key={b.name}>
-                <Card blueprint={b} />
+                <BuiltCard blueprint={b} />
               </li>
             ))}
           </ul>
@@ -162,22 +201,38 @@ export default function BlueprintsPage() {
             <Reveal>
               <SectionHeader
                 align="left"
-                eyebrow="On the list"
+                eyebrow={`On the list, ${planned.length} of them`}
                 title="Next out of the workshop."
-                lead="Named here rather than hinted at, so it is obvious what is finished and what is not."
+                lead="Named here rather than hinted at, so it is obvious what is finished and what is not. A membership covers each one the day it ships."
               />
             </Reveal>
-            <ul className="mt-12 grid list-none grid-cols-1 gap-4 p-0 lg:grid-cols-3">
+            <ul className="mt-12 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
               {planned.map((b) => (
                 <li key={b.name}>
-                  <Card blueprint={b} />
+                  <PlannedCard blueprint={b} />
                 </li>
               ))}
             </ul>
           </Section>
         )}
 
-        <Section id="why" wash="left">
+        <Section id="membership" wash="left">
+          <Reveal>
+            <SectionHeader
+              eyebrow="What they cost"
+              title={
+                <>
+                  One of them, or <Highlight>every one of them.</Highlight>
+                </>
+              }
+              lead={`${usd(PLANS.single.priceUsd)} buys a single blueprint and keeps it permanently. A membership covers all of them, including the ones still on the list, for as long as it runs.`}
+            />
+          </Reveal>
+
+          <MembershipPlans className="mt-12" />
+        </Section>
+
+        <Section id="why">
           <Reveal>
             <SectionHeader
               eyebrow="Why they exist"
@@ -223,13 +278,9 @@ export default function BlueprintsPage() {
               API. Clone it, run it, and see whether this is how you want to build.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button
-                href="https://github.com/MUKE-coder/grit-whatsapp"
-                variant="primary"
-                size="lg"
-              >
+              <Button href="/blueprints/whatsapp" variant="primary" size="lg">
                 <Github className="h-4 w-4" aria-hidden="true" />
-                Clone the WhatsApp blueprint
+                The WhatsApp blueprint
               </Button>
               <Button href="/docs/getting-started/quick-start" variant="secondary" size="lg">
                 Build your own instead
@@ -240,7 +291,7 @@ export default function BlueprintsPage() {
               <Link href="/docs/blueprints" className="g-link">
                 The docs
               </Link>{' '}
-              cover ports, demo data and what each blueprint needs.
+              cover what a blueprint is and how it stays current.
             </p>
           </div>
         </Section>

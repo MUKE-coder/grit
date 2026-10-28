@@ -54,6 +54,10 @@ func blueprintListCmd() *cobra.Command {
 			}
 
 			fmt.Println("  grit blueprint info <name>   what it teaches, and where it is")
+			fmt.Printf("  %s\n", faint.Sprintf(
+				"$%d buys one. $%d a month, $%d a year or $%d once buys every one of them.",
+				blueprint.PriceSingleUSD, blueprint.PriceMembershipMonthlyUSD,
+				blueprint.PriceMembershipYearlyUSD, blueprint.PriceLifetimeUSD))
 			fmt.Println("  " + faint.Sprint(blueprint.Site))
 			fmt.Println()
 			return nil
@@ -98,9 +102,13 @@ func blueprintInfoCmd() *cobra.Command {
 			case blueprint.Open:
 				fmt.Printf("  %s\n", b.Repo)
 				fmt.Printf("  %s\n", faint.Sprintf("git clone %s", b.Repo))
+				fmt.Printf("  %s\n", faint.Sprintf("%s has the steps to run it", b.Page()))
 			case blueprint.Paid:
-				fmt.Printf("  %s\n", faint.Sprint("A membership sends an invitation to the private repository."))
-				fmt.Printf("  %s\n", blueprint.Site)
+				fmt.Printf("  %s\n", faint.Sprintf(
+					"$%d once, or $%d a month for every blueprint. Paying invites your",
+					blueprint.PriceSingleUSD, blueprint.PriceMembershipMonthlyUSD))
+				fmt.Printf("  %s\n", faint.Sprint("GitHub account to the private repository."))
+				fmt.Printf("  %s\n", b.Page())
 			case blueprint.Planned:
 				fmt.Printf("  %s\n", faint.Sprint("Not built yet. It is on the list, which is why it is listed."))
 				fmt.Printf("  %s\n", blueprint.Site)

@@ -23,6 +23,7 @@ import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structure
 import { ToolMarquee } from '@/components/landing/marquee'
 import { Batteries } from '@/components/landing/batteries'
 import { DeployPipeline } from '@/components/landing/deploy-pipeline'
+import { BlueprintsBand } from '@/components/landing/blueprints'
 import { Showcase } from '@/components/landing/showcase'
 import { Faq, FAQS } from '@/components/landing/faq'
 import { DayOne } from '@/components/landing/day-one'
@@ -312,7 +313,23 @@ export default function HomePage() {
           </div>
         </Section>
 
-        {/* ── 10. Built with Grit ──────────────────────────────────── */}
+        {/* ── 10. Blueprints ──────────────────────────────────────── */}
+        <Section id="blueprints" wash="right">
+          <Reveal>
+            <SectionHeader
+              eyebrow="Blueprints"
+              title={
+                <>
+                  Whole applications, <Highlight>not snippets.</Highlight>
+                </>
+              }
+              lead="A blueprint is a real product in its own repository, built with Grit and kept current with it. Read how a thing is actually built, then take the parts you need."
+            />
+          </Reveal>
+          <BlueprintsBand />
+        </Section>
+
+        {/* ── 11. Built with Grit ─────────────────────── */}
         <Section id="showcase">
           <Reveal>
             <SectionHeader
@@ -328,7 +345,7 @@ export default function HomePage() {
           <Showcase />
         </Section>
 
-        {/* ── 11. FAQ ──────────────────────────────────────────────── */}
+        {/* ── 12. FAQ ──────────────────────────────────────────────── */}
         <Section id="faq">
           <Reveal>
             <SectionHeader
@@ -345,7 +362,7 @@ export default function HomePage() {
           </div>
         </Section>
 
-        {/* ── 12. The last word ────────────────────────────────────── */}
+        {/* ── 13. The last word ────────────────────────────────────── */}
         <Section id="start" grid wash="right">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.07] tracking-[-0.04em] text-fg [text-wrap:balance]">

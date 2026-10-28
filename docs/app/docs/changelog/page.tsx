@@ -59,6 +59,76 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.418.0 */}
+            <div className="mb-12" id="v3.418.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.418.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Blueprints have a page, a price and a way to buy them</h3>
+                <p>
+                  <strong>
+                    Every blueprint now has its own page, and the paid ones can be
+                    bought.
+                  </strong>{' '}
+                  $10 buys one blueprint permanently. $20 a month, $200 a year or $400
+                  once buys every one of them, including the ones still on the list. A
+                  year costs ten months; lifetime costs two years.
+                </p>
+                <p>
+                  Access is a GitHub repository invitation, and it is automatic.
+                  Checkout asks for your GitHub username, and a Stripe webhook adds you
+                  as a collaborator, usually within a minute of paying. Ending a
+                  membership takes that access back; a single purchase is never
+                  revoked, which is what &ldquo;permanently&rdquo; means on the page.
+                </p>
+                <p>
+                  There is no database behind any of it. Stripe is the record of who
+                  paid, and both GitHub calls are idempotent (adding a collaborator who
+                  is already one changes nothing, removing one who is already gone
+                  returns 404), so a redelivered event is harmless. That property is
+                  what lets the whole thing be stateless.
+                </p>
+                <p>
+                  <strong>Each page says how to run it.</strong> What has to be on the
+                  machine first, the exact commands in order, what each one does, where
+                  to open it, and which account to sign in as, taken from the
+                  blueprint&apos;s own README rather than written again. A Go test
+                  fails if an available blueprint has no install steps: a page that
+                  takes $10 and then does not say what to type is worse than no page.
+                </p>
+                <p>
+                  <strong>And three screenshots each.</strong> Real ones, from the
+                  running application with its demo data: each blueprint repository
+                  already shipped mockups for its README, and{' '}
+                  <code>scripts/blueprint-shots.py</code> crops and resizes them into
+                  the site. A card fans three phone screens or stacks three browser
+                  windows; the detail page lays them out flat with captions.
+                </p>
+                <p>
+                  <strong>Ten blueprints in the catalogue</strong>, up from six: Airbnb
+                  (an availability calendar that cannot double-book), Notion (a block
+                  tree that loads in one query), Udemy (video that has been paid for)
+                  and Zendesk (an SLA clock that pauses) join the list. Three are built
+                  and seven are named rather than hinted at, so it is obvious which is
+                  which.
+                </p>
+                <p>
+                  The CLI prints the same numbers.{' '}
+                  <code>grit blueprint info instagram</code> says what it costs and
+                  links to the page that sells it, and{' '}
+                  <code>TestBlueprintPricesMatchTheWebsite</code> compares the Go
+                  constants with the website&apos;s. A price the CLI prints and a price
+                  the checkout charges are two writers for one number, and the drift
+                  between them is an argument with a customer holding a screenshot.
+                </p>
+              </div>
+            </div>
+
             {/* v3.417.0 */}
             <div className="mb-12" id="v3.417.0">
               <div className="flex items-center gap-3 mb-4">

@@ -1,4 +1,59 @@
 {
+  "/blueprints": {
+    "keywords": "blueprint blueprints example apps whole applications clone starter whatsapp instagram storefront shop membership buy price repository",
+    "section": "Blueprints",
+    "title": "Blueprints"
+  },
+  "/blueprints/airbnb": {
+    "keywords": "blueprint install run clone bookings stays availability calendar double booking payouts",
+    "section": "Blueprints",
+    "title": "Airbnb blueprint"
+  },
+  "/blueprints/instagram": {
+    "keywords": "blueprint install run clone feed photos video stories upload ffmpeg expo mobile pagination",
+    "section": "Blueprints",
+    "title": "Instagram blueprint"
+  },
+  "/blueprints/linear": {
+    "keywords": "blueprint install run clone issue tracker keyboard shortcuts optimistic updates",
+    "section": "Blueprints",
+    "title": "Linear blueprint"
+  },
+  "/blueprints/notion": {
+    "keywords": "blueprint install run clone documents blocks tree nested sharing permissions collaborative",
+    "section": "Blueprints",
+    "title": "Notion blueprint"
+  },
+  "/blueprints/storefront": {
+    "keywords": "blueprint install run clone shop ecommerce products variants cart checkout stripe orders stock seller",
+    "section": "Blueprints",
+    "title": "Kaya Goods storefront blueprint"
+  },
+  "/blueprints/stripe-dashboard": {
+    "keywords": "blueprint install run clone payments subscriptions revenue reporting dunning trials",
+    "section": "Blueprints",
+    "title": "Stripe dashboard blueprint"
+  },
+  "/blueprints/uber": {
+    "keywords": "blueprint install run clone maps tracking postgis geospatial location driver rides",
+    "section": "Blueprints",
+    "title": "Uber blueprint"
+  },
+  "/blueprints/udemy": {
+    "keywords": "blueprint install run clone courses lessons video progress certificates learning lms",
+    "section": "Blueprints",
+    "title": "Udemy blueprint"
+  },
+  "/blueprints/whatsapp": {
+    "keywords": "blueprint install run clone chat messaging realtime websocket expo desktop wails read receipts typing",
+    "section": "Blueprints",
+    "title": "WhatsApp blueprint"
+  },
+  "/blueprints/zendesk": {
+    "keywords": "blueprint install run clone support tickets helpdesk sla assignment canned replies inbox",
+    "section": "Blueprints",
+    "title": "Zendesk blueprint"
+  },
   "/docs": {
     "keywords": "overview what is grit start begin home introduction welcome",
     "section": "Getting Started",

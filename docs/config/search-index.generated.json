@@ -1386,6 +1386,72 @@
     "keywords": "nginx php fpm opcache tracing jit production only vendor eloquent docs benchmarks laravel"
   },
   {
+    "title": "Blueprints",
+    "href": "/blueprints",
+    "section": "Blueprints",
+    "keywords": "blueprint blueprints example apps whole applications clone starter whatsapp instagram storefront shop membership buy price repository"
+  },
+  {
+    "title": "Airbnb blueprint",
+    "href": "/blueprints/airbnb",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone bookings stays availability calendar double booking payouts"
+  },
+  {
+    "title": "Instagram blueprint",
+    "href": "/blueprints/instagram",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone feed photos video stories upload ffmpeg expo mobile pagination"
+  },
+  {
+    "title": "Linear blueprint",
+    "href": "/blueprints/linear",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone issue tracker keyboard shortcuts optimistic updates"
+  },
+  {
+    "title": "Notion blueprint",
+    "href": "/blueprints/notion",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone documents blocks tree nested sharing permissions collaborative"
+  },
+  {
+    "title": "Kaya Goods storefront blueprint",
+    "href": "/blueprints/storefront",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone shop ecommerce products variants cart checkout stripe orders stock seller"
+  },
+  {
+    "title": "Stripe dashboard blueprint",
+    "href": "/blueprints/stripe-dashboard",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone payments subscriptions revenue reporting dunning trials"
+  },
+  {
+    "title": "Uber blueprint",
+    "href": "/blueprints/uber",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone maps tracking postgis geospatial location driver rides"
+  },
+  {
+    "title": "Udemy blueprint",
+    "href": "/blueprints/udemy",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone courses lessons video progress certificates learning lms"
+  },
+  {
+    "title": "WhatsApp blueprint",
+    "href": "/blueprints/whatsapp",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone chat messaging realtime websocket expo desktop wails read receipts typing"
+  },
+  {
+    "title": "Zendesk blueprint",
+    "href": "/blueprints/zendesk",
+    "section": "Blueprints",
+    "keywords": "blueprint install run clone support tickets helpdesk sla assignment canned replies inbox"
+  },
+  {
     "title": "Grid Data Entry (Bulk Create)",
     "href": "/docs/admin/datatable#grid-data-entry",
     "section": "Admin Panel",

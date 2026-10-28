@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { COURSES } from '@/config/courses'
 import { PROBLEMS } from '@/config/problems'
+import { BLUEPRINTS } from '@/config/blueprints'
 import { getAllPosts } from '@/lib/blog'
 import { SEARCH_INDEX } from '@/config/search-index.generated'
 
@@ -62,6 +63,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...PROBLEMS.map((problem) => ({
       path: `/problems/${problem.slug}`,
       priority: 0.6,
+      changeFrequency: 'monthly' as const,
+    })),
+    // One per blueprint, from the same config the pages render from. The
+    // gallery itself is found by discoverStaticRoutes; these are not, because
+    // they come from a [name] template.
+    ...BLUEPRINTS.map((blueprint) => ({
+      path: `/blueprints/${blueprint.name}`,
+      priority: blueprint.access === 'planned' ? 0.5 : 0.8,
       changeFrequency: 'monthly' as const,
     })),
     { path: '/blog', priority: 0.8, changeFrequency: 'daily' as const },
