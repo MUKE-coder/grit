@@ -66,6 +66,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.414.0 */}
+            <div className="mb-12" id="v3.414.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.414.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A Kanban board you can install, and the marketplace to find it in</h3>
+                <p>
+                  <code>grit plugin add kanban</code> gives a project boards, columns and cards,
+                  with dragging by pointer, by finger and by keyboard. It is also the worked
+                  example the{' '}
+                  <a href="/docs/plugins/authoring">authoring guide</a> is now written around,
+                  because a board turns out to be the smallest feature that needs every part of
+                  the plugin system at once: models and migrations, a service with real logic,
+                  routes, React Query hooks, two admin pages, a nav entry, an npm dependency, and
+                  injections into six existing files.
+                </p>
+                <p>
+                  <strong>The part worth stealing is the ordering.</strong> An integer{' '}
+                  <code>position</code> column is the obvious design and the wrong one. Moving a
+                  card means rewriting every card below it, two people dragging at once interleave
+                  those rewrites, and on Postgres the two statements can deadlock outright because
+                  they touch the same rows in opposite orders. Gap numbering only delays it. So a
+                  rank here is a string compared lexicographically, with fractional indexing to
+                  guarantee room between any two, and a move writes exactly one row. Verified on a
+                  running board: three cards appended as <code>a0</code>, <code>a1</code>,{' '}
+                  <code>a2</code>, and dragging the last to the top changed that one card to{' '}
+                  <code>Zz</code> and left the other two alone. Ten thousand appends leave the key
+                  four characters long.
+                </p>
+                <p>
+                  The algorithm is embedded from a real Go file rather than held in a string, so
+                  the bytes a project receives are the bytes Grit&apos;s own tests run. A plugin
+                  that keeps its algorithm in a string literal has no tests for what it ships: the
+                  string compiles nowhere until somebody installs it.
+                </p>
+                <p>
+                  <strong>Two faults the build found.</strong> <code>WIPLimit</code> became the
+                  column <code>w_ip_limit</code>, not <code>wip_limit</code>, because GORM looks
+                  for known initialisms anywhere in a field name and IP is on its list. The struct
+                  reads fine, AutoMigrate is happy, and the only thing that breaks is a write by
+                  column name, in a handler, in production. The column is pinned now, and a test
+                  checks every model every plugin emits, not just this one.
+                </p>
+                <p>
+                  And the board landed three clicks deep under System, Extensions, because{' '}
+                  <code>SYSTEM_NAV</code> was the only anchor a plugin had and it has not rendered
+                  in the sidebar rail since v3.102.0. <code>grit:nav:content</code> is the anchor
+                  for a working surface: it renders beside the resources, where somebody would
+                  look for their board. Existing projects get it from <code>grit upgrade</code>,
+                  and the template and the repair splice the same constants so a repaired sidebar
+                  and a scaffolded one cannot drift apart.
+                </p>
+                <p>
+                  <strong>Four new documentation pages.</strong>{' '}
+                  <a href="/docs/extending">Four ways to extend</a> is the one that was missing:
+                  Grit has four mechanisms for adding to a project and nothing said which one a
+                  given job needs. Each has a unit. A resource is a noun, a plugin is a feature, a
+                  Grit UI block is a component, a blueprint is a whole application. It also names
+                  the trap: <code>grit ui add</code> gives presentation with nothing behind it, so
+                  adding a board that way leaves you with a board that displays nothing and saves
+                  nothing, which is worse than having no board because it looks finished.
+                </p>
+                <p>
+                  The <a href="/docs/plugins/marketplace">marketplace</a> lists official, Go module
+                  and community plugins; <a href="/docs/blueprints">blueprints</a> does the same
+                  for the complete applications. Both hold a hand-maintained copy of a list the Go
+                  code owns, because a Next page cannot import a Go registry, so each has a test
+                  comparing them in both directions: a plugin that is registered but missing from
+                  the page fails, and a page advertising a plugin that does not exist fails too.
+                </p>
+                <p>
+                  <strong>Community plugins.</strong>{' '}
+                  <code>grit plugin add github.com/someone/grit-calendar</code> now works, with the
+                  source named and confirmed before anything is cloned. Nothing from the repository
+                  is executed: Grit reads its <code>plugin.json</code> and writes the files that
+                  manifest names, which is the same trust surface as a local directory plugin.{' '}
+                  <code>grit plugin submit</code> prints the three-command checklist and the
+                  submission link, and the third command is the one people skip: the build{' '}
+                  <em>after</em> <code>grit plugin remove</code>, which is the only thing that
+                  proves the lockfile recorded everything the install did.
+                </p>
+                <p>
+                  Also: <code>grit blueprint list</code> and <code>grit blueprint info</code>, next
+                  to <code>grit plugin list</code> and <code>grit ui list</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.413.0 */}
             <div className="mb-12" id="v3.413.0">
               <div className="flex items-center gap-3 mb-4">
