@@ -1237,27 +1237,16 @@ func Upgrade(uOpts UpgradeOptions) error {
 		cyan.Println("    grit upgrade --plan     # write a runbook for finishing these")
 	}
 
-	// The last word: does it still compile? Every repair above is anchored on
-	// a file the project owns, and an anchor that has drifted warns and moves
-	// on while the file that needs the change is written anyway. This is the
-	// one check that catches that whole class.
-	fmt.Println()
-	builds := reportBuildAfterUpgrade(opts.APIRoot(root))
-
 	cyan.Println("  Next steps:")
-	if !builds {
-		cyan.Println("    Fix the errors above first: nothing below will work until it compiles.")
-	}
 	// Then this, because without it nothing else works. An upgrade adds the
 	// modules the new framework files import to go.mod, and go.sum is left
 	// behind: the next command is `grit migrate` and it fails with "missing
 	// go.sum entry". This was printed mid-run, a few hundred lines up, where
 	// it scrolled past.
-	// Only when the check above could not do it for itself: an upgrade adds
-	// modules to go.mod and leaves go.sum behind, and `grit migrate` then
-	// fails with "missing go.sum entry". The check runs `go mod tidy`, so
-	// this is the offline path rather than the usual one.
-	if dirExists(opts.APIRoot(root)) && !builds {
+	// The build check at the very end runs `go mod tidy` itself, and says so
+	// when it could not. This line is for the case where there is no API to
+	// check at all, so nothing else will mention go.sum.
+	if dirExists(opts.APIRoot(root)) && !dirExists(filepath.Join(opts.APIRoot(root), "internal", "routes")) {
 		cyan.Printf("    cd %s && go mod tidy    # go.sum, for the modules this upgrade added\n",
 			apiRelPath(root, opts))
 	}
@@ -1282,6 +1271,20 @@ func Upgrade(uOpts UpgradeOptions) error {
 	spinner.Println("  Note: Resource definitions and API code were preserved.")
 	spinner.Println("  Run 'grit sync' to regenerate TypeScript types from Go models.")
 	fmt.Println()
+
+	// The last word, and it has to be last. Every repair above is anchored on
+	// a file the project owns, and an anchor that has drifted warns and moves
+	// on while the file that needs the change is written anyway; this is the
+	// one check that catches that whole class.
+	//
+	// Below the access table on purpose. "Next steps" is printed with a
+	// hundred lines of upgrade still to come, and running the build there
+	// caught the project mid-flight: four "undefined: table" errors in
+	// internal/access that accessgen.Generate was about to fix.
+	if !reportBuildAfterUpgrade(opts.APIRoot(root)) {
+		color.New(color.FgHiCyan).Printf("  Fix those first: nothing else will work until it compiles.\n")
+		fmt.Println()
+	}
 
 	return nil
 }

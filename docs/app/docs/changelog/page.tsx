@@ -59,6 +59,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.419.1 */}
+            <div className="mb-12" id="v3.419.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.419.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The build check ran before the upgrade had finished</h3>
+                <p>
+                  <strong>
+                    Yesterday&apos;s check could report a working project as broken.
+                  </strong>{' '}
+                  It ran where &ldquo;Next steps&rdquo; is printed, which is not the end
+                  of <code>grit upgrade</code>: the access table is regenerated after
+                  that, and so is every resource&apos;s service, handler and routes file.
+                  So it compiled the project mid-flight and blamed it for a file the
+                  upgrade was about to write:
+                </p>
+                <p>
+                  <code>internal/access/access.go:77:13: undefined: table</code>, four
+                  times over, on a project where <code>go build ./...</code> by hand one
+                  second later succeeded. A check that calls a working project broken is
+                  worse than no check, which was the whole argument for making it run{' '}
+                  <code>go mod tidy</code> first.
+                </p>
+                <p>
+                  It is genuinely last now, below the access table and the resource
+                  regeneration. Measured on a fresh clone of a real project two hundred
+                  releases behind: the previous release leaves it not compiling and says
+                  nothing; this one reports{' '}
+                  <code>go.sum is current and the API still compiles</code>, and an
+                  independent build agrees in both directions.
+                </p>
+                <p>
+                  Also a correction to v3.419.0&apos;s release notes. They say a project
+                  can accumulate dozens of falsely &ldquo;edited&rdquo; framework files
+                  and silently stop receiving updates, citing 43 of them on the WhatsApp
+                  blueprint. That is wrong, and it was self-inflicted: re-testing the
+                  upgrade with <code>git checkout apps/api/</code> reverts the code and
+                  not <code>.grit/manifest.json</code>, which sits outside{' '}
+                  <code>apps/</code>, so the manifest kept the post-upgrade hashes while
+                  the files went back. Grit then correctly reported that they differed
+                  from what it last wrote. On a pristine clone the same upgrade holds
+                  back nine files, every one a real edit. There is no manifest bug.
+                </p>
+              </div>
+            </div>
+
             {/* v3.419.0 */}
             <div className="mb-12" id="v3.419.0">
               <div className="flex items-center gap-3 mb-4">
