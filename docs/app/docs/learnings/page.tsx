@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Lightbulb, Activity, Calendar } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/learnings')
@@ -31,12 +30,7 @@ const ENTRIES: Entry[] = [
 
 export default function LearningsIndexPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-4xl mx-auto">
+    <DocsShell>
             {/* Header */}
             <div className="mb-12">
               <span className="tag-mono text-accent/80 mb-3 inline-flex items-center gap-1.5">
@@ -110,9 +104,6 @@ export default function LearningsIndexPage() {
                 shape: problem · build · numbers · takeaways.
               </p>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

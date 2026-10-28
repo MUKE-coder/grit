@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Diagram, DiagramBox, DiagramRow, DiagramArrow } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -13,13 +12,7 @@ const C = 'text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded'
 
 export default function VariantsPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             {/* Header */}
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Backend</span>
@@ -467,9 +460,6 @@ PATCH  /api/v1/product-variants/:id           sku, stock, price, active`} />
                 </Button>
               </Link>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

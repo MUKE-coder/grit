@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { FileTree, type TreeNode } from '@/components/diagram'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -186,12 +185,7 @@ const architectures: ArchMode[] = [
 
 export default function ArchitectureModesPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
+    <DocsShell>
           <div className="mb-14">
             <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Core Concepts
@@ -356,8 +350,6 @@ export default function ArchitectureModesPage() {
               </Link>
             </Button>
           </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

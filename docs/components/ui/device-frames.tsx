@@ -121,6 +121,17 @@ export function MobileFrame({
 }) {
   return (
     <div
+      /*
+       * A drawing of a phone, not a piece of UI.
+       *
+       * 28px and 22px are the handset's own corner radii and the screen
+       * inside it; they are representational geometry in the same way an
+       * icon's internal shapes are, and bending them to the interface's
+       * radius scale would just make the phone look wrong. The marker tells
+       * the design audit to leave this subtree alone, so the radius check
+       * stays trustworthy instead of reporting a known-good value forever.
+       */
+      data-decorative
       className={cn(
         'relative rounded-[28px] bg-[#0b0b0d] p-[6px]',
         'shadow-[0_24px_64px_-16px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.2)] dark:shadow-[0_24px_64px_-16px_rgba(0,0,0,0.8)]',

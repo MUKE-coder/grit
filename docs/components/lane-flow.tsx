@@ -372,7 +372,7 @@ export function LaneFlow({
               {legend.map((l, i) => (
                 <span key={i} className="inline-flex items-center gap-1.5">
                   <span
-                    className="inline-block h-2.5 w-2.5 rounded-[3px]"
+                    className="inline-block h-2.5 w-2.5 rounded-xs"
                     style={{ background: hsl(l.tone, 0.9) }}
                   />
                   {l.label}

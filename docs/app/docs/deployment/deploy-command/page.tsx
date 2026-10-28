@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock, StepWithCode } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -11,12 +10,7 @@ export const metadata = getDocMetadata('/docs/deployment/deploy-command')
 
 export default function DeployCommandPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
+    <DocsShell>
           <div className="mb-14">
             <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
               Infrastructure
@@ -165,8 +159,6 @@ WantedBy=multi-user.target`}
               </Link>
             </Button>
           </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

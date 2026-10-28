@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { ArrowRight, Rocket, Terminal, Layers, Zap, Shield, Code2, Database, Server, Gauge, CheckCircle2, X, Minus, Download, BookOpen, Boxes, Globe, LayoutDashboard, Smartphone, Monitor, Newspaper } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CodeBlock } from '@/components/code-block'
 import { PageHelp } from '@/components/page-help'
@@ -15,13 +14,7 @@ export const metadata = getDocMetadata('/docs')
 
 export default function DocsIntroductionPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             {/* Header */}
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Introduction</span>
@@ -809,9 +802,6 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 },
               ]}
             />
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

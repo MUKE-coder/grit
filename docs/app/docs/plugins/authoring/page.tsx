@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { AlertTriangle, ArrowRight, Boxes } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 
 export const metadata = {
@@ -44,12 +43,7 @@ const RULES = [
 
 export default function PluginAuthoringPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="mx-auto max-w-3xl px-6 py-12">
+    <DocsShell>
           <div className="mb-3 flex items-center gap-2">
             <Boxes className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
@@ -403,8 +397,6 @@ cd apps/api && go build ./...     # STILL compiles`}
               <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

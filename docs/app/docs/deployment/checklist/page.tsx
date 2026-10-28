@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { AlertCircle, ArrowLeft } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -114,13 +113,7 @@ const GROUPS: { title: string; note?: string; items: Item[] }[] = [
 
 export default function ChecklistPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <Link
               href="/docs/deployment"
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
@@ -250,9 +243,6 @@ export default function ChecklistPage() {
                 All deployment targets
               </Link>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

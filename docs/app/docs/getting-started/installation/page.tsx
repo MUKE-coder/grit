@@ -1,8 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { SiteHeader } from "@/components/site-header"
-import { DocsSidebar } from "@/components/docs-sidebar"
+import { DocsShell } from "@/components/docs/shell"
 import { CodeBlock, StepWithCode } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -11,12 +10,7 @@ export const metadata = getDocMetadata('/docs/getting-started/installation')
 
 export default function InstallationPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="max-w-5xl mx-auto py-12 px-6 lg:px-8">
+    <DocsShell>
           {/* Header */}
           <div className="mb-14">
             <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
@@ -304,8 +298,6 @@ grit start client`} />
               </Link>
             </Button>
           </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

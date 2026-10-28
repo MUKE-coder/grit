@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Check, Clock } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CodeBlock } from '@/components/code-block'
 import { QuickStart } from '@/components/quick-start'
@@ -135,13 +134,7 @@ const STEPS: Step[] = [
 
 export default function StartPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <div className="mb-8">
               <span className="tag-mono text-accent/80 mb-3 block">Start here</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -341,9 +334,6 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </Link>
               ))}
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

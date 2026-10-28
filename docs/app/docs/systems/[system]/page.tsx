@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { SystemDesignBody } from '@/components/system-design'
 import { SYSTEMS, getSystem } from '@/config/systems'
 
@@ -47,13 +46,7 @@ export default async function SystemPage({
   const next = SYSTEMS[index + 1]
 
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl px-6 py-10">
-          <div className="max-w-3xl">
+    <DocsShell>
             <Link
               href="/docs/systems"
               className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -129,9 +122,6 @@ export default async function SystemPage({
                 </Link>
               )}
             </nav>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

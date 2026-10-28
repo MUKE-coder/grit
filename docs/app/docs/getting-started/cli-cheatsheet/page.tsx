@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Download, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SiteHeader } from "@/components/site-header";
-import { DocsSidebar } from "@/components/docs-sidebar";
+import { DocsShell } from "@/components/docs/shell";
 import { CodeBlock } from "@/components/code-block";
 import { getDocMetadata } from "@/config/docs-metadata";
 import { WindowDots } from '@/components/window-dots'
@@ -43,13 +42,7 @@ function TerminalCard({
 /* ------------------------------------------------------------------ */
 export default function CLICheatsheetPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             {/* Header */}
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">
@@ -2094,9 +2087,6 @@ grit upgrade`}
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   );
 }

@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -12,13 +11,7 @@ export const metadata = getDocMetadata('/docs/tutorials/contacts/mobile')
 
 export default function ContactsMobileTutorialPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Tutorial</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Contacts: the mobile app</h1>
@@ -263,9 +256,6 @@ npx eas submit`} />
                 </Link>
               </Button>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

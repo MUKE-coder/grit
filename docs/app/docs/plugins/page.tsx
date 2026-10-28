@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { Callout } from '@/components/callout'
@@ -201,13 +200,7 @@ r.GET("/api/users/export", export.ExportHandler(svc, queryFn))`,
 
 export default function PluginsPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-4xl">
+    <DocsShell>
             {/* Header */}
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Extend Grit</span>
@@ -388,9 +381,6 @@ plugin.RegisterRoutes(router.Group("/api"), svc)`} />
                 </Button>
               </Link>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

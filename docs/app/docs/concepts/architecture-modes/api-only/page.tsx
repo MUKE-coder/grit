@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Files, Folder, File } from '@/components/files'
 import { LaneFlow } from '@/components/lane-flow'
@@ -12,12 +11,7 @@ export const metadata = getDocMetadata('/docs/concepts/architecture-modes/api-on
 
 export default function ApiOnlyArchitecturePage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
+    <DocsShell>
           {/* Header */}
           <div className="mb-14">
             <p className="text-sm font-mono font-medium text-accent mb-3 tracking-wide uppercase">
@@ -595,8 +589,6 @@ volumes:
               </Link>
             </Button>
           </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

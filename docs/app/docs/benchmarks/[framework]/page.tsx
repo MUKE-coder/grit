@@ -4,8 +4,7 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import { ArrowLeft, ArrowRight, AlertTriangle, Scale, Video, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { FrameworkLogo } from '@/components/framework-logo'
 import { GUIDES, guideFor } from '@/config/benchmark-guides'
@@ -63,12 +62,7 @@ export default async function FrameworkBenchmarkPage({
 
 
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Benchmark methodology</span>
 
@@ -322,9 +316,6 @@ export default async function FrameworkBenchmarkPage({
                 </Link>
               </Button>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

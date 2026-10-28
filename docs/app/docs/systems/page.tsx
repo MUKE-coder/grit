@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { GROUP_BLURB, SYSTEMS, SYSTEM_GROUPS, systemsInGroup } from '@/config/systems'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -9,13 +8,7 @@ export const metadata = getDocMetadata('/docs/systems')
 
 export default function SystemsIndexPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl px-6 py-10">
-          <div className="max-w-3xl">
+    <DocsShell>
             <div className="mb-10">
               <span className="tag-mono mb-3 block text-accent/80">System Design</span>
               <h1 className="mb-4 text-4xl font-bold tracking-tight">Systems</h1>
@@ -71,9 +64,6 @@ export default function SystemsIndexPage() {
             <p className="mt-10 text-sm text-muted-foreground">
               {SYSTEMS.length} systems documented.
             </p>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

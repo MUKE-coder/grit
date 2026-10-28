@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CliExplorer } from '@/components/cli-explorer'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -14,13 +13,7 @@ export default function CliExplorerPage() {
   const writes = CLI_COMMANDS.filter((c) => c.files.length > 0).length
 
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-5xl">
+    <DocsShell>
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Reference</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Command explorer</h1>
@@ -58,9 +51,6 @@ export default function CliExplorerPage() {
                 </Button>
               </Link>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

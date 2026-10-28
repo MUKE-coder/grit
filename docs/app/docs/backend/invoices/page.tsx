@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -10,13 +9,7 @@ export const metadata = getDocMetadata('/docs/backend/invoices')
 
 export default function InvoicesPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <p className="tag-mono text-accent/80 mb-3">Backend</p>
             <h1 className="text-4xl font-bold tracking-tight mb-4">Invoices &amp; Line Items</h1>
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
@@ -345,9 +338,6 @@ out, err := pdf.RenderRecord(rec)`}
                 </Link>
               </Button>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

@@ -1,5 +1,4 @@
-import { SiteHeader } from "@/components/site-header";
-import { DocsSidebar } from "@/components/docs-sidebar";
+import { DocsShell } from "@/components/docs/shell";
 import { CodeBlock } from "@/components/code-block";
 import { LaneFlow } from "@/components/lane-flow";
 import { getDocMetadata } from "@/config/docs-metadata";
@@ -9,13 +8,7 @@ export const metadata = getDocMetadata("/docs/desktop/building");
 
 export default function DesktopBuildingPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             {/* Header */}
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">
@@ -256,9 +249,6 @@ wails build -platform linux/amd64`}
                 </div>
               </a>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   );
 }

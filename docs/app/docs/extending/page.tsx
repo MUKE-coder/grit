@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Blocks, Boxes, Layers, Package, Puzzle } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 
 export const metadata = {
@@ -60,12 +59,7 @@ const MECHANISMS = [
 
 export default function ExtendingPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="mx-auto max-w-3xl px-6 py-12">
+    <DocsShell>
           <div className="mb-3 flex items-center gap-2">
             <Package className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
@@ -318,8 +312,6 @@ export default function ExtendingPage() {
               )
             })}
           </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

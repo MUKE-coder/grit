@@ -219,6 +219,13 @@ genuinely floats: a dropdown, a dialog, a drag preview.
   concentric: `.g-tab` is 7px because it sits in a 10px `.g-tabs` with a 3px
   pad. 7 is not a ninth value and nothing else may use it.
 
+  **A drawing is not an interface.** `data-decorative` opts a subtree out of
+  the radius check, for geometry that represents a real object rather than a
+  control: the phone frame's 28px bezel and 22px screen are the handset's own
+  corners. Use it there and nowhere else. Without it the audit reports the
+  same known-good value on every page showing a device, which is how a check
+  stops being read.
+
 - **Shadow**: two.
   - `--shadow-pop` for something that floats.
   - `--shadow-focus` for the focus ring: `0 0 0 2px var(--bg), 0 0 0 4px var(--accent)`.

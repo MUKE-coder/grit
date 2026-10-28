@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Check, Minus } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { getDocMetadata } from '@/config/docs-metadata'
 import {
   DEPLOYMENT_PROVIDERS,
@@ -27,13 +26,7 @@ const GUIDE_SLUG_BY_NAME: Record<string, string> = {
 
 export default function DeploymentIndexPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Deployment</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Where to deploy Grit</h1>
@@ -253,9 +246,6 @@ export default function DeploymentIndexPage() {
                 </div>
               )
             })}
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

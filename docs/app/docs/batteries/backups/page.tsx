@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, DatabaseBackup, Clock, Download, RotateCcw, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 
 export const metadata = {
@@ -14,12 +13,7 @@ export const metadata = {
 
 export default function BackupsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="mx-auto max-w-3xl px-6 py-12">
+    <DocsShell>
           <div className="mb-3 flex items-center gap-2">
             <DatabaseBackup className="h-5 w-5 text-accent" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
@@ -173,8 +167,6 @@ grit restore backup.zip --no-migrate`} />
               </Link>
             </Button>
           </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

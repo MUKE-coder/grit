@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { AlertCircle, ArrowRight, Github } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -9,13 +8,7 @@ export const metadata = getDocMetadata('/docs/governance')
 
 export default function GovernancePage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Project</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Governance &amp; risk</h1>
@@ -204,9 +197,6 @@ go build -o grit ./cmd/grit   # your build of the CLI`}
               <Github className="h-4 w-4" />
               github.com/MUKE-coder/grit
             </Link>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

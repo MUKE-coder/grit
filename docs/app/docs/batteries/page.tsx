@@ -18,8 +18,7 @@ import {
   RadioTower,
   type LucideIcon,
 } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -209,13 +208,7 @@ const FAQS = [
 
 export default function BatteriesPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-5xl">
+    <DocsShell>
             <div className="mb-10">
               <span className="tag-mono text-accent/80 mb-3 block">Batteries Included</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Everything, out of the box</h1>
@@ -265,9 +258,6 @@ export default function BatteriesPage() {
             </div>
 
             <PageHelp faqs={FAQS} />
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

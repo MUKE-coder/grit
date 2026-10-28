@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { Button, ButtonArrow } from '@/components/grit/button'
 import { Tabs, TabPanel } from '@/components/grit/tabs'
 import { Terminal } from '@/components/grit/terminal'
@@ -53,12 +52,7 @@ export default function DesignPage() {
   const [tab, setTab] = useState('segmented')
 
   return (
-    <div className="min-h-screen bg-bg">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="mx-auto max-w-3xl px-6 py-12">
+    <DocsShell>
           <p className="g-eyebrow mb-4">{'{ DESIGN SYSTEM }'}</p>
           <h1 className="text-[40px] font-semibold leading-[48px] tracking-[-0.035em] text-fg">
             Every component, <Highlight>beside its value</Highlight>
@@ -350,8 +344,6 @@ export default function DesignPage() {
               eval(await (await fetch(&apos;/design-audit.js&apos;)).text())
             </code>
           </p>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }

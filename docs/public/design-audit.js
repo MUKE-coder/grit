@@ -175,8 +175,13 @@
       .filter((p) => p && p !== '0px');
     return parts.length ? parts.sort().join(' ') : null;
   };
+  // [data-decorative] opts a subtree out: a drawing of a phone has the
+  // handset's corner radii, which are representational geometry rather than
+  // interface chrome. Without it the check reports the same known-good value
+  // on every page that shows a device, which is how a check stops being read.
   const radiusValues = tally(
     els.map((e) => {
+      if (e.closest('[data-decorative]')) return null;
       const r = getComputedStyle(e).borderRadius;
       return r && r !== '0px' ? normaliseRadius(r) : null;
     })

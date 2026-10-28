@@ -20,8 +20,7 @@ import {
   Webhook,
   Zap,
 } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import {
   CommunityEmpty,
@@ -183,11 +182,7 @@ const COMMUNITY = ((communityIndex.plugins ?? []) as CommunityRecord[]).map(
 
 export default function MarketplacePage() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
+    <DocsShell>
         {/* ---------------------------------------------------------- hero */}
         <section className="relative overflow-hidden border-b border-border">
           <div
@@ -367,7 +362,6 @@ export default function MarketplacePage() {
             </p>
           </section>
         </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }
