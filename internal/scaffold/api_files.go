@@ -3331,6 +3331,105 @@ func orderStably(query *gorm.DB, sortBy, sortOrder string) *gorm.DB {
 	return query
 }
 
+// deepPageOffset is where OFFSET stops being free and the deferred join
+// starts paying for its second round trip.
+//
+// Below it, one query is cheaper: the extra round trip costs more than the
+// rows OFFSET throws away. Above it, OFFSET is reading and discarding enough
+// of the table that two queries win by an order of magnitude. 1,000 is about
+// where the two cross on Postgres with a 25-row page; it is not a precise
+// number and does not need to be, because the curve is flat on both sides of
+// it.
+const deepPageOffset = 1000
+
+// fetchPage reads one page of rows, by OFFSET or by a deferred join.
+//
+// ── Why a deep page is slow ──────────────────────────────────────────────
+//
+// SELECT * ... ORDER BY name LIMIT 25 OFFSET 499950 makes Postgres fetch
+// every one of those 499,950 earlier rows FROM THE TABLE, not just from the
+// index, and throw them away. An index on the sort column does not help,
+// because the planner still has to visit the heap for each row it skips.
+// Page 1 is 9ms; page 20,000 is 1.6s, and every "last page" click pays it
+// (grit#121).
+//
+// ── What the deferred join does ──────────────────────────────────────────
+//
+// It asks for the primary keys first. That query touches only the index, so
+// skipping 499,950 entries is an index walk rather than half a million heap
+// fetches. Then it reads the 25 full rows by key. Same page, 0.15s cold.
+//
+// Two queries rather than one JOIN against a subquery, deliberately: the
+// caller's query arrives with its own scopes, conditions and Preload chains
+// already set, and reusing it as-is means the second query is exactly the
+// query the handler asked for. It also works unchanged on SQLite, where a
+// lateral join would not.
+//
+// ── The index this needs ─────────────────────────────────────────────────
+//
+// The gain depends on the key query being answerable from an index ALONE.
+// Every list here carries a deleted_at IS NULL test, so a plain
+// (org_id, name, id) index still visits the table to check it and the
+// deferred join buys nothing. The index has to be partial:
+//
+//	CREATE INDEX idx_contacts_list ON contacts (org_id, name, id)
+//	  WHERE deleted_at IS NULL;
+//
+// See the pagination docs. Without it this is correct but no faster.
+func fetchPage[T any](query *gorm.DB, dest *[]T, offset, limit int, sortBy, sortOrder string) error {
+	if offset < deepPageOffset {
+		return orderStably(query, sortBy, sortOrder).
+			Offset(offset).
+			Limit(limit).
+			Find(dest).Error
+	}
+
+	// The table and primary key of whatever model the caller set. Qualified
+	// with the table name because a handler may have joined another table
+	// that also has an id.
+	stmt := query.Statement
+	if stmt == nil || stmt.Schema == nil || stmt.Schema.PrioritizedPrimaryField == nil {
+		// No schema to work from: fall back rather than guess at a key name.
+		return orderStably(query, sortBy, sortOrder).
+			Offset(offset).
+			Limit(limit).
+			Find(dest).Error
+	}
+	key := stmt.Table + "." + stmt.Schema.PrioritizedPrimaryField.DBName
+
+	// The key query needs its own Statement, not the caller's.
+	//
+	// Session(&gorm.Session{}) shares the statement pointer, so clearing
+	// preloads on it clears them on the caller's query too and the row query
+	// below comes back with empty associations. Passing a Context is what
+	// makes GORM clone the statement instead of aliasing it: conditions and
+	// scopes are copied, and what happens next is local to this query.
+	//
+	// Preloads are then cleared, because the key query returns scalars and
+	// running a handler's Preload chain to throw the result away is exactly
+	// the cost this function exists to avoid. Select narrows it to the key,
+	// so the database can answer from an index.
+	keyQuery := query.Session(&gorm.Session{Context: stmt.Context})
+	keyQuery.Statement.Preloads = map[string][]interface{}{}
+
+	var ids []interface{}
+	if err := orderStably(keyQuery.Select(key), sortBy, sortOrder).
+		Offset(offset).
+		Limit(limit).
+		Pluck(key, &ids).Error; err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		// Past the end. Leave dest as the empty slice the caller gave us
+		// rather than running a WHERE id IN () that some drivers reject.
+		return nil
+	}
+
+	// The rows, by key, through the caller's query so its preloads run.
+	return orderStably(query.Where(key+" IN ?", ids), sortBy, sortOrder).
+		Find(dest).Error
+}
+
 func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	// Normalize sort_by against the whitelist.
 	sortBy := p.SortBy
@@ -3485,12 +3584,10 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 		result.Meta.Breakdown = breakdown
 	}
 
-	// Then fetch the page.
+	// Then fetch the page. A deep page goes through a deferred join; see
+	// fetchPage for why, and for the index it needs to actually be faster.
 	offset := (p.Page - 1) * p.PageSize
-	if err := orderStably(query, sortBy, sortOrder).
-		Offset(offset).
-		Limit(p.PageSize).
-		Find(&result.Data).Error; err != nil {
+	if err := fetchPage(query, &result.Data, offset, p.PageSize, sortBy, sortOrder); err != nil {
 		return result, err
 	}
 

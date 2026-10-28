@@ -59,6 +59,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.417.0 */}
+            <div className="mb-12" id="v3.417.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.417.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A deep page no longer reads the whole table</h3>
+                <p>
+                  <strong>Page 20,000 of a list took 1.6 seconds.</strong>{' '}
+                  <code>LIMIT 25 OFFSET 499950</code> makes the database fetch every one of those
+                  499,950 earlier rows <em>from the table</em>, not just from the index, and throw
+                  them away. An index on the sort column does not help, because the planner still
+                  visits the heap for each row it skips. Page 1 was 9ms; the last page of a large
+                  list was 1.6s cold, and every &ldquo;go to page&rdquo; click paid it
+                  (<a href="https://github.com/MUKE-coder/grit/issues/121">grit#121</a>).
+                </p>
+                <p>
+                  Past an offset of 1,000, <code>paginate.List</code> now fetches a page in two
+                  queries: the primary keys first, which touches only the index, then the rows by
+                  key. Same page, same order, about a tenth of the time. Shallow pages stay a
+                  single query, because below that threshold the extra round trip costs more than
+                  the rows OFFSET discards. Nothing to switch on and nothing to configure.
+                </p>
+                <p>
+                  Two queries rather than one join against a subquery, deliberately: your query
+                  arrives with its own scopes, conditions and <code>Preload</code> chains already
+                  set, and reusing it as-is means the second query is exactly the one your handler
+                  asked for. It also works unchanged on SQLite.
+                </p>
+                <p>
+                  <strong>It needs a partial index to actually be faster.</strong> The gain depends
+                  on the key query being answerable from an index alone, and every generated list
+                  carries <code>deleted_at IS NULL</code>, so a plain index on the sort columns
+                  still visits the table to check it. The{' '}
+                  <a href="/docs/scaling#deep-pages">scaling guide</a> now says so, with the index
+                  to create and the <code>EXPLAIN</code> output that tells you whether it worked.
+                </p>
+                <p>
+                  Five tests ship with every project and run against SQLite: a deep page matches
+                  the plain OFFSET query row for row across three sort orders, the pages partition
+                  the table with no row repeated or missing, preloads arrive on a deep page, a
+                  filter applies to both queries, and a page past the end is empty. The preload one
+                  is not hypothetical. The first implementation shared the caller&apos;s GORM
+                  statement, so clearing preloads for the key query cleared them for the row query
+                  too and every association came back empty; that test is what caught it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.416.0 */}
             <div className="mb-12" id="v3.416.0">
               <div className="flex items-center gap-3 mb-4">

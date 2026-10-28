@@ -163,6 +163,50 @@ export default function ScalingPage() {
                 variable and one function call from being in force.
               </Callout>
 
+              <h2 id="deep-pages">Deep pages, and the index they need</h2>
+              <p>
+                A page-numbered list is <code>LIMIT 25 OFFSET n</code>, and OFFSET is not free:
+                the database fetches every one of those <em>n</em> earlier rows from the table and
+                throws them away. On 500,000 rows, page 1 is 9ms and page 20,000 is 1.6 seconds.
+                Every &ldquo;last page&rdquo; click pays it, and an index on the sort column does
+                not help, because the planner still visits the heap for each row it skips.
+              </p>
+              <p>
+                Past an offset of 1,000, <code>paginate.List</code> fetches the page in two
+                queries instead: the primary keys first, from the index alone, then the rows by
+                key. Same page, same order, about a tenth of the time. You do not switch it on and
+                there is nothing to configure.
+              </p>
+              <Callout type="warning" title="It needs a partial index to actually be faster">
+                <p>
+                  The gain depends on the key query being answerable from an index{' '}
+                  <strong>alone</strong>. Every generated list carries{' '}
+                  <code>deleted_at IS NULL</code>, so a plain index on the sort columns still
+                  visits the table to check it, and the two-query path buys nothing. The index has
+                  to cover that condition:
+                </p>
+                <CodeBlock
+                  language="sql"
+                  code={`CREATE INDEX idx_contacts_list ON contacts (org_id, name, id)
+  WHERE deleted_at IS NULL;`}
+                />
+                <p>
+                  Add one per list people actually page deeply through, matching the columns that
+                  list sorts and filters by. <code>EXPLAIN (ANALYZE)</code> on the key query should
+                  say <code>Index Only Scan</code> with <code>Heap Fetches: 0</code>; if it says
+                  anything else, the index is not covering the query and the page will not get
+                  faster.
+                </p>
+              </Callout>
+              <p>
+                The real fix for a list somebody pages through all day is not to make page 20,000
+                fast but to remove the need for it: a filter, a search, or cursor pagination, which
+                has no offset at all. Send <code>?mode=cursor</code> and follow{' '}
+                <code>meta.next_cursor</code>. It cannot give you page numbers or a total, which is
+                why the admin table does not use it, but for an API client walking a list it is the
+                right shape.
+              </p>
+
               <h2 id="replicas">Stage 6: read replicas</h2>
               <p>One environment variable, and no code changes:</p>
               <CodeBlock
