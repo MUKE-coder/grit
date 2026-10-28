@@ -711,7 +711,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "%s",
-  description: "A full-stack framework that combines Go backend with Next.js frontend. Build fast, ship faster.",
+  // Yours to write. This is the sentence a search result and a link preview
+  // show under the name, and it shipped for a long time as Grit's description
+  // of itself, which described the framework on somebody else's product.
+  description: "%s",
   // <meta name="generator" content="Grit">, the convention every static site
   // generator and CMS uses and the one technology scanners read. No version:
   // knowing an app is a Grit app is fine, and knowing which release it is
@@ -733,7 +736,7 @@ export default function RootLayout({
       </body>
     </html>
   );
-}`, fontImport, opts.ProjectName, fontVars)
+}`, fontImport, opts.ProjectName, webMetaDescription(opts), fontVars)
 }
 
 func webUtils() string {
@@ -744,6 +747,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 `
+}
+
+// webMetaDescription is the one sentence under the project's name in a search
+// result. It names the project and says what it is, because the alternative
+// that shipped before it named Grit and said what Grit is.
+func webMetaDescription(opts Options) string {
+	return opts.ProjectName + ", a web application."
 }
 
 func webNavbar(opts Options) string {

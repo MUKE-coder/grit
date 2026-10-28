@@ -46,3 +46,28 @@ func TestLandingPageIsAboutTheProject(t *testing.T) {
 		}
 	}
 }
+
+// TestRootLayoutMetaDescriptionIsAboutTheProject: the <head> above the home
+// page.
+//
+// The page below it was fixed to name the project. The description in the
+// layout was not, and it is the sentence a search result and a link preview
+// read out: every generated app told Google it was "a full-stack framework
+// that combines Go backend with Next.js frontend", which is Grit's description
+// of itself on somebody else's product.
+func TestRootLayoutMetaDescriptionIsAboutTheProject(t *testing.T) {
+	src := webRootLayout(Options{ProjectName: "contacts", Architecture: ArchTriple, Frontend: FrontendNext})
+
+	if !strings.Contains(src, `description: "contacts`) {
+		t.Error("the layout's meta description never names the project")
+	}
+	for _, grit := range []string{"full-stack framework", "meta-framework", "Go backend with Next.js"} {
+		if strings.Contains(src, grit) {
+			t.Errorf("the layout's meta description still describes the framework: %q", grit)
+		}
+	}
+	// The generator tag is deliberate and documented, so it stays.
+	if !strings.Contains(src, `generator: "Grit"`) {
+		t.Error("the generator meta tag is gone; it is deliberate, see the comment beside it")
+	}
+}

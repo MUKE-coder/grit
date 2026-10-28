@@ -59,6 +59,142 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.419.0 */}
+            <div className="mb-12" id="v3.419.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.419.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Your app told Google it was a framework</h3>
+                <p>
+                  <strong>
+                    Every generated project shipped Grit&apos;s description of itself
+                    as its own meta description.
+                  </strong>{' '}
+                  The tag read &ldquo;A full-stack framework that combines Go backend
+                  with Next.js frontend. Build fast, ship faster&rdquo;, and it is the
+                  sentence a search result and a link preview read out under your
+                  project&apos;s name. It now names the project.
+                </p>
+                <p>
+                  The home page under it was fixed a while ago, and the{' '}
+                  <code>&lt;head&gt;</code> above it was missed, which is the shape
+                  this keeps taking: the visible half gets corrected and the half that
+                  only a crawler reads does not.{' '}
+                  <code>TestRootLayoutMetaDescriptionIsAboutTheProject</code> now sits
+                  beside the home page&apos;s test and fails on the exact string that
+                  shipped.
+                </p>
+                <p>
+                  Existing projects take it on <code>grit upgrade</code>, which already
+                  rewrites the root layout. The{' '}
+                  <code>&lt;meta name=&quot;generator&quot; content=&quot;Grit&quot;&gt;</code>{' '}
+                  tag stays: it is the convention every static site generator uses, it
+                  carries no version, and the comment beside it says how to delete it.
+                </p>
+                <p>
+                  Found by opening the WhatsApp blueprint and reading its front page,
+                  which is the only way this class of thing gets found.
+                </p>
+
+                <h3>grit upgrade tells you when it has broken your build</h3>
+                <p>
+                  <strong>
+                    An upgrade can leave a project that does not compile, and until now
+                    it did not say so.
+                  </strong>{' '}
+                  Upgrading that same blueprint from 3.306.0 produced four compiler
+                  errors from three separate causes, and reported success. The next
+                  command somebody types is the one that tells them.
+                </p>
+                <p>
+                  <code>grit upgrade</code> now ends by running{' '}
+                  <code>go build ./...</code> and printing what broke, where, and that
+                  the previous files are in <code>.grit/backups</code>. It fixes
+                  nothing: telling the truth at the end of an upgrade is the whole job.
+                  A missing Go toolchain or a build that runs long is reported as
+                  &ldquo;could not check&rdquo;, never as a failure.
+                </p>
+                <p>
+                  The reason this class exists at all:{' '}
+                  <code>internal/config/config.go</code> is yours, not the
+                  framework&apos;s, so every field added to it since your project was
+                  scaffolded arrives through an anchored repair. The file that{' '}
+                  <em>uses</em> the field is framework-owned and gets rewritten
+                  regardless. A repair whose anchor has drifted warns and moves on,
+                  and the warning scrolls past in a thousand-line upgrade.
+                </p>
+                <p>Four of them are fixed where they were caused:</p>
+                <ul>
+                  <li>
+                    The auto-ban config repair anchored on a{' '}
+                    <code>SentinelTurnstileSecret</code> field that older projects
+                    never had. It falls back to the end of the struct and the end of
+                    the loader&apos;s literal, which are there whatever the fields have
+                    done since.
+                  </li>
+                  <li>
+                    The auto-ban worker repair added a{' '}
+                    <code>*services.SecurityAutoBan</code> field without adding the
+                    import (<code>undefined: services</code>), wrote its half-applied
+                    result when an anchor was missing, and, because its guard was a
+                    string only the missing half carried, declared the handler again on
+                    every later upgrade. It is all-or-nothing now, imports what it
+                    names, and the module path comes off a sibling import rather than a
+                    guess.
+                  </li>
+                  <li>
+                    The Sentinel exempt-list repair returned early on a project with
+                    neither list, reasoning that nothing would miss them. routes.go
+                    names both and is rewritten from the template every time, so such a
+                    project got two undefined fields. It adds both.
+                  </li>
+                  <li>
+                    The Pulse profiling repair anchored on{' '}
+                    <code>resolveSQLitePath(getEnv(&quot;PULSE_STORAGE_DSN&quot;</code>
+                    , and <code>repairSQLitePath</code>, which is what wraps that line
+                    in <code>resolveSQLitePath</code>, ran seventy lines later. One
+                    upgrade left the project broken and a second one fixed it, which is
+                    not a thing anybody does. The order is swapped, with a comment
+                    saying it is load-bearing.
+                  </li>
+                </ul>
+                <p>
+                  <strong>And two writers the upgrade never called at all.</strong>{' '}
+                  <code>writeTOTPFiles</code> and{' '}
+                  <code>writeSecurityObservabilityFiles</code> ran when scaffolding a
+                  new project and nowhere else, so everything they own was frozen at
+                  whatever version a project started on: the two-factor models and
+                  service, the security and observability handlers, the Sentinel and
+                  Pulse bridge, its poller, and the ban sweep itself. Other paths kept
+                  refreshing the code that calls them, which is how it surfaced, as
+                  <code>s.Bridge.SentinelPost undefined</code> and{' '}
+                  <code>pending.CodeHash undefined</code>. Both are delivered on
+                  upgrade now, and two tests hold it: one that the ban sweep only calls
+                  bridge methods the bridge template defines, and one that upgrade
+                  calls both writers.
+                </p>
+                <p>
+                  The build check exists because the seventh one will not be in that
+                  list. An anchor is a guess about a file somebody else owns, and
+                  guesses go stale.
+                </p>
+                <p>
+                  Also: the upgrade runs <code>go mod tidy</code> for you. It adds the
+                  modules its new files import to go.mod and left go.sum behind, so{' '}
+                  <code>grit migrate</code> failed with &ldquo;missing go.sum
+                  entry&rdquo;. The instruction existed, a few hundred lines up, where
+                  it scrolled past. It is printed at the end now, and only when the
+                  tidy could not be run, because a check that reports a wall of
+                  go.sum errors as a broken build is one people learn to ignore.
+                </p>
+              </div>
+            </div>
+
             {/* v3.418.0 */}
             <div className="mb-12" id="v3.418.0">
               <div className="flex items-center gap-3 mb-4">

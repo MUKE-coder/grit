@@ -36,13 +36,26 @@ func repairSecurityAutoBan(root string, opts Options) error {
 		{filepath.Join(apiRoot, "internal", "cron", "start.go"), repairAutoBanCronStartSource},
 		{filepath.Join(apiRoot, "internal", "jobs", "client.go"), repairAutoBanTaskTypeSource},
 		{filepath.Join(apiRoot, "internal", "jobs", "workers.go"), repairAutoBanWorkerSource},
-		{filepath.Join(apiRoot, "cmd", "server", "main.go"), repairAutoBanMainSource},
 	} {
 		if !fileExists(f.path) {
 			continue
 		}
 		if err := repairSourceFile(root, m, f.path, f.fn); err != nil {
 			return fmt.Errorf("%s: %w", f.path, err)
+		}
+	}
+
+	// main.go last, because one of its two edits depends on what workers.go
+	// ended up with. The worker repair is all-or-nothing and refuses a file it
+	// cannot wire completely; setting AutoBan in the WorkerDeps literal after
+	// such a refusal is "unknown field AutoBan in struct literal of type
+	// jobs.WorkerDeps". The cron.New argument goes in either way: cron.go is
+	// framework-owned and its signature has already changed.
+	workers := filepath.Join(apiRoot, "internal", "jobs", "workers.go")
+	wireWorker := !fileExists(workers) || fileContains(workers, "AutoBan *services.SecurityAutoBan")
+	if main := filepath.Join(apiRoot, "cmd", "server", "main.go"); fileExists(main) {
+		if err := repairSourceFile(root, m, main, repairAutoBanMain(wireWorker)); err != nil {
+			return fmt.Errorf("%s: %w", main, err)
 		}
 	}
 	return nil
@@ -95,20 +108,67 @@ func repairAutoBanConfigSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "SecurityAutoBanEnabled") {
 		return src, nil, nil
 	}
+
+	// SentinelTurnstileSecret is where Grit writes these, and it is the
+	// anchor when it is there. It is not there in a project scaffolded before
+	// that field existed, and for those the end of the struct does just as
+	// well: the fields are a block of their own and their position in it
+	// carries no meaning.
+	//
+	// The fallback matters more than it looks. Without it this returns a
+	// warning and the upgrade carries on to write security_autoban.go and
+	// cron/start.go, both of which read cfg.SecurityAutoBan*, so the upgrade
+	// reports success and leaves a project that does not compile. A repair
+	// that cannot reach its target must not be the only thing standing
+	// between the user and a broken build.
 	at, _, ok := lineWith(src, "SentinelTurnstileSecret ")
 	if !ok {
-		return src, nil, []string{"its Config has no SentinelTurnstileSecret field where Grit wrote one, " +
-			"so the scheduled ban sweep has nothing to read: add the SecurityAutoBan fields by hand"}
+		at, ok = endOfStruct(src, "type Config struct {")
+		if !ok {
+			return src, nil, []string{"its config.go has no `type Config struct` that Grit can find, " +
+				"so the scheduled ban sweep has nothing to read: add the SecurityAutoBan fields by hand, " +
+				"or internal/services/security_autoban.go will not compile"}
+		}
 	}
 	src = src[:at] + autoBanConfigFields + src[at:]
 
 	_, after, ok := lineWith(src, "SentinelTurnstileSecret:")
 	if !ok {
-		return src, nil, []string{"its Config never loads SENTINEL_TURNSTILE_SECRET, so the sweep's " +
-			"settings are not read from the environment: add the SecurityAutoBan loads by hand"}
+		var at int
+		at, ok = endOfStruct(src, "cfg := &Config{")
+		if !ok {
+			at, ok = endOfStruct(src, "return &Config{")
+		}
+		if !ok {
+			return src, nil, []string{"its config.go never builds a Config literal that Grit can find, " +
+				"so the sweep's settings are not read from the environment: add the SecurityAutoBan " +
+				"loads by hand, or the defaults are the zero values and the sweep never runs"}
+		}
+		after = at
 	}
 	src = src[:after] + autoBanConfigLoads + src[after:]
 	return src, []string{"the scheduled ban sweep reads its policy from the environment"}, nil
+}
+
+// endOfStruct returns the offset of the line closing the block that `opener`
+// starts: the first line after it that is exactly "}" or "\t}" at the opener's
+// own indentation. Structural, so it survives any amount of drift in the
+// fields between.
+func endOfStruct(src, opener string) (int, bool) {
+	at := strings.Index(src, opener)
+	if at < 0 {
+		return 0, false
+	}
+	lineStart := strings.LastIndexByte(src[:at], '\n') + 1
+	indent := src[lineStart : lineStart+len(src[lineStart:])-len(strings.TrimLeft(src[lineStart:], " \t"))]
+	closer := "\n" + indent + "}"
+	end := strings.Index(src[at:], closer)
+	if end < 0 {
+		return 0, false
+	}
+	// The offset of the closing line itself, so an insertion lands as the last
+	// entry inside the block.
+	return at + end + 1, true
 }
 
 // --------------------------------------------------------------------- routes
@@ -271,37 +331,83 @@ func repairAutoBanTaskTypeSource(src string) (string, []string, []string) {
 // -------------------------------------------------------------------- worker
 
 func repairAutoBanWorkerSource(src string) (string, []string, []string) {
-	if strings.Contains(src, "TypeSecurityAutoBan") {
+	// Two guards, not one. TypeSecurityAutoBan comes from the mux edit and
+	// handleSecurityAutoBan from the handler edit, and asking about only the
+	// first meant a run that added the handler but missed the mux declared
+	// the handler again on the next upgrade, and the one after that.
+	if strings.Contains(src, "TypeSecurityAutoBan") || strings.Contains(src, "func handleSecurityAutoBan") {
 		return src, nil, nil
 	}
+
+	// Everything below works on `out`, and `src` is returned untouched unless
+	// every edit lands. The comment at the top of this file says a
+	// half-applied wiring change is worse than none because it does not
+	// compile; this is what makes that true rather than aspirational.
+	out := src
 	var warn []string
 
 	const depsAnchor = "type WorkerDeps struct {\n\tDB      *gorm.DB\n\tMailer  *mail.Mailer\n\tStorage *storage.Storage\n\tCache   *cache.Cache\n}"
-	if strings.Contains(src, depsAnchor) {
-		src = strings.Replace(src, depsAnchor,
+	switch {
+	case strings.Contains(out, depsAnchor):
+		out = strings.Replace(out, depsAnchor,
 			"type WorkerDeps struct {\n\tDB      *gorm.DB\n\tMailer  *mail.Mailer\n\tStorage *storage.Storage\n\tCache   *cache.Cache\n"+
 				"\t// AutoBan is the scheduled security sweep. Nil when Sentinel is off,\n"+
 				"\t// and the job says so rather than failing.\n\tAutoBan *services.SecurityAutoBan\n}", 1)
-	} else if !strings.Contains(src, "AutoBan *services.SecurityAutoBan") {
+		// The field names a package this file may never have imported. Adding
+		// the one without the other is `undefined: services`, which is how
+		// this was found.
+		added, ok := withInternalImport(out, "services")
+		if !ok {
+			warn = append(warn, "its import block is not the one Grit wrote, so the sweep's type cannot be "+
+				"named: add the internal/services import, or internal/jobs will not compile")
+		}
+		out = added
+	case !strings.Contains(out, "AutoBan *services.SecurityAutoBan"):
 		warn = append(warn, "its WorkerDeps is not the one Grit wrote, so the sweep cannot reach the worker")
 	}
 
-	if _, after, ok := lineWith(src, "mux.HandleFunc(TypeTrashPurgeExpired"); ok {
-		src = src[:after] + "\tmux.HandleFunc(TypeSecurityAutoBan, handleSecurityAutoBan(deps))\n" + src[after:]
+	if _, after, ok := lineWith(out, "mux.HandleFunc(TypeTrashPurgeExpired"); ok {
+		out = out[:after] + "\tmux.HandleFunc(TypeSecurityAutoBan, handleSecurityAutoBan(deps))\n" + out[after:]
 	} else {
 		warn = append(warn, "its worker mux is not the one Grit wrote, so security:auto_ban has no handler")
 	}
 
 	const handlerAnchor = "// handleBackupWeekly takes the scheduled full-database backup"
-	if at := strings.Index(src, handlerAnchor); at >= 0 {
-		src = src[:at] + autoBanJobHandler + src[at:]
+	if at := strings.Index(out, handlerAnchor); at >= 0 {
+		out = out[:at] + autoBanJobHandler + out[at:]
 	} else {
 		warn = append(warn, "its job handlers are not where Grit wrote them, so handleSecurityAutoBan was not added")
 	}
+
 	if len(warn) > 0 {
+		// Unchanged. The warnings say what to add by hand, and the file still
+		// builds while somebody gets round to it.
 		return src, nil, warn
 	}
-	return src, []string{"the ban sweep runs as a background job"}, nil
+	return out, []string{"the ban sweep runs as a background job"}, nil
+}
+
+// withInternalImport adds this project's internal/<pkg> to an import block,
+// working out the module path from an internal import the file already has.
+//
+// The module is not something a repair is told, and guessing it wrong writes
+// an import of a package that does not exist. Reading it off a sibling import
+// is exact, and a file in internal/jobs always has at least one.
+func withInternalImport(src, pkg string) (string, bool) {
+	want := "/internal/" + pkg + "\""
+	if strings.Contains(src, want) {
+		return src, true
+	}
+	at := strings.Index(src, "/internal/")
+	if at < 0 {
+		return src, false
+	}
+	start := strings.LastIndexByte(src[:at], '"')
+	if start < 0 {
+		return src, false
+	}
+	module := src[start+1 : at]
+	return addImportGroup(src, module+"/internal/"+pkg)
 }
 
 const autoBanJobHandler = `// handleSecurityAutoBan bans the addresses that keep attacking.
@@ -332,29 +438,85 @@ func handleSecurityAutoBan(deps WorkerDeps) func(ctx context.Context, task *asyn
 
 // ---------------------------------------------------------------------- main
 
+// addAutoBanToWorkerDeps inserts the sweep as the last field of the
+// jobs.WorkerDeps literal, at whatever indentation that literal uses.
+func addAutoBanToWorkerDeps(src string) (string, bool) {
+	if strings.Contains(src, "AutoBan: services.NewSecurityAutoBan") {
+		return src, false
+	}
+	at := strings.Index(src, "jobs.WorkerDeps{")
+	if at < 0 {
+		return src, false
+	}
+	// The first line after it that closes the call.
+	rest := src[at:]
+	close := strings.Index(rest, "})")
+	if close < 0 {
+		return src, false
+	}
+	lineStart := strings.LastIndexByte(rest[:close], '\n') + 1
+	outer := rest[lineStart:close]
+	if strings.TrimSpace(outer) != "" {
+		// `})` on the same line as a field: not the shape Grit writes, and
+		// not one worth guessing at.
+		return src, false
+	}
+	inner := outer + "\t"
+	field := inner + "// Nil when Sentinel is off, and the sweep says so rather than\n" +
+		inner + "// failing: a project with no firewall did not ask for a ban sweep.\n" +
+		inner + "AutoBan: services.NewSecurityAutoBan(secObsBridge, cfg),\n"
+	return src[:at+lineStart] + field + src[at+lineStart:], true
+}
+
+// repairAutoBanMainSource keeps the one-argument shape for the tests that
+// drive it directly: a project whose worker was wired gets both edits.
 func repairAutoBanMainSource(src string) (string, []string, []string) {
+	return repairAutoBanMain(true)(src)
+}
+
+// repairAutoBanMain returns the edit for cmd/server/main.go.
+//
+// wireWorker says whether workers.go actually carries
+// `AutoBan *services.SecurityAutoBan`. When it does not, because the worker
+// repair refused a file it could not wire completely, setting the field here
+// is "unknown field AutoBan in struct literal of type jobs.WorkerDeps".
+//
+// The cron.New argument is not conditional. cron.go is framework-owned and is
+// rewritten on every upgrade, so its signature has changed whatever happened
+// to the worker, and the call site has to follow or main.go does not compile.
+func repairAutoBanMain(wireWorker bool) func(string) (string, []string, []string) {
+	return func(src string) (string, []string, []string) {
+		return repairAutoBanMainWith(src, wireWorker)
+	}
+}
+
+func repairAutoBanMainWith(src string, wireWorker bool) (string, []string, []string) {
 	var fixed, warn []string
 
-	const oldDeps = "\t\tstop, err := jobs.StartWorker(cfg.RedisURL, jobs.WorkerDeps{\n\t\t\tDB:      db,\n\t\t\tMailer:  mailer,\n\t\t\tStorage: storageService,\n\t\t\tCache:   cacheService,\n\t\t})"
-	if strings.Contains(src, oldDeps) {
-		src = strings.Replace(src, oldDeps,
-			"\t\tstop, err := jobs.StartWorker(cfg.RedisURL, jobs.WorkerDeps{\n"+
-				"\t\t\tDB:      db,\n\t\t\tMailer:  mailer,\n\t\t\tStorage: storageService,\n\t\t\tCache:   cacheService,\n"+
-				"\t\t\t// Nil when Sentinel is off, and the sweep says so rather than\n"+
-				"\t\t\t// failing: a project with no firewall did not ask for a ban sweep.\n"+
-				"\t\t\tAutoBan: services.NewSecurityAutoBan(secObsBridge, cfg),\n\t\t})", 1)
-		fixed = append(fixed, "the worker is given the ban sweep")
-	} else if !strings.Contains(src, "AutoBan: services.NewSecurityAutoBan") {
-		warn = append(warn, "its jobs.StartWorker call is not the one Grit wrote, so the sweep never "+
-			"reaches the worker: add AutoBan: services.NewSecurityAutoBan(secObsBridge, cfg)")
+	// The WorkerDeps literal, found by its opening and its closing brace
+	// rather than by a copy of every line between them at the template's
+	// indentation. The copy matched the template and not a project whose
+	// call sits at a different depth, and a project that is not matched is
+	// one the sweep never reaches.
+	if wireWorker {
+		if out, ok := addAutoBanToWorkerDeps(src); ok {
+			src = out
+			fixed = append(fixed, "the worker is given the ban sweep")
+		} else if !strings.Contains(src, "AutoBan: services.NewSecurityAutoBan") {
+			warn = append(warn, "its jobs.StartWorker call is not the one Grit wrote, so the sweep never "+
+				"reaches the worker: add AutoBan: services.NewSecurityAutoBan(secObsBridge, cfg)")
+		}
 	}
 
-	const oldCron = "\t\tcs, err := cron.New(cfg.RedisURL)\n"
-	if strings.Contains(src, oldCron) {
-		src = strings.Replace(src, oldCron, "\t\tcs, err := cron.New(cfg.RedisURL, cfg.SecurityAutoBanEvery)\n", 1)
+	// Matched without indentation. The call sits inside an if block in the
+	// main.go Grit writes and at the function's own level in some projects,
+	// and an anchor carrying two tabs matched the template and not them.
+	if strings.Contains(src, "cron.New(cfg.RedisURL)") {
+		src = strings.Replace(src, "cron.New(cfg.RedisURL)",
+			"cron.New(cfg.RedisURL, cfg.SecurityAutoBanEvery)", 1)
 		fixed = append(fixed, "the scheduler is told how often to sweep")
-	} else if strings.Contains(src, "cron.New(cfg.RedisURL)") {
-		warn = append(warn, "its cron.New call is not where Grit wrote it: pass cfg.SecurityAutoBanEvery as its second argument")
+	} else if strings.Contains(src, "cron.New(") && !strings.Contains(src, "cfg.SecurityAutoBanEvery") {
+		warn = append(warn, "its cron.New call is not the one Grit wrote: pass cfg.SecurityAutoBanEvery as its second argument")
 	}
 	return src, fixed, warn
 }

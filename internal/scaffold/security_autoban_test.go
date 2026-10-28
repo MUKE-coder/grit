@@ -158,3 +158,230 @@ func Load() *Config {
 		}
 	}
 }
+
+// TestTheConfigRepairWorksWithoutTheTurnstileField is the case the WhatsApp
+// blueprint found.
+//
+// The repair anchored on SentinelTurnstileSecret, a field added to config.go
+// after some projects were scaffolded. In one of those, the anchor is missing,
+// the repair warns and returns, and the upgrade carries on to write
+// internal/services/security_autoban.go and internal/cron/start.go, both of
+// which read cfg.SecurityAutoBan*. The upgrade reported success and left a
+// project that would not compile:
+//
+//	cfg.SecurityAutoBanEnabled undefined (type *config.Config has no field
+//	or method SecurityAutoBanEnabled)
+//
+// So the fallback is the end of the struct and the end of the literal, which
+// are there whatever the fields have done since.
+func TestTheConfigRepairWorksWithoutTheTurnstileField(t *testing.T) {
+	// A config.go from before SentinelTurnstileSecret existed.
+	old := `type Config struct {
+	AppPort string
+	AppURL  string
+
+	// Serve the API reference at /docs in production (API_DOCS_PUBLIC).
+	APIDocsPublic bool
+}
+
+func Load() (*Config, error) {
+	cfg := &Config{
+		AppPort:       getEnv("APP_PORT", "8080"),
+		AppURL:        getEnv("APP_URL", "http://localhost:8080"),
+		APIDocsPublic: getEnv("API_DOCS_PUBLIC", "false") == "true",
+	}
+	return cfg, nil
+}
+`
+	out, fixed, warn := repairAutoBanConfigSource(old)
+	if len(warn) > 0 {
+		t.Fatalf("a config.go with no Turnstile field was refused: %v", warn)
+	}
+	if len(fixed) != 1 {
+		t.Fatalf("fixed %v", fixed)
+	}
+	for _, want := range []string{
+		"SecurityAutoBanEnabled    bool",
+		`SecurityAutoBanEnabled:    getEnv("SECURITY_AUTO_BAN", "true") == "true",`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the repaired config is missing %q\n\n%s", want, out)
+		}
+	}
+	// Inside the struct and inside the literal, not after either of them.
+	if strings.Index(out, "SecurityAutoBanEnabled    bool") > strings.Index(out, "func Load()") {
+		t.Error("the fields landed outside the Config struct")
+	}
+	if !strings.Contains(out, "== \"true\",\n\t}\n\treturn cfg, nil") {
+		t.Errorf("the loads did not land as the last entries of the literal\n\n%s", out)
+	}
+
+	// And it stays idempotent, which is what a second upgrade does.
+	twice, fixed2, _ := repairAutoBanConfigSource(out)
+	if twice != out || len(fixed2) > 0 {
+		t.Error("running upgrade twice changes the file twice")
+	}
+}
+
+// TestTheWorkerRepairIsAllOrNothing is the second half of what the WhatsApp
+// blueprint found.
+//
+// The repair used to collect warnings and return the source it had already
+// modified, so a project missing one anchor got the other edits written: the
+// WorkerDeps field without the services import (undefined: services), and the
+// handler without the mux line. Because its only guard was the string the mux
+// line carries, the next upgrade added the handler again:
+//
+//	workers.go:305:6: handleSecurityAutoBan redeclared in this block
+func TestTheWorkerRepairIsAllOrNothing(t *testing.T) {
+	// Grit's WorkerDeps, and a mux this project has made its own.
+	partial := `package jobs
+
+import (
+	"github.com/hibiken/asynq"
+	"gorm.io/gorm"
+
+	"app/apps/api/internal/cache"
+	"app/apps/api/internal/mail"
+	"app/apps/api/internal/storage"
+)
+
+type WorkerDeps struct {
+	DB      *gorm.DB
+	Mailer  *mail.Mailer
+	Storage *storage.Storage
+	Cache   *cache.Cache
+}
+
+func Register(mux *asynq.ServeMux, deps WorkerDeps) {
+	mux.HandleFunc(TypeEmailSend, handleEmailSend(deps))
+}
+
+// handleBackupWeekly takes the scheduled full-database backup
+func handleBackupWeekly(deps WorkerDeps) {}
+`
+	out, fixed, warn := repairAutoBanWorkerSource(partial)
+	if len(warn) == 0 {
+		t.Fatal("a file with no TypeTrashPurgeExpired line was repaired silently")
+	}
+	if len(fixed) != 0 {
+		t.Errorf("reported %v while warning", fixed)
+	}
+	if out != partial {
+		t.Error("the file was modified even though an anchor was missing, which is the half-applied " +
+			"state that does not compile")
+	}
+
+	// Run it again, as the next upgrade would. Still unchanged, still warning,
+	// and above all not a second copy of anything.
+	twice, _, _ := repairAutoBanWorkerSource(out)
+	if twice != partial {
+		t.Error("a second upgrade changed the file again")
+	}
+}
+
+// TestTheWorkerRepairImportsWhatItNames: the field it adds has a type from
+// internal/services, and a project whose workers.go never imported that
+// package stopped compiling with "undefined: services".
+func TestTheWorkerRepairImportsWhatItNames(t *testing.T) {
+	src := `package jobs
+
+import (
+	"github.com/hibiken/asynq"
+	"gorm.io/gorm"
+
+	"whatsapp/apps/api/internal/cache"
+	"whatsapp/apps/api/internal/mail"
+	"whatsapp/apps/api/internal/storage"
+)
+
+type WorkerDeps struct {
+	DB      *gorm.DB
+	Mailer  *mail.Mailer
+	Storage *storage.Storage
+	Cache   *cache.Cache
+}
+
+func Register(mux *asynq.ServeMux, deps WorkerDeps) {
+	mux.HandleFunc(TypeTrashPurgeExpired, handleTrashPurgeExpired(deps))
+}
+
+// handleBackupWeekly takes the scheduled full-database backup
+func handleBackupWeekly(deps WorkerDeps) {}
+`
+	out, fixed, warn := repairAutoBanWorkerSource(src)
+	if len(warn) > 0 {
+		t.Fatalf("refused a file with every anchor: %v", warn)
+	}
+	if len(fixed) != 1 {
+		t.Fatalf("fixed %v", fixed)
+	}
+	if !strings.Contains(out, "AutoBan *services.SecurityAutoBan") {
+		t.Error("the WorkerDeps field was not added")
+	}
+	// The module comes off a sibling import, so it is this project's and not
+	// a guess.
+	if !strings.Contains(out, `"whatsapp/apps/api/internal/services"`) {
+		t.Errorf("the services import was not added, so this file is `undefined: services`\n\n%s", out)
+	}
+	if strings.Contains(out, `"app/apps/api/internal/services"`) {
+		t.Error("the import was written with a module path from somewhere else")
+	}
+
+	// Idempotent: the second upgrade does nothing at all.
+	twice, fixed2, _ := repairAutoBanWorkerSource(out)
+	if twice != out || len(fixed2) > 0 {
+		t.Error("running upgrade twice changes the file twice")
+	}
+}
+
+// TestTheCronArgumentIsFixedEvenWhenTheWorkerIsNot.
+//
+// main.go has two edits and only one of them depends on workers.go. Gating
+// both on the worker skipped the cron.New argument, and cron.go is
+// framework-owned: its signature changes on every upgrade whatever the worker
+// did, so the call site has to follow.
+//
+//	cmd/server/main.go:267:23: not enough arguments in call to cron.New
+//	        have (string)
+//	        want (string, "time".Duration)
+func TestTheCronArgumentIsFixedEvenWhenTheWorkerIsNot(t *testing.T) {
+	src := `package main
+
+func main() {
+	stop, err := jobs.StartWorker(cfg.RedisURL, jobs.WorkerDeps{
+		DB:      db,
+		Mailer:  mailer,
+		Storage: storageService,
+		Cache:   cacheService,
+	})
+	cs, err := cron.New(cfg.RedisURL)
+}
+`
+	out, fixed, warn := repairAutoBanMainWith(src, false)
+	if len(warn) > 0 {
+		t.Fatalf("warned although the worker was deliberately skipped: %v", warn)
+	}
+	if !strings.Contains(out, "cron.New(cfg.RedisURL, cfg.SecurityAutoBanEvery)") {
+		t.Error("the cron.New argument was not added, so main.go does not compile")
+	}
+	if strings.Contains(out, "AutoBan: services.NewSecurityAutoBan") {
+		t.Error("the WorkerDeps field was set although workers.go has no such field")
+	}
+	if len(fixed) != 1 {
+		t.Errorf("reported %v, wanted just the scheduler", fixed)
+	}
+
+	// And with the worker wired, both land.
+	both, fixed2, warn2 := repairAutoBanMainWith(src, true)
+	if len(warn2) > 0 {
+		t.Fatalf("refused the shape Grit writes: %v", warn2)
+	}
+	if !strings.Contains(both, "AutoBan: services.NewSecurityAutoBan") ||
+		!strings.Contains(both, "cfg.SecurityAutoBanEvery") {
+		t.Error("a wired project should get both edits")
+	}
+	if len(fixed2) != 2 {
+		t.Errorf("reported %v, wanted both", fixed2)
+	}
+}

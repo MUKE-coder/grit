@@ -230,6 +230,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeMoneyFiles(root, opts); err != nil {
 			return fmt.Errorf("updating money files: %w", err)
 		}
+		// These two were in the new-project path and nowhere else, so every
+		// file they own was frozen at the version a project was scaffolded
+		// with. The callers are refreshed by other paths, which is how it
+		// showed up: security_autoban.go calling Bridge.SentinelPost on a
+		// bridge from eighteen months ago, and two_factor.go reading a
+		// CodeHash the model never gained.
+		if err := writeTOTPFiles(root, opts); err != nil {
+			return fmt.Errorf("updating two-factor files: %w", err)
+		}
+		if err := writeSecurityObservabilityFiles(root, opts); err != nil {
+			return fmt.Errorf("updating security and observability files: %w", err)
+		}
 		// Same reason as money: the generator writes calls into this package,
 		// so an older copy of it means generated code that does not compile.
 		if err := writeRespondFiles(root, opts); err != nil {
@@ -552,6 +564,19 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairTrustedProxies(root, opts); err != nil {
 			fmt.Printf("  ⚠ trusting forwarded headers only from TRUSTED_PROXIES: %v\n", err)
 		}
+		// One database per project, wherever a command runs from. config.go is
+		// not in the file map, so without this the fix is new projects only.
+		//
+		// BEFORE the Pulse repair below, and the order is load-bearing: that
+		// one anchors on `PulseStorageDSN: resolveSQLitePath(getEnv(...`, and
+		// this is what wraps the line in resolveSQLitePath. With this running
+		// afterwards, a project old enough to predate the helper got a Pulse
+		// repair that matched nothing while routes.go was rewritten to use the
+		// fields it did not add. One `grit upgrade` left it not compiling and a
+		// second one fixed it, which is not a thing anybody does.
+		if err := repairSQLitePath(root); err != nil {
+			fmt.Printf("  ⚠ anchoring the SQLite database to the project: %v\n", err)
+		}
 		// Pulse v1.3.0's profile endpoints and the switches that gate them.
 		// config.go and routes.go are not framework-owned, so without this a new
 		// project would get profiling and every existing one would not.
@@ -627,11 +652,6 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
-		}
-		// One database per project, wherever a command runs from. config.go is
-		// not in the file map, so without this the fix is new projects only.
-		if err := repairSQLitePath(root); err != nil {
-			fmt.Printf("  ⚠ anchoring the SQLite database to the project: %v\n", err)
 		}
 		if err := repairDesktopForms(root); err != nil {
 			fmt.Printf("  ⚠ typing the desktop forms' payloads: %v\n", err)
@@ -1217,8 +1237,30 @@ func Upgrade(uOpts UpgradeOptions) error {
 		cyan.Println("    grit upgrade --plan     # write a runbook for finishing these")
 	}
 
+	// The last word: does it still compile? Every repair above is anchored on
+	// a file the project owns, and an anchor that has drifted warns and moves
+	// on while the file that needs the change is written anyway. This is the
+	// one check that catches that whole class.
 	fmt.Println()
+	builds := reportBuildAfterUpgrade(opts.APIRoot(root))
+
 	cyan.Println("  Next steps:")
+	if !builds {
+		cyan.Println("    Fix the errors above first: nothing below will work until it compiles.")
+	}
+	// Then this, because without it nothing else works. An upgrade adds the
+	// modules the new framework files import to go.mod, and go.sum is left
+	// behind: the next command is `grit migrate` and it fails with "missing
+	// go.sum entry". This was printed mid-run, a few hundred lines up, where
+	// it scrolled past.
+	// Only when the check above could not do it for itself: an upgrade adds
+	// modules to go.mod and leaves go.sum behind, and `grit migrate` then
+	// fails with "missing go.sum entry". The check runs `go mod tidy`, so
+	// this is the offline path rather than the usual one.
+	if dirExists(opts.APIRoot(root)) && !builds {
+		cyan.Printf("    cd %s && go mod tidy    # go.sum, for the modules this upgrade added\n",
+			apiRelPath(root, opts))
+	}
 	if hasWeb || hasAdmin {
 		cyan.Println("    pnpm install    # Install any new dependencies")
 		cyan.Println("    pnpm dev        # Restart development servers")
@@ -1288,6 +1330,16 @@ func migrateResourceFolders(root string, spinner, green *color.Color) {
 
 // upgradeAdminFiles regenerates admin panel generic files while preserving
 // user-created resource definitions and pages.
+// apiRelPath is where the Go API lives, as a person would type it: apps/api in
+// a triple or double, the project root itself in a single.
+func apiRelPath(root string, opts Options) string {
+	rel, err := filepath.Rel(root, opts.APIRoot(root))
+	if err != nil || rel == "." {
+		return "."
+	}
+	return filepath.ToSlash(rel)
+}
+
 func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, error) {
 	adminRoot := filepath.Join(root, "apps", "admin")
 	green := color.New(color.FgHiGreen)

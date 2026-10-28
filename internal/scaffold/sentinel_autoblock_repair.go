@@ -189,6 +189,40 @@ func repairSentinelV280RoutesSource(src string) (string, []string, []string) {
 	return out2, append(fixed, fixed2...), append(warn, warn2...)
 }
 
+// addBothExemptLists gives a project that has neither exempt list both of
+// them, anchored on the end of the Config struct and the end of the literal
+// the loader returns rather than on any field, since by definition the fields
+// this would anchor on are the ones that are missing.
+func addBothExemptLists(src string) (string, []string, []string) {
+	at, ok := endOfStruct(src, "type Config struct {")
+	if !ok {
+		return src, nil, []string{"its config.go has no `type Config struct` that Grit can find, so the " +
+			"two exempt lists cannot be added: add SentinelLockoutExemptIPs and " +
+			"SentinelAutoBlockExemptIPs ([]string) by hand, or internal/routes will not compile"}
+	}
+	src = src[:at] + "\t// Addresses or CIDRs the sign-in lockout and auto-block never bar,\n" +
+		"\t// whatever they do: your own monitoring, a partner's integration, an\n" +
+		"\t// office range. Auto-block falls back to the lockout list when its own\n" +
+		"\t// is empty, because both answer the same question.\n" +
+		"\tSentinelLockoutExemptIPs   []string\n" +
+		"\tSentinelAutoBlockExemptIPs []string\n" + src[at:]
+
+	lat, ok := endOfStruct(src, "cfg := &Config{")
+	if !ok {
+		lat, ok = endOfStruct(src, "return &Config{")
+	}
+	if !ok {
+		return src, nil, []string{"its config.go never builds a Config literal that Grit can find, so the " +
+			"exempt lists are never read from the environment: add the two splitCSV(getEnv(...)) " +
+			"lines by hand"}
+	}
+	src = src[:lat] +
+		"\t\tSentinelLockoutExemptIPs:   splitCSV(getEnv(\"SENTINEL_LOCKOUT_EXEMPT_IPS\", \"\")),\n" +
+		"\t\tSentinelAutoBlockExemptIPs: splitCSV(getEnv(\"SENTINEL_AUTOBLOCK_EXEMPT_IPS\", \"\")),\n" +
+		src[lat:]
+	return src, []string{"both Sentinel exempt lists are read from the environment"}, nil
+}
+
 // repairSentinelAutoBlockConfigSource adds the field auto-block's exempt list
 // is read from.
 func repairSentinelAutoBlockConfigSource(src string) (string, []string, []string) {
@@ -196,9 +230,13 @@ func repairSentinelAutoBlockConfigSource(src string) (string, []string, []string
 		return src, nil, nil
 	}
 	if !strings.Contains(src, "SentinelLockoutExemptIPs") {
-		// A project from before the lockout exempt list. Auto-block still
-		// works; it just has nothing to exempt.
-		return src, nil, nil
+		// A project from before either exempt list. This used to return here,
+		// reasoning that auto-block still works and simply has nothing to
+		// exempt. That was true while nothing else named the fields. routes.go
+		// names both now and is rewritten from the template on every upgrade,
+		// so returning here leaves routes.go referring to two fields that do
+		// not exist and an API that does not compile.
+		return addBothExemptLists(src)
 	}
 	const field = "\tSentinelLockoutExemptIPs []string\n"
 	at := strings.Index(src, field)
