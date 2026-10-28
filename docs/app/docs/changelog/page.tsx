@@ -59,6 +59,96 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.420.0 */}
+            <div className="mb-12" id="v3.420.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.420.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Your shared package was never upgraded</h3>
+                <p>
+                  <strong>
+                    packages/shared/themes.ts and brand.config.ts have never been
+                    delivered by an upgrade.
+                  </strong>{' '}
+                  Not to any project, since the shared package existed. The upgrade&apos;s
+                  shared step wrote package.json, tsconfig.json and types/errors.ts,
+                  and stopped there.
+                </p>
+                <p>
+                  <code>apps/admin/components/auth/</code> <em>is</em> refreshed every
+                  time, so an upgraded project ends up with eight auth shells switching
+                  on an <code>AuthLayout</code> that still declares three, and shells
+                  reading <code>brand.proof</code> from a config that has no such field.
+                  Go compiles. <code>pnpm type-check</code> does not:
+                </p>
+                <p>
+                  <code>
+                    AuthShell.tsx(39,10): error TS2678: Type &quot;modal&quot; is not
+                    comparable to type &quot;AuthLayout&quot;
+                  </code>
+                </p>
+                <p>
+                  Ten errors on a real project, and the same on any project upgrading
+                  from before the extra layouts landed. Both files travel with the
+                  components now. brand.config.ts is the one you are meant to edit, and
+                  that is exactly why it is safe to include: an edited copy is held back
+                  and named, as every framework file is, so a rebrand survives and you
+                  are told the file is behind.
+                </p>
+
+                <h3>The upgrade did not know you had a desktop app</h3>
+                <p>
+                  <code>opts.IncludeDesktop</code> was never set during an upgrade. The
+                  line directly above it does exactly this for Expo. So{' '}
+                  <code>hasDesktop</code>, probed from the directory, gated the desktop
+                  blocks, while <code>opts.ShouldIncludeDesktop()</code> gated every
+                  writer that takes Options, and the two disagreed for the whole life of
+                  the desktop app.
+                </p>
+                <p>
+                  The visible half: the desktop routes import{' '}
+                  <code>@/components/password-strength</code>, and the component was
+                  never written there, because the writer that writes it takes Options.
+                </p>
+
+                <h3>A plugin stopped injecting code you already have</h3>
+                <p>
+                  <code>injectBefore</code> is idempotent against the lines directly
+                  above its own marker, which is the right question for a snippet that
+                  may legitimately repeat and the wrong one for{' '}
+                  <code>x := ...</code>: that can exist once in a scope. A shop which
+                  had moved the Stripe block and extended it got a second copy fourteen
+                  lines below the first, and <code>no new variables on left side of :=</code>.
+                </p>
+                <p>
+                  It now refuses to inject a short variable declaration the file already
+                  declares, names it, and carries on rather than failing the install.
+                </p>
+
+                <h3>And the build check is now genuinely last</h3>
+                <p>
+                  It moved twice yesterday and was still not at the end: plugins are
+                  updated by the command after <code>Upgrade()</code> returns, and a
+                  plugin rewrites routes.go. That is how the storefront was told its API
+                  compiled and then had a duplicate declaration injected into it.
+                </p>
+                <p>
+                  Blueprints is in the documentation navbar too. It was on the marketing
+                  header and nowhere inside /docs, which is where a reader actually is.
+                </p>
+                <p>
+                  All four were found by upgrading three real applications from 3.306.0
+                  and running their whole CI gate rather than the Go half. Three of the
+                  four are invisible to Go tooling entirely.
+                </p>
+              </div>
+            </div>
+
             {/* v3.419.1 */}
             <div className="mb-12" id="v3.419.1">
               <div className="flex items-center gap-3 mb-4">

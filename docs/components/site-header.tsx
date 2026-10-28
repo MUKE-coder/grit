@@ -99,6 +99,11 @@ export function SiteHeader() {
                 { label: 'CLI', href: '/docs/cli' },
                 { label: 'Systems', href: '/docs/systems' },
                 { label: 'Plugins', href: '/docs/plugins/marketplace' },
+                // The one link here that leaves the docs, because a blueprint
+                // is a product rather than a section. It was reachable from
+                // the marketing header and from nowhere inside /docs, which
+                // is where a reader actually is.
+                { label: 'Blueprints', href: '/blueprints' },
                 { label: 'Changelog', href: '/docs/changelog' },
               ]
             : [

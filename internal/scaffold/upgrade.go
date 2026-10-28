@@ -115,6 +115,16 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// package.json pin Expo's React when the project has the Expo app, and
 	// they are written before it.
 	opts.IncludeExpo = opts.IncludeExpo || hasExpo
+	// And the same for the desktop app, which this line used to leave out.
+	// Two sources of truth: hasDesktop, probed from the directory, gates the
+	// blocks below, while opts.ShouldIncludeDesktop() gates every writer that
+	// takes Options. writePasswordStrengthFiles takes Options, so the desktop
+	// never got components/password-strength.tsx, while the desktop routes
+	// written from the other side imported it:
+	//
+	//	src/routes/auth/register.tsx(9,34): error TS2307: Cannot find module
+	//	'@/components/password-strength'
+	opts.IncludeDesktop = opts.IncludeDesktop || hasDesktop
 	// Before anything is rewritten: whether i18n was set up, since the files
 	// that say so (package.json, the layouts) are among those replaced below.
 	hadI18n := i18nInstalled(root)
@@ -876,6 +886,19 @@ func Upgrade(uOpts UpgradeOptions) error {
 			// Generated, not edited: a frontend switching on a stale list of error
 			// codes is the drift the catalogue exists to end.
 			filepath.Join(root, "packages", "shared", "types", "errors.ts"): sharedErrorsTS(),
+			// The design tokens the admin's components are typed against.
+			// apps/admin/components/auth is refreshed on every upgrade, and
+			// without these two travelling with it a project ends up with
+			// eight auth shells switching on an AuthLayout that still declares
+			// three, and shells reading brand.proof from a config that has no
+			// such field. Go compiles; pnpm type-check does not.
+			filepath.Join(root, "packages", "shared", "themes.ts"): sharedThemes(),
+			// brand.config.ts is the file a project is meant to edit, and that
+			// is exactly why it is safe here: writeUpgradeFiles holds back
+			// anything the manifest records as edited and names it. A rebranded
+			// project is told this file is behind, which beats ten type errors
+			// with nothing pointing at the cause.
+			filepath.Join(root, "packages", "shared", "brand.config.ts"): sharedBrandConfig(opts),
 		}
 		n, err = writeUpgradeFiles(sharedFiles, uOpts.Force)
 		if err != nil {
@@ -1272,20 +1295,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 	spinner.Println("  Run 'grit sync' to regenerate TypeScript types from Go models.")
 	fmt.Println()
 
-	// The last word, and it has to be last. Every repair above is anchored on
-	// a file the project owns, and an anchor that has drifted warns and moves
-	// on while the file that needs the change is written anyway; this is the
-	// one check that catches that whole class.
-	//
-	// Below the access table on purpose. "Next steps" is printed with a
-	// hundred lines of upgrade still to come, and running the build there
-	// caught the project mid-flight: four "undefined: table" errors in
-	// internal/access that accessgen.Generate was about to fix.
-	if !reportBuildAfterUpgrade(opts.APIRoot(root)) {
-		color.New(color.FgHiCyan).Printf("  Fix those first: nothing else will work until it compiles.\n")
-		fmt.Println()
-	}
-
+	// The build check is NOT here. It belongs after the last thing that
+	// writes code, and that is the plugin update, which the cobra command
+	// runs once this function has returned. ReportBuild is exported for it.
 	return nil
 }
 

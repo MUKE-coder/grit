@@ -69,6 +69,18 @@ func tidyModules(apiDir string) bool {
 	}
 }
 
+// ReportBuild runs the check against a project root, for the caller that owns
+// the last word.
+//
+// `grit upgrade` ends in the cobra command, not in Upgrade(): plugins are
+// updated after it returns, and a plugin rewrites routes.go. Running the check
+// inside Upgrade() therefore reported the storefront as compiling and the
+// Stripe plugin then gave routes.go a second `paymentService :=`.
+func ReportBuild(root string) bool {
+	opts := Options{Architecture: detectArchitecture(root)}
+	return reportBuildAfterUpgrade(opts.APIRoot(root))
+}
+
 // reportBuildAfterUpgrade compiles the API and says what broke.
 //
 // Returns true when the project builds, or when the check could not be run at

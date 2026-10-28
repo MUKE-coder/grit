@@ -3,6 +3,7 @@ package plugin
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -130,6 +131,14 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 				return nil, fmt.Errorf("injection target %s does not exist", inj.File)
 			}
 			if err := injectBefore(abs, inj.Marker, inj.Code); err != nil {
+				// The project already has this wiring, somewhere other than
+				// where Grit puts it. Said once and skipped, never fatal: it is
+				// a reason not to write, not a reason to stop.
+				var declared *AlreadyDeclaredError
+				if errors.As(err, &declared) {
+					fmt.Printf("  ⚠ %s: %v\n", inj.File, err)
+					continue
+				}
 				if inj.Optional {
 					fmt.Printf("  ⚠ skipped %s (%v)\n", inj.File, err)
 					continue
@@ -311,12 +320,76 @@ func Remove(root, name string) ([]string, error) {
 // an edit and a resource generator applying one have different failure
 // expectations, and coupling them means a change for one silently alters the
 // other.
+// AlreadyDeclaredError says an injection was skipped because the file already
+// declares the variable it introduces. Not a failure: the project has the
+// wiring, somewhere other than where Grit would put it.
+type AlreadyDeclaredError struct {
+	Name string
+	File string
+}
+
+func (e *AlreadyDeclaredError) Error() string {
+	return e.Name + " is already declared in " + filepath.Base(e.File) +
+		", so injecting it again would not compile"
+}
+
+// declaresVariable returns the name a block of Go introduces with :=, when it
+// introduces exactly one at the top level of the block. Multiple declarations
+// or none means this guard does not apply and the ordinary marker rules do.
+func declaresVariable(code string) (string, bool) {
+	var found string
+	for _, line := range strings.Split(code, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "//") {
+			continue
+		}
+		at := strings.Index(trimmed, " := ")
+		if at <= 0 {
+			continue
+		}
+		name := strings.TrimSpace(trimmed[:at])
+		// One name only: `a, b := f()` is a different shape and is left alone.
+		if name == "" || strings.ContainsAny(name, " ,.\t()[]{}") {
+			continue
+		}
+		if found != "" && found != name {
+			return "", false
+		}
+		found = name
+	}
+	return found, found != ""
+}
+
+// fileDeclares reports whether content already declares that name with
+// :=, ignoring commented-out lines.
+func fileDeclares(content, name string) bool {
+	for _, line := range strings.Split(content, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "//") {
+			continue
+		}
+		if strings.HasPrefix(trimmed, name+" := ") {
+			return true
+		}
+	}
+	return false
+}
+
 func injectBefore(path, marker, code string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 	content := string(data)
+
+	// A declaration the file already has. The marker check below asks
+	// whether this exact block sits directly above this marker, which is
+	// the right question for a snippet that may legitimately repeat and the
+	// wrong one for `x := ...`: that can exist once in a scope, so a second
+	// one does not compile however the lines around the marker have moved.
+	if name, ok := declaresVariable(code); ok && fileDeclares(content, name) {
+		return &AlreadyDeclaredError{Name: name, File: path}
+	}
 
 	lines := strings.Split(content, "\n")
 	codeLines := strings.Split(code, "\n")

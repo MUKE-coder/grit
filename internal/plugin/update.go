@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -213,6 +214,13 @@ func UpdateWith(ctx Context, p Plugin, opts UpdateOptions) (*UpdateResult, error
 				continue
 			}
 			if err := injectBefore(abs, inj.Marker, inj.Code); err != nil {
+				// Already wired, somewhere this plugin did not put it. Injecting
+				// it again gave the Kaya Goods storefront two paymentService
+				// declarations and a routes.go that did not compile.
+				var declared *AlreadyDeclaredError
+				if errors.As(err, &declared) {
+					continue
+				}
 				if inj.Optional {
 					continue
 				}

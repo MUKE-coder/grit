@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.419.1"
+var version = "3.420.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1585,6 +1585,17 @@ func upgradeCmd() *cobra.Command {
 			// how the Stripe plugin could learn to record what a renewal
 			// charged and no existing shop could have it.
 			upgradeInstalledPlugins()
+
+			// Last, because a plugin update rewrites routes.go and this is the
+			// one check that catches an upgrade which has left the project not
+			// compiling. Run inside Upgrade() it said the storefront was fine and
+			// the Stripe plugin then gave routes.go a second paymentService.
+			if root, err := os.Getwd(); err == nil {
+				if !scaffold.ReportBuild(root) {
+					color.New(color.FgHiCyan).Printf("  Fix those first: nothing else will work until it compiles.\n")
+					fmt.Println()
+				}
+			}
 			return nil
 		},
 	}
