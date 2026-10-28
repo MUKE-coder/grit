@@ -50,12 +50,12 @@ export default function SingleViteKitPage() {
               <svg viewBox="0 0 200 50" className="w-full h-full">
                 <defs>
                   <linearGradient id="va" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 <path d="M 0 40 L 20 32 L 40 35 L 60 28 L 80 22 L 100 25 L 120 18 L 140 20 L 160 12 L 180 14 L 200 8 L 200 50 L 0 50 Z" fill="url(#va)" />
-                <path d="M 0 40 L 20 32 L 40 35 L 60 28 L 80 22 L 100 25 L 120 18 L 140 20 L 160 12 L 180 14 L 200 8" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                <path d="M 0 40 L 20 32 L 40 35 L 60 28 L 80 22 L 100 25 L 120 18 L 140 20 L 160 12 L 180 14 L 200 8" fill="none" stroke="var(--primary)" strokeWidth="1.5" />
               </svg>
             </div>
           </div>

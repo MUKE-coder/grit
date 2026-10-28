@@ -88,7 +88,7 @@ export default function HomePage() {
                 <span className="text-fg-subtle">Batteries included.</span>
               </h1>
 
-              <p className="mt-6 max-w-[52ch] text-[clamp(1.0625rem,1.5vw,1.1875rem)] leading-[1.65] text-fg-muted">
+              <p className="mt-6 max-w-[var(--measure)] text-[clamp(1.0625rem,1.5vw,1.1875rem)] leading-[1.65] text-fg-muted">
                 Describe a resource once. Grit writes the Go model, API, migrations,
                 TypeScript types, React hooks and admin screen, then ships it to the web,
                 desktop and mobile from one repo.

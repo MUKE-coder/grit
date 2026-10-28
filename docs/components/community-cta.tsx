@@ -110,7 +110,7 @@ export function CommunityCTA({
             href={DISCORD_INVITE_URL}
             target="_blank"
             rel="noreferrer"
-            className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground no-underline transition-colors hover:bg-accent/85"
+            className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground no-underline transition-colors hover:bg-fg/85"
           >
             <DiscordIcon className="h-4 w-4" />
             Join the Discord

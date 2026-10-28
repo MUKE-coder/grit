@@ -123,7 +123,7 @@ export default function CoursesPage() {
             className="absolute inset-0 -z-10"
             style={{
               background:
-                'radial-gradient(ellipse 70% 70% at 50% -10%, hsl(var(--primary) / 0.12), transparent 60%)',
+                'radial-gradient(ellipse 70% 70% at 50% -10%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 60%)',
             }}
           />
           <span className="crosshair absolute top-16 left-[16%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />

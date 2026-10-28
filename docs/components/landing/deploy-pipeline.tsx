@@ -54,7 +54,7 @@ export function DeployPipeline() {
       </ol>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-6 rounded-xl border border-border px-6 py-5">
-        <p className="m-0 max-w-[48ch] text-[14px] leading-[1.65] text-fg-muted">
+        <p className="m-0 max-w-[var(--measure)] text-[14px] leading-[1.65] text-fg-muted">
           <span className="text-fg">It is a Go binary and some containers.</span> Which
           means it runs anywhere: a $5 VPS, a managed platform, or your own Docker host.
           Fly, Railway, Render, Dokploy, Coolify, EC2 and Lightsail each have a guide with

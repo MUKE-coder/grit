@@ -203,7 +203,7 @@ export default function PitchPage() {
           className="absolute inset-0 -z-10"
           style={{
             background:
-              'radial-gradient(ellipse 60% 60% at 50% -10%, hsl(var(--primary) / 0.14), transparent 60%)',
+              'radial-gradient(ellipse 60% 60% at 50% -10%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 60%)',
           }}
         />
         <GlowOrb className="-top-32 left-1/3 h-[420px] w-[420px] bg-accent/[0.10]" duration={20} />

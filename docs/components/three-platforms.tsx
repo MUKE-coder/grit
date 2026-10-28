@@ -171,8 +171,8 @@ function DashboardMockup({ variant }: { variant: 'web' | 'desktop' | 'mobile' })
           <svg viewBox="0 0 200 50" className="w-full h-10">
             <defs>
               <linearGradient id="rev-area" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
               </linearGradient>
             </defs>
             <path
@@ -182,7 +182,7 @@ function DashboardMockup({ variant }: { variant: 'web' | 'desktop' | 'mobile' })
             <path
               d="M 0 40 L 20 32 L 40 35 L 60 28 L 80 22 L 100 25 L 120 18 L 140 20 L 160 12 L 180 14 L 200 8"
               fill="none"
-              stroke="hsl(var(--primary))"
+              stroke="var(--primary)"
               strokeWidth="1.5"
             />
           </svg>
@@ -216,7 +216,7 @@ export function ThreePlatforms() {
         className="absolute inset-0 -z-20 opacity-[0.4]"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.06) 1px, transparent 0)',
+            'radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--foreground) 6%, transparent) 1px, transparent 0)',
           backgroundSize: '32px 32px',
         }}
       />

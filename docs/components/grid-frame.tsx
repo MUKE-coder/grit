@@ -26,7 +26,7 @@ export function GridFrame({ width = '80rem' }: { width?: string }) {
         className="absolute inset-x-0 top-0 h-[640px]"
         style={{
           background:
-            'radial-gradient(ellipse 60% 100% at 50% -10%, hsl(var(--primary) / 0.12), transparent 65%)',
+            'radial-gradient(ellipse 60% 100% at 50% -10%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 65%)',
         }}
       />
 

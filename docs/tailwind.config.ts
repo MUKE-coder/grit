@@ -18,6 +18,35 @@ const config: Config = {
         display: ['var(--font-geist-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['var(--font-geist-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
+      /*
+       * The twelve named type styles, from the design system.
+       *
+       * They have names here because the contract is "use one of the twelve",
+       * and a rule like that is only checkable if the twelve are things you
+       * can name. Before this block, `text-lead` was written in two
+       * components and existed in no stylesheet: Tailwind emits nothing for
+       * a class it does not know, so every section lead on the landing page
+       * rendered at the inherited 16px instead of 20, silently, for as long
+       * as it took somebody to measure it.
+       *
+       * Each entry carries its line height and weight, so `text-h2` is the
+       * whole style and not just a size somebody still has to pair.
+       */
+      fontSize: {
+        'display-xl': ['80px', { lineHeight: '84px', fontWeight: '600', letterSpacing: '-0.045em' }],
+        display: ['56px', { lineHeight: '60px', fontWeight: '600', letterSpacing: '-0.04em' }],
+        stat: ['64px', { lineHeight: '64px', fontWeight: '500', letterSpacing: '-0.04em' }],
+        h1: ['40px', { lineHeight: '48px', fontWeight: '600', letterSpacing: '-0.035em' }],
+        h2: ['28px', { lineHeight: '36px', fontWeight: '600', letterSpacing: '-0.025em' }],
+        h3: ['20px', { lineHeight: '28px', fontWeight: '600', letterSpacing: '-0.02em' }],
+        h4: ['16px', { lineHeight: '24px', fontWeight: '600', letterSpacing: '-0.01em' }],
+        lead: ['20px', { lineHeight: '32px', fontWeight: '400' }],
+        body: ['16px', { lineHeight: '28px', fontWeight: '400' }],
+        'body-sm': ['14px', { lineHeight: '22px', fontWeight: '400' }],
+        caption: ['13px', { lineHeight: '20px', fontWeight: '400' }],
+        eyebrow: ['12px', { lineHeight: '16px', fontWeight: '500', letterSpacing: '0.08em' }],
+        code: ['13.5px', { lineHeight: '24px', fontWeight: '400' }],
+      },
       colors: {
         // Grit design system. The shadcn names below are aliases kept so
         // every existing components/ui/ file keeps working.
@@ -47,11 +76,15 @@ const config: Config = {
         success: 'rgb(from var(--success) r g b / <alpha-value>)',
         warning: 'rgb(from var(--warning) r g b / <alpha-value>)',
         danger: 'rgb(from var(--danger) r g b / <alpha-value>)',
-        // The code palette. `bg-code` stays the panel background it has
-        // always been; the rest are the syntax roles, so a hand-written
-        // snippet can be coloured from tokens rather than from hex.
+        // The code palette: the syntax roles, so a hand-written snippet can
+        // be coloured from tokens rather than from hex.
+        //
+        // There is deliberately no DEFAULT here. `text-code` is a font size
+        // in the scale above, and a colour of the same name would make one
+        // class quietly set both a size and a colour. The panel background
+        // is `bg-code-bg`.
         code: {
-          DEFAULT: 'rgb(from var(--code-bg) r g b / <alpha-value>)',
+          bg: 'rgb(from var(--code-bg) r g b / <alpha-value>)',
           fg: 'rgb(from var(--code-fg) r g b / <alpha-value>)',
           comment: 'rgb(from var(--code-comment) r g b / <alpha-value>)',
           keyword: 'rgb(from var(--code-keyword) r g b / <alpha-value>)',

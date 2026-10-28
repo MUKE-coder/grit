@@ -96,7 +96,7 @@ export function HubAndSpoke() {
         className="absolute inset-0 -z-20 opacity-[0.5]"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.06) 1px, transparent 0)',
+            'radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--foreground) 6%, transparent) 1px, transparent 0)',
           backgroundSize: '32px 32px',
         }}
       />
@@ -129,13 +129,13 @@ export function HubAndSpoke() {
           >
             <defs>
               <linearGradient id="hub-line-grad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-                <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
+                <stop offset="50%" stopColor="var(--primary)" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.25" />
               </linearGradient>
               <radialGradient id="hub-pulse-grad">
-                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="1" />
-                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity="1" />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
               </radialGradient>
             </defs>
 
@@ -217,13 +217,13 @@ export function HubAndSpoke() {
               {/* Pulsing primary halo */}
               <div className="absolute inset-0 rounded-2xl bg-accent/30 blur-2xl scale-110 animate-pulse" />
 
-              <div className="relative rounded-2xl border-2 border-accent/40 bg-card px-6 py-5 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.35),0_0_0_4px_hsl(var(--primary)/0.08)]">
+              <div className="relative rounded-2xl border-2 border-accent/40 bg-card px-6 py-5 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.35),0_0_0_4px_color-mix(in srgb, var(--primary) 8%, transparent)]">
                 <div className="flex items-center gap-3 mb-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/grit_logo.png"
                     alt="Grit"
-                    className="h-10 w-10 rounded-xl shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.4)]"
+                    className="h-10 w-10 rounded-xl shadow-[0_4px_12px_-2px_color-mix(in srgb, var(--primary) 40%, transparent)]"
                   />
                   <div>
                     <div className="font-bold text-foreground leading-tight">Grit Framework</div>

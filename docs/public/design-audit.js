@@ -146,6 +146,26 @@
       typeStyles.slice(-6).map(([k, n]) => `${k} (x${n})`).join(', '));
   }
 
+  /*
+   * Which of them are not one of the twelve named styles.
+   *
+   * The count alone says a page is undisciplined; this says where. It is
+   * reported rather than failed, because `clamp()` is legitimate and lands
+   * between two named sizes at most viewport widths: the hero h1 is one of
+   * the twelve at each end of its range and neither of them in the middle.
+   * Flagging that would be flagging responsive type.
+   */
+  const NAMED_TYPE = [
+    [80, 600], [56, 600], [64, 500], [40, 600], [28, 600], [20, 600],
+    [16, 600], [20, 400], [16, 400], [14, 400], [13, 400], [12, 500],
+    [14, 400], // text-code rounds to 14
+  ];
+  const offSystemType = typeStyles.filter(([k]) => {
+    const [px, w] = k.split('/');
+    return !NAMED_TYPE.some(([np, nw]) =>
+      Math.abs(Number(px.replace('px', '')) - np) <= 1 && Number(w) === nw);
+  });
+
   // --- 2. radii -----------------------------------------------------------
   // A compound radius ("0px 10px 10px 0px") is one value applied to some
   // corners, not a new one. Normalising to the distinct non-zero components
@@ -409,10 +429,61 @@
     failures,
     details: {
       typeStyles: typeStyles.map(([k, n]) => `${k} x${n}`),
+      offSystemTypeStyles: offSystemType.map(([k, n]) => `${k} x${n}`),
       radii: radiusValues.map(([k, n]) => `${k} x${n}`),
       sectionPaddings: paddings.map(([k, n]) => `${k} x${n}`),
       contrast: contrastFails.slice(0, 10),
       unnamedControls: unnamed.slice(0, 10),
+    },
+
+    /*
+     * The fingerprint: what a mockup diff compares.
+     *
+     * "Pixel to pixel" is only checkable if there is something to check. Run
+     * the audit on the design and on the page, diff these two objects, and
+     * what differs is what has not been built to the design yet. It is a
+     * list of landmarks rather than an image comparison, because an image
+     * diff of two pages with different copy in them is all noise.
+     */
+    fingerprint: {
+      container: (() => {
+        /*
+         * `.frame` and `.cnr` are the mockup's names for `.g-frame` and
+         * `.g-cnr`. Accepting both is what lets one fingerprint describe the
+         * design and the page, which is the only way to diff them.
+         *
+         * Tried in order, one querySelector each. A selector LIST returns
+         * the first element in document order that matches any of them, not
+         * the first match of the first selector: with
+         * '.g-frame, .frame, main > div, main', <main> precedes every frame
+         * in the document and won every time, so this landmark reported the
+         * viewport width on both sides instead of the container.
+         */
+        for (const sel of ['.g-frame', '.frame', 'main > div', 'main']) {
+          const el = document.querySelector(sel);
+          if (el) return Math.round(el.getBoundingClientRect().width);
+        }
+        return null;
+      })(),
+      sections: [...document.querySelectorAll('main > section')]
+        .filter(visible)
+        .map((el) => {
+          const h = el.querySelector('h1, h2');
+          const cs = getComputedStyle(el);
+          return {
+            heading: h ? h.textContent.trim().slice(0, 48) : null,
+            headingPx: h ? Math.round(parseFloat(getComputedStyle(h).fontSize)) : null,
+            height: Math.round(el.getBoundingClientRect().height),
+            padTop: Math.round(parseFloat(cs.paddingTop)),
+            hasCornerMarks: !!el.querySelector('.g-cnr, .cnr'),
+            hasRule: parseFloat(cs.borderTopWidth) > 0,
+          };
+        }),
+      colours: Object.fromEntries(
+        ['bg', 'surface-1', 'border', 'fg', 'fg-muted', 'fg-subtle', 'accent']
+          .map((n) => [n, getComputedStyle(document.documentElement)
+            .getPropertyValue('--' + n).trim()])
+      ),
     },
     verdict: failures.length === 0
       ? 'within budget'

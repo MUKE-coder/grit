@@ -3,7 +3,7 @@
 // Swim-lane columns, numbered/tinted boxes, optional grouped containers, and
 // orthogonal elbow-arrow connectors that route deterministically. Rendered as a
 // single responsive SVG (viewBox) so connectors stay pixel-locked to boxes and
-// the whole thing scales to its container. Theme-aware via hsl(var(--…)).
+// the whole thing scales to its container. Theme-aware via the colour tokens.
 //
 //   <LaneFlow
 //     id="auth"
@@ -186,7 +186,7 @@ export function LaneFlow({
                   y1={HEADER_H - 8}
                   x2={i * LANE_W}
                   y2={H - 8}
-                  stroke="hsl(var(--border))"
+                  stroke="var(--border)"
                   strokeWidth="1"
                   strokeDasharray="4 5"
                 />
@@ -198,7 +198,7 @@ export function LaneFlow({
                 fontSize="11"
                 fontWeight="700"
                 letterSpacing="0.08em"
-                fill="hsl(var(--muted-foreground))"
+                fill="var(--muted-foreground)"
                 style={{ textTransform: 'uppercase' } as React.CSSProperties}
               >
                 {lane}
@@ -235,7 +235,7 @@ export function LaneFlow({
                       dominantBaseline="central"
                       fontSize="11"
                       fontWeight="700"
-                      fill="hsl(var(--background))"
+                      fill="var(--background)"
                     >
                       {g.badge}
                     </text>
@@ -280,8 +280,8 @@ export function LaneFlow({
                       width={e.label.length * 6.3 + 10}
                       height="18"
                       rx="5"
-                      fill="hsl(var(--card))"
-                      stroke="hsl(var(--border))"
+                      fill="var(--card)"
+                      stroke="var(--border)"
                       strokeWidth="0.75"
                     />
                     <text
@@ -291,7 +291,7 @@ export function LaneFlow({
                       dominantBaseline="central"
                       fontSize="10"
                       fontFamily="var(--font-mono, ui-monospace, monospace)"
-                      fill="hsl(var(--muted-foreground))"
+                      fill="var(--muted-foreground)"
                     >
                       {e.label}
                     </text>
@@ -326,7 +326,7 @@ export function LaneFlow({
                   dominantBaseline="central"
                   fontSize="12.5"
                   fontWeight="600"
-                  fill="hsl(var(--foreground))"
+                  fill="var(--foreground)"
                 >
                   {n.title}
                 </text>
@@ -338,7 +338,7 @@ export function LaneFlow({
                     dominantBaseline="central"
                     fontSize="10.5"
                     fontFamily="var(--font-mono, ui-monospace, monospace)"
-                    fill="hsl(var(--muted-foreground))"
+                    fill="var(--muted-foreground)"
                   >
                     {n.sub}
                   </text>
@@ -353,7 +353,7 @@ export function LaneFlow({
                       dominantBaseline="central"
                       fontSize="11"
                       fontWeight="700"
-                      fill="hsl(var(--background))"
+                      fill="var(--background)"
                     >
                       {n.badge}
                     </text>

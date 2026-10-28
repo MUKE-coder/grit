@@ -50,7 +50,7 @@ export function WhatIsGrit() {
         className="absolute inset-0 -z-20 opacity-[0.35]"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.06) 1px, transparent 0)',
+            'radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--foreground) 6%, transparent) 1px, transparent 0)',
           backgroundSize: '32px 32px',
         }}
       />
@@ -80,7 +80,7 @@ export function WhatIsGrit() {
             className="hidden md:block absolute top-[88px] left-[16%] right-[16%] h-px"
             style={{
               background:
-                'linear-gradient(to right, transparent 0%, hsl(var(--primary)/0.3) 20%, hsl(var(--primary)/0.6) 50%, hsl(var(--primary)/0.3) 80%, transparent 100%)',
+                'linear-gradient(to right, transparent 0%, color-mix(in srgb, var(--primary) 30%, transparent) 20%, color-mix(in srgb, var(--primary) 60%, transparent) 50%, color-mix(in srgb, var(--primary) 30%, transparent) 80%, transparent 100%)',
             }}
           />
 
