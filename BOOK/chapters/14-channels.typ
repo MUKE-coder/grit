@@ -317,8 +317,8 @@ would panic a worker still writing.
   )
 
   // Stage 1: produce lines. Returns a channel rather than taking one,
-  // which
-  // is the convention: the producer owns and closes what it creates.
+  // which is the convention: the producer owns and closes what it
+  // creates.
   func generate(done <-chan struct{}, lines []string) <-chan string {
       out := make(chan string)
       go func() {
@@ -395,8 +395,7 @@ would panic a worker still writing.
           total += n
       }
 
-      fmt.Printf("%d words in %v
-", total,
+      fmt.Printf("%d words in %v\n", total,
           time.Since(start).Round(time.Millisecond))
   }
   ```

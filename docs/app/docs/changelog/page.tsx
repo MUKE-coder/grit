@@ -59,6 +59,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.422.0 */}
+            <div className="mb-12" id="v3.422.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.422.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Go, the Full Course</h3>
+                <p>
+                  All 503 pages of{' '}
+                  <em>Go for JavaScript Developers</em> as a course: 59 lessons
+                  across seven parts, every one ending in the chapter&apos;s own
+                  assignment with the exact commit name the leaderboard scores.
+                  About thirteen hours, from &quot;what is a pointer&quot; to
+                  rebuilding Redis&apos;s wire protocol.
+                </p>
+                <p>
+                  <strong>It is generated from the book, not copied from it.</strong>{' '}
+                  <code>scripts/go-course-build.py</code> reads
+                  <code>BOOK/chapters/</code> and writes the lesson pages, the
+                  course structure and the import registry. Two hand-written
+                  copies of 61 chapters would disagree within a month; there is
+                  one source, and changing a chapter changes the lesson.
+                </p>
+                <p>
+                  The Go prerequisites page now says what each of the three is
+                  for, because they are three depths of the same material and a
+                  reader who found one should know the others exist. The page is
+                  the reference, the book is the long form, the course is the
+                  book with a leaderboard.
+                </p>
+
+                <h3>Two bugs in the book, found by checking it</h3>
+                <p>
+                  Chapter 14&apos;s pipeline program, the one its assignment tells
+                  you to build, did not compile. A <code>\n</code> inside a
+                  <code>Printf</code> had become a real newline, splitting the
+                  string literal across two lines. The chapter&apos;s headline
+                  example failed on the first run, for every reader who typed it
+                  in.
+                </p>
+                <p>
+                  Chapters 21 and 54 both named their assignment &quot;HTTP Server -
+                  Assignment One&quot;. Committed scores by exact commit name, so
+                  one of the two could never score.
+                </p>
+                <p>
+                  Both came from <code>BOOK/scripts/</code>, three checkers that
+                  now run over the book: every Go snippet parses (461 of them, and
+                  the checker knows the difference between a broken snippet and an
+                  elided or deliberately-illegal one), assignment names are unique
+                  and scorable, and nothing uses a concept the book has not taught
+                  yet. That last one reports 22 today, which is a triage list
+                  rather than a defect list: the rule is not that a chapter may
+                  never use something early, it is that the prose has to say so.
+                </p>
+              </div>
+            </div>
+
             {/* v3.421.0 */}
             <div className="mb-12" id="v3.421.0">
               <div className="flex items-center gap-3 mb-4">

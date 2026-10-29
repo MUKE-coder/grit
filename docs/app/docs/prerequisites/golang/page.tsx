@@ -54,6 +54,29 @@ export default function GoForGritPage() {
 
             <BookDownload className="mb-8" />
 
+            {/* The same Go is taught in three places, at three depths. Saying
+                so here stops a reader concluding that this page is all there
+                is, which is the complaint that produced the course. */}
+            <div className="rounded-xl border border-border/40 bg-card/30 p-5 mb-10">
+              <h2 className="text-sm font-semibold text-foreground mb-2">
+                This page, the book, and the course
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                This page is the reference: enough Go to read a Grit project,
+                on one page, in the order the code appears. It assumes you are
+                in a hurry.
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                If you are learning Go rather than looking something up, the{' '}
+                <Link href="/courses/go-full" className="text-accent hover:underline">
+                  Go Full course
+                </Link>{' '}
+                is the whole book as lessons: 59 of them, every one ending in a
+                committed assignment that the leaderboard scores. Same material,
+                taught from zero rather than summarised.
+              </p>
+            </div>
+
             <TableOfContents items={tocItems} />
 
             {/* Try it live callout */}

@@ -12,6 +12,8 @@
  * a new lesson TSX in the right place and it just works.
  */
 
+import { GO_FULL_LESSONS } from './lesson-content.go-full.generated'
+
 type LessonComponent = React.ComponentType
 
 const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
@@ -185,6 +187,10 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'benchmarking/fundamentals/first-bench': () => import('@/content/lessons/benchmarking/fundamentals/first-bench'),
   'benchmarking/fundamentals/reading-output': () => import('@/content/lessons/benchmarking/fundamentals/reading-output'),
 }
+
+// The Go Full course's 59 lessons are generated from the book, and so is
+// their half of this map: see scripts/go-course-build.py.
+Object.assign(moduleMap, GO_FULL_LESSONS)
 
 export async function loadLessonContent(
   courseSlug: string,

@@ -28,10 +28,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const found = findLesson(courseSlug, chapterSlug, lessonSlug)
   if (!found) return {}
   return {
-    title: `${found.lesson.title} — ${found.course.shortName}`,
+    title: `${found.lesson.title} · ${found.course.shortName}`,
     description: found.lesson.tagline,
     openGraph: {
-      title: `${found.lesson.title} — ${found.course.name}`,
+      title: `${found.lesson.title} · ${found.course.name}`,
       description: found.lesson.tagline,
       url: `https://gritframework.dev/courses/${courseSlug}/${chapterSlug}/${lessonSlug}`,
       type: 'article',

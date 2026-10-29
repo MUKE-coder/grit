@@ -70,6 +70,8 @@ export interface Course {
   chapters: Chapter[]
 }
 
+import { GO_FULL_COURSE } from './go-full-course.generated'
+
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Helpers                                                            */
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2147,7 +2149,11 @@ const benchmarkingCourse: Course = {
   ],
 }
 
+// The Go Full course is generated from BOOK/chapters by
+// scripts/go-course-build.py, so the book and the course cannot drift.
+// Imported rather than written here for the same reason.
 export const COURSES: Course[] = [
+  GO_FULL_COURSE,
   conceptsCourse,
   goApiCourse,
   mobileCourse,

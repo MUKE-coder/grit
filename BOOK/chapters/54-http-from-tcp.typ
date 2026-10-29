@@ -400,7 +400,7 @@ printf "$R$R" | nc localhost 8080
   to disagree with, which is the point of the chapter.
 ]
 
-#assignment(name: "HTTP Server - Assignment One")[
+#assignment(name: "HTTP From TCP - Assignment One")[
   Build the server, then attack it.
 
   *One.* The full implementation with chunked bodies, keep-alive, pipelining
