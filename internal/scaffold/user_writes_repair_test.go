@@ -149,7 +149,12 @@ func previousUserHandler(t *testing.T) string {
 	src = strings.Replace(src, userCreateInsertNew, userCreateInsertAnchor, 1)
 	src = strings.Replace(src, "\tuser := models.User{\n\t\tFirstName: req.FirstName,",
 		userCreateCheckAnchor+"\tuser := models.User{\n\t\tFirstName: req.FirstName,", 1)
-	src = strings.Replace(src, userRoleSyncNew, userRoleSyncAnchor, 1)
+	// The fixture is a real v3.339.0 project, so it holds the text the repair
+	// wrote THEN. When that text changes, an exact reversal quietly does
+	// nothing and the repair reads the fixture as already fixed: three fixes
+	// instead of four, with no warning. Reversed by locating the helper
+	// instead, and loudly when it is not there at all.
+	src = reverseRoleSync(t, src)
 	src = strings.Replace(src, userUpdateWritesNew, userUpdateWritesAnchor, 1)
 	src = strings.Replace(src, profileReloadNew, profileReloadAnchor, 1)
 
@@ -279,3 +284,41 @@ func (h *UserHandler) List(c *gin.Context) {
 }
 
 `
+
+// reverseRoleSync puts the role assignment back the way it was before the
+// repair, whatever the repair writes today.
+//
+// It cuts from the start of the transaction the repair introduces to the end
+// of the helper it adds, and replaces the lot with the anchor. That survives
+// a change inside the helper, which an exact match on userRoleSyncNew does
+// not.
+func reverseRoleSync(t *testing.T, src string) string {
+	t.Helper()
+
+	const openMarker = "\tif err := db.Transaction(func(tx *gorm.DB) error {\n\t\treturn writeUserRoleAssignment("
+	start := strings.Index(src, openMarker)
+	if start < 0 {
+		t.Fatalf("the fixture does not contain the role-sync transaction, so it " +
+			"cannot be reversed: either the fixture changed or the repair no " +
+			"longer writes one")
+	}
+
+	// The helper ends at the declaration that follows it.
+	const after = "\n// syncUserRole"
+	end := strings.Index(src[start:], after)
+	if end < 0 {
+		// Fall back to the end of the helper function itself.
+		const helperEnd = "\n}\n"
+		tail := strings.Index(src[start:], "func writeUserRoleAssignment(")
+		if tail < 0 {
+			t.Fatal("writeUserRoleAssignment is not in the fixture after the transaction")
+		}
+		closing := strings.Index(src[start+tail:], helperEnd)
+		if closing < 0 {
+			t.Fatal("writeUserRoleAssignment does not close")
+		}
+		end = tail + closing + len(helperEnd)
+	}
+
+	return src[:start] + userRoleSyncAnchor + src[start+end:]
+}

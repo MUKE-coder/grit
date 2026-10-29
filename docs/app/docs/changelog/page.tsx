@@ -59,6 +59,101 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.441.0 */}
+            <div className="mb-12" id="v3.441.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.441.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An organization can have roles of its own</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/130">#130</a>.
+                  A role&apos;s name was unique across the whole platform, so
+                  if one customer created an &quot;Accountant&quot; nobody else
+                  could, and giving a second customer the same role meant every
+                  edit by the first changed the second&apos;s permissions. The
+                  multitenant plugin promises &quot;an Editor in one
+                  organization and a Viewer in another&quot;, which was true of
+                  the assignment and not of the role.
+                </p>
+                <p>
+                  <code>Role</code> carries an owner now. Empty means the
+                  platform defines it; an organization&apos;s id means that
+                  organization does, and the name is unique per owner.
+                </p>
+
+                <h3>Not called org_id, and that matters</h3>
+                <p>
+                  The reporter&apos;s warning, which is worth repeating: the
+                  multitenant plugin scopes every query on a model carrying{' '}
+                  <code>org_id</code> to the active organization. A column of
+                  that name on <code>roles</code> would hide every platform
+                  role from every request made inside an organization. The
+                  table would read as empty mid-request and every permission
+                  lookup would fail closed. It is <code>owner_org_id</code>.
+                </p>
+
+                <h3>Six lookups, not four</h3>
+                <p>
+                  Every lookup of a role by name had to say whose role it
+                  meant, because &quot;the role called ADMIN&quot; now has as
+                  many answers as there are organizations. The report listed
+                  four places; there were six. They go through{' '}
+                  <code>models.PlatformRoles</code> now, and a test enumerates
+                  them rather than a person: it reads every template for a
+                  lookup by name and fails on one that does not narrow to an
+                  owner. It found five I had missed.
+                </p>
+
+                <h3>What an organization role may hold</h3>
+                <p>
+                  Nothing marked that before, and the default was everything. A
+                  customer&apos;s role holding <code>users.view</code> reads
+                  the whole platform&apos;s user table, because a membership
+                  role&apos;s grants are merged into the request and the
+                  platform routes check the key rather than who owns the role.
+                </p>
+                <p>
+                  An organization role may hold permissions about its own
+                  resources and never <code>*</code>, <code>users.</code>,{' '}
+                  <code>roles.</code>, <code>apikeys.</code>,{' '}
+                  <code>settings.</code>, <code>organizations.</code>,{' '}
+                  <code>audit.</code> or the rest of the platform&apos;s own
+                  administration. A forbidden list rather than an allowed one,
+                  so a resource generated tomorrow works in an organization
+                  role the day it exists and a new piece of platform
+                  administration does not. Checked where a role is written,
+                  because the ceiling at grant time sees the role somebody
+                  chose and not the one they wrote a moment earlier.
+                </p>
+
+                <h3>And two gaps the work exposed</h3>
+                <p>
+                  <code>internal/models/role.go</code> was never delivered on
+                  an upgrade: <code>writeSecurityFiles</code> writes it and
+                  only new projects call that. It went unnoticed while nothing
+                  depended on the file. When <code>ceiling.go</code>, which{' '}
+                  <em>is</em> delivered, started calling{' '}
+                  <code>models.PlatformRoles</code>, an upgraded project got
+                  the caller without the function and stopped compiling.
+                </p>
+                <p>
+                  The old unique index needed dropping too, and the first place
+                  I put that was <code>Migrate</code>, which lives in{' '}
+                  <code>models/user.go</code> and has the same problem: it
+                  would have reached only projects that never had the old index
+                  in the first place. It runs from <code>SeedRoles</code> now,
+                  after AutoMigrate has created the replacement, because
+                  between dropping one and creating the other there is no
+                  uniqueness at all.
+                </p>
+              </div>
+            </div>
+
             {/* v3.440.0 */}
             <div className="mb-12" id="v3.440.0">
               <div className="flex items-center gap-3 mb-4">

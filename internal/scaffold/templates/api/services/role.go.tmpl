@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"gorm.io/gorm"
@@ -83,10 +84,81 @@ func (s *RoleService) ByIDs(ctx context.Context, ids []string) ([]models.Role, e
 	return roles, nil
 }
 
+// OrgRoleForbiddenPrefixes are the permission families an organization's own
+// role may never hold.
+//
+// Everything here is about the PLATFORM rather than about a customer's data:
+// the people who can sign in, what roles exist, what the API keys are, the
+// settings every organization shares. A membership role's grants are merged
+// into the request by the multitenant middleware, and the routes that serve
+// these check the key and not who owns the role, so one of them in a
+// customer's role is that customer reading everybody's. See grit#130 and
+// GHSA-4j45-98gm-mv9v.
+//
+// A list of what is forbidden rather than what is allowed, deliberately: a
+// new resource permission should work in an organization role the day it is
+// generated, and a new piece of platform administration should not.
+var OrgRoleForbiddenPrefixes = []string{
+	"users.",
+	"roles.",
+	"permissions.",
+	"apikeys.",
+	"settings.",
+	"organizations.",
+	"system.",
+	"audit.",
+	"sso.",
+	"flags.",
+}
+
+// CheckOrgRoleGrants refuses an organization role that holds more than an
+// organization may.
+//
+// A platform role (empty OwnerOrgID) is not checked: that is the operator
+// authoring their own system, and the grant ceiling in internal/authz already
+// stops them handing out more than they hold.
+//
+// Checked where the role is WRITTEN, not where it is granted. The ceiling at
+// grant time sees the role somebody chose; it cannot see that they wrote it
+// themselves a moment earlier.
+func CheckOrgRoleGrants(role *models.Role) error {
+	if role == nil || role.OwnerOrgID == "" {
+		return nil
+	}
+	for _, grant := range role.GrantsList() {
+		key := strings.ToLower(strings.TrimSpace(grant))
+		if key == "" {
+			continue
+		}
+		if key == "*" {
+			return fmt.Errorf("an organization role cannot hold %q: that is every permission on the platform", grant)
+		}
+		for _, prefix := range OrgRoleForbiddenPrefixes {
+			if strings.HasPrefix(key, prefix) {
+				return fmt.Errorf("an organization role cannot hold %q: %s permissions are the platform's, and a role holding one reads every organization's", grant, strings.TrimSuffix(prefix, "."))
+			}
+		}
+	}
+	return nil
+}
+
 // NameTaken reports whether a role of this name already exists.
+//
+// Among the PLATFORM's roles. A name is unique per owner, so two
+// organizations may each have an "Accountant" and neither collides with the
+// other or with a platform role of the same name. An organization's own
+// roles are checked against that organization. See grit#130.
 func (s *RoleService) NameTaken(ctx context.Context, name string) (bool, error) {
+	return s.NameTakenFor(ctx, "", name)
+}
+
+// NameTakenFor reports whether ownerOrgID already has a role of this name.
+// An empty ownerOrgID asks about the platform's roles.
+func (s *RoleService) NameTakenFor(ctx context.Context, ownerOrgID, name string) (bool, error) {
 	var n int64
-	if err := s.db(ctx).Model(&models.Role{}).Where("name = ?", name).Count(&n).Error; err != nil {
+	if err := s.db(ctx).Model(&models.Role{}).
+		Where("owner_org_id = ? AND name = ?", ownerOrgID, name).
+		Count(&n).Error; err != nil {
 		return false, err
 	}
 	return n > 0, nil
@@ -124,6 +196,9 @@ func (s *RoleService) Assignments(ctx context.Context, role *models.Role) (int64
 
 // Create saves a new role.
 func (s *RoleService) Create(ctx context.Context, role *models.Role) error {
+	if err := CheckOrgRoleGrants(role); err != nil {
+		return err
+	}
 	if err := s.db(ctx).Create(role).Error; err != nil {
 		return err
 	}
@@ -133,6 +208,9 @@ func (s *RoleService) Create(ctx context.Context, role *models.Role) error {
 
 // Save writes a role the caller has already changed.
 func (s *RoleService) Save(ctx context.Context, role *models.Role) error {
+	if err := CheckOrgRoleGrants(role); err != nil {
+		return err
+	}
 	if err := s.db(ctx).Save(role).Error; err != nil {
 		return err
 	}

@@ -113,7 +113,7 @@ func TestRoleAPI_SystemRolesProtected(t *testing.T) {
 	r := roleRouter(db)
 
 	var admin models.Role
-	require.NoError(t, db.Where("name = ?", models.RoleAdmin).First(&admin).Error)
+	require.NoError(t, models.PlatformRoles(db).Where("name = ?", models.RoleAdmin).First(&admin).Error)
 
 	w := do(t, r, "PUT", "/roles/"+admin.ID, map[string]any{
 		"name": "SuperBoss", "grants": []string{"*"},

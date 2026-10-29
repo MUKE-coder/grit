@@ -25,6 +25,8 @@ func roleModelGo() string {
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"time"
 
 	"{{MODULE}}/internal/ids"
@@ -38,8 +40,24 @@ import (
 // than the expanded leaves is deliberate: the role keeps working when a new
 // action shows up in the catalog.
 type Role struct {
-	ID          string ~gorm:"primarykey;size:36" json:"id"~
-	Name        string ~gorm:"size:80;uniqueIndex;not null" json:"name" binding:"required"~
+	ID string ~gorm:"primarykey;size:36" json:"id"~
+
+	// OwnerOrgID is "" for a role the platform defines, and an organization's
+	// id for one that organization defined for itself. The name is unique per
+	// owner, so two organizations can each have an "Accountant" and neither
+	// can rename the platform's ADMIN out from under the other.
+	//
+	// Deliberately NOT called org_id. The multitenant plugin scopes every
+	// query on a model carrying org_id to the active organization, so that
+	// name would hide every platform role from every request made inside an
+	// organization: the roles table would appear empty mid-request and every
+	// permission lookup would fail closed. See grit#130.
+	//
+	// Without the plugin this is always "" and the index behaves exactly like
+	// the unique name it replaced.
+	OwnerOrgID string ~gorm:"size:36;not null;default:'';uniqueIndex:idx_roles_owner_name" json:"owner_org_id,omitempty"~
+
+	Name        string ~gorm:"size:80;not null;uniqueIndex:idx_roles_owner_name" json:"name" binding:"required"~
 	Description string ~gorm:"size:500" json:"description"~
 
 	// Grants is a JSON array of permission keys. Use GrantsList/SetGrants
@@ -154,6 +172,57 @@ func DefaultRoles() []Role {
 	}
 }
 
+// PlatformRoles narrows a query to the roles the platform defines, leaving
+// out any an organization made for itself.
+//
+// Every lookup of a role BY NAME has to go through this. A name is unique per
+// owner, not globally, so "the role called ADMIN" is a question with as many
+// answers as there are organizations, and the one meant is almost always the
+// platform's. The four places that forgot are how a customer's "Accountant"
+// could be picked up as if the platform had defined it. See grit#130.
+func PlatformRoles(q *gorm.DB) *gorm.DB {
+	return q.Where("owner_org_id = ?", "")
+}
+
+// OrgRoles narrows a query to the roles one organization defined for itself.
+func OrgRoles(q *gorm.DB, orgID string) *gorm.DB {
+	return q.Where("owner_org_id = ?", orgID)
+}
+
+// dropLegacyRoleNameIndex removes the unique index on roles.name alone.
+//
+// A role's name is unique per OWNER now, so two organizations can each have
+// an "Accountant". AutoMigrate creates idx_roles_owner_name and leaves the
+// old idx_roles_name in place, and while that one exists the second
+// Accountant is still refused: the feature would be present and not work.
+// See grit#130.
+//
+// Called from SeedRoles because that runs during migrate, right after
+// AutoMigrate has created the replacement and before anything reads the
+// table. Dropping first would leave a window with no uniqueness at all,
+// which is where two platform roles called ADMIN come from.
+//
+// A failure is reported rather than swallowed. A project that still has the
+// old index has a feature that looks available and is not, and finding that
+// out from a constraint violation months later is worse than a loud migrate.
+func dropLegacyRoleNameIndex(db *gorm.DB) error {
+	mig := db.Migrator()
+	if !mig.HasIndex(&Role{}, "idx_roles_name") {
+		return nil
+	}
+	if !mig.HasIndex(&Role{}, "idx_roles_owner_name") {
+		log.Println("roles: idx_roles_owner_name is missing, so the old unique " +
+			"index on name was left alone. Organizations cannot define roles of " +
+			"their own until the schema is migrated (grit#130).")
+		return nil
+	}
+	if err := mig.DropIndex(&Role{}, "idx_roles_name"); err != nil {
+		return fmt.Errorf("dropping the old unique index on roles.name: %w", err)
+	}
+	log.Println("roles: name is unique per owner now, not across the platform")
+	return nil
+}
+
 // SeedRoles inserts the default roles if they are missing.
 //
 // Idempotent, and deliberately NON-destructive: an existing role's grants are
@@ -162,13 +231,19 @@ func DefaultRoles() []Role {
 // seeding ran on every roles-page load and quietly undid their changes.
 // "Reset to defaults" is an explicit action in the UI instead.
 func SeedRoles(db *gorm.DB) error {
+	if err := dropLegacyRoleNameIndex(db); err != nil {
+		return err
+	}
 	for _, want := range DefaultRoles() {
 		var existing Role
 		// Find, not First: on a fresh database every role is missing, and First
 		// logs each miss as "record not found" — three scary-looking lines on
 		// the first migrate even though creating them is exactly the point.
 		// Find treats zero rows as normal and stays quiet.
-		if err := db.Where("name = ?", want.Name).Limit(1).Find(&existing).Error; err != nil {
+		// Platform roles only. An organization that named a role ADMIN for
+		// itself must not stop the platform's ADMIN being seeded, and must
+		// not be mistaken for it.
+		if err := PlatformRoles(db).Where("name = ?", want.Name).Limit(1).Find(&existing).Error; err != nil {
 			return err
 		}
 		if existing.ID != "" {
@@ -354,7 +429,10 @@ func resolveGrants(db *gorm.DB, userID string) ([]string, error) {
 		if user.Role == "" {
 			return nil, nil
 		}
-		if err := db.Where("name = ?", user.Role).Find(&roles).Error; err != nil {
+		// user.Role is a PLATFORM role name, so an organization's role of
+		// the same name must not answer here: it would hand somebody another
+		// customer's permissions on every request. See grit#130.
+		if err := models.PlatformRoles(db).Where("name = ?", user.Role).Find(&roles).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -430,6 +508,56 @@ func newDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// A role's name is unique per OWNER, which is what lets two customers each
+// have an "Accountant". It used to be unique across the platform, so the
+// second one was refused and an organization could not define a role of its
+// own at all (grit#130).
+func TestTwoOrganizationsCanEachHaveTheSameRoleName(t *testing.T) {
+	db := newDB(t)
+
+	a := models.Role{OwnerOrgID: "org-a", Name: "Accountant"}
+	b := models.Role{OwnerOrgID: "org-b", Name: "Accountant"}
+	if err := db.Create(&a).Error; err != nil {
+		t.Fatalf("org A's Accountant: %v", err)
+	}
+	if err := db.Create(&b).Error; err != nil {
+		t.Fatalf("org B's Accountant: %v, so an organization still cannot define "+
+			"a role of its own", err)
+	}
+	if a.ID == b.ID {
+		t.Error("the two organizations share one role row, so an edit by A changes B")
+	}
+
+	// And one organization still cannot have two of the same name.
+	if err := db.Create(&models.Role{OwnerOrgID: "org-a", Name: "Accountant"}).Error; err == nil {
+		t.Error("one organization has two roles called Accountant")
+	}
+}
+
+// A lookup by name means the PLATFORM's role. An organization that names a
+// role ADMIN must not be found by anything resolving platform permissions,
+// or its members hold whatever the platform's ADMIN holds.
+func TestAnOrganizationRoleIsNotFoundAsAPlatformRole(t *testing.T) {
+	db := newDB(t)
+
+	impostor := models.Role{OwnerOrgID: "org-a", Name: models.RoleAdmin}
+	if err := db.Create(&impostor).Error; err != nil {
+		t.Fatalf("an organization naming a role %s: %v", models.RoleAdmin, err)
+	}
+
+	var found models.Role
+	if err := models.PlatformRoles(db).Where("name = ?", models.RoleAdmin).
+		First(&found).Error; err != nil {
+		t.Fatal(err)
+	}
+	if found.ID == impostor.ID {
+		t.Error("a platform lookup found the organization's role")
+	}
+	if found.OwnerOrgID != "" {
+		t.Errorf("a platform lookup returned a role owned by %q", found.OwnerOrgID)
+	}
+}
+
 // Roles must exist automatically, with sane grants.
 func TestSeedRoles(t *testing.T) {
 	db := newDB(t)
@@ -441,7 +569,7 @@ func TestSeedRoles(t *testing.T) {
 	}
 
 	var admin models.Role
-	db.Where("name = ?", models.RoleAdmin).First(&admin)
+	models.PlatformRoles(db).Where("name = ?", models.RoleAdmin).First(&admin)
 	if got := admin.GrantsList(); len(got) != 1 || got[0] != "*" {
 		t.Errorf("ADMIN grants = %v, want [*]", got)
 	}
@@ -455,7 +583,7 @@ func TestSeedRoles(t *testing.T) {
 	if err := models.SeedRoles(db); err != nil {
 		t.Fatal(err)
 	}
-	db.Where("name = ?", models.RoleAdmin).First(&admin)
+	models.PlatformRoles(db).Where("name = ?", models.RoleAdmin).First(&admin)
 	if got := admin.GrantsList(); len(got) != 1 || got[0] != "users.view" {
 		t.Errorf("re-seeding clobbered an operator edit: %v", got)
 	}

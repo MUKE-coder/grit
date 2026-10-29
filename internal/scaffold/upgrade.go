@@ -338,6 +338,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairTwoFactor(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening two-factor sign-in: %v\n", err)
 		}
+		// The Role model, which nothing delivered on an upgrade until now, so
+		// a project's role.go has never changed since it was scaffolded. It
+		// goes BEFORE the ceiling: ceiling.go calls models.PlatformRoles, and
+		// the file that declares it has to arrive first.
+		if err := repairRoleModel(root, opts); err != nil {
+			fmt.Printf("  ⚠ updating the Role model: %v\n", err)
+		}
 		// The grant ceiling: a users.edit or roles.edit holder cannot make
 		// themselves ADMIN or hand out more than they hold.
 		if err := repairGrantCeiling(root, opts); err != nil {

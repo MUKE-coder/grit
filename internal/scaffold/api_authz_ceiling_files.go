@@ -100,7 +100,10 @@ func RoleBeyondCaller(c *gin.Context, db *gorm.DB, roleName string) string {
 		return "only an ADMIN can make an ADMIN"
 	}
 	var role models.Role
-	if err := db.Where("name = ?", roleName).First(&role).Error; err != nil {
+	// The platform's role of that name. A name is unique per owner, so
+	// without this an organization's own "Accountant" could be picked up
+	// as the thing being granted. See grit#130.
+	if err := models.PlatformRoles(db).Where("name = ?", roleName).First(&role).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ""
 		}

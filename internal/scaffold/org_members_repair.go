@@ -50,7 +50,7 @@ func repairOrgMemberGuardsSource(src string) (string, []string, []string) {
 
 	// 1. The creator gets no platform role.
 	const createRole = `		var admin models.Role
-		tx.Where("name = ?", models.RoleAdmin).First(&admin)
+		tx.Where("name = ?", models.RoleAdmin).First(&admin) // grit:role-lookup-ok searched-for, not run
 		return tenant.Unscoped(tx).Create(&models.OrganizationMember{
 			UserID:         uid,
 			OrganizationID: org.ID,

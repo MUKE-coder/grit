@@ -159,7 +159,7 @@ const (
 // transaction commits, and that is the moment the cache is stale.
 func writeUserRoleAssignment(tx *gorm.DB, userID, roleName string) error {
 	var role models.Role
-	err := tx.Where("name = ?", roleName).First(&role).Error
+	err := models.PlatformRoles(tx).Where("name = ?", roleName).First(&role).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}

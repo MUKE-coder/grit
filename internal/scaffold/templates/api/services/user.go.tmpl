@@ -186,7 +186,10 @@ func (s *UserService) SyncRoleAssignment(ctx context.Context, userID, roleName s
 // transaction commits, and that is the moment the cache is stale.
 func writeUserRoleAssignment(tx *gorm.DB, userID, roleName string) error {
 	var role models.Role
-	err := tx.Where("name = ?", roleName).First(&role).Error
+	// The platform's role. A user's Role column names a platform role;
+	// an organization's own role is granted through their membership.
+	// See grit#130.
+	err := models.PlatformRoles(tx).Where("name = ?", roleName).First(&role).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
