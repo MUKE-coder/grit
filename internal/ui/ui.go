@@ -51,16 +51,41 @@ var (
 	// TestBrandIsReadableOnEveryTerminalBackground keeps the hue honest: the
 	// nine backgrounds below are the claim this file has always made in a
 	// comment, and now makes in a test.
-	cBrand   = pair("#5B47E0", "#A99BFF", "5", "13")
-	// #939CAE measured 5.07:1 on One Dark, just under the floor this file
-	// has always claimed. One step lighter clears it at 5.13:1. Found by
-	// TestEveryTextRoleIsReadableOnEveryTerminalBackground the first time it
-	// ran, which is the argument for the test.
-	cMuted   = pair("#586170", "#949DAF", "8", "8")
-	cFaint   = pair("#C4C9D2", "#4A5160", "7", "8")
+	cBrand = pair("#5B47E0", "#A99BFF", "5", "13")
+
+	// The rest of the roles are the website's tokens too, wherever the
+	// website's value clears this file's contrast floor.
+	//
+	// It usually does not, and that is not a disagreement: the site holds its
+	// colours to two backgrounds, its own light and dark. The CLI holds them
+	// to nine, because a terminal has no zoom, no user stylesheet and no
+	// high-contrast mode to fall back on. Where a site value would fail, the
+	// CLI keeps a darker or lighter one and the comment carries the measured
+	// ratio that forced it, so the next person does not "fix" it back.
+	//
+	// TestTextRolesTrackTheWebsite is the comparator. It reads
+	// docs/app/globals.css rather than a copy of it, so a token changed on
+	// the website fails the CLI's build until somebody has looked.
+
+	// --fg-muted exactly, both modes.
+	cMuted = pair("#555B64", "#A1A7B0", "8", "8")
+
+	// Not a text role, so it has no site equivalent and no floor to clear:
+	// faint is a rule, a pending dot or a progress track, never a word.
+	cFaint = pair("#C4C9D2", "#4A5160", "7", "8")
+
+	// Dark is --success exactly. Light is one step darker: the site's
+	// #0b7a45 measures 4.66:1 on a light grey terminal, below the 5.1 floor.
 	cSuccess = pair("#0A7343", "#3DD68C", "2", "10")
-	cWarning = pair("#855300", "#F0B847", "3", "11")
-	cError   = pair("#BE1F2B", "#FF7B7B", "1", "9")
+
+	// Dark is --warning exactly. Light is darker: #a35f00 measures 4.32:1 on
+	// light grey, which is the worst miss of the three.
+	cWarning = pair("#855300", "#F5A524", "3", "11")
+
+	// Neither mode can take the site's value. --danger #ff6b6b is 5.04:1 on
+	// One Dark, and #c93636 is 4.45:1 on light grey. Both miss by little, and
+	// little is still unreadable for the person it is unreadable for.
+	cError = pair("#BE1F2B", "#FF7B7B", "1", "9")
 )
 
 // The styles. Text sets no Foreground on purpose: that is the rule, not an

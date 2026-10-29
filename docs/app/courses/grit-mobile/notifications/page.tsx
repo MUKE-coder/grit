@@ -59,7 +59,7 @@ export default function NotificationsCourse() {
         <div className="my-4 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">
             <strong className="text-foreground">Reference docs:</strong>{' '}
-            <a href="/docs/mobile" className="text-accent hover:underline">Mobile Docs →</a>
+            <a href="/docs/mobile/getting-started" className="text-accent hover:underline">Mobile Docs →</a>
           </p>
         </div>
 

@@ -1122,6 +1122,8 @@ import { ThemeProvider } from "./lib/theme-provider";
 import { ConfirmProvider } from "./components/confirm-dialog";
 import "./lib/fonts";
 import "./globals.css";
+// Yours, and never written over. Imported last so what it sets wins.
+import "./brand.css";
 
 // Hash history works inside Wails' single-page webview context.
 const router = createRouter({

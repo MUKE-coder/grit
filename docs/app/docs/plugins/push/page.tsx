@@ -7,7 +7,7 @@ import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
 import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
-  title: 'Push notifications plugin | Grit',
+  title: 'Push notifications plugin',
   description:
     'Push notifications to the Expo app on iOS and Android, through Expo’s push service: device tokens, sending, and cleaning up tokens for deleted apps.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/push' },

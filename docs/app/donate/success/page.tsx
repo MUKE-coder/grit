@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-  title: "Thank You | Grit",
+  title: "Thank You",
   description: "Thank you for supporting the Grit framework!",
 };
 

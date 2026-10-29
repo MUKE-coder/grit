@@ -3,7 +3,6 @@ package scaffold
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -80,7 +79,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.420.0"
+const DefaultVersion = "3.421.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -458,6 +457,13 @@ func Run(opts Options) error {
 		}
 	}()
 
+	// brand.css, for whichever frontends end up on disk. Deferred rather than
+	// placed before the return, because this function has more than one exit
+	// and the next one added would not have got the file.
+	//
+	// Deliberately outside the manifest: see brand_css_files.go.
+	defer func() { writeBrandCSS(root, opts) }()
+
 	// Results, not activity: the stage that is running shows as running and
 	// is rewritten to a check when it finishes. In a pipe or under NO_COLOR
 	// there is no cursor control, just one plain line per finished stage.
@@ -593,13 +599,15 @@ func Run(opts Options) error {
 		return fmt.Errorf("writing blog files: %w", err)
 	}
 
-	// Run go mod tidy to resolve dependencies and generate go.sum
+	// Resolve dependencies and generate go.sum.
+	//
+	// The slowest stage in the whole scaffold on a cold module cache, by a
+	// wide margin, so it is the one stage that reports what it is doing: see
+	// go_deps.go for why that is worth the code.
 	steps.Start("Go dependencies")
 	apiDir := filepath.Join(root, "apps", "api")
-	tidyCmd := exec.Command("go", "mod", "tidy")
-	tidyCmd.Dir = apiDir
-	if out, err := tidyCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("running go mod tidy: %w\n%s", err, string(out))
+	if err := goModTidy(apiDir, steps); err != nil {
+		return err
 	}
 
 	// Write Docker files
@@ -695,11 +703,9 @@ func Run(opts Options) error {
 		// project works; losing the whole scaffold to a network hiccup would
 		// be the worse outcome, so say what to run and carry on.
 		steps.Start("Desktop Go dependencies")
-		desktopTidy := exec.Command("go", "mod", "tidy")
-		desktopTidy.Dir = filepath.Join(root, "apps", "desktop")
-		if out, err := desktopTidy.CombinedOutput(); err != nil {
+		if err := goModTidy(filepath.Join(root, "apps", "desktop"), steps); err != nil {
 			spinner.Printf("  ⚠ could not resolve desktop dependencies: %v\n", err)
-			spinner.Printf("    run: cd apps/desktop && go mod tidy\n%s\n", string(out))
+			spinner.Printf("    run: cd apps/desktop && go mod tidy\n")
 		}
 	}
 
@@ -752,6 +758,13 @@ func RunSingle(opts Options) error {
 			color.New(color.FgHiBlack).Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
 		}
 	}()
+
+	// brand.css, for whichever frontends end up on disk. Deferred rather than
+	// placed before the return, because this function has more than one exit
+	// and the next one added would not have got the file.
+	//
+	// Deliberately outside the manifest: see brand_css_files.go.
+	defer func() { writeBrandCSS(root, opts) }()
 
 	steps := ui.NewStepper(46)
 
@@ -889,12 +902,11 @@ func RunSingle(opts Options) error {
 		return fmt.Errorf("writing single main.go: %w", err)
 	}
 
-	// Run go mod tidy at project root
+	// Run go mod tidy at project root. Reports what it downloads, for the
+	// same reason the triple does: see go_deps.go.
 	steps.Start("Go dependencies")
-	tidyCmd := exec.Command("go", "mod", "tidy")
-	tidyCmd.Dir = opts.APIRoot(root)
-	if out, err := tidyCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("running go mod tidy: %w\n%s", err, string(out))
+	if err := goModTidy(opts.APIRoot(root), steps); err != nil {
+		return err
 	}
 
 	// Write Docker files

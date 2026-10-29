@@ -59,6 +59,92 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.421.0 */}
+            <div className="mb-12" id="v3.421.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.421.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The spinner never span</h3>
+                <p>
+                  Reported as the scaffolder hanging on &quot;Go dependencies&quot;
+                  for half an hour, and the report was right about everything
+                  except the cause.
+                </p>
+                <p>
+                  <code>Stepper.Start</code> drew <code>Frames()[0]</code> once.
+                  Nothing ever drew the second frame. Two files carried a comment
+                  saying &quot;the step that is running animates&quot;, and it had
+                  never been true. At 600ms a stage nobody noticed. On a cold Go
+                  module cache the dependency stage really does take minutes, and
+                  a motionless glyph over a silent terminal is indistinguishable
+                  from a dead process.
+                </p>
+                <p>
+                  It animates now, counts the seconds once there are two of them,
+                  and says what it is doing:{' '}
+                  <code>Go dependencies  downloading github.com/gin-gonic/gin (23)</code>.
+                  Those lines were always there. <code>go mod tidy</code> prints one
+                  per module to stderr and the scaffolder was calling{' '}
+                  <code>CombinedOutput()</code>, which swallows every byte until the
+                  command is over and then throws them away unless it failed.
+                </p>
+                <p>
+                  Nothing here makes the download faster. Measured on a cold cache,
+                  an API-only project spends 283 seconds in that stage, and that
+                  time is Go&apos;s, over whatever connection you have. A
+                  scaffolder that quietly changed your GOPROXY to improve the
+                  number would be a worse tool than a slow one. The bug was the
+                  silence.
+                </p>
+
+                <h3>brand.css: somewhere to put your own colours</h3>
+                <p>
+                  Giving an app its own accent meant editing{' '}
+                  <code>globals.css</code>, which Grit owns and rewrites on every
+                  upgrade. The manifest guard then held that file back for ever:
+                  the app kept its colours, stopped receiving every later fix to
+                  the same file, and was told so on every upgrade. Ten blueprints
+                  were about to hit this at once.
+                </p>
+                <p>
+                  Every frontend now has <code>app/brand.css</code> (or{' '}
+                  <code>src/brand.css</code> on Vite): created once, never written
+                  again, deliberately absent from the manifest, and imported after{' '}
+                  <code>globals.css</code> so what it sets wins. It ships with
+                  every rule commented out, so a project that never opens it
+                  renders identically.
+                </p>
+                <p>
+                  Four uncommented lines turn a scaffolded app WhatsApp green,
+                  logo and buttons and icons, in both modes, while globals.css
+                  keeps arriving with fixes.
+                </p>
+
+                <h3>The CLI and the website are one palette again</h3>
+                <p>
+                  The brand violet already matched. Five of the other six roles
+                  had drifted: close enough to look deliberate, far enough to be
+                  two palettes. The comparator that was meant to stop this held
+                  two hex strings copied out of <code>globals.css</code>, covered
+                  the accent alone, and a copy is the thing that drifts.
+                </p>
+                <p>
+                  It reads <code>docs/app/globals.css</code> now, for every text
+                  role. <code>muted</code> and dark <code>warning</code> moved onto
+                  the site&apos;s tokens exactly. Four values cannot: the site holds
+                  its colours to two backgrounds, its own, and the CLI holds them
+                  to nine, because a terminal has no zoom and no high-contrast
+                  mode. Each exception carries the measured ratio that forced it,
+                  and the test now fails if an exception becomes unnecessary.
+                </p>
+              </div>
+            </div>
+
             {/* v3.420.0 */}
             <div className="mb-12" id="v3.420.0">
               <div className="flex items-center gap-3 mb-4">
@@ -33916,7 +34002,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/plugins" className="text-accent hover:underline">Plugins</Link>{' '}
+                    <Link href="/docs/plugins/overview" className="text-accent hover:underline">Plugins</Link>{' '}
                     page &mdash; overview of all 10 plugins with installation, environment setup,
                     quick start code, features, and use cases for each.
                   </li>

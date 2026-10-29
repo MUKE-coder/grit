@@ -1137,6 +1137,17 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// missing one is safe in a way that rewriting a page never is.
 	updated += ensureShadcnConfigs(root, spinner, green)
 
+	// --- brand.css for every frontend ---
+	//
+	// Created when missing, never overwritten, and never recorded in the
+	// manifest. A project that has had its colours in globals.css until now
+	// gets somewhere to move them to; one that already has the file is left
+	// entirely alone.
+	if made := writeBrandCSS(root, opts); made > 0 {
+		green.Printf("  ✓ brand.css for %d app(s): your colours, never overwritten\n", made)
+		updated += made
+	}
+
 	// --- Docs ---
 	if hasDocs {
 		spinner.Printf("  → Updating documentation...\n")

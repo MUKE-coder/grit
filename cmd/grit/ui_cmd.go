@@ -98,7 +98,10 @@ func uiListCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&category, "category", "", "Filter by category (marketing, saas, ecommerce, auth, layout)")
+	// Not a list of category names: the registry decides those, and a copy
+	// here went stale and sent people to three categories that do not exist.
+	// `grit ui list` prints the real ones in its footer.
+	cmd.Flags().StringVar(&category, "category", "", "Filter by category. `grit ui list` prints the ones that exist")
 	return cmd
 }
 

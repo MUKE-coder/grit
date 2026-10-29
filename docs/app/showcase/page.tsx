@@ -16,7 +16,7 @@ import { GridFrame } from "@/components/grid-frame";
 import { ShowcaseGrid, type ShowcaseProject } from "@/components/showcase-grid";
 
 export const metadata: Metadata = {
-  title: "Showcase | Grit",
+  title: "Showcase",
   description:
     "Explore real-world applications built with the Grit framework. See what's possible with Go + React full-stack development.",
   openGraph: {

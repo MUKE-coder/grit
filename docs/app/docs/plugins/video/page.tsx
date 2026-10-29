@@ -7,7 +7,7 @@ import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
 import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
-  title: 'Video plugin | Grit',
+  title: 'Video plugin',
   description:
     'Video uploads converted by ffmpeg to an MP4 every browser and phone plays, with a poster frame, in a background queue that needs no Redis. Players for the web app and the Expo app.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/video' },

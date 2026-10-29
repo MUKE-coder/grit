@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, Puzzle } from 'lucide-react'
 import { CodeBlock } from '@/components/code-block'
+import { Step, Steps } from '@/components/steps'
 
 /**
  * One step in a worked example.
@@ -30,7 +31,9 @@ export interface RelatedPlugin {
 }
 
 /**
- * PluginSteps renders a worked example on a real project.
+ * PluginSteps renders a worked example on a real project, on the shared
+ * stepper so that a numbered list looks the same here as it does in Getting
+ * Started: a circled number on a rail, numbered by CSS rather than by hand.
  *
  * The steps are passed in rather than read from a shared config because the
  * CLI's docs indexer only extracts const arrays a page maps over in its own
@@ -49,25 +52,18 @@ export function PluginSteps({
       <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Using it, step by step</h2>
       {intro ? <p className="mb-6 leading-relaxed text-muted-foreground">{intro}</p> : null}
 
-      <ol className="mb-8 space-y-6">
-        {steps.map((step, i) => (
-          <li key={step.title} className="relative pl-10">
-            <span
-              className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 font-mono text-xs font-semibold text-accent"
-              aria-hidden="true"
-            >
-              {i + 1}
-            </span>
-            <p className="mb-2 font-medium leading-snug">{step.title}</p>
+      <Steps>
+        {steps.map((step) => (
+          <Step key={step.title} title={step.title} toc={false}>
             {step.run ? (
-              <div className="mb-2">
+              <div className="mb-3">
                 <CodeBlock language={step.language ?? 'bash'} code={step.run} />
               </div>
             ) : null}
-            <p className="text-sm leading-relaxed text-muted-foreground">{step.then}</p>
-          </li>
+            <p>{step.then}</p>
+          </Step>
         ))}
-      </ol>
+      </Steps>
     </>
   )
 }

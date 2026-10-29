@@ -916,6 +916,8 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mon
 	return fmt.Sprintf(`import type { Metadata } from "next";
 %s
 import "./globals.css";
+// Yours, and never written over. Imported last so what it sets wins.
+import "./brand.css";
 import { Providers } from "@/components/shared/providers";
 
 export const metadata: Metadata = {

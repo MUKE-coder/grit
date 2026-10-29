@@ -708,6 +708,8 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mon
 %s
 import { Providers } from "@/components/providers";
 import "./globals.css";
+// Yours, and never written over. Imported last so what it sets wins.
+import "./brand.css";
 
 export const metadata: Metadata = {
   title: "%s",

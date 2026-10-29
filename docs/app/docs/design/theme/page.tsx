@@ -404,6 +404,48 @@ export function ThemeToggle() {
                 </div>
               </div>
 
+              {/* brand.css */}
+              <div className="mb-10">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Your own colours: brand.css
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every frontend has an <code className="font-mono text-xs text-accent">app/brand.css</code>{' '}
+                  (or <code className="font-mono text-xs text-accent">src/brand.css</code> on Vite).
+                  It is the one stylesheet Grit creates and then never writes
+                  again, so anything you set in it survives{' '}
+                  <code className="font-mono text-xs text-accent">grit upgrade</code>.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  It ships with every rule commented out, and it is imported
+                  after <code className="font-mono text-xs text-accent">globals.css</code>, so
+                  uncommenting a block is enough. Change the values, not the
+                  selectors: they are written to out-specify the theme blocks
+                  they override.
+                </p>
+                <CodeBlock
+                  language="css"
+                  code={`/* apps/web/app/brand.css */
+html[data-theme] {
+  --accent: #25d366;
+  --accent-hover: #1fb855;
+}
+
+html[data-theme][data-theme-mode="dark"],
+html[data-theme].dark {
+  --accent: #25d366;
+}`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  That is the whole of giving an app its own identity. Before
+                  this file existed the only place to put it was{' '}
+                  <code className="font-mono text-xs text-accent">globals.css</code>, which
+                  Grit owns and replaces: a project that edited it kept its
+                  colours and stopped receiving every later fix to the same
+                  file, and was told so on every upgrade.
+                </p>
+              </div>
+
               {/* Design Tokens Reference */}
               <div className="mb-10">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

@@ -17,7 +17,7 @@ import { SiteHeader } from "@/components/site-header";
 import { GridFrame } from "@/components/grid-frame";
 
 export const metadata: Metadata = {
-  title: "Hire Grit Developers | Grit",
+  title: "Hire Grit Developers",
   description:
     "Hire experienced Go + React developers to build your next production application with the Grit framework. Fast delivery, full-stack expertise, battle-tested stack.",
 };

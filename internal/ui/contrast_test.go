@@ -2,6 +2,9 @@ package ui
 
 import (
 	"math"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -105,22 +108,164 @@ func TestEveryTextRoleIsReadableOnEveryTerminalBackground(t *testing.T) {
 	}
 }
 
-// TestBrandMatchesTheWebsite is the comparator that stops the two identities
-// drifting apart again. The values are the design system's --accent, and if
-// the website's accent changes this is where the CLI finds out.
-func TestBrandMatchesTheWebsite(t *testing.T) {
-	const (
-		webAccentLight = "#5B47E0"
-		webAccentDark  = "#A99BFF"
-	)
-	if !strings.EqualFold(cBrand.Light.TrueColor, webAccentLight) {
-		t.Errorf("the CLI brand on a light terminal is %s; the website's --accent is %s",
-			cBrand.Light.TrueColor, webAccentLight)
+// TestTextRolesTrackTheWebsite is the comparator that stops the CLI and the
+// website drifting apart, and it reads the website rather than a copy of it.
+//
+// The version before this held two hex strings transcribed from globals.css.
+// It covered the brand and nothing else, and by the time anybody looked, five
+// of the other six roles had drifted: close enough to look deliberate, far
+// enough that the CLI and the site were two palettes.
+//
+// Where the CLI cannot take the site's value it says so here, with the
+// measured ratio that forced it, so an exception has to be argued for rather
+// than just existing.
+func TestTextRolesTrackTheWebsite(t *testing.T) {
+	css := websiteTokens(t)
+
+	// role -> (css token, cli pair, and whether each mode must match)
+	cases := []struct {
+		role       string
+		token      string
+		pair       colourPair
+		matchLight bool
+		matchDark  bool
+		why        string
+	}{
+		{"brand", "accent", colourPair{cBrand.Light.TrueColor, cBrand.Dark.TrueColor}, true, true, ""},
+		{"muted", "fg-muted", colourPair{cMuted.Light.TrueColor, cMuted.Dark.TrueColor}, true, true, ""},
+		{
+			"success", "success",
+			colourPair{cSuccess.Light.TrueColor, cSuccess.Dark.TrueColor},
+			false, true,
+			"the site's light --success is 4.66:1 on a light grey terminal, below the 5.1 floor",
+		},
+		{
+			"warning", "warning",
+			colourPair{cWarning.Light.TrueColor, cWarning.Dark.TrueColor},
+			false, true,
+			"the site's light --warning is 4.32:1 on a light grey terminal",
+		},
+		{
+			"error", "danger",
+			colourPair{cError.Light.TrueColor, cError.Dark.TrueColor},
+			false, false,
+			"the site's --danger misses in both modes: 4.45:1 on light grey, 5.04:1 on One Dark",
+		},
 	}
-	if !strings.EqualFold(cBrand.Dark.TrueColor, webAccentDark) {
-		t.Errorf("the CLI brand on a dark terminal is %s; the website's --accent is %s",
-			cBrand.Dark.TrueColor, webAccentDark)
+
+	for _, c := range cases {
+		light, dark := css.light[c.token], css.dark[c.token]
+		if light == "" || dark == "" {
+			t.Errorf("the website has no --%s in one of its modes (light=%q dark=%q); "+
+				"if it was renamed, this test is how the CLI finds out",
+				c.token, light, dark)
+			continue
+		}
+
+		if c.matchLight && !strings.EqualFold(c.pair.light, light) {
+			t.Errorf("%s on a light terminal is %s; the website's --%s is %s",
+				c.role, c.pair.light, c.token, light)
+		}
+		if c.matchDark && !strings.EqualFold(c.pair.dark, dark) {
+			t.Errorf("%s on a dark terminal is %s; the website's --%s is %s",
+				c.role, c.pair.dark, c.token, dark)
+		}
+
+		// An exception has to stay an exception. If the site moves its token
+		// to something the CLI could now use, this says so rather than
+		// letting the deviation outlive its reason.
+		if !c.matchLight && strings.EqualFold(c.pair.light, light) {
+			t.Errorf("%s light now equals the website's --%s (%s), so the exception "+
+				"is stale: set matchLight and delete the note (%s)",
+				c.role, c.token, light, c.why)
+		}
+		if !c.matchDark && strings.EqualFold(c.pair.dark, dark) {
+			t.Errorf("%s dark now equals the website's --%s (%s), so the exception "+
+				"is stale: set matchDark and delete the note (%s)",
+				c.role, c.token, dark, c.why)
+		}
 	}
+}
+
+type colourPair struct{ light, dark string }
+
+type tokenSet struct {
+	light map[string]string
+	dark  map[string]string
+}
+
+// websiteTokens reads docs/app/globals.css and returns the two palettes.
+//
+// The file declares the dark palette first, under :root, and the light one in
+// a later block. Which is which is decided by --bg rather than by order or by
+// a selector name, because that is the one token whose value says outright
+// which mode a block is: a near-black background is the dark theme.
+func websiteTokens(t *testing.T) tokenSet {
+	t.Helper()
+
+	path := filepath.Join("..", "..", "docs", "app", "globals.css")
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Skipf("the website stylesheet is not in this checkout (%v), so there "+
+			"is nothing to compare against", err)
+	}
+
+	blocks := splitCSSBlocks(string(body))
+	out := tokenSet{light: map[string]string{}, dark: map[string]string{}}
+	for _, block := range blocks {
+		bg := block["bg"]
+		if bg == "" {
+			continue
+		}
+		target := out.light
+		if isDarkHex(t, bg) {
+			target = out.dark
+		}
+		for k, v := range block {
+			// First declaration wins: the base palette is declared before the
+			// per-theme overrides that follow it.
+			if _, seen := target[k]; !seen {
+				target[k] = v
+			}
+		}
+	}
+
+	if len(out.light) == 0 || len(out.dark) == 0 {
+		t.Fatalf("could not read a light and a dark palette out of %s "+
+			"(light=%d tokens, dark=%d)", path, len(out.light), len(out.dark))
+	}
+	return out
+}
+
+// isDarkHex reports whether a background colour is the dark theme's.
+func isDarkHex(t *testing.T, hex string) bool {
+	t.Helper()
+	if !strings.HasPrefix(hex, "#") || len(hex) != 7 {
+		return false
+	}
+	return luminance(t, hex) < 0.5
+}
+
+var (
+	blockRe = regexp.MustCompile(`(?s)\{([^{}]*)\}`)
+	varRe   = regexp.MustCompile(`--([a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;`)
+)
+
+// splitCSSBlocks returns one map of custom properties per brace-delimited
+// block. Only hex values: a var() reference or an rgba() is not a colour this
+// comparator can compare.
+func splitCSSBlocks(css string) []map[string]string {
+	var out []map[string]string
+	for _, m := range blockRe.FindAllStringSubmatch(css, -1) {
+		vars := map[string]string{}
+		for _, v := range varRe.FindAllStringSubmatch(m[1], -1) {
+			vars[v[1]] = v[2]
+		}
+		if len(vars) > 0 {
+			out = append(out, vars)
+		}
+	}
+	return out
 }
 
 // TestFaintIsBelowTheFloorOnPurpose documents the one exclusion, so that a

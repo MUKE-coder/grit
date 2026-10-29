@@ -587,13 +587,22 @@ docker compose -f docker-compose.prod.yml up -d --build`} />
             </div>
 
             <div className="mt-6 rounded-lg border border-border/40 bg-accent/20 p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-2">Upgrading from Double to Triple</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Moving from Double to Triple</h3>
               <p className="text-sm text-muted-foreground">
-                If your project outgrows double architecture, you can upgrade to triple later. Run
-                <code className="text-xs font-mono bg-accent/30 px-1 rounded">grit upgrade --triple</code> to scaffold
-                the admin app into your existing project. Your existing Go API, shared types, and web app
-                remain untouched — the command only adds the <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/admin/</code> directory
-                and updates <code className="text-xs font-mono bg-accent/30 px-1 rounded">grit.json</code>.
+                There is no command that converts one into the other.{' '}
+                <code className="text-xs font-mono bg-accent/30 px-1 rounded">grit upgrade</code> works out
+                which architecture a project is from what is on disk: an{' '}
+                <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/admin/</code> directory
+                makes it a triple, and <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/</code>{' '}
+                alone makes it a double. It upgrades what you have rather than changing its shape.
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                So the move is a manual one: scaffold a triple with{' '}
+                <code className="text-xs font-mono bg-accent/30 px-1 rounded">grit new</code>, then bring your
+                Go API, your shared package and your web app across. The admin route group inside{' '}
+                <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/</code> is the part that
+                does not transfer: in a triple those screens are a separate app. Worth knowing before you pick
+                double, rather than after.
               </p>
             </div>
           </section>

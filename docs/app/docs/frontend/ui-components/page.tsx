@@ -8,12 +8,26 @@ import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/frontend/ui-components')
 
+// Counted from `grit ui list`, which is the registry itself. These numbers
+// move every time components are added, so they are worth re-checking rather
+// than trusting: the previous set had been wrong for long enough that every
+// example on this page named a component that no longer existed.
 const CATEGORIES = [
-  { name: 'marketing', count: 20, examples: 'heroes, pricing, testimonials, FAQ, CTA banners' },
-  { name: 'saas', count: 30, examples: 'billing, usage meters, API keys, audit logs, team rows' },
-  { name: 'ecommerce', count: 20, examples: 'product cards, cart, checkout steps, variants' },
-  { name: 'layout', count: 20, examples: 'navbars, modals, tabs, empty states, toasts' },
-  { name: 'auth', count: 10, examples: 'login, signup, OTP, 2FA setup, OAuth buttons' },
+  {
+    name: 'marketing',
+    count: 93,
+    examples: 'hero sections, pricing, FAQs, feature sections, CTAs, headers, stats, whole landing pages',
+  },
+  {
+    name: 'ecommerce',
+    count: 34,
+    examples: 'product grids, product detail, checkout, store banners, category tiles, store navigation',
+  },
+  {
+    name: 'application-ui',
+    count: 14,
+    examples: 'sign-in and register cards, sidebar layouts, tables, forms, inputs, buttons, upload',
+  },
 ]
 
 export default function UIComponentsPage() {
@@ -23,7 +37,7 @@ export default function UIComponentsPage() {
               <span className="tag-mono text-accent/80 mb-3 block">Frontend</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">UI Components</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Grit UI is a registry of 100 ready-made React components. Install one
+                Grit UI is a registry of 141 ready-made React components. Install one
                 with a command and it lands in your repo as an ordinary{' '}
                 <code>.tsx</code> file you own.
               </p>
@@ -53,11 +67,17 @@ export default function UIComponentsPage() {
               </p>
               <CodeBlock
                 language="bash"
-                code={`grit ui list                      # everything in the registry
-grit ui list --category saas      # narrow it down
-grit ui add billing-card-01       # install one
-grit ui add login-card-01 otp-input-01   # or several`}
+                code={`grit ui list                           # everything in the registry
+grit ui list --category ecommerce      # narrow it down
+grit ui add marketing-pricing-sections-three-tiers-with-toggle
+grit ui add application-ui-tables-sortable-table-with-selection \\
+  application-ui-authentication-sign-in-card-with-oauth`}
               />
+              <p>
+                A name is its category, then its group, then the component:{' '}
+                <code>ecommerce-product-grids-grid-with-ratings</code>. Running{' '}
+                <code>grit ui list</code> is the only reliable way to spell one.
+              </p>
               <p>
                 Files land in <code>components/grit-ui/</code> inside{' '}
                 <code>apps/web</code>, falling back to <code>apps/admin</code> or a flat{' '}
@@ -78,7 +98,7 @@ grit ui add login-card-01 otp-input-01   # or several`}
               </p>
               <CodeBlock
                 language="bash"
-                code={`npx shadcn@latest add https://ui.gritframework.dev/r/hero-split-01.json`}
+                code={`npx shadcn@latest add https://ui.gritframework.dev/r/marketing-hero-sections-split-with-code.json`}
               />
               <p>
                 That single command writes the component, merges Grit&apos;s design
@@ -102,7 +122,7 @@ grit ui add login-card-01 otp-input-01   # or several`}
                   <tbody>
                     {CATEGORIES.map((c) => (
                       <tr key={c.name} className="border-b border-border/20 last:border-0">
-                        <td className="px-4 py-2.5 font-mono text-xs capitalize">{c.name}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{c.name}</td>
                         <td className="px-4 py-2.5 font-mono text-xs">{c.count}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">{c.examples}</td>
                       </tr>
@@ -119,7 +139,7 @@ grit ui add login-card-01 otp-input-01   # or several`}
               </p>
               <CodeBlock
                 language="bash"
-                code={`https://ui.gritframework.dev/r/registry.json   # index of all 100
+                code={`https://ui.gritframework.dev/r/registry.json   # the index
 https://ui.gritframework.dev/r/<name>.json     # one item, source inlined`}
               />
               <p>
@@ -149,13 +169,13 @@ https://ui.gritframework.dev/r/<name>.json     # one item, source inlined`}
 
             <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">
               <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-surface-2">
-                <Link href="/docs/frontend">
+                <Link href="/docs/frontend/web-app">
                   <ArrowLeft className="mr-1.5 h-4 w-4" />
                   Frontend
                 </Link>
               </Button>
               <Button asChild className="glow-purple-sm ml-auto">
-                <Link href="/docs/admin">
+                <Link href="/docs/admin/overview">
                   Admin Panel
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>

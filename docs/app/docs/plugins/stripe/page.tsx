@@ -7,7 +7,7 @@ import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
 import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
-  title: 'Stripe plugin | Grit',
+  title: 'Stripe plugin',
   description:
     'Take payments and subscriptions through Stripe: the price decided on the server, the order settled by a verified webhook exactly once, refunds from the admin, a payment form for the web app, and hosted billing for recurring plans.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/stripe' },
