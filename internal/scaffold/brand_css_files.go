@@ -1,6 +1,7 @@
 package scaffold
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,15 +54,17 @@ func brandCSSPath(appRoot string) string {
 // beats the first (0,1,1 over 0,1,0) and the dark selector beats the second
 // (0,2,1 over 0,2,0). Uncommenting a block is then enough, which is the whole
 // point of shipping it filled in.
-func brandCSS(appName string) string {
+func brandCSS(appName string, light, dark map[string]string) string {
 	return `/* brand.css: your app's colours. Grit never writes this file again.
  *
  * globals.css carries Grit's token palette and is replaced on every upgrade.
  * This file is imported after it and is yours, so anything set here survives
  * ` + "`grit upgrade`" + ` and still lets globals.css keep arriving with fixes.
  *
- * Everything below is commented out. Uncomment what you want to change and
- * leave the rest: a token you do not set keeps the value your theme gives it.
+ * Everything below is commented out, and the values shown are the ones this
+ * app renders today, read from its own globals.css. Uncommenting a block
+ * changes nothing until you edit a value, which is the point: it is a
+ * starting position, not a repaint.
  *
  * The selectors look heavier than they need to be, and they do need to be:
  * they have to out-specify the [data-theme] blocks in globals.css. Change the
@@ -71,41 +74,12 @@ func brandCSS(appName string) string {
  */
 
 /* ── Light ──────────────────────────────────────────────────────────── */
-/*
-html[data-theme] {
-  --accent: #5b47e0;
-  --accent-hover: #4a38c9;
-  --accent-fg: #ffffff;
-
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-
-  --success: #0b7a45;
-  --warning: #a35f00;
-  --danger: #c93636;
-}
-*/
+` + brandBlock("html[data-theme]", light) + `
 
 /* ── Dark ───────────────────────────────────────────────────────────── */
 /* Both selectors, because the two frontends mark dark mode differently:
  * the admin writes data-theme-mode on <html>, Tailwind writes .dark. */
-/*
-html[data-theme][data-theme-mode="dark"],
-html[data-theme].dark {
-  --accent: #a99bff;
-  --accent-hover: #b9aeff;
-  --accent-fg: #08090b;
-
-  --bg-primary: #08090b;
-  --bg-secondary: #0f1114;
-  --bg-tertiary: #15181c;
-
-  --success: #3dd68c;
-  --warning: #f5a524;
-  --danger: #ff6b6b;
-}
-*/
+` + brandBlock("html[data-theme][data-theme-mode=\"dark\"],\nhtml[data-theme].dark", dark) + `
 
 /* ── Anything else ──────────────────────────────────────────────────── */
 /* Ordinary CSS from here down. It loads after Tailwind's layers, so a plain
@@ -134,7 +108,8 @@ func writeBrandCSS(root string, opts Options) int {
 		if _, err := os.Stat(path); err == nil {
 			continue // yours now
 		}
-		if err := os.WriteFile(path, []byte(brandCSS(opts.ProjectName)), 0o644); err != nil {
+		light, dark := readBrandTokens(app)
+		if err := os.WriteFile(path, []byte(brandCSS(opts.ProjectName, light, dark)), 0o644); err != nil {
 			continue
 		}
 		created++
@@ -219,4 +194,129 @@ func frontendRoots(root string) []string {
 		}
 	}
 	return found
+}
+
+// The tokens the example offers, in the order they read best: what an app
+// changes first, then its surfaces, then its status colours.
+var brandExampleTokens = []string{
+	"accent", "accent-hover", "accent-fg",
+	"", // a blank line in the output
+	"bg-primary", "bg-secondary", "bg-tertiary",
+	"",
+	"success", "warning", "danger",
+}
+
+// brandTokenLines renders the example's declarations from what the app's own
+// globals.css sets, and shows nothing else.
+//
+// A token the app does not set is left out rather than filled in from Grit's
+// palette. The web app has no dark palette at all, so a dark block seeded
+// from defaults showed a colour that app has never rendered, which is the
+// same fault this is fixing in a smaller place (grit#135).
+func brandTokenLines(found map[string]string) string {
+	var b strings.Builder
+	pending := false
+	for _, name := range brandExampleTokens {
+		if name == "" {
+			pending = true
+			continue
+		}
+		value := found[name]
+		if value == "" {
+			continue
+		}
+		if pending && b.Len() > 0 {
+			b.WriteString("\n")
+		}
+		pending = false
+		fmt.Fprintf(&b, "  --%s: %s;\n", name, value)
+	}
+	return b.String()
+}
+
+// readBrandTokens reads the light and dark values an app's globals.css sets
+// for the tokens the example offers.
+//
+// Read from the project rather than from the theme palette, because a project
+// that edited globals.css has colours no palette knows. That is exactly the
+// project this file is for, and the one that reads "your colours" over Grit's
+// purple and concludes an upgrade is about to repaint it (grit#135).
+//
+// The dark values are whichever the file sets last under a dark selector:
+// globals.css writes its dark block after its light one, so a second value
+// for the same token is the dark one. Crude, and right for the file it reads.
+func readBrandTokens(appRoot string) (light, dark map[string]string) {
+	light, dark = map[string]string{}, map[string]string{}
+
+	var path string
+	for _, dir := range []string{"app", "src"} {
+		candidate := filepath.Join(appRoot, dir, "globals.css")
+		if fileExists(candidate) {
+			path = candidate
+			break
+		}
+	}
+	if path == "" {
+		return light, dark
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return light, dark
+	}
+
+	wanted := map[string]bool{}
+	for _, name := range brandExampleTokens {
+		if name != "" {
+			wanted[name] = true
+		}
+	}
+
+	inDark := false
+	for _, line := range strings.Split(string(raw), "\n") {
+		trimmed := strings.TrimSpace(line)
+		switch {
+		case strings.Contains(trimmed, "data-theme-mode=\"dark\""),
+			strings.Contains(trimmed, ".dark"),
+			strings.Contains(trimmed, "prefers-color-scheme: dark"):
+			inDark = true
+		case strings.HasPrefix(trimmed, "html[data-theme"),
+			strings.HasPrefix(trimmed, ":root"):
+			inDark = false
+		}
+
+		if !strings.HasPrefix(trimmed, "--") {
+			continue
+		}
+		name, value, ok := strings.Cut(trimmed, ":")
+		if !ok {
+			continue
+		}
+		name = strings.TrimPrefix(strings.TrimSpace(name), "--")
+		value = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(value), ";"))
+		if !wanted[name] || value == "" || strings.HasPrefix(value, "var(") {
+			continue
+		}
+		if inDark {
+			dark[name] = value
+		} else if _, seen := light[name]; !seen {
+			light[name] = value
+		}
+	}
+	return light, dark
+}
+
+// brandBlock renders one commented example block, or a note when the app's
+// stylesheet sets none of these tokens.
+//
+// The note is a comment of its own rather than a line inside the block,
+// because CSS comments do not nest: an inner */ ends the outer comment, and
+// the block's closing brace becomes live CSS in a file whose whole promise
+// is that it declares nothing.
+func brandBlock(selector string, found map[string]string) string {
+	lines := brandTokenLines(found)
+	if strings.TrimSpace(lines) == "" {
+		return "/* This app's stylesheet sets none of these tokens here, so there is\n" +
+			" * nothing to copy. Write the ones you want, on " + selector + ". */\n"
+	}
+	return "/*\n" + selector + " {\n" + lines + "}\n*/\n"
 }

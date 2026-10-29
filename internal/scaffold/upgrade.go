@@ -1169,7 +1169,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// gets somewhere to move them to; one that already has the file is left
 	// entirely alone.
 	if made := writeBrandCSS(root, opts); made > 0 {
-		green.Printf("  ✓ brand.css for %d app(s): your colours, never overwritten\n", made)
+		green.Printf("  ✓ brand.css for %d app(s): empty, and yours. Grit never writes it again\n", made)
 		updated += made
 	}
 	// Separately, and every time: the file only does anything if the layout

@@ -59,6 +59,91 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.439.0 */}
+            <div className="mb-12" id="v3.439.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.439.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit upgrade --dry-run, because --diff was not one</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/133">#133</a>.{' '}
+                  <code>--plan</code>&apos;s help said &quot;Not a dry run: use
+                  --diff for that&quot;, and <code>--diff</code> applies the
+                  upgrade. On a real project it rewrote 46 tracked files and
+                  added about 40. A flag that promises a look and writes is the
+                  worst shape a flag can have.
+                </p>
+                <p>
+                  <code>--dry-run</code> runs the real upgrade on a copy of the
+                  project and diffs the two trees. A dry-run switch threaded
+                  through every writer was the other option, and there are 54
+                  places that write a file without passing through the guard:
+                  a dry run that still wrote some of them would be the same bug
+                  wearing a different name. Running the real thing somewhere
+                  else cannot drift from what an upgrade does, because it is
+                  what an upgrade does.
+                </p>
+                <p>
+                  <code>--diff</code> still applies the upgrade, deliberately:
+                  what it prints is what the upgrade would have changed in the
+                  files it leaves alone, and that is only knowable while the
+                  upgrade runs. Its help says so now, and so does{' '}
+                  <code>--plan</code>&apos;s.
+                </p>
+
+                <h3>brand.css showed Grit's colours under a heading saying yours</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/135">#135</a>{' '}
+                  reported an upgrade repainting a themed project purple. It
+                  does not: the file is 1714 bytes and zero after stripping
+                  comments, in both apps, and a project&apos;s own accent in{' '}
+                  <code>globals.css</code> survives the upgrade intact.
+                </p>
+                <p>
+                  What is real is why it read that way. The upgrade said
+                  &quot;your colours&quot;, the example then showed Grit&apos;s
+                  purple, and the comment markers sit on their own lines where
+                  they are easy to miss. The example is now seeded from what
+                  the app renders today, read out of its own{' '}
+                  <code>globals.css</code>, and a token the app does not set is
+                  left out rather than filled in from Grit&apos;s palette. The
+                  web app has no dark palette at all, so a dark block seeded
+                  from defaults was showing a colour that app has never
+                  rendered.
+                </p>
+                <p>
+                  Writing that found a second thing, in the fix: a note placed
+                  inside the commented block ended the comment early, because
+                  CSS comments do not nest, and the closing brace became live
+                  CSS. Four bytes of it, in a file whose whole promise is that
+                  it declares nothing. A test now asserts the file is inert for
+                  every shape of input, and that its comment markers balance.
+                </p>
+
+                <h3>Every invoice PDF was two pages</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/136">#136</a>.
+                  The second held nothing but the footer line. fpdf breaks 20mm
+                  from the bottom, which is 277mm on A4;{' '}
+                  <code>Doc.Footer</code> moved to 272 and wrote a 5mm cell,
+                  ending at exactly 277, so fpdf started a new page to write
+                  it. One millimetre either way and nobody would have noticed
+                  for another year.
+                </p>
+                <p>
+                  The automatic break is off around the footer and restored
+                  after, so a document that genuinely needs more pages still
+                  gets them. Two tests ship with every project: a one-line
+                  invoice is one page, and a 120-line invoice is more than one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.438.0 */}
             <div className="mb-12" id="v3.438.0">
               <div className="flex items-center gap-3 mb-4">

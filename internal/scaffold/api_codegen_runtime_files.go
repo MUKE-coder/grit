@@ -56,6 +56,7 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "ids", "ids_test.go"):           apiIDsTestGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                apiPDFGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):            apiPDFInvoiceGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "pdf_test.go"):           apiPDFTestGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "record.go"):             apiPDFRecordGo(),
 	}
 

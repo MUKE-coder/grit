@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.438.0"
+var version = "3.439.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1534,12 +1534,13 @@ func upgradeCmd() *cobra.Command {
 	var force bool
 	var showDiff bool
 	var writePlan bool
+	var dryRun bool
 
 	cmd := &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade an existing Grit project to the latest scaffold templates",
 		Long: "Regenerates framework components (admin panel, web app, configs) while preserving your resource definitions and API code.\n\n" +
-			"Files you have edited since Grit wrote them are left alone. Use --diff to see what the new version would change in them, or --force to take it anyway.",
+			"Files you have edited since Grit wrote them are left alone. Use --diff to see what the new version would change in them, --dry-run to look without upgrading at all, or --force to take it anyway.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 			cHeading.Printf("\n  Upgrading project to Grit v%s\n\n", version)
@@ -1549,16 +1550,25 @@ func upgradeCmd() *cobra.Command {
 			// press Ctrl+C, and it is worth more than a note in the summary.
 			if writePlan {
 				cMuted.Println("  --plan upgrades the project as well as writing UPGRADE-PLAN.md.")
-				cMuted.Println("  To see what would change without changing anything, use --diff.")
+				cMuted.Println("  To see what would change without changing anything, use --dry-run.")
 				fmt.Println()
 			}
 
-			if err := scaffold.Upgrade(scaffold.UpgradeOptions{
+			upgradeOpts := scaffold.UpgradeOptions{
 				Force:    force,
 				ShowDiff: showDiff,
 				Plan:     writePlan,
 				Version:  version,
-			}); err != nil {
+			}
+
+			// A dry run stops here: it runs the upgrade on a copy, says what
+			// that changed, and leaves this project alone. Nothing below it
+			// may run, because every one of those steps writes.
+			if dryRun {
+				return scaffold.UpgradeDryRun(upgradeOpts)
+			}
+
+			if err := scaffold.Upgrade(upgradeOpts); err != nil {
 				return err
 			}
 
@@ -1601,14 +1611,15 @@ func upgradeCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite every file, including ones you have edited")
-	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show what the upgrade would change in the files it leaves alone")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Say what the upgrade would change and change nothing: runs it on a copy and diffs the two")
+	cmd.Flags().BoolVar(&showDiff, "diff", false, "Upgrade, and show what it would have changed in the files it leaves alone. Use --dry-run to look without upgrading")
 	// Says "and upgrades" out loud. Every other tool with a --plan means a dry
 	// run, so this one reads as one, and somebody ran it on a project with no
 	// git expecting to be shown what would happen (grit#111). The flag still
 	// does what it has always done; the help no longer implies otherwise, and
 	// it names the flag that does look without touching anything.
 	cmd.Flags().BoolVar(&writePlan, "plan", false,
-		"Upgrade, and also write UPGRADE-PLAN.md: a runbook for the files the upgrade leaves alone. Not a dry run: use --diff for that")
+		"Upgrade, and also write UPGRADE-PLAN.md: a runbook for the files the upgrade leaves alone. Not a dry run: use --dry-run for that")
 
 	return cmd
 }

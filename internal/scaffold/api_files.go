@@ -6815,6 +6815,19 @@ func (d *Doc) Notes(text string) {
 // CURRENT page only. For a footer that repeats on every page (and page
 // numbers), use RunningFooter instead.
 func (d *Doc) Footer(text string) {
+	// The automatic page break has to be off while this is written.
+	//
+	// fpdf breaks 20mm from the bottom, which is 277mm on A4. SetY(-25) puts
+	// the cursor at 272 and the 5mm cell ends at exactly 277, so fpdf broke
+	// to a new page before writing: every invoice was two pages, the second
+	// holding nothing but the footer line. See grit#136.
+	//
+	// Restored rather than left off, because a caller that writes more after
+	// this still wants its content to flow.
+	auto, margin := d.GetAutoPageBreak()
+	d.SetAutoPageBreak(false, 0)
+	defer d.SetAutoPageBreak(auto, margin)
+
 	d.SetY(-25)
 	d.SetFont("Helvetica", "I", 9)
 	d.SetTextColor(d.Muted[0], d.Muted[1], d.Muted[2])
