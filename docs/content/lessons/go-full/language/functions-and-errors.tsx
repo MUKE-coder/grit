@@ -12,6 +12,14 @@ where the language is most unlike JavaScript, it is the thing newcomers
 complain about loudest, and the complaint is half right. Let us do the
 mechanics first and the argument second.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>Code here uses a few things this book has not covered yet: structs in
+chapter 5, slices in chapter 6, interfaces in chapter 10, errors.Is in
+chapter 11 and defer in chapter 12. You are not missing anything. Read
+them as the shapes they look like, and each one gets its own chapter.</p>
+      </TipBox>
+
       <h2>Functions</h2>
 
       <CodeBlock language="go" code={`func add(a int, b int) int {

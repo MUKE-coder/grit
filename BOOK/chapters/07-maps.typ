@@ -6,6 +6,13 @@ A Go map is a hash table with typed keys and typed values. It is the closest
 thing Go has to a JavaScript object used as a dictionary, and it differs in
 four ways that each cause a specific bug the first time you meet them.
 
+
+#bridge(title: "Things you have not met yet")[
+  The concurrency-safe example at the end uses sync.Mutex (chapter 15) and
+  defer (chapter 12). Skip it on a first read if you like: the map itself is
+  the chapter.
+]
+
 == Declaring and using
 
 ```go

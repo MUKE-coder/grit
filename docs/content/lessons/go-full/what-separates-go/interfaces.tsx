@@ -11,6 +11,13 @@ export default function Lesson() {
 TypeScript&apos;s and work backwards from them, and once that clicks a great deal of
 Go code stops looking odd and starts looking inevitable.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>Two examples look ahead: context.Context is chapter 16 and the test is
+chapter 18. Interfaces are what make both of them work, which is why
+they are here rather than there.</p>
+      </TipBox>
+
       <h2>The mechanical part</h2>
 
       <p>An interface is a set of method signatures.</p>

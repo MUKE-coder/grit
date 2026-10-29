@@ -7,6 +7,13 @@ a fixed set of named fields with fixed types, decided when you declare the type
 and never changing. Everything else in this chapter follows from that one
 difference.
 
+
+#bridge(title: "Things you have not met yet")[
+  Two things appear before their chapters: the & in front of a struct is
+  a pointer, which chapter 8 is about, and the slices in these examples
+  come in chapter 6. Neither matters for understanding a struct.
+]
+
 == Declaring and creating
 
 ```go

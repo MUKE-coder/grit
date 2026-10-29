@@ -11,6 +11,12 @@ export default function Lesson() {
 everything, and the distinction matters exactly twice: when you declare one,
 and when a surprising bug appears. This chapter covers both.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>One example counts words with a map. Maps are chapter 7; here it is
+just somewhere to put a count.</p>
+      </TipBox>
+
       <h2>Arrays have a fixed length, in the type</h2>
 
       <CodeBlock language="go" code={`var a [3]int        // an array of exactly three ints

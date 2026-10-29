@@ -10,6 +10,13 @@ export default function Lesson() {
       <p>Three keywords that look like <code>finally</code>, <code>throw</code> and <code>catch</code> and are not. The
 resemblance is close enough to mislead, which is why they get a chapter.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>One example defers inside a goroutine. Goroutines are chapter 13; the
+point here is only that defer belongs to the function it is written
+in, not to the one that started it.</p>
+      </TipBox>
+
       <h2>defer: cleanup that cannot be forgotten</h2>
 
       <p><code>defer</code> schedules a function call to run when the <strong>surrounding function</strong>

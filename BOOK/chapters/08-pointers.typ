@@ -10,6 +10,13 @@ address of a value rather than a copy of it*.
 
 You have already been using them. This chapter names what was happening.
 
+
+#bridge(title: "Things you have not met yet")[
+  A couple of examples borrow from later chapters: errors.Is is chapter
+  11, goroutines are chapter 13, and the json tags are chapter 19. They
+  are there because pointers are what those chapters trip over.
+]
+
 == Everything in Go is passed by value
 
 This is the single sentence that explains pointers, and it is worth reading

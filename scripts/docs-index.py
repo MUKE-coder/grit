@@ -391,12 +391,65 @@ def markdown_pages():
     return pages
 
 
+def course_pages():
+    """The courses: their own pages, and the lesson bodies beside them.
+
+    Two roots, because a course is in two places. app/courses holds the
+    landing and chapter pages; content/lessons holds what a lesson actually
+    says, and a lesson body is the part somebody searching is looking for.
+
+    The lesson URL is rebuilt from the path rather than read from the config:
+    content/lessons/<course>/<chapter>/<lesson>.tsx is exactly the route, and
+    lesson-content.ts resolves it by that same correspondence.
+    """
+    pages = []
+
+    root = os.path.join(DOCS, "app", "courses")
+    for current, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in (".next", "node_modules")]
+        if "page.tsx" not in files:
+            continue
+        path = os.path.join(current, "page.tsx")
+        source = read(path)
+        heads = headings(source)
+        pages.append({
+            "url": url_for(path),
+            "title": heads[0] if heads else url_for(path),
+            "description": "",
+            "headings": heads,
+            "text": " ".join(prose(source))[:6000],
+            "kind": "course",
+        })
+
+    lessons = os.path.join(DOCS, "content", "lessons")
+    for current, dirs, files in os.walk(lessons):
+        dirs[:] = [d for d in dirs if d not in (".next", "node_modules")]
+        for name in sorted(files):
+            if not name.endswith(".tsx"):
+                continue
+            path = os.path.join(current, name)
+            rel = os.path.relpath(path, lessons).replace(os.sep, "/")
+            url = "/courses/" + rel[: -len(".tsx")]
+            source = read(path)
+            heads = headings(source)
+            pages.append({
+                "url": url,
+                "title": heads[0] if heads else url.rsplit("/", 1)[-1].replace("-", " "),
+                "description": "",
+                "headings": heads,
+                "text": " ".join(prose(source))[:6000],
+                "kind": "lesson",
+            })
+
+    return pages
+
+
 def main():
     if not os.path.isdir(DOCS):
         sys.exit("docs/ not found; run this from the repository root")
 
     meta = metadata()
-    pages = doc_pages(meta) + system_pages() + markdown_pages()
+    pages = doc_pages(meta) + system_pages() + markdown_pages() + course_pages()
     # The dynamic route itself indexes the template, not a page anybody reads.
     pages = [p for p in pages if "[" not in p["url"]]
     pages.sort(key=lambda p: p["url"])

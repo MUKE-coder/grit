@@ -7,6 +7,12 @@ famous for is *do not communicate by sharing memory; share memory by
 communicating*, which sounds like a fortune cookie until you have written both
 versions of the same program.
 
+
+#bridge(title: "Things you have not met yet")[
+  sync.WaitGroup turns up in a couple of examples and is chapter 15. A
+  channel can do the same job, less clearly, which is the comparison.
+]
+
 == A channel is a typed pipe
 
 ```go

@@ -38,6 +38,29 @@ CONCEPTS = {
     'structs':         (r'^\s*type \w+ struct\b', 5),
 }
 
+WORDS = {
+    5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
+    11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen',
+    15: 'fifteen', 16: 'sixteen', 17: 'seventeen', 18: 'eighteen',
+    19: 'nineteen', 20: 'twenty',
+}
+
+
+def points_forward(text, taught):
+    """Does the prose tell the reader where this is coming from?
+
+    A chapter that says "chapter fifteen" or "chapter 15" anywhere has told
+    the reader the thing has a home. That is the whole requirement: the
+    reader needs to know they have not missed something, not a full
+    explanation in place.
+    """
+    word = WORDS.get(taught)
+    patterns = [r'chapter\s+%d\b' % taught]
+    if word:
+        patterns.append(r'chapter\s+%s\b' % word)
+    return any(re.search(p, text, re.I) for p in patterns)
+
+
 CHAPTER = re.compile(r'^(\d\d)-')
 
 
@@ -64,13 +87,27 @@ for name in sorted(os.listdir(BOOK)):
         if m:
             line = code[:m.start()].count('\n') + 1
             snippet = code.splitlines()[line - 1].strip()[:88]
-            findings.append((n, name, concept, taught, snippet))
+            findings.append((n, name, concept, taught, snippet,
+                             points_forward(text, taught)))
 
 findings.sort()
+explained = [f for f in findings if f[5]]
+unexplained = [f for f in findings if not f[5]]
+
 print(f'{len(findings)} forward reference(s): code using a concept the book '
-      f'has not taught yet\n')
-for n, name, concept, taught, snippet in findings:
+      f'has not taught yet.')
+print(f'{len(explained)} of them point the reader at the chapter that does.')
+print()
+print(f'{len(unexplained)} say nothing, which is the list that is work:')
+print()
+for n, name, concept, taught, snippet, _ in unexplained:
     print(f'  ch{n:02d} {name}')
-    print(f'      uses {concept}, which chapter {taught} teaches')
+    print(f'      uses {concept}, which chapter {taught} teaches, and does '
+          f'not say so')
     print(f'      | {snippet}')
     print()
+
+if explained:
+    print('Already handled, listed so nobody re-reads them:')
+    for n, name, concept, taught, _s, _ in explained:
+        print(f'  ch{n:02d} {concept} (chapter {taught})')

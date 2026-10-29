@@ -5,6 +5,13 @@
 Three keywords that look like `finally`, `throw` and `catch` and are not. The
 resemblance is close enough to mislead, which is why they get a chapter.
 
+
+#bridge(title: "Things you have not met yet")[
+  One example defers inside a goroutine. Goroutines are chapter 13; the
+  point here is only that defer belongs to the function it is written
+  in, not to the one that started it.
+]
+
 == defer: cleanup that cannot be forgotten
 
 `defer` schedules a function call to run when the *surrounding function*

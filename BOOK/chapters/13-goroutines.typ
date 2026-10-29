@@ -7,6 +7,14 @@ concurrency. What you have not had is *parallelism*: two pieces of your own
 code running at the same instant on two cores. This chapter is about the
 difference, because it is the whole reason Go's model exists.
 
+
+#bridge(title: "Things you have not met yet")[
+  This chapter starts goroutines and mostly waits for them crudely.
+  Channels are chapter 14 and sync.WaitGroup and sync.Mutex are chapter
+  15. Those are the proper answers; this chapter is about what a
+  goroutine is.
+]
+
 == The one-keyword version
 
 Put `go` in front of a function call and it runs independently.

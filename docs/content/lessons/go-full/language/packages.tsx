@@ -11,6 +11,11 @@ export default function Lesson() {
 Go&apos;s rules for organising them are stricter and simpler than what you are used
 to. This chapter is the one that makes a Go repository stop looking strange.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>errors.Is appears in one example and is properly chapter 11.</p>
+      </TipBox>
+
       <h2>A package is a directory</h2>
 
       <p>Every <code>.go</code> file belongs to a package, declared on its first line. *Every file

@@ -12,6 +12,12 @@ famous for is *do not communicate by sharing memory; share memory by
 communicating*, which sounds like a fortune cookie until you have written both
 versions of the same program.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>sync.WaitGroup turns up in a couple of examples and is chapter 15. A
+channel can do the same job, less clearly, which is the comparison.</p>
+      </TipBox>
+
       <h2>A channel is a typed pipe</h2>
 
       <CodeBlock language="go" code={`ch := make(chan int)    // unbuffered

@@ -6,6 +6,12 @@ Go has arrays and it has slices. You will use slices for essentially
 everything, and the distinction matters exactly twice: when you declare one,
 and when a surprising bug appears. This chapter covers both.
 
+
+#bridge(title: "Things you have not met yet")[
+  One example counts words with a map. Maps are chapter 7; here it is
+  just somewhere to put a count.
+]
+
 == Arrays have a fixed length, in the type
 
 ```go

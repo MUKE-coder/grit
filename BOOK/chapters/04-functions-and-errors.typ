@@ -7,6 +7,14 @@ where the language is most unlike JavaScript, it is the thing newcomers
 complain about loudest, and the complaint is half right. Let us do the
 mechanics first and the argument second.
 
+
+#bridge(title: "Things you have not met yet")[
+  Code here uses a few things this book has not covered yet: structs in
+  chapter 5, slices in chapter 6, interfaces in chapter 10, errors.Is in
+  chapter 11 and defer in chapter 12. You are not missing anything. Read
+  them as the shapes they look like, and each one gets its own chapter.
+]
+
 == Functions
 
 ```go

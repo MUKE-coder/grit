@@ -12,6 +12,13 @@ a fixed set of named fields with fixed types, decided when you declare the type
 and never changing. Everything else in this chapter follows from that one
 difference.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>Two things appear before their chapters: the &amp; in front of a struct is
+a pointer, which chapter 8 is about, and the slices in these examples
+come in chapter 6. Neither matters for understanding a struct.</p>
+      </TipBox>
+
       <h2>Declaring and creating</h2>
 
       <CodeBlock language="go" code={`type User struct {

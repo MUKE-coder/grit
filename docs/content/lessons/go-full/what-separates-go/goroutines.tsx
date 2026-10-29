@@ -12,6 +12,14 @@ concurrency. What you have not had is <strong>parallelism</strong>: two pieces o
 code running at the same instant on two cores. This chapter is about the
 difference, because it is the whole reason Go&apos;s model exists.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>This chapter starts goroutines and mostly waits for them crudely.
+Channels are chapter 14 and sync.WaitGroup and sync.Mutex are chapter
+15. Those are the proper answers; this chapter is about what a
+goroutine is.</p>
+      </TipBox>
+
       <h2>The one-keyword version</h2>
 
       <p>Put <code>go</code> in front of a function call and it runs independently.</p>

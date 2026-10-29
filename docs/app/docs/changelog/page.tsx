@@ -59,6 +59,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.427.0 */}
+            <div className="mb-12" id="v3.427.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.427.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit docs search could not find a single course</h3>
+                <p>
+                  The index that ships inside the binary walked{' '}
+                  <code>docs/app/docs</code> and the markdown under{' '}
+                  <code>docs/content</code>. The courses are in neither: their
+                  pages live in <code>docs/app/courses</code>, and the 184
+                  lesson bodies are <code>.tsx</code> under{' '}
+                  <code>docs/content/lessons</code>, while the markdown reader
+                  only looked for top-level <code>.md</code>.
+                </p>
+                <p>
+                  So eleven courses were invisible to an agent working offline,
+                  including the 59-lesson Go Full course. The website&apos;s
+                  search dialog finds them, because it reads the course config
+                  at runtime rather than the index, which is exactly why nothing
+                  ever looked wrong.
+                </p>
+                <p>
+                  The index goes from 238 pages to 464: 184 lessons and 42
+                  course pages, 463 of the 464 carrying real prose. The one
+                  without is a lesson that has not been written yet, which is
+                  the honest answer.{' '}
+                  <code>grit docs search goroutine</code> now returns chapters
+                  of the book.
+                </p>
+
+                <h3>The book says where the unfamiliar things come from</h3>
+                <p>
+                  Twenty places where a chapter&apos;s code used something a
+                  later chapter teaches, and the prose never mentioned it.
+                  Chapter 4 uses structs, slices, interfaces, errors.Is and
+                  defer before any of their chapters; chapter 7 reaches for
+                  sync.Mutex, which is eight chapters away.
+                </p>
+                <p>
+                  For a beginner that is the expensive kind of confusion. They
+                  do not know they are allowed to not understand it yet, so
+                  they assume they missed something and stop. The rule is not
+                  that a chapter may never use something early, which would be
+                  unfollowable: you cannot teach structs without putting a
+                  slice in one. It is that the prose has to say so.
+                </p>
+                <p>
+                  Ten chapters get one note each rather than twenty inline
+                  asides, because a reader wants one reassurance up front, not
+                  an interruption every time an unfamiliar word appears.{' '}
+                  <code>BOOK/scripts/check-order.py</code> now reports whether
+                  the prose points forward rather than just that a forward
+                  reference exists, so it answers the rule instead of a proxy
+                  for it. All 22 are explained.
+                </p>
+              </div>
+            </div>
+
             {/* v3.426.0 */}
             <div className="mb-12" id="v3.426.0">
               <div className="flex items-center gap-3 mb-4">

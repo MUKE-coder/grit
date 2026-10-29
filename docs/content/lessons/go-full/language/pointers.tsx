@@ -15,6 +15,13 @@ address of a value rather than a copy of it*.</p>
 
       <p>You have already been using them. This chapter names what was happening.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>A couple of examples borrow from later chapters: errors.Is is chapter
+11, goroutines are chapter 13, and the json tags are chapter 19. They
+are there because pointers are what those chapters trip over.</p>
+      </TipBox>
+
       <h2>Everything in Go is passed by value</h2>
 
       <p>This is the single sentence that explains pointers, and it is worth reading

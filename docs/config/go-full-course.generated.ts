@@ -119,7 +119,7 @@ export const GO_FULL_COURSE: Course = {
           slug: 'functions-and-errors',
           title: 'Functions, multiple returns, and the end of try/catch',
           tagline: 'This is the chapter that decides whether you get on with Go.',
-          minutes: 10,
+          minutes: 15,
           difficulty: 'easy',
           status: 'available',
         },

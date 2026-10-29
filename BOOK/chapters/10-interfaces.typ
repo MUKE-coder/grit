@@ -6,6 +6,13 @@ If you take one idea from this book, take this one. Go's interfaces look like
 TypeScript's and work backwards from them, and once that clicks a great deal of
 Go code stops looking odd and starts looking inevitable.
 
+
+#bridge(title: "Things you have not met yet")[
+  Two examples look ahead: context.Context is chapter 16 and the test is
+  chapter 18. Interfaces are what make both of them work, which is why
+  they are here rather than there.
+]
+
 == The mechanical part
 
 An interface is a set of method signatures.

@@ -11,6 +11,13 @@ export default function Lesson() {
 thing Go has to a JavaScript object used as a dictionary, and it differs in
 four ways that each cause a specific bug the first time you meet them.</p>
 
+      <TipBox tone="warning">
+        <p><strong>Things you have not met yet</strong></p>
+        <p>The concurrency-safe example at the end uses sync.Mutex (chapter 15) and
+defer (chapter 12). Skip it on a first read if you like: the map itself is
+the chapter.</p>
+      </TipBox>
+
       <h2>Declaring and using</h2>
 
       <CodeBlock language="go" code={`ages := map[string]int{
