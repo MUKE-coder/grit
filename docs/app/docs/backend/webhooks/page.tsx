@@ -26,6 +26,14 @@ export default function WebhooksPage() {
                 verifiers cover Stripe, GitHub, and generic HMAC; adding your own is
                 a single function.
               </p>
+              <p className="text-muted-foreground leading-relaxed mt-4">
+                This is the <strong>incoming</strong> direction. To send signed
+                webhooks to your own users, see the{' '}
+                <Link href="/docs/plugins/webhooks" className="text-accent hover:underline">
+                  webhooks plugin
+                </Link>
+                .
+              </p>
             </div>
 
             <div className="prose-grit">

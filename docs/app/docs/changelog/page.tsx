@@ -59,6 +59,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.428.0 */}
+            <div className="mb-12" id="v3.428.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.428.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The FormBuilder takes 31 field types, not 8</h3>
+                <p>
+                  The Next.js prerequisites page said <strong>8</strong>, and
+                  named them: text, textarea, number, select, date, toggle,
+                  checkbox, radio. The architecture page said{' '}
+                  <strong>10+</strong>, which is true the way &quot;2+&quot; is
+                  true.
+                </p>
+                <p>
+                  It takes <strong>31</strong>: the ordinary ones, the typed
+                  ones that bring their own validation and keyboard (email,
+                  url, tel, domain, country, colour, time, percent, rating,
+                  money), uploads, relationships, line items and a JSON editor.
+                  Counted from the <code>FieldType</code> union the scaffold
+                  writes into every project&apos;s <code>lib/resource.ts</code>,
+                  and confirmed in a generated project rather than read off the
+                  template.
+                </p>
+                <p>
+                  Not a rounding error in a sentence. A reader deciding whether
+                  the admin can render their form counts on that number, and
+                  eight is a reason to go and write the form by hand. A test
+                  compares every &quot;N field types&quot; claim in the docs to
+                  the union now.
+                </p>
+
+                <h3>A plugin nobody could read about</h3>
+                <p>
+                  <code>grit plugin add webhooks</code> has worked for months
+                  with no page under <code>/docs/plugins</code>, while the other
+                  nine plugins each have one. It was findable only by running{' '}
+                  <code>grit plugin list</code>, which nobody does before
+                  deciding whether a thing exists.
+                </p>
+                <p>
+                  <Link href="/docs/plugins/webhooks">The page</Link> covers the
+                  Standard Webhooks signature and why it signs{' '}
+                  <code>{'{id}.{timestamp}.{body}'}</code> rather than the body
+                  alone, the retry and dead-letter path, and the delivery log.
+                  A second test compares <code>plugin.All()</code> to the
+                  directories under <code>docs/app/docs/plugins</code>, so the
+                  next plugin cannot ship undocumented.
+                </p>
+              </div>
+            </div>
+
             {/* v3.427.0 */}
             <div className="mb-12" id="v3.427.0">
               <div className="flex items-center gap-3 mb-4">

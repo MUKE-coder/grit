@@ -91,6 +91,51 @@ Recorded so nobody pays to investigate them twice.
 
 ---
 
+## 2026-10-29, second round
+
+Countable claims, which is where this kind of page rots first. A number in
+prose has an expiry date and nothing tells you when it passed.
+
+### The FormBuilder takes 31 field types, not 8
+
+`prerequisites/nextjs` said **8**, and named them: text, textarea, number,
+select, date, toggle, checkbox, radio. `concepts/architecture-modes/triple`
+said **10+**, which is true the way "2+" is true.
+
+The real number is **31**, counted from the `FieldType` union the scaffold
+writes into every project's `lib/resource.ts`, and confirmed in a generated
+project rather than from the template.
+
+This is not a rounding error in a sentence. A reader deciding whether the
+admin can render their form counts on that number, and eight is a reason to
+go and write the form by hand.
+
+`internal/docscheck/field_types_test.go` compares every "N field types" claim
+in the docs to that union, so the count cannot drift again.
+
+### A plugin nobody could read about
+
+`grit plugin add webhooks` has worked for months with no page under
+`/docs/plugins`. The other nine plugins each have one. It was findable only
+by running `grit plugin list`, which nobody does before deciding whether a
+thing exists.
+
+Written: `/docs/plugins/webhooks`, covering the Standard Webhooks signature
+and why it signs `{id}.{timestamp}.{body}` rather than the body alone, the
+retry and dead-letter path, and the delivery log.
+
+`internal/docscheck/plugin_pages_test.go` compares `plugin.All()` to the
+directories under `docs/app/docs/plugins`, so the next plugin cannot ship
+undocumented.
+
+### Still clean
+
+Commands, flags, colour tokens, toolchain versions, dead links, double
+titles, removed features. The one dead link left is the `/login` inside a
+mobile course's code sample, which is the reader's own app.
+
+---
+
 ## Not yet audited
 
 Everything else. The sections most likely to have rotted, in order, are the

@@ -136,8 +136,15 @@ func TestEveryPluginPageHasAWorkedExample(t *testing.T) {
 	for _, p := range All() {
 		page, ok := readRepoFile(t, "docs/app/docs/plugins/"+p.Name+"/page.tsx")
 		if !ok {
-			// webhooks documents itself under /docs/backend; the marketplace
-			// test above is what checks every plugin is reachable.
+			// A plugin with no page at all. internal/docscheck has the test
+			// that says there should not be one; this test only checks the
+			// shape of the pages that exist.
+			//
+			// This used to carry a note saying webhooks documented itself
+			// under /docs/backend. It did not: that page is about INCOMING
+			// webhooks, verifying what Stripe and GitHub send you, and never
+			// mentions the plugin, which is the outgoing side. The note
+			// explained away a real gap.
 			continue
 		}
 		if !strings.Contains(page, "const STEPS: PluginStep[]") {

@@ -294,7 +294,7 @@ grit new myapp --triple --vite`} />
               <h3 className="text-lg font-semibold text-foreground mb-3">apps/admin/ (Admin Panel)</h3>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 The admin panel is a Filament-inspired dashboard with runtime resource definitions. It provides
-                DataTable (sorting, filtering, pagination, row selection), FormBuilder (10+ field types),
+                DataTable (sorting, filtering, pagination, row selection), FormBuilder (31 field types),
                 multi-step forms, dashboard widgets, and system administration pages. Resources are defined
                 declaratively using <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">defineResource()</code> and
                 the admin automatically generates CRUD pages from those definitions.

@@ -753,9 +753,12 @@ export default function NextjsForGritPage() {
                   <h4 className="text-sm font-semibold text-accent/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     Grit&apos;s admin panel includes a FormBuilder component that wraps React Hook Form with Zod
-                    validation, supporting 8 field types (text, textarea, number, select, date, toggle, checkbox,
-                    radio). For simple forms or custom requirements, you can use React Hook Form directly. The
-                    profile page and auth pages both use raw React Hook Form with Zod resolvers.
+                    validation, supporting 31 field types: the ordinary ones (text, textarea, number, select, date,
+                    toggle, checkbox, radio), the typed ones that bring their own validation and keyboard (email,
+                    url, tel, domain, country, colour, time, percent, rating, money), uploads (image, images, video,
+                    videos, file, files), relationships (single, multiple, line items) and a JSON editor. For simple
+                    forms or custom requirements, you can use React Hook Form directly. The profile page and auth
+                    pages both use raw React Hook Form with Zod resolvers.
                   </p>
                 </div>
               </div>

@@ -888,6 +888,12 @@
     "keywords": "docs plugins video"
   },
   {
+    "title": "Webhooks",
+    "href": "/docs/plugins/webhooks",
+    "section": "Plugins",
+    "keywords": "docs plugins webhooks"
+  },
+  {
     "title": "Docker for Grit Developers",
     "href": "/docs/prerequisites/docker",
     "section": "Getting Started",
