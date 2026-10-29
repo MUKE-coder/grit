@@ -35,7 +35,8 @@ func init() { Register(multitenantPlugin()) }
 func multitenantPlugin() Plugin {
 	return Plugin{
 		Name: "multitenant",
-		// 1.0.1 scopes the GORM Row callback. Before it, Scan and Rows read
+		// 1.0.1 scopes the GORM Row callback, after a cross-tenant read was
+		// reported by daljo25 (github.com/daljo25). Before it, Scan and Rows read
 		// across organizations on tenant-owned models while Find and First
 		// were scoped correctly. If a project reports 1.0.0, it is affected:
 		// grit plugin update multitenant.

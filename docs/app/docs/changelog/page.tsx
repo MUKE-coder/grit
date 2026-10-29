@@ -124,10 +124,15 @@ export default function ChangelogPage() {
                   insights-shaped grouped count, and raw SQL staying unscoped.
                 </p>
                 <p>
-                  <strong>Reported privately by a Grit user</strong> who found
-                  it while testing an organization switcher in their own
-                  project, and who asked that it be treated as a user report
-                  rather than an expert finding. It was correct in every
+                  <strong>
+                    Reported privately by{' '}
+                    <Link href="https://github.com/daljo25" target="_blank" rel="noreferrer">
+                      daljo25
+                    </Link>
+                  </strong>
+                  , who found it while testing an organization switcher in
+                  their own project and asked that it be treated as a user
+                  report rather than an expert finding. It was correct in every
                   particular: the missing callback, the Scan path, and the
                   insights queries as the place it shows. Thank you.
                 </p>
