@@ -171,7 +171,13 @@ export default function CoursesPage() {
 
             <Reveal className="grid md:grid-cols-2 lg:grid-cols-3 rounded-xl border-[3px] border-double border-foreground/20 overflow-hidden mb-4">
               {COURSES.map((course) => {
-                const lessons = flatLessons(course).length
+                const all = flatLessons(course)
+                const lessons = all.length
+                // Only the lessons that have been written. An outline entry
+                // with no content renders a "being written" placeholder, and
+                // counting those made the card promise more than the course
+                // delivers.
+                const ready = all.filter((l) => l.lesson.status !== "coming-soon").length
                 const hours = Math.round(courseTotalMinutes(course) / 60)
                 const isComing = course.status === "coming-soon"
                 return (
@@ -199,7 +205,7 @@ export default function CoursesPage() {
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <ListChecks className="h-2.5 w-2.5" />
-                        {lessons} lessons
+                        {ready === lessons ? `${lessons} lessons` : `${ready} of ${lessons} lessons`}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Clock className="h-2.5 w-2.5" />

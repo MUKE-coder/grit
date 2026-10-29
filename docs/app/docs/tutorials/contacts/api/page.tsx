@@ -29,7 +29,7 @@ export default function ContactsApiTutorialPage() {
               <h2>Before you start</h2>
               <ul>
                   <li>
-                    <strong>Go 1.21 or newer</strong> &mdash; The only thing this tier needs.
+                    <strong>Go 1.26 or newer</strong> &mdash; The only thing this tier needs.
                   </li>
               </ul>
               <p>

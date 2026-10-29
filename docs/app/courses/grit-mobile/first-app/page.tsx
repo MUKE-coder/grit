@@ -114,7 +114,7 @@ export default function FirstMobileAppCourse() {
               </thead>
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-medium text-foreground">Go 1.21+</td>
+                  <td className="px-4 py-3 font-medium text-foreground">Go 1.26+</td>
                   <td className="px-4 py-3">Runs the backend API</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">go version</code></td>
                 </tr>

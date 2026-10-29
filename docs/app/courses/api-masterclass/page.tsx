@@ -642,7 +642,7 @@ grit generate resource AuditLog --fields "action:string,user_id:int,details:text
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Your server needs: Ubuntu 22.04+, Docker, Go 1.21+, and Caddy. The deploy command handles
+            Your server needs: Ubuntu 22.04+, Docker, Go 1.26+, and Caddy. The deploy command handles
             the rest.
           </p>
 

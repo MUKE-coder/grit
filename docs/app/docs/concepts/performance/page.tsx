@@ -295,7 +295,7 @@ protected.GET("/orders", orderHandler.List)`} />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold tracking-tight">Frontend Performance</h2>
-                    <p className="text-sm text-muted-foreground">Next.js 15 — App Router + React</p>
+                    <p className="text-sm text-muted-foreground">Next.js 16 · App Router + React</p>
                   </div>
                 </div>
 

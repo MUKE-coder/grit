@@ -1851,9 +1851,9 @@ const loadTestingCourse: Course = {
         {
           title: 'Scenario types',
           lessons: [
-            { slug: 'smoke-load', title: 'Smoke + load tests', tagline: 'Sanity check + steady-state expected traffic.', minutes: 7, difficulty: 'easy', status: 'available' },
-            { slug: 'stress-spike', title: 'Stress + spike tests', tagline: 'Push to breaking point; sudden traffic surges.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'soak-test', title: 'Soak test', tagline: 'Run for hours to catch leaks the short tests miss.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'smoke-load', title: 'Smoke + load tests', tagline: 'Sanity check + steady-state expected traffic.', minutes: 7, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'stress-spike', title: 'Stress + spike tests', tagline: 'Push to breaking point; sudden traffic surges.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'soak-test', title: 'Soak test', tagline: 'Run for hours to catch leaks the short tests miss.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],
@@ -1874,9 +1874,9 @@ const loadTestingCourse: Course = {
         {
           title: 'Diagnosis',
           lessons: [
-            { slug: 'reading-metrics', title: 'Reading the numbers', tagline: 'p50 vs p95 vs p99, what each tells you.', minutes: 7, difficulty: 'medium', status: 'available' },
-            { slug: 'common-bottlenecks', title: 'Common bottlenecks', tagline: 'DB connection pool, N+1, cold caches, GC pauses.', minutes: 9, difficulty: 'medium', status: 'available' },
-            { slug: 'fix-and-prove', title: 'Fix and prove it', tagline: 'Make a change, re-run, compare, disciplined performance work.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'reading-metrics', title: 'Reading the numbers', tagline: 'p50 vs p95 vs p99, what each tells you.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'common-bottlenecks', title: 'Common bottlenecks', tagline: 'DB connection pool, N+1, cold caches, GC pauses.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'fix-and-prove', title: 'Fix and prove it', tagline: 'Make a change, re-run, compare, disciplined performance work.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],
@@ -1897,7 +1897,7 @@ const loadTestingCourse: Course = {
         {
           title: 'Automation',
           lessons: [
-            { slug: 'github-actions', title: 'Running k6 in GitHub Actions', tagline: 'One workflow, one Docker image, automatic on PR.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'github-actions', title: 'Running k6 in GitHub Actions', tagline: 'One workflow, one Docker image, automatic on PR.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],
@@ -1972,7 +1972,7 @@ const securityCourse: Course = {
           title: 'Attack + defend',
           lessons: [
             { slug: 'idor', title: 'IDOR, the most common bug in the wild', tagline: 'Cross-account access by guessing IDs.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'authz-package', title: 'The authz package', tagline: 'Centralized authorization in Grit and how to use it.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'authz-package', title: 'The authz package', tagline: 'Centralized authorization in Grit and how to use it.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],
@@ -1993,8 +1993,8 @@ const securityCourse: Course = {
         {
           title: 'Attack + defend',
           lessons: [
-            { slug: 'sql-injection', title: 'SQL injection in Go', tagline: 'How GORM protects you, and how Sprintf undoes that protection.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'ssrf-safefetch', title: 'SSRF + safefetch', tagline: 'The internal-network attack and how Grit\'s safefetch blocks it.', minutes: 9, difficulty: 'hard', status: 'available' },
+            { slug: 'sql-injection', title: 'SQL injection in Go', tagline: 'How GORM protects you, and how Sprintf undoes that protection.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'ssrf-safefetch', title: 'SSRF + safefetch', tagline: 'The internal-network attack and how Grit\'s safefetch blocks it.', minutes: 9, difficulty: 'hard', status: 'coming-soon' },
           ],
         },
       ],
@@ -2015,8 +2015,8 @@ const securityCourse: Course = {
         {
           title: 'Hardening',
           lessons: [
-            { slug: 'jwt-pitfalls', title: 'JWT pitfalls', tagline: 'alg=none, missing expiry, leaked secrets.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'secrets', title: 'Where do your secrets live?', tagline: '.env, vaults, KMS, what to use when.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'jwt-pitfalls', title: 'JWT pitfalls', tagline: 'alg=none, missing expiry, leaked secrets.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'secrets', title: 'Where do your secrets live?', tagline: '.env, vaults, KMS, what to use when.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],
@@ -2037,9 +2037,9 @@ const securityCourse: Course = {
         {
           title: 'Defence in depth',
           lessons: [
-            { slug: 'sentinel-rate-limit', title: 'Sentinel rate limiting', tagline: 'Per-IP, per-user, per-endpoint throttles.', minutes: 7, difficulty: 'medium', status: 'available' },
-            { slug: 'csrf-cors', title: 'CSRF + CORS', tagline: 'Why both, when each matters.', minutes: 8, difficulty: 'hard', status: 'available' },
-            { slug: 'audit-log', title: 'Audit log', tagline: 'Who did what, when. The black-box recorder for incidents.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'sentinel-rate-limit', title: 'Sentinel rate limiting', tagline: 'Per-IP, per-user, per-endpoint throttles.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'csrf-cors', title: 'CSRF + CORS', tagline: 'Why both, when each matters.', minutes: 8, difficulty: 'hard', status: 'coming-soon' },
+            { slug: 'audit-log', title: 'Audit log', tagline: 'Who did what, when. The black-box recorder for incidents.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],
@@ -2113,8 +2113,8 @@ const benchmarkingCourse: Course = {
         {
           title: 'Tools',
           lessons: [
-            { slug: 'cpu-profile', title: 'CPU profile', tagline: 'Capture, open in pprof, find the hot frame.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'heap-profile', title: 'Heap profile', tagline: 'Find allocation sources and reduce GC pressure.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'cpu-profile', title: 'CPU profile', tagline: 'Capture, open in pprof, find the hot frame.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'heap-profile', title: 'Heap profile', tagline: 'Find allocation sources and reduce GC pressure.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],
@@ -2135,8 +2135,8 @@ const benchmarkingCourse: Course = {
         {
           title: 'Disciplined optimisation',
           lessons: [
-            { slug: 'benchstat', title: 'benchstat, compare two runs', tagline: 'Statistical significance, not vibes.', minutes: 6, difficulty: 'medium', status: 'available' },
-            { slug: 'one-optimisation', title: 'Ship one measured optimisation', tagline: 'Pick, change, re-run, decide.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'benchstat', title: 'benchstat, compare two runs', tagline: 'Statistical significance, not vibes.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'one-optimisation', title: 'Ship one measured optimisation', tagline: 'Pick, change, re-run, decide.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
           ],
         },
       ],

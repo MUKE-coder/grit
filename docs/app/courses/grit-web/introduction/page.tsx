@@ -326,7 +326,7 @@ export default function IntroductionToGritCourse() {
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Backend</td>
-                  <td className="px-4 py-3">Go 1.21+</td>
+                  <td className="px-4 py-3">Go 1.26+</td>
                   <td className="px-4 py-3">Fast, compiled, type-safe</td>
                 </tr>
                 <tr className="border-b border-border/20">
@@ -374,7 +374,7 @@ export default function IntroductionToGritCourse() {
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Router</td>
-                  <td className="px-4 py-3">Next.js 14+ / TanStack Router</td>
+                  <td className="px-4 py-3">Next.js 16+ / TanStack Router</td>
                   <td className="px-4 py-3">SEO (Next) or SPA speed (TanStack)</td>
                 </tr>
                 <tr className="border-b border-border/20">

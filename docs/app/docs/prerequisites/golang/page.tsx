@@ -2180,6 +2180,7 @@ func main() {
               <p>
                 The empty interface <code>interface{'{}'}</code> has zero methods, which means <strong>every
                 type satisfies it</strong>. It&apos;s Go&apos;s way of saying &quot;any type at all.&quot;
+                {/* toolchain-version: historical. When any arrived, not a requirement. */}
                 Since Go 1.18, you can write <code>any</code> instead &mdash; they are identical.
               </p>
               <p>
@@ -2494,6 +2495,7 @@ func main() {
                   </tr>
                   <tr className="border-b border-border/20">
                     <td className="px-4 py-2.5 font-medium text-foreground/90">Prefer <code>any</code> over <code>interface{'{}'}</code></td>
+                    {/* toolchain-version: historical */}
                     <td className="px-4 py-2.5 text-xs">Since Go 1.18, <code>any</code> is the idiomatic alias. Use it for readability</td>
                   </tr>
                   <tr>
@@ -4146,7 +4148,7 @@ import (
 
 // Challenge: a tiny router
 // 1. Make a mux:  mux := http.NewServeMux()
-// 2. Handle "GET /products/{id}" (Go 1.22+ patterns support this)
+// 2. Handle "GET /products/{id}" (Go 1.22+ patterns support this)   toolchain-version: historical
 //      - read the id with r.PathValue("id")
 //      - look it up in the products map below
 //      - found:   w.WriteHeader(200) and write {"id":1,"name":"Laptop"}

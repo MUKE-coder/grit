@@ -274,7 +274,7 @@ func (s *PostService) List(params PostListParams) ([]models.Post, int64, int, er
                   Next.js Frontend Layer
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Both the web app and admin panel are Next.js 14+ applications using the App Router.
+                  Both the web app and admin panel are Next.js 16+ applications using the App Router.
                   They share the same data-fetching pattern: React Query hooks call the Go API through
                   an Axios-based API client that automatically injects JWT tokens.
                 </p>

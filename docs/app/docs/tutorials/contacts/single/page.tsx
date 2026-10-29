@@ -29,7 +29,7 @@ export default function ContactsSingleTutorialPage() {
               <h2>Before you start</h2>
               <ul>
                   <li>
-                    <strong>Go 1.21 or newer</strong> &mdash; The API, and the binary that ends up carrying everything.
+                    <strong>Go 1.26 or newer</strong> &mdash; The API, and the binary that ends up carrying everything.
                   </li>
                   <li>
                     <strong>Node 20 or newer, with pnpm</strong> &mdash; To build the frontend. Only at build time: the server needs nothing.

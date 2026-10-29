@@ -29,7 +29,7 @@ export default function ContactsDesktopTutorialPage() {
               <h2>Before you start</h2>
               <ul>
                   <li>
-                    <strong>Go 1.21 or newer</strong> &mdash; Both the API and the desktop shell are Go.
+                    <strong>Go 1.26 or newer</strong> &mdash; Both the API and the desktop shell are Go.
                   </li>
                   <li>
                     <strong>Node 20 or newer, with pnpm</strong> &mdash; The frontends, including the desktop app&apos;s own.

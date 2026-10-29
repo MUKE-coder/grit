@@ -29,7 +29,7 @@ export default function ContactsMobileTutorialPage() {
               <h2>Before you start</h2>
               <ul>
                   <li>
-                    <strong>Go 1.21 or newer</strong> &mdash; For the API.
+                    <strong>Go 1.26 or newer</strong> &mdash; For the API.
                   </li>
                   <li>
                     <strong>Node 20 or newer, with pnpm</strong> &mdash; The workspace, including apps/expo.

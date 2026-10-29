@@ -59,6 +59,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.424.0 */}
+            <div className="mb-12" id="v3.424.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.424.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Nineteen lessons said they were written and were not</h3>
+                <p>
+                  Three courses were marked available while some of their
+                  lessons had no content, so clicking one landed on the
+                  &quot;being written&quot; placeholder. The cards counted those
+                  lessons too, so Security advertised eleven when three existed.
+                </p>
+                <p>
+                  Counted from the build output rather than the config, because
+                  the rendered HTML is what a reader sees and therefore what
+                  decides whether the claim is true: 31 of 376 prerendered course
+                  pages were placeholders. Twelve belong to the TanStack course,
+                  which is honestly marked coming-soon and stays as it is. The
+                  other 19 are now marked too, and the cards read &quot;3 of 11
+                  lessons&quot; instead of &quot;11 lessons&quot;.
+                </p>
+
+                <h3>Every stated toolchain version was out of date</h3>
+                <p>
+                  Courses asked for <strong>Go 1.21</strong> and{' '}
+                  <strong>Next.js 14</strong>. Grit&apos;s floor is Go 1.26.10,
+                  and <code>grit upgrade</code> rewrites a go.mod below it; the
+                  scaffold pins Next 16.3.8. A requirement is a promise, and that
+                  one had been false for a long time, on the page somebody reads
+                  before installing anything. Seventeen mentions across courses,
+                  tutorials and concept pages, including six generated tutorial
+                  pages where the fix went into the generator.
+                </p>
+                <p>
+                  <code>docs/scripts/check-toolchain-versions.py</code> reads the
+                  floor out of the Go source that sets it and compares every
+                  version the docs state. The hard part is that{' '}
+                  &quot;generics arrived in Go 1.18&quot; is a true sentence that
+                  will stay true, so historical facts carry a marker and the
+                  changelog is skipped outright.
+                </p>
+              </div>
+            </div>
+
             {/* v3.423.0 */}
             <div className="mb-12" id="v3.423.0">
               <div className="flex items-center gap-3 mb-4">

@@ -76,7 +76,7 @@ TIERS = [
             'the shape most Grit projects take.'
         ),
         prereq=[
-            ('Go 1.21 or newer', 'The API is a Go module. <code>go version</code> to check.'),
+            ('Go 1.26 or newer', 'The API is a Go module. <code>go version</code> to check.'),
             ('Node 20 or newer, with pnpm', 'The two frontends are a pnpm workspace. <code>corepack enable pnpm</code> if you have none.'),
         ],
         structure=[
@@ -123,7 +123,7 @@ grit deploy --railway''',
             'installs the way desktop software installs.'
         ),
         prereq=[
-            ('Go 1.21 or newer', 'Both the API and the desktop shell are Go.'),
+            ('Go 1.26 or newer', 'Both the API and the desktop shell are Go.'),
             ('Node 20 or newer, with pnpm', 'The frontends, including the desktop app&apos;s own.'),
             ('The Wails CLI', 'Install from <a className="underline" href="https://wails.io">wails.io</a>. <code>grit start desktop</code> says so plainly if it is missing, rather than failing obscurely.'),
         ],
@@ -174,7 +174,7 @@ cd apps/desktop && wails build''',
             'contact is.'
         ),
         prereq=[
-            ('Go 1.21 or newer', 'For the API.'),
+            ('Go 1.26 or newer', 'For the API.'),
             ('Node 20 or newer, with pnpm', 'The workspace, including apps/expo.'),
             ('Expo Go, or a simulator', 'Expo Go on your phone is the quickest. Xcode or Android Studio if you want a simulator.'),
         ],
@@ -225,7 +225,7 @@ npx eas submit''',
             'no JavaScript anywhere in the project.'
         ),
         prereq=[
-            ('Go 1.21 or newer', 'The only thing this tier needs.'),
+            ('Go 1.26 or newer', 'The only thing this tier needs.'),
         ],
         structure=[
             ('apps/api/internal/models', 'The Go structs the database is built from'),
@@ -268,7 +268,7 @@ docker compose -f docker-compose.prod.yml up --build''',
             'Next.js with <code>--next</code>, which builds a static export into the same place.'
         ),
         prereq=[
-            ('Go 1.21 or newer', 'The API, and the binary that ends up carrying everything.'),
+            ('Go 1.26 or newer', 'The API, and the binary that ends up carrying everything.'),
             ('Node 20 or newer, with pnpm', 'To build the frontend. Only at build time: the server needs nothing.'),
         ],
         structure=[
@@ -324,7 +324,7 @@ grit deploy --host user@server.com --domain contacts.example.com''',
             'tiers give you before choosing one.'
         ),
         prereq=[
-            ('Go 1.21 or newer', 'The API and the desktop shell.'),
+            ('Go 1.26 or newer', 'The API and the desktop shell.'),
             ('Node 20 or newer, with pnpm', 'Four JavaScript applications.'),
             ('The Wails CLI', 'For the desktop app. The rest works without it.'),
             ('Expo Go, or a simulator', 'For the phone app.'),

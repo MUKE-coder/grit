@@ -29,7 +29,7 @@ export default function ContactsFullTutorialPage() {
               <h2>Before you start</h2>
               <ul>
                   <li>
-                    <strong>Go 1.21 or newer</strong> &mdash; The API and the desktop shell.
+                    <strong>Go 1.26 or newer</strong> &mdash; The API and the desktop shell.
                   </li>
                   <li>
                     <strong>Node 20 or newer, with pnpm</strong> &mdash; Four JavaScript applications.

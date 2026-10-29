@@ -29,7 +29,7 @@ export default function ContactsWebTutorialPage() {
               <h2>Before you start</h2>
               <ul>
                   <li>
-                    <strong>Go 1.21 or newer</strong> &mdash; The API is a Go module. <code>go version</code> to check.
+                    <strong>Go 1.26 or newer</strong> &mdash; The API is a Go module. <code>go version</code> to check.
                   </li>
                   <li>
                     <strong>Node 20 or newer, with pnpm</strong> &mdash; The two frontends are a pnpm workspace. <code>corepack enable pnpm</code> if you have none.
