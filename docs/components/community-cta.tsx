@@ -13,7 +13,7 @@ import { siteConfig } from '@/config/site'
 export const DISCORD_INVITE_URL = siteConfig.discord
 
 /** The Grit WhatsApp community — questions, tutorials, and help from other builders. */
-export const WHATSAPP_COMMUNITY_URL = 'https://chat.whatsapp.com/HXsOWlp5W6o9lV4YhsY376'
+export const WHATSAPP_COMMUNITY_URL = siteConfig.whatsapp
 
 /**
  * DiscordIcon — lucide ships no Discord glyph, so the official mark is

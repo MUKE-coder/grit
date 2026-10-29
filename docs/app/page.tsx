@@ -7,6 +7,7 @@ import { SiteHeader } from '@/components/site-header'
 import { Button, ButtonArrow } from '@/components/grit/button'
 import { Section, SectionHeader, Highlight } from '@/components/grit/section'
 import { Reveal } from '@/components/grit/reveal'
+import { SocialStrip } from '@/components/social-links'
 import { CopyButton } from '@/components/grit/terminal'
 
 import { InstallTabs } from '@/components/hero-code-tabs'
@@ -397,6 +398,10 @@ export default function HomePage() {
               keeps a project on the current framework without touching the code you
               wrote.
             </p>
+
+            {/* Last thing on the page, where somebody who read this far is
+                looking for a way in. */}
+            <SocialStrip className="mt-12 border-t border-border pt-10" />
           </div>
         </Section>
       </main>

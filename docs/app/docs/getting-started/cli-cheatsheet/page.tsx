@@ -106,11 +106,6 @@ export default function CLICheatsheetPage() {
                         desc: "Rewrite internal/access/registry.go from the route files",
                       },
                       {
-                        cmd: "grit skills install",
-                        alias: "",
-                        desc: "Install the expert skills an AI assistant builds with",
-                      },
-                      {
                         cmd: "grit new",
                         alias: "",
                         desc: "Scaffold a new project",
@@ -174,11 +169,6 @@ export default function CLICheatsheetPage() {
                         cmd: "grit index",
                         alias: "",
                         desc: "The indexes your list queries need, as SQL",
-                      },
-                      {
-                        cmd: "grit skills",
-                        alias: "",
-                        desc: "Install the expert skills",
                       },
                       {
                         cmd: "grit env",
@@ -1324,42 +1314,6 @@ export default function CLICheatsheetPage() {
                   , which does not lock the table and therefore cannot run inside a
                   transaction: apply the file with psql rather than through a runner that
                   wraps everything in BEGIN.
-                </p>
-              </div>
-
-              {/* -------------------------------------------------------- */}
-              {/*  grit skills                                             */}
-              {/* -------------------------------------------------------- */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-2">
-                  grit skills
-                </h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Installs the expert skills: a router that reads your project and assigns
-                  the work, one expert per architecture, specialists for resources, the
-                  admin panel, design, data, security, performance, deployment and review,
-                  an independent critic for anything marked done, one that reads what the
-                  work cost in tokens, and one that writes up what was worth telling
-                  people about.
-                </p>
-                <div className="space-y-3">
-                  <TerminalCard
-                    cmd="grit skills install"
-                    desc="The pack, at user level, so every project on the machine has it"
-                  />
-                  <TerminalCard
-                    cmd="grit skills install --all"
-                    desc="The pack plus the external skills the experts use"
-                  />
-                  <TerminalCard
-                    cmd="grit skills status"
-                    desc="What is installed, without touching the network"
-                  />
-                </div>
-                <p className="text-muted-foreground leading-relaxed mt-4">
-                  They read the docs out of your installed binary rather than from memory,
-                  so the answers match the version you are on, and they file what Grit got
-                  wrong as an issue while they work.
                 </p>
               </div>
 

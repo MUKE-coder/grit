@@ -59,6 +59,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.425.0 */}
+            <div className="mb-12" id="v3.425.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.425.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The expert skills are internal now</h3>
+                <p>
+                  <code>grit skills</code> installed a pack from a repository
+                  that is now private, so it advertised itself in{' '}
+                  <code>grit --help</code> to everybody while working for almost
+                  nobody: anyone without access got a raw authentication failure
+                  from npx with no explanation. It is hidden from help and off
+                  the CLI cheatsheet.
+                </p>
+                <p>
+                  <strong>
+                    The skill your project gets is untouched.
+                  </strong>{' '}
+                  Every <code>grit new</code> still writes{' '}
+                  <code>.claude/skills/grit/SKILL.md</code>, tailored to the
+                  architecture you chose, and{' '}
+                  <a href="/docs/ai-skill">the AI skill page</a> still documents
+                  it. Two different things that share a word.
+                </p>
+                <p>
+                  Hidden rather than deleted, so the command still runs for
+                  anybody who does have access.
+                </p>
+
+                <h3>Where to find Grit</h3>
+                <p>
+                  GitHub, YouTube, LinkedIn, Discord and the WhatsApp group now
+                  have one component, at the end of the landing page and in the
+                  documentation sidebar on every page.
+                </p>
+                <p>
+                  The WhatsApp invite moved into <code>config/site.ts</code>{' '}
+                  while doing it. The Discord invite already carried a note
+                  saying it was &quot;the one place the invite is written&quot;;
+                  the WhatsApp link had three copies and no such rule, which is
+                  how an expired invite survives in a component nobody thinks to
+                  grep.
+                </p>
+              </div>
+            </div>
+
             {/* v3.424.0 */}
             <div className="mb-12" id="v3.424.0">
               <div className="flex items-center gap-3 mb-4">

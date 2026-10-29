@@ -58,6 +58,12 @@ they work.
   grit skills install          the pack, at user level
   grit skills install --all    the pack and the five skills it works better with
   grit skills status           what is installed`,
+		// Hidden: the expert pack lives in a private repository, so this
+		// command cannot work for most people who would find it in
+		// `grit --help`. It still runs for anybody with access, which is
+		// who it is for. The skill a scaffolded project gets is a
+		// different thing and is untouched: see internal/scaffold/skill_file.go.
+		Hidden: true,
 	}
 	cmd.AddCommand(skillsInstallCmd())
 	cmd.AddCommand(skillsStatusCmd())

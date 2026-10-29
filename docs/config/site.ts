@@ -3,7 +3,7 @@
 // example output, verify-install lesson, animated terminal). Bump this
 // when the Go CLI releases; keep it in sync with cmd/grit/main.go's
 // `var version` and internal/scaffold.DefaultVersion.
-export const GRIT_VERSION = '3.424.0'
+export const GRIT_VERSION = '3.425.0'
 
 /**
  * Which channel the version above belongs to.
@@ -57,6 +57,8 @@ export const siteConfig = {
   // DISCORD_INVITE_URL for the components, so a new invite is a one-line
   // change here rather than a search for the old code.
   discord: 'https://discord.gg/6nJpTgN7U',
+  // Same rule as the Discord invite above: written once, here.
+  whatsapp: 'https://chat.whatsapp.com/HXsOWlp5W6o9lV4YhsY376',
   website: 'https://jb.desishub.com',
   keywords: [
     'Go framework',

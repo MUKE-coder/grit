@@ -1,5 +1,6 @@
 'use client'
 
+import { SocialLinks } from '@/components/social-links'
 import React, { useRef, useEffect, useState } from "react"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -560,6 +561,8 @@ export function DocsSidebar({
           <>
             <CommunityNudge />
             <SponsorNudge />
+            {/* Every docs page, under the nudges: the five places Grit is. */}
+            <SocialLinks size="compact" className="mt-4 justify-start px-2" />
           </>
         )}
       </aside>
