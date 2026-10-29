@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"commerce/apps/api/internal/config"
-	"commerce/apps/api/internal/services"
 )
 
 func newBenchRouter(b *testing.B) *gin.Engine {
@@ -26,12 +25,10 @@ func newBenchRouter(b *testing.B) *gin.Engine {
 		JWTAccessExpiry:  15 * time.Minute,
 		JWTRefreshExpiry: 7 * 24 * time.Hour,
 	}
-	authSvc := &services.AuthService{
-		Secret:        cfg.JWTSecret,
-		AccessExpiry:  cfg.JWTAccessExpiry,
-		RefreshExpiry: cfg.JWTRefreshExpiry,
-	}
-	h := &AuthHandler{DB: db, AuthService: authSvc, Config: cfg}
+	// The same helper the tests use. Built inline here, the service had no
+	// DB, and Login reads the user through AuthService.UserByEmail: the
+	// first request dereferenced nil. One builder, so it cannot drift again.
+	h := &AuthHandler{DB: db, AuthService: newTestAuthSvc(cfg, db), Config: cfg}
 
 	r := gin.New()
 	r.POST("/api/auth/register", h.Register)
@@ -64,11 +61,15 @@ func BenchmarkHealthCheck(b *testing.B) {
 func BenchmarkAuthLogin(b *testing.B) {
 	r := newBenchRouter(b)
 
+	// The password shares nothing with the name or the address. Registration
+	// rejects a password containing any 4+ character piece of either, which
+	// "benchpassword99" does with the surname "Bench": this benchmark failed
+	// on its own require in every scaffolded project.
 	body, _ := json.Marshal(map[string]string{
-		"first_name": "Login",
-		"last_name":  "Bench",
-		"email":      "loginbench@example.com",
-		"password":   "benchpassword99",
+		"first_name": "Ada",
+		"last_name":  "Nakamura",
+		"email":      "ada@example.com",
+		"password":   "harbour-lamp-97",
 	})
 	req0 := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(body))
 	req0.Header.Set("Content-Type", "application/json")
@@ -77,8 +78,8 @@ func BenchmarkAuthLogin(b *testing.B) {
 	require.Equal(b, http.StatusCreated, w0.Code, "pre-registration must succeed")
 
 	loginBody, _ := json.Marshal(map[string]string{
-		"email":    "loginbench@example.com",
-		"password": "benchpassword99",
+		"email":    "ada@example.com",
+		"password": "harbour-lamp-97",
 	})
 
 	b.ResetTimer()
@@ -101,15 +102,7 @@ func BenchmarkAuthRegister(b *testing.B) {
 		JWTAccessExpiry:  15 * time.Minute,
 		JWTRefreshExpiry: 7 * 24 * time.Hour,
 	}
-	h := &AuthHandler{
-		DB: db,
-		AuthService: &services.AuthService{
-			Secret:        cfg.JWTSecret,
-			AccessExpiry:  cfg.JWTAccessExpiry,
-			RefreshExpiry: cfg.JWTRefreshExpiry,
-		},
-		Config: cfg,
-	}
+	h := &AuthHandler{DB: db, AuthService: newTestAuthSvc(cfg, db), Config: cfg}
 	r := gin.New()
 	r.POST("/api/auth/register", h.Register)
 

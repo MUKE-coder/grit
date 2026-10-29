@@ -205,6 +205,10 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   /* ─── Benchmarking ──────────────────────────────── */
   'benchmarking/fundamentals/first-bench': () => import('@/content/lessons/benchmarking/fundamentals/first-bench'),
   'benchmarking/fundamentals/reading-output': () => import('@/content/lessons/benchmarking/fundamentals/reading-output'),
+  'benchmarking/profiling/cpu-profile': () => import('@/content/lessons/benchmarking/profiling/cpu-profile'),
+  'benchmarking/profiling/heap-profile': () => import('@/content/lessons/benchmarking/profiling/heap-profile'),
+  'benchmarking/optimise/benchstat': () => import('@/content/lessons/benchmarking/optimise/benchstat'),
+  'benchmarking/optimise/one-optimisation': () => import('@/content/lessons/benchmarking/optimise/one-optimisation'),
 }
 
 // The Go Full course's 59 lessons are generated from the book, and so is

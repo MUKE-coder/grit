@@ -2113,8 +2113,8 @@ const benchmarkingCourse: Course = {
         {
           title: 'Tools',
           lessons: [
-            { slug: 'cpu-profile', title: 'CPU profile', tagline: 'Capture, open in pprof, find the hot frame.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'heap-profile', title: 'Heap profile', tagline: 'Find allocation sources and reduce GC pressure.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'cpu-profile', title: 'CPU profile', tagline: 'Capture, open in pprof, find the hot frame.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'heap-profile', title: 'Heap profile', tagline: 'Find allocation sources and reduce GC pressure.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
@@ -2135,8 +2135,8 @@ const benchmarkingCourse: Course = {
         {
           title: 'Disciplined optimisation',
           lessons: [
-            { slug: 'benchstat', title: 'benchstat, compare two runs', tagline: 'Statistical significance, not vibes.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'one-optimisation', title: 'Ship one measured optimisation', tagline: 'Pick, change, re-run, decide.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'benchstat', title: 'benchstat, compare two runs', tagline: 'Statistical significance, not vibes.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'one-optimisation', title: 'Ship one measured optimisation', tagline: 'Pick, change, re-run, decide.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],

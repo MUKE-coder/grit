@@ -504,6 +504,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairK6Suite(root, opts); err != nil {
 			fmt.Printf("  ⚠ fixing the k6 load tests: %v\n", err)
 		}
+		// BenchmarkAuthLogin registered a password the project itself refuses,
+		// and behind that both benchmarks built an AuthService with no DB. The
+		// benchmark step in ci.yml was red in every scaffolded project.
+		if err := repairBenchTestGo(root, opts); err != nil {
+			fmt.Printf("  ⚠ fixing the handler benchmarks: %v\n", err)
+		}
 		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
 		// security workflow's audit fails until the patched build is in.
 		warnVulnerableXLSX(root)

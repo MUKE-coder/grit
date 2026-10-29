@@ -7,16 +7,24 @@ export default function Lesson() {
   return (
     <>
       <p>
-        Go has the cleanest built-in benchmarking I&apos;ve ever used.
-        Write a function with a name starting <code>Benchmark</code>,
-        loop over <code>b.N</code>, run <code>go test -bench=.</code>.
-        Done. This lesson is that whole loop, end-to-end.
+        Go&apos;s benchmarking is built in and small. Write a function
+        whose name starts <code>Benchmark</code>, loop over{' '}
+        <code>b.N</code>, run <code>go test -bench=.</code>. This lesson is
+        that whole loop, end to end.
+      </p>
+      <p>
+        Your project already has some: Grit scaffolds{' '}
+        <code>apps/api/internal/handlers/bench_test.go</code> with
+        benchmarks for the health check, login and registration, and{' '}
+        <code>perf_test.go</code> beside it with allocation budgets. The
+        example below is a pure function, because that is the simplest thing
+        to measure and the easiest to get wrong.
       </p>
 
       <h2>The shape of a benchmark</h2>
       <CodeBlock
         language="go"
-        filename="internal/generate/pluralize_test.go"
+        filename="apps/api/internal/text/pluralize_test.go"
         code={`package generate
 
 import "testing"
@@ -49,7 +57,7 @@ func BenchmarkPluralize(b *testing.B) {
       <h2>Run it</h2>
       <CodeBlock
         language="bash"
-        code={`go test -bench=BenchmarkPluralize -benchmem -count=3 ./internal/generate/`}
+        code={`cd apps/api\ngo test -bench=BenchmarkPluralize -benchmem -count=3 ./internal/text/\n\n# the ones Grit already scaffolded\ngo test -run XXX -bench . -benchmem ./internal/handlers/`}
       />
       <p>Three flags worth knowing:</p>
       <ul>
@@ -72,12 +80,12 @@ func BenchmarkPluralize(b *testing.B) {
         language="text"
         code={`goos: darwin
 goarch: arm64
-pkg: github.com/MUKE-coder/grit/internal/generate
+pkg: myproject/apps/api/internal/text
 BenchmarkPluralize-10  	5012461	   228.4 ns/op	    64 B/op	   2 allocs/op
 BenchmarkPluralize-10  	5102937	   226.1 ns/op	    64 B/op	   2 allocs/op
 BenchmarkPluralize-10  	5098102	   227.8 ns/op	    64 B/op	   2 allocs/op
 PASS
-ok  	github.com/MUKE-coder/grit/internal/generate	4.523s`}
+ok  	myproject/apps/api/internal/text	4.523s`}
       />
       <p>Decode each column:</p>
       <ul>

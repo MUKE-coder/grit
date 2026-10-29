@@ -59,6 +59,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.433.0 */}
+            <div className="mb-12" id="v3.433.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.433.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A benchmark that could never have run, in every project</h3>
+                <p>
+                  <code>BenchmarkAuthLogin</code> registered a user with the
+                  password <code>benchpassword99</code> and the surname{' '}
+                  <code>Bench</code>. Registration refuses a password
+                  containing any four character piece of the name or the
+                  address, so it answered 422 and the benchmark failed on its
+                  own require. The register benchmark in the same file used a
+                  password that passes: somebody fixed one and not the other.
+                </p>
+                <p>
+                  Behind that was a second fault the first one hid. Both
+                  benchmarks built an <code>AuthService</code> with no DB, and
+                  Login reads the user through{' '}
+                  <code>AuthService.UserByEmail</code>, so the first request
+                  dereferenced nil. Fixing the password revealed a panic.
+                  Both now use <code>newTestAuthSvc</code>, the helper the
+                  tests already had.
+                </p>
+                <p>
+                  The scaffolded <code>ci.yml</code> runs the benchmarks, so
+                  this was a red step in every generated project from the
+                  first push. All six now run: login 141ms an operation,
+                  register 80ms, both bcrypt bound, verified in a real
+                  project. A test checks every registration fixture in the
+                  templates against the project&apos;s own password rules,
+                  mirrored rather than imported because that package is
+                  itself a template.
+                </p>
+
+                <h3>The benchmarking course is written</h3>
+                <p>
+                  Four lessons: CPU profiles and why a slow handler with no
+                  CPU shows an empty one, heap profiles and the difference
+                  between alloc_space and inuse_space, benchstat and what a{' '}
+                  <code>~</code> actually means, and the measure-change-measure
+                  loop run once on a real function.
+                </p>
+                <p>
+                  The two that existed pointed at{' '}
+                  <code>internal/generate</code>, which is Grit&apos;s own
+                  source and not a package any scaffolded project has, so the
+                  first command in the lesson failed. They point at the
+                  reader&apos;s own tree now, and at the benchmarks Grit
+                  already scaffolds.
+                </p>
+                <p>
+                  That is 203 of 215 lessons written. The twelve left are the
+                  TanStack course, which is marked coming soon and means it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.432.0 */}
             <div className="mb-12" id="v3.432.0">
               <div className="flex items-center gap-3 mb-4">
