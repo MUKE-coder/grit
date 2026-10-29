@@ -517,6 +517,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairReportedBugs(root, opts); err != nil {
 			fmt.Printf("  ⚠ applying reported-bug fixes: %v\n", err)
 		}
+		// Two privilege escalations in the multitenant plugin's membership
+		// API: creating an organization granted the platform ADMIN role, and
+		// any member could hand themselves any role.
+		if err := repairOrgMemberGuards(root, opts); err != nil {
+			fmt.Printf("  ⚠ guarding organization membership: %v\n", err)
+		}
 		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
 		// security workflow's audit fails until the patched build is in.
 		warnVulnerableXLSX(root)

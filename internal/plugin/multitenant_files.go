@@ -164,12 +164,14 @@ func mtHandler(ctx Context) string {
 	src := `package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/tenant"
 )
@@ -249,12 +251,20 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 		if err := tenant.Unscoped(tx).Create(&org).Error; err != nil {
 			return err
 		}
-		var admin models.Role
-		tx.Where("name = ?", models.RoleAdmin).First(&admin)
+		// No role. The creator is the organization's owner, which is what
+		// canManageMembers reads, and that is the whole of what they need.
+		//
+		// This used to assign the PLATFORM ADMIN role, whose grants
+		// addOrgGrants then merged into every request made with the
+		// organization active. ADMIN holds "*", so anybody who created an
+		// organization could read every user on the platform rather than
+		// their own members: 403 before, 200 and the whole table after. That
+		// is what GHSA-4j45-98gm-mv9v describes about a membership role
+		// holding a platform grant, and the plugin was doing it by default.
+		// See grit#130.
 		return tenant.Unscoped(tx).Create(&models.OrganizationMember{
 			UserID:         uid,
 			OrganizationID: org.ID,
-			RoleID:         admin.ID,
 		}).Error
 	})
 	if err != nil {
@@ -286,13 +296,21 @@ type addMemberInput struct {
 // AddMember adds a user to an organization with a role.
 func (h *OrganizationHandler) AddMember(c *gin.Context) {
 	orgID := c.Param("id")
-	if !h.isMember(c, orgID) {
+	if !h.canManageMembers(c, orgID) {
 		return
 	}
 
 	var in addMemberInput
 	if err := c.ShouldBindJSON(&in); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "user_id is required"}})
+		return
+	}
+
+	// Nobody hands out more than they hold. This is the guard that closes the
+	// escalation even where the one above is relaxed, so it is checked on the
+	// role itself rather than on who is asking.
+	if why := h.roleBeyondCaller(c, in.RoleID); why != "" {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": why}})
 		return
 	}
 
@@ -309,7 +327,7 @@ func (h *OrganizationHandler) AddMember(c *gin.Context) {
 // RemoveMember removes a user from an organization.
 func (h *OrganizationHandler) RemoveMember(c *gin.Context) {
 	orgID := c.Param("id")
-	if !h.isMember(c, orgID) {
+	if !h.canManageMembers(c, orgID) {
 		return
 	}
 
@@ -330,6 +348,78 @@ func (h *OrganizationHandler) RemoveMember(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Member removed"})
+}
+
+// PermissionMembersManage is what a per-organization role carries to let a
+// customer's own administrator manage their members. Nothing grants it by
+// default: until a project defines such a role, only the organization's owner
+// and a platform administrator can.
+const PermissionMembersManage = "organizations.members.manage"
+
+// canManageMembers reports whether the caller may change who belongs to this
+// organization, writing the refusal when they may not.
+//
+// Membership alone used to be the whole check, and it is not a check: an
+// ordinary member could POST their own user id with the ADMIN role's id, and
+// addOrgGrants then merged that role's grants into every request they made
+// inside the organization. Reproduced on a fresh project: the same GET
+// /api/users answered 403 before the call and 200 after it. See grit#130.
+//
+// Who may: a platform administrator, the organization's owner, or a member
+// whose grants carry organizations.members.manage. That last is what a
+// per-organization role gives a customer's own administrator, and until a
+// project defines such a role only the owner can do it, which is the safe
+// default rather than the convenient one.
+func (h *OrganizationHandler) canManageMembers(c *gin.Context, orgID string) bool {
+	if !h.isMember(c, orgID) {
+		return false
+	}
+	if authz.IsAdmin(c) || len(authz.Beyond(authz.CallerGrants(c), []string{PermissionMembersManage})) == 0 {
+		return true
+	}
+
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(string)
+
+	var org models.Organization
+	if err := tenant.Unscoped(h.DB).Where("id = ?", orgID).First(&org).Error; err == nil {
+		if org.OwnerID != "" && org.OwnerID == uid {
+			return true
+		}
+	}
+
+	c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN",
+		"message": "Only the organization's owner can change who belongs to it"}})
+	return false
+}
+
+// roleBeyondCaller says why the caller may not hand out this role, or "" when
+// they may.
+//
+// The ceiling is the caller's own grants: a role carrying a permission they do
+// not hold is refused, so member management cannot be used to climb. A role id
+// that matches nothing grants nothing and is allowed through, which is the
+// same answer as sending no role at all.
+func (h *OrganizationHandler) roleBeyondCaller(c *gin.Context, roleID string) string {
+	if roleID == "" || authz.IsAdmin(c) {
+		return ""
+	}
+
+	var role models.Role
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", roleID).First(&role).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ""
+		}
+		return "The role could not be checked"
+	}
+	if strings.EqualFold(role.Name, models.RoleAdmin) {
+		return "Only an administrator can grant the " + role.Name + " role"
+	}
+	if beyond := authz.CannotGrant(c, role.GrantsList()); len(beyond) > 0 {
+		return "The " + role.Name + " role grants permissions you do not hold: " +
+			strings.Join(beyond, ", ")
+	}
+	return ""
 }
 
 // isMember verifies the caller belongs to the organization, writing a 404 and

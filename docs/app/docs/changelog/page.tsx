@@ -59,6 +59,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.438.0 */}
+            <div className="mb-12" id="v3.438.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-danger/15 px-3 py-1 text-sm font-semibold text-danger">
+                  v3.438.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+                <span className="text-xs font-medium text-danger">Security</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two privilege escalations in the multitenant plugin</h3>
+                <p>
+                  <strong>
+                    Upgrade if you have <code>grit plugin add multitenant</code>{' '}
+                    installed.
+                  </strong>{' '}
+                  Both were found while working on{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/130">#130</a>,
+                  and both were reproduced on a freshly scaffolded project.
+                </p>
+
+                <h3>Creating an organization made you a platform administrator</h3>
+                <p>
+                  This one needed no attack. It was the happy path.
+                </p>
+                <p>
+                  <code>OrganizationHandler.Create</code> assigned the{' '}
+                  <strong>platform ADMIN role</strong> as the creator&apos;s
+                  membership role, and <code>addOrgGrants</code> merges a
+                  membership role&apos;s grants into every request made with
+                  that organization active. ADMIN holds <code>*</code>. So
+                  anybody who created an organization could read every user on
+                  the platform, not only their own members.
+                </p>
+                <p>
+                  Measured on a fresh project: <code>GET /api/users</code> was
+                  403 for a new account, and 200 returning the whole table
+                  after that account created an organization. The creator is
+                  the organization&apos;s owner, which is all they need, and
+                  they are given no role now.
+                </p>
+
+                <h3>Any member could grant themselves any role</h3>
+                <p>
+                  <code>POST /organizations/:id/members</code> checked that the
+                  caller was a member and nothing else, then wrote whatever{' '}
+                  <code>role_id</code> it was sent. An ordinary member could
+                  post their own user id with the ADMIN role&apos;s id: the
+                  same <code>GET /api/users</code> answered 403 before the call
+                  and 200 after it.
+                </p>
+                <p>
+                  Two guards now, deliberately both, because they fail
+                  independently. <code>canManageMembers</code> is who may
+                  change the membership at all: a platform administrator, the
+                  organization&apos;s owner, or a member holding{' '}
+                  <code>organizations.members.manage</code>, which nothing
+                  grants by default.{' '}
+                  <code>roleBeyondCaller</code> is what they may hand out,
+                  bounded by their own grants, and only a platform
+                  administrator may hand out ADMIN. The second is the one that
+                  still holds if a project relaxes the first, which is a thing
+                  projects do.
+                </p>
+                <p>
+                  This is the shape GHSA-4j45-98gm-mv9v describes, a membership
+                  role holding a platform grant, and the plugin was doing it to
+                  itself by default. <code>grit upgrade</code> repairs an
+                  existing project and says what it changed; a project that has
+                  rewritten the handler is told so rather than silently
+                  skipped, because an upgrade that looks like it fixed
+                  something is worse than one that admits it could not.
+                </p>
+
+                <h3>And a repair of mine that broke the build</h3>
+                <p>
+                  The benchmark repair added in v3.433.0 substituted{' '}
+                  <code>&#123;&#123;PROJECT&#125;&#125;</code> and not{' '}
+                  <code>&#123;&#123;MODULE&#125;&#125;</code>, so an upgrade
+                  wrote a literal{' '}
+                  <code>&#123;&#123;MODULE&#125;&#125;/internal/config</code>{' '}
+                  import into <code>bench_test.go</code> and the project
+                  stopped compiling. Found by running an upgrade on a real
+                  project, which is the only place it shows.
+                </p>
+                <p>
+                  A test now reads every repair and fails when one renders a
+                  template with a placeholder it does not substitute.
+                </p>
+              </div>
+            </div>
+
             {/* v3.437.0 */}
             <div className="mb-12" id="v3.437.0">
               <div className="flex items-center gap-3 mb-4">

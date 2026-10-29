@@ -28,7 +28,11 @@ func repairBenchTestGo(root string, opts Options) error {
 	if !fileExists(path) {
 		return nil
 	}
-	content := strings.ReplaceAll(apiBenchTestGo(), "{{PROJECT}}", opts.ProjectName)
+	// Both placeholders. {{MODULE}} was missed the first time, and the file
+	// it wrote carried a literal "{{MODULE}}/internal/config" import that
+	// stopped the project compiling.
+	content := strings.ReplaceAll(apiBenchTestGo(), "{{MODULE}}", opts.Module())
+	content = strings.ReplaceAll(content, "{{PROJECT}}", opts.ProjectName)
 	if err := writeFile(path, content); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
