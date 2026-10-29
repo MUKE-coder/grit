@@ -206,7 +206,17 @@ func Next(db *gorm.DB, cfg Config, t time.Time) (string, error) {
 		}
 		c.NextValue++
 		next = c.NextValue
-		return tx.Save(&c).Error
+		// An explicit UPDATE, not Save. With Reset "never" the bucket is "",
+		// which is the zero value of the string half of the primary key, and
+		// Save treats a zero primary key as a new row: it INSERTed a second
+		// ("name", "") and the second number of every such sequence failed on
+		// the unique constraint. See grit#132.
+		return tx.Model(&Counter{}).
+			Where("name = ? AND bucket = ?", cfg.Name, bucket).
+			Updates(map[string]any{
+				"next_value": c.NextValue,
+				"updated_at": time.Now(),
+			}).Error
 	})
 	if err != nil {
 		return "", err

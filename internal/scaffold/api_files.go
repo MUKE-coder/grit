@@ -2628,7 +2628,44 @@ var allowedRequestHeaders = []string{
 	"X-CSRF-Token",
 	"Idempotency-Key",
 	"X-Public-IP-Hint",
+	// Optimistic locking. internal/concurrency reads the version the client
+	// last saw from If-Match and answers 409 rather than overwriting a newer
+	// save. Without it here the preflight strips the header and the PATCH is
+	// never sent, so the feature worked under curl and for no browser on
+	// another origin at all. See grit#124.
+	"If-Match",
 }
+
+// exposedResponseHeaders is what cross-origin JavaScript may READ back.
+//
+// A response header not named here is invisible to fetch() on another
+// origin, whatever the server sent. ETag carries the version a client puts
+// in If-Match on its next write, so without this the optimistic locking in
+// internal/concurrency is only half usable from a browser: it can send the
+// header and has no way to learn the value. Deprecation and Link are set by
+// the unversioned /api alias to say the path will stop working, which is
+// worth nothing if the client cannot read it. See grit#124.
+var exposedResponseHeaders = []string{
+	"ETag",
+	"Deprecation",
+	"Link",
+}
+
+// ExposeResponseHeader adds a header to that list, for the same reason
+// AllowRequestHeader exists: the feature and its CORS entry should arrive
+// together rather than the second one being a thing to remember.
+func ExposeResponseHeader(name string) {
+	for _, h := range exposedResponseHeaders {
+		if strings.EqualFold(h, name) {
+			return
+		}
+	}
+	exposedResponseHeaders = append(exposedResponseHeaders, name)
+	exposedResponseHeadersValue = strings.Join(exposedResponseHeaders, ", ")
+}
+
+// exposedResponseHeadersValue is the joined header value, built once.
+var exposedResponseHeadersValue = strings.Join(exposedResponseHeaders, ", ")
 
 // allowedRequestHeadersValue is the joined header value, built once.
 var allowedRequestHeadersValue = strings.Join(allowedRequestHeaders, ", ")
@@ -2696,6 +2733,7 @@ func CORSDynamic(resolve func() []string) gin.HandlerFunc {
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", allowedRequestHeadersValue)
+		c.Header("Access-Control-Expose-Headers", exposedResponseHeadersValue)
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Max-Age", "86400")
 
@@ -8644,6 +8682,14 @@ func mountLegacyAPIAlias(r *gin.Engine) {
 			// ignore, but it shows up in their logs before v2 forces the issue.
 			c.Header("Deprecation", "true")
 			c.Header("Link", "</api/"+APIVersion+">; rel=\"successor-version\"")
+			// Clear the 404 gin set on the way into NoRoute. HandleContext
+			// does not reset the writer, so a handler that streams bytes
+			// without calling WriteHeader flushes that status instead of its
+			// own: every generated /export answered 404 with the whole file
+			// in the body, and the browser saved a failed download. Writing
+			// nothing, this only resets the pending status, so a handler that
+			// sets its own is unaffected. See grit#128.
+			c.Status(http.StatusOK)
 			r.HandleContext(c)
 			return
 		}

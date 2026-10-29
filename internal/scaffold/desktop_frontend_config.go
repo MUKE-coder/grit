@@ -104,16 +104,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        "bg-elevated": "var(--bg-elevated)",
-        "bg-hover": "var(--bg-hover)",
-        border: "var(--border)",
-        foreground: "var(--foreground)",
-        "text-secondary": "var(--text-secondary)",
-        "text-muted": "var(--text-muted)",
-        accent: "var(--accent)",
-        success: "var(--success)",
-        danger: "var(--danger)",
+        // color-mix, not a bare var(): Tailwind 3 emits no rule at all for
+        // bg-accent/10 when the colour is a plain variable, so every tint in
+        // the app renders as nothing. See grit#126.
+        background: "color-mix(in srgb, var(--background) calc(<alpha-value> * 100%), transparent)",
+        "bg-elevated": "color-mix(in srgb, var(--bg-elevated) calc(<alpha-value> * 100%), transparent)",
+        "bg-hover": "color-mix(in srgb, var(--bg-hover) calc(<alpha-value> * 100%), transparent)",
+        border: "color-mix(in srgb, var(--border) calc(<alpha-value> * 100%), transparent)",
+        foreground: "color-mix(in srgb, var(--foreground) calc(<alpha-value> * 100%), transparent)",
+        "text-secondary": "color-mix(in srgb, var(--text-secondary) calc(<alpha-value> * 100%), transparent)",
+        "text-muted": "color-mix(in srgb, var(--text-muted) calc(<alpha-value> * 100%), transparent)",
+        accent: "color-mix(in srgb, var(--accent) calc(<alpha-value> * 100%), transparent)",
+        "accent-fg": "var(--accent-fg)",
+        success: "color-mix(in srgb, var(--success) calc(<alpha-value> * 100%), transparent)",
+        danger: "color-mix(in srgb, var(--danger) calc(<alpha-value> * 100%), transparent)",
       },
       fontFamily: {
         sans: ["Onest", "system-ui", "sans-serif"],
@@ -228,6 +232,7 @@ func desktopIndexCSS() string {
   --text-muted: #606078;
   --accent: #6c5ce7;
   --accent-hover: #7d6ff0;
+  --accent-fg: #ffffff;
   --success: #00b894;
   --danger: #ff6b6b;
   --warning: #fdcb6e;
@@ -243,6 +248,7 @@ func desktopIndexCSS() string {
   --text-muted: #9090a8;
   --accent: #6c5ce7;
   --accent-hover: #5a4bd6;
+  --accent-fg: #ffffff;
   --success: #00b894;
   --danger: #ff6b6b;
   --warning: #fdcb6e;

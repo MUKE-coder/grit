@@ -1045,14 +1045,23 @@ export default {
         surface: "var(--bg-secondary)",
         "surface-2": "var(--bg-tertiary)",
         "surface-3": "var(--bg-elevated)",
-        "surface-hover": "var(--bg-hover)",
-        border: "var(--border)",
-        "border-subtle": "var(--border-subtle)",
-        foreground: "var(--text-foreground)",
-        "foreground-secondary": "var(--text-secondary)",
-        "foreground-muted": "var(--text-muted)",
-        accent: "var(--accent)",
-        "accent-hover": "var(--accent-hover)",
+        // Every colour here is a CSS variable, and Tailwind 3 cannot apply an
+        // opacity to a bare var(): it emits NO rule for bg-accent/10, so the
+        // tint is simply absent and the class on the element does nothing.
+        // color-mix with <alpha-value> makes the opacity variants real, and
+        // works on a hex variable in WebView2 and WKWebView. See grit#126.
+        "surface-hover": "color-mix(in srgb, var(--bg-hover) calc(<alpha-value> * 100%), transparent)",
+        border: "color-mix(in srgb, var(--border) calc(<alpha-value> * 100%), transparent)",
+        "border-subtle": "color-mix(in srgb, var(--border-subtle) calc(<alpha-value> * 100%), transparent)",
+        foreground: "color-mix(in srgb, var(--text-foreground) calc(<alpha-value> * 100%), transparent)",
+        "foreground-secondary": "color-mix(in srgb, var(--text-secondary) calc(<alpha-value> * 100%), transparent)",
+        "foreground-muted": "color-mix(in srgb, var(--text-muted) calc(<alpha-value> * 100%), transparent)",
+        accent: "color-mix(in srgb, var(--accent) calc(<alpha-value> * 100%), transparent)",
+        "accent-hover": "color-mix(in srgb, var(--accent-hover) calc(<alpha-value> * 100%), transparent)",
+        // The label on an accent fill. Used by button.tsx and form.tsx, and
+        // never defined, so every primary button kept the inherited dark
+        // text on a dark purple fill.
+        "accent-fg": "var(--accent-fg)",
         success: "#059669",
         warning: "#D97706",
         danger: "#DC2626",
@@ -1203,6 +1212,7 @@ func desktopClientGlobalsCSS() string {
 
   --accent: #6C5CE7;
   --accent-hover: #5B4BD6;
+  --accent-fg: #FFFFFF;
 }
 
 .dark {
@@ -1215,13 +1225,15 @@ func desktopClientGlobalsCSS() string {
 
   --text-foreground: #e8e8f0;
   --text-secondary: #9090a8;
-  --text-muted: #606078;
+  /* 4.9:1 on bg-primary. The previous #606078 measured 3.1:1 and failed AA. */
+  --text-muted: #7c7c96;
 
   --border: #2a2a3a;
   --border-subtle: #1a1a24;
 
   --accent: #6c5ce7;
   --accent-hover: #7c6cf7;
+  --accent-fg: #ffffff;
 }
 
 html, body, #app {

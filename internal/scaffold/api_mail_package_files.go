@@ -863,7 +863,7 @@ func buildMIME(m *Message, now time.Time) ([]byte, error) {
 	}
 	writeHeader(&out, "Subject", mime.QEncoding.Encode("utf-8", m.Subject))
 	writeHeader(&out, "Date", now.Format(time.RFC1123Z))
-	id, err := messageID(from.Address)
+	id, err := resolveMessageID(m.Headers, from.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -934,6 +934,49 @@ func formatAddressList(list []string) (string, error) {
 		formatted = append(formatted, a.String())
 	}
 	return strings.Join(formatted, ", "), nil
+}
+
+// resolveMessageID keeps the caller's Message-ID when they set one, and
+// generates it otherwise.
+//
+// A Message-ID is the only thing a reply carries back, in In-Reply-To and
+// References, so an app that logs what it sent needs to know the id that
+// went out. This used to always generate: Message-Id is in reservedHeaders,
+// so the SMTP driver replaced the caller's silently while the API drivers
+// passed theirs through, and the same message got a different id depending
+// on the driver. See grit#122.
+//
+// A caller value is used only when it is <local@domain> with no CR or LF.
+// A header value containing either is header injection, so a malformed one
+// is replaced rather than written.
+func resolveMessageID(headers map[string]string, from string) (string, error) {
+	for name, v := range headers {
+		if !strings.EqualFold(name, "Message-ID") {
+			continue
+		}
+		v = strings.TrimSpace(v)
+		if validMessageID(v) {
+			return v, nil
+		}
+		break
+	}
+	return messageID(from)
+}
+
+// validMessageID reports whether v is a well formed <local@domain>.
+func validMessageID(v string) bool {
+	if len(v) < 5 || !strings.HasPrefix(v, "<") || !strings.HasSuffix(v, ">") {
+		return false
+	}
+	if strings.ContainsAny(v, "\r\n") {
+		return false
+	}
+	inner := v[1 : len(v)-1]
+	at := strings.LastIndex(inner, "@")
+	if at <= 0 || at >= len(inner)-1 {
+		return false
+	}
+	return !strings.ContainsAny(inner, "<> ")
 }
 
 func messageID(from string) (string, error) {

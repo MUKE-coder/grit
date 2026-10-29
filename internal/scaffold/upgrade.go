@@ -510,6 +510,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBenchTestGo(root, opts); err != nil {
 			fmt.Printf("  ⚠ fixing the handler benchmarks: %v\n", err)
 		}
+		// Bugs reported against projects in the field: optimistic locking that
+		// no browser could use, downloads answering 404 with the file in the
+		// body, a Message-ID the SMTP driver threw away, and a sequence that
+		// never resets issuing exactly one number.
+		if err := repairReportedBugs(root, opts); err != nil {
+			fmt.Printf("  ⚠ applying reported-bug fixes: %v\n", err)
+		}
 		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
 		// security workflow's audit fails until the patched build is in.
 		warnVulnerableXLSX(root)

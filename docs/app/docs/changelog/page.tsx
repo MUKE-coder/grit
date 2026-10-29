@@ -59,6 +59,124 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.435.0 */}
+            <div className="mb-12" id="v3.435.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.435.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Five reported bugs, all of them invisible from inside the app</h3>
+                <p>
+                  Every one of these was reported from a real project with a
+                  repro and a cause, and every one of them failed in a way the
+                  application could not see.
+                </p>
+
+                <h3>A sequence that never resets issued exactly one number</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/132">#132</a>.
+                  With <code>--reset never</code> the counter&apos;s bucket is
+                  the empty string, which is the zero value of the string half
+                  of its primary key, and GORM&apos;s <code>Save</code> treats
+                  a zero primary key as a new row. So the second call INSERTed
+                  a duplicate and hit the unique constraint, and with the
+                  generated <code>BeforeCreate</code> hook the second record of
+                  that resource could not be created at all. Monthly and yearly
+                  counters have a non-empty bucket, which is why only
+                  &quot;never&quot; broke. It is an explicit update now, inside
+                  the same lock: C-0001, C-0002, C-0003.
+                </p>
+
+                <h3>Downloads answered 404 with the file in the body</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/128">#128</a>.
+                  Every generated <code>/export</code> through the unversioned{' '}
+                  <code>/api</code> path. The alias is a <code>NoRoute</code>{' '}
+                  handler, so gin has already set the writer to 404 on the way
+                  in, and <code>HandleContext</code> does not reset it. A
+                  handler answering with <code>c.JSON</code> sets its own
+                  status and was fine; the export handler sets headers and
+                  streams the CSV, so the first write flushed the leftover 404.
+                  axios rejected the download as an error and a browser saved a
+                  failed request. Verified on a running API: 200 on both paths,
+                  same bytes.
+                </p>
+
+                <h3>No browser could use optimistic locking</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/124">#124</a>.{' '}
+                  <code>If-Match</code> was missing from the CORS allow-list,
+                  so the preflight stripped it and the write was never sent: no
+                  status, no log line, and a bare{' '}
+                  <code>TypeError: Failed to fetch</code> in the page, which is
+                  also what a lost connection looks like. The same call worked
+                  under curl.
+                </p>
+                <p>
+                  Allowing it is half the fix. Cross-origin JavaScript can only
+                  read a response header named in{' '}
+                  <code>Access-Control-Expose-Headers</code>, and there was no
+                  such header at all, so a client could not read the{' '}
+                  <code>ETag</code> that carries the version it must send back.{' '}
+                  <code>ETag</code>, <code>Deprecation</code> and{' '}
+                  <code>Link</code> are exposed now, with an{' '}
+                  <code>ExposeResponseHeader</code> to extend the list the way{' '}
+                  <code>AllowRequestHeader</code> already does.
+                </p>
+
+                <h3>The SMTP driver threw away a Message-ID</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/122">#122</a>.{' '}
+                  <code>Message-Id</code> is in <code>reservedHeaders</code>, so
+                  the MIME builder always wrote a generated one, while the API
+                  drivers passed the caller&apos;s through. The same{' '}
+                  <code>mail.Message</code> therefore kept its id on Resend and
+                  lost it on SMTP. An app that stores the id to match replies
+                  by <code>In-Reply-To</code> stored one that was never sent.
+                </p>
+                <p>
+                  A caller-set id is kept when it is well formed, and generated
+                  otherwise. Well formed means <code>&lt;local@domain&gt;</code>{' '}
+                  with no CR or LF: a header value carrying either is header
+                  injection, so a malformed one is replaced rather than written.
+                </p>
+
+                <h3>Every accent tint on the desktop app rendered as nothing</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/126">#126</a>.
+                  Tailwind 3 cannot apply an opacity to a colour given as a bare
+                  CSS variable: it emits no rule at all for{' '}
+                  <code>bg-accent/10</code>. The class was on the element, the
+                  variable was set, and the stylesheet held nothing. The
+                  scaffold tints the accent 25 times: the sidebar&apos;s active
+                  item, the avatar, badges, the command palette&apos;s selected
+                  row, table selection, filter chips.
+                </p>
+                <p>
+                  <code>text-accent-fg</code> was used on three accent fills and
+                  never defined, so every primary button kept the inherited dark
+                  text on a dark purple fill. Both are fixed, in the config{' '}
+                  <code>grit new --desktop</code> writes and in the separate one{' '}
+                  <code>grit new-desktop</code> writes, because a fix in one of
+                  two copies is how a bug comes back. The dark{' '}
+                  <code>--text-muted</code> went with them: it was{' '}
+                  <code>#606078</code>, which this project&apos;s own design
+                  system records as 3.1:1 and a failure of AA.
+                </p>
+
+                <h3>All five are in grit upgrade, and all five have a test</h3>
+                <p>
+                  Each repair leaves a project alone that already has the fix or
+                  has rewritten the file itself, and says what it changed. The
+                  tests were each confirmed by putting the bug back.
+                </p>
+              </div>
+            </div>
+
             {/* v3.434.0 */}
             <div className="mb-12" id="v3.434.0">
               <div className="flex items-center gap-3 mb-4">
