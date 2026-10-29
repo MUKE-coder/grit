@@ -5,11 +5,15 @@
  *   /content/lessons/<course>/<chapter>/<lesson>.tsx
  * and exports a default React component (no props).
  *
- * loadLessonContent dynamically imports it; missing files return null
- * so the dynamic lesson page can fall through to <LessonComingSoon />.
+ * loadLessonContent looks the key up in the map below. A key the map does
+ * not hold returns null and the page falls through to <LessonComingSoon />,
+ * which is why a missing entry is silent: the lesson renders as unwritten.
  *
- * This means I never have to keep an explicit registry in sync — drop
- * a new lesson TSX in the right place and it just works.
+ * The map is explicit because a bundler cannot resolve import() with a
+ * computed path. Dropping a TSX file in the right place is NOT enough: add
+ * the entry here and flip the status in config/courses.ts, and run
+ * scripts/check-lessons.py, which exists because nineteen lessons were
+ * marked available with no entry and advertised as finished.
  */
 
 import { GO_FULL_LESSONS } from './lesson-content.go-full.generated'
@@ -182,6 +186,14 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'security/mindset/threat-model': () => import('@/content/lessons/security/mindset/threat-model'),
   'security/mindset/owasp-tour': () => import('@/content/lessons/security/mindset/owasp-tour'),
   'security/access-control/idor': () => import('@/content/lessons/security/access-control/idor'),
+  'security/access-control/authz-package': () => import('@/content/lessons/security/access-control/authz-package'),
+  'security/injection-ssrf/ssrf-safefetch': () => import('@/content/lessons/security/injection-ssrf/ssrf-safefetch'),
+  'security/auth-secrets/jwt-pitfalls': () => import('@/content/lessons/security/auth-secrets/jwt-pitfalls'),
+  'security/defensive-stack/audit-log': () => import('@/content/lessons/security/defensive-stack/audit-log'),
+  'security/injection-ssrf/sql-injection': () => import('@/content/lessons/security/injection-ssrf/sql-injection'),
+  'security/defensive-stack/csrf-cors': () => import('@/content/lessons/security/defensive-stack/csrf-cors'),
+  'security/auth-secrets/secrets': () => import('@/content/lessons/security/auth-secrets/secrets'),
+  'security/defensive-stack/sentinel-rate-limit': () => import('@/content/lessons/security/defensive-stack/sentinel-rate-limit'),
 
   /* ─── Benchmarking ──────────────────────────────── */
   'benchmarking/fundamentals/first-bench': () => import('@/content/lessons/benchmarking/fundamentals/first-bench'),

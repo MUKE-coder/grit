@@ -32,6 +32,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.dirname(HERE)
 APP_DOCS = os.path.join(DOCS, "app", "docs")
+APP_COURSES = os.path.join(DOCS, "app", "courses")
 METADATA = os.path.join(DOCS, "config", "docs-metadata.ts")
 CURATED = os.path.join(DOCS, "config", "search-keywords.json")
 OUT = os.path.join(DOCS, "config", "search-index.generated.ts")
@@ -142,6 +143,56 @@ def dynamic():
     return out
 
 
+# The 41 standalone course pages under app/courses: Stripe payments, GORM
+# mastery, the Grit Web / Desktop / Mobile series. Real pages with their own
+# files, and none of them was in search, because routes() walks app/docs and
+# stops there. A search for "stripe" found the plugin page and not the course
+# about integrating it.
+#
+# The courses in config/courses.ts are deliberately NOT here. search-dialog.tsx
+# builds those live from the config, with the module title, the minutes and the
+# difficulty in their keywords, and its map keeps the later entry: adding them
+# here would ship 300 entries to the browser that are then thrown away.
+PAGE_METADATA = re.compile(
+    r"export const metadata(?::\s*Metadata)?\s*=\s*\{"
+    r".*?\btitle:\s*(['\"])(.*?)\1"
+    r".*?\bdescription:\s*(['\"])(.*?)\3",
+    re.S,
+)
+STANDALONE_COURSES_MIN = 40
+
+
+def standalone_courses():
+    """Every course page that has a file of its own, titled from its metadata."""
+    out = []
+    for dirpath, _dirs, files in os.walk(APP_COURSES):
+        if "page.tsx" not in files:
+            continue
+        rel = os.path.relpath(dirpath, APP_COURSES).replace(os.sep, "/")
+        if rel == "." or "[" in rel:   # /courses itself, and the [param] tree
+            continue
+        href = "/courses/" + rel
+        src = open(os.path.join(dirpath, "page.tsx"), encoding="utf-8").read()
+        m = PAGE_METADATA.search(src)
+        if not m:
+            raise SystemExit(
+                "%s: no metadata title and description, so there is nothing to "
+                "index it by. Add them to the page, or teach the reader in "
+                "scripts/search-index.py where its title lives." % href
+            )
+        title = re.sub(r"\s+", " ", m.group(2)).strip()
+        description = re.sub(r"\s+", " ", m.group(4)).strip()
+        out.append((href, title, description, "Courses"))
+    if len(out) < STANDALONE_COURSES_MIN:
+        raise SystemExit(
+            "standalone courses: found %d pages under app/courses, expected at "
+            "least %d. Either pages were deleted, or the walk broke and they go "
+            "missing from search without anything saying so."
+            % (len(out), STANDALONE_COURSES_MIN)
+        )
+    return sorted(out)
+
+
 def metadata():
     """title and description per route, from config/docs-metadata.ts."""
     src = open(METADATA, encoding="utf-8").read()
@@ -242,7 +293,7 @@ def main():
 
     shadowed = []
     seen_href = {i["href"] for i in items}
-    for href, name, tagline, section in dynamic():
+    for href, name, tagline, section in dynamic() + standalone_courses():
         if href in seen_href:
             # A static page of the same path, which is what Next serves: the
             # [param] template never renders this slug. One entry, not two.
@@ -293,8 +344,10 @@ export const SEARCH_INDEX: SearchItem[] = entries
         before = open(OUT, encoding="utf-8").read()
     open(OUT, "w", encoding="utf-8", newline="").write(out)
 
-    print("indexed %d pages (%d static routes, %d config-driven, %d curated kept)"
-          % (len(items), len(routes()), len(dynamic()), len(hand)))
+    print("indexed %d pages (%d static routes, %d config-driven, %d course "
+          "pages, %d curated kept)"
+          % (len(items), len(routes()), len(dynamic()),
+             len(standalone_courses()), len(hand)))
     if shadowed:
         print("a static page of the same path wins, so the config entry is skipped:")
         for href in shadowed:

@@ -1392,6 +1392,252 @@
     "keywords": "nginx php fpm opcache tracing jit production only vendor eloquent docs benchmarks laravel"
   },
   {
+    "title": "Auto-Generated API Docs: Scalar & Swagger in Grit",
+    "href": "/courses/api-docs-scalar",
+    "section": "Courses",
+    "keywords": "learn grit auto generates interactive api documentation gin docs covers openapi scalar ui request testing authentication response formats spec export courses generated swagger"
+  },
+  {
+    "title": "Build & Deploy a REST API with Go (API-Only Masterclass)",
+    "href": "/courses/api-masterclass",
+    "section": "Courses",
+    "keywords": "build complete rest api scratch grit only mode no frontend pure go authentication relationships role based access deployment courses masterclass deploy"
+  },
+  {
+    "title": "Audit Log + Hash Chain — Tamper-Evident Activity Tracking",
+    "href": "/courses/audit-log",
+    "section": "Courses",
+    "keywords": "build tamper evident audit trail grit every authenticated mutation appended sha 256 hash chain verify one request ideal soc hipaa finance courses log activity tracking"
+  },
+  {
+    "title": "Batteries Included: Every Feature That Ships with Grit",
+    "href": "/courses/batteries",
+    "section": "Courses",
+    "keywords": "learn every battery ships grit project redis caching file storage email background jobs cron ai 2fa gorm studio api docs security observability ui components docker courses batteries included feature"
+  },
+  {
+    "title": "CI/CD with GitHub Actions: Automated Testing & Deployment",
+    "href": "/courses/cicd-github",
+    "section": "Courses",
+    "keywords": "up automated testing deployment pipelines grit projects github actions ci workflows release automation branch protection environment deploys courses cicd cd"
+  },
+  {
+    "title": "Deployment Guide: Dokploy, Orbita, VPS & Vercel — Grit Course",
+    "href": "/courses/deployment-guide",
+    "section": "Courses",
+    "keywords": "learn four deployment methods grit applications deploy direct vps dokploy self hosted paas orbita native vercel next js frontends courses guide course"
+  },
+  {
+    "title": "CSV / Excel Export — Per-Resource Data Export in Grit",
+    "href": "/courses/export",
+    "section": "Courses",
+    "keywords": "every generated grit resource ships csv xlsx export endpoint learn streaming chunked constant memory exports filters carry through file courses excel per data"
+  },
+  {
+    "title": "Feature Flags & A/B Testing — Ship Safely with Grit",
+    "href": "/courses/feature-flags",
+    "section": "Courses",
+    "keywords": "grit built feature flag engine sticky bucketing percentage rollouts allow blocklists realtime admin push decouple deploy release run tests courses flags testing ship safely"
+  },
+  {
+    "title": "Database Mastery with GORM: Models, Migrations & Queries",
+    "href": "/courses/gorm-mastery",
+    "section": "Courses",
+    "keywords": "master gorm go courses mastery database models migrations queries"
+  },
+  {
+    "title": "GORM Studio: The Visual Database Browser",
+    "href": "/courses/gorm-studio",
+    "section": "Courses",
+    "keywords": "complete guide gorm studio browse tables view edit records run sql queries export schemas import data generate go models database courses visual browser"
+  },
+  {
+    "title": "Grit Desktop — Building Desktop Applications with Grit",
+    "href": "/courses/grit-desktop",
+    "section": "Courses",
+    "keywords": "self paced courses teaching build native desktop apps grit wails first app distribution building applications"
+  },
+  {
+    "title": "Build & Distribution — Grit Desktop Course",
+    "href": "/courses/grit-desktop/build",
+    "section": "Courses",
+    "keywords": "compile grit desktop app native binary target multiple platforms customize icons distribute users courses build distribution course"
+  },
+  {
+    "title": "Desktop CRUD & Data — Grit Desktop Course",
+    "href": "/courses/grit-desktop/crud-data",
+    "section": "Courses",
+    "keywords": "generate resources understand wails bindings gorm models sqlite tanstack router service layer grit desktop apps courses crud data course"
+  },
+  {
+    "title": "Custom UI & Theming — Grit Desktop Course",
+    "href": "/courses/grit-desktop/custom-ui",
+    "section": "Courses",
+    "keywords": "frameless window custom title bar sidebar navigation dark theme shadcn ui components resizable panels grit desktop apps courses theming course"
+  },
+  {
+    "title": "PDF & Excel Export — Grit Desktop Course",
+    "href": "/courses/grit-desktop/export",
+    "section": "Courses",
+    "keywords": "generate pdfs excel spreadsheets csv files grit desktop app learn export service download flow custom report templates courses pdf course"
+  },
+  {
+    "title": "Your First Desktop App — Grit Desktop Course",
+    "href": "/courses/grit-desktop/first-app",
+    "section": "Courses",
+    "keywords": "install wails scaffold desktop app grit understand project structure bindings run dev mode courses first course"
+  },
+  {
+    "title": "Grit Mobile — Building Mobile Applications with Grit",
+    "href": "/courses/grit-mobile",
+    "section": "Courses",
+    "keywords": "self paced courses teaching build cross platform mobile apps go api expo react native scaffolding app store grit building applications"
+  },
+  {
+    "title": "API Integration & Offline — Grit Mobile Course",
+    "href": "/courses/grit-mobile/api-offline",
+    "section": "Courses",
+    "keywords": "learn tanstack query react native pull refresh infinite scroll offline caching error handling patterns mobile apps courses grit api integration course"
+  },
+  {
+    "title": "Mobile Auth & Navigation — Grit Mobile Course",
+    "href": "/courses/grit-mobile/auth-navigation",
+    "section": "Courses",
+    "keywords": "implement secure token storage expo router navigation tab stack protected routes refresh react native app courses grit mobile auth course"
+  },
+  {
+    "title": "Build & App Store — Grit Mobile Course",
+    "href": "/courses/grit-mobile/build-store",
+    "section": "Courses",
+    "keywords": "learn eas build testflight play store submission ota updates deploy go api production mobile apps courses grit app course"
+  },
+  {
+    "title": "Your First Mobile App — Grit Mobile Course",
+    "href": "/courses/grit-mobile/first-app",
+    "section": "Courses",
+    "keywords": "scaffold go api expo react native project up emulator run device understand mobile structure courses grit first app course"
+  },
+  {
+    "title": "Push Notifications — Grit Mobile Course",
+    "href": "/courses/grit-mobile/notifications",
+    "section": "Courses",
+    "keywords": "learn expo push tokens grit notifications plugin fcm apns local handling notification taps react native courses mobile course"
+  },
+  {
+    "title": "Grit Web — Building Web Applications with Grit",
+    "href": "/courses/grit-web",
+    "section": "Courses",
+    "keywords": "self paced courses teaching build full stack web apps grit introduction production deployment building applications"
+  },
+  {
+    "title": "Admin Panel Customization — Grit Web Course",
+    "href": "/courses/grit-web/admin-panel",
+    "section": "Courses",
+    "keywords": "learn grit admin panel works customize understand dashboard datatable formbuilder resource definitions multi step forms style variants system pages courses web customization course"
+  },
+  {
+    "title": "AI-Powered Features — Grit Web Course",
+    "href": "/courses/grit-web/ai-features",
+    "section": "Courses",
+    "keywords": "learn integrate ai grit application vercel gateway understand completions streaming multi turn chat sse model switching building uis courses web features powered course"
+  },
+  {
+    "title": "Authentication & Authorization — Grit Web Course",
+    "href": "/courses/grit-web/authentication",
+    "section": "Courses",
+    "keywords": "learn complete auth system grit jwt tokens bcrypt hashing role based access control two factor authentication totp oauth2 social login frontend flows courses web authorization course"
+  },
+  {
+    "title": "Code Generator Mastery — Grit Web Course",
+    "href": "/courses/grit-web/code-generator",
+    "section": "Courses",
+    "keywords": "master grit generate resource command learn field types modifiers relationships slugs interactive mode type sync build full stack crud features single courses web code generator mastery course"
+  },
+  {
+    "title": "Deploy to Production — Grit Web Course",
+    "href": "/courses/grit-web/deploy",
+    "section": "Courses",
+    "keywords": "learn deploy grit app production systemd caddy reverse proxy auto tls docker best practices courses web course"
+  },
+  {
+    "title": "File Storage & Uploads — Grit Web Course",
+    "href": "/courses/grit-web/file-storage",
+    "section": "Courses",
+    "keywords": "learn handle file uploads s3 compatible storage presigned urls covers minio local development cloudflare r2 aws image processing admin management courses grit web course"
+  },
+  {
+    "title": "Your First Grit App — Grit Web Course",
+    "href": "/courses/grit-web/first-app",
+    "section": "Courses",
+    "keywords": "learn install grit scaffold first full stack project understand structure run all development servers courses web app course"
+  },
+  {
+    "title": "Introduction to Grit — Grit Web Course",
+    "href": "/courses/grit-web/introduction",
+    "section": "Courses",
+    "keywords": "learn grit exists problems solves compares other frameworks web course series courses introduction"
+  },
+  {
+    "title": "Background Jobs & Email — Grit Web Course",
+    "href": "/courses/grit-web/jobs-email",
+    "section": "Courses",
+    "keywords": "learn redis job queues asynq background processing send transactional emails resend covers workers retry logic cron scheduling email templates admin jobs dashboard courses grit web course"
+  },
+  {
+    "title": "Build an Invoice Generator: Desktop App with Wails — Grit Course",
+    "href": "/courses/invoice-desktop",
+    "section": "Courses",
+    "keywords": "build real desktop invoice generator grit wails create clients invoices line items generate pdf track payment status export excel courses app course"
+  },
+  {
+    "title": "Build a Fitness App: Go API + Expo React Native",
+    "href": "/courses/mobile-fitness-app",
+    "section": "Courses",
+    "keywords": "build fitness tracking app go backend expo react native frontend track workouts exercises sets reps weight real mobile courses api"
+  },
+  {
+    "title": "Performance Analytics with Pulse: Tracing, Metrics & Monitoring",
+    "href": "/courses/pulse-analytics",
+    "section": "Courses",
+    "keywords": "deep dive pulse observability learn request tracing database monitoring runtime metrics error tracking health checks prometheus export performance baselining courses analytics"
+  },
+  {
+    "title": "React + Vite + Go: Building with TanStack Router — Grit Course",
+    "href": "/courses/react-vite-go",
+    "section": "Courses",
+    "keywords": "learn tanstack router vite frontend grit application instead next js file based routing data fetching auth production builds courses react go building course"
+  },
+  {
+    "title": "Build a Real-Time Chat App with WebSockets",
+    "href": "/courses/realtime-chat",
+    "section": "Courses",
+    "keywords": "build complete real time chat application websocket hub every grit project ships channels authorizers presence client events courses realtime app websockets"
+  },
+  {
+    "title": "Security Deep Dive: Auth, 2FA, WAF & Rate Limiting",
+    "href": "/courses/security-deep-dive",
+    "section": "Courses",
+    "keywords": "comprehensive security course covering bcrypt passwords jwt authentication rbac two factor backup codes trusted devices sentinel waf rate limiting headers oauth2 courses deep dive auth 2fa"
+  },
+  {
+    "title": "Stripe Payments & Subscriptions for SaaS",
+    "href": "/courses/stripe-payments",
+    "section": "Courses",
+    "keywords": "integrate stripe payments grit saas app checkout sessions subscription plans webhooks customer portal billing management courses subscriptions"
+  },
+  {
+    "title": "Testing Your Grit App: Go, Vitest & Playwright",
+    "href": "/courses/testing",
+    "section": "Courses",
+    "keywords": "learn test every layer grit application go unit tests testify frontend component vitest end playwright courses testing app"
+  },
+  {
+    "title": "Webhook Receiver — Stripe, GitHub & HMAC Verifiers in Grit",
+    "href": "/courses/webhook-receiver",
+    "section": "Courses",
+    "keywords": "receive third party webhooks safely grit verify stripe github generic hmac signatures dedup provider external id replay events safe retries courses webhook receiver verifiers"
+  },
+  {
     "title": "Blueprints",
     "href": "/blueprints",
     "section": "Blueprints",

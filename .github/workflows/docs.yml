@@ -84,6 +84,13 @@ jobs:
         run: python3 scripts/check-search-index.py
         working-directory: docs
 
+      # A lesson marked available with no body renders the "being written"
+      # card under a heading that says it is finished, and nothing complained:
+      # nineteen were advertised that way.
+      - name: Every written lesson has a body
+        run: python3 scripts/check-lessons.py
+        working-directory: docs
+
   flows:
     name: the runnable blocks run
     runs-on: ubuntu-latest

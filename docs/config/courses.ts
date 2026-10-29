@@ -1972,7 +1972,7 @@ const securityCourse: Course = {
           title: 'Attack + defend',
           lessons: [
             { slug: 'idor', title: 'IDOR, the most common bug in the wild', tagline: 'Cross-account access by guessing IDs.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'authz-package', title: 'The authz package', tagline: 'Centralized authorization in Grit and how to use it.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'authz-package', title: 'The authz package', tagline: 'Centralized authorization in Grit and how to use it.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
@@ -1993,8 +1993,8 @@ const securityCourse: Course = {
         {
           title: 'Attack + defend',
           lessons: [
-            { slug: 'sql-injection', title: 'SQL injection in Go', tagline: 'How GORM protects you, and how Sprintf undoes that protection.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'ssrf-safefetch', title: 'SSRF + safefetch', tagline: 'The internal-network attack and how Grit\'s safefetch blocks it.', minutes: 9, difficulty: 'hard', status: 'coming-soon' },
+            { slug: 'sql-injection', title: 'SQL injection in Go', tagline: 'How GORM protects you, and how Sprintf undoes that protection.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'ssrf-safefetch', title: 'SSRF + safefetch', tagline: 'The internal-network attack and how Grit\'s safefetch blocks it.', minutes: 9, difficulty: 'hard', status: 'available' },
           ],
         },
       ],
@@ -2015,8 +2015,8 @@ const securityCourse: Course = {
         {
           title: 'Hardening',
           lessons: [
-            { slug: 'jwt-pitfalls', title: 'JWT pitfalls', tagline: 'alg=none, missing expiry, leaked secrets.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'secrets', title: 'Where do your secrets live?', tagline: '.env, vaults, KMS, what to use when.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'jwt-pitfalls', title: 'JWT pitfalls', tagline: 'alg=none, missing expiry, leaked secrets.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'secrets', title: 'Where do your secrets live?', tagline: '.env, vaults, KMS, what to use when.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
@@ -2037,9 +2037,9 @@ const securityCourse: Course = {
         {
           title: 'Defence in depth',
           lessons: [
-            { slug: 'sentinel-rate-limit', title: 'Sentinel rate limiting', tagline: 'Per-IP, per-user, per-endpoint throttles.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'csrf-cors', title: 'CSRF + CORS', tagline: 'Why both, when each matters.', minutes: 8, difficulty: 'hard', status: 'coming-soon' },
-            { slug: 'audit-log', title: 'Audit log', tagline: 'Who did what, when. The black-box recorder for incidents.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'sentinel-rate-limit', title: 'Sentinel rate limiting', tagline: 'Per-IP, per-user, per-endpoint throttles.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'csrf-cors', title: 'CSRF + CORS', tagline: 'Why both, when each matters.', minutes: 8, difficulty: 'hard', status: 'available' },
+            { slug: 'audit-log', title: 'Audit log', tagline: 'Who did what, when. The black-box recorder for incidents.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
