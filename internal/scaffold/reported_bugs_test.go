@@ -158,3 +158,44 @@ func desktopClientFileSource(t *testing.T) string {
 }
 
 var desktopSource string
+
+// grit#127: enterprise SSO had no login hook, so a project had no supported
+// place to act on an SSO sign-in. In a multi-tenant app the obvious thing to
+// do there is put the person in the organisation the connection belongs to,
+// and applyGroupRoles only writes platform roles.
+//
+// A registry nothing calls is the failure mode worth guarding: it compiles,
+// it is documented, and no hook ever runs.
+func TestBothSSOCallbacksRunTheLoginHooks(t *testing.T) {
+	for name, src := range map[string]string{
+		"sso.go (OIDC callback)": tmpl("api/handlers/sso.go"),
+		"saml.go (SAML ACS)":     tmpl("api/handlers/saml.go"),
+	} {
+		if !strings.Contains(src, "services.RunSSOLoginHooks(") {
+			t.Errorf("%s does not run the SSO login hooks, so the registry in "+
+				"services/sso_hooks.go exists and nothing calls it (grit#127)", name)
+			continue
+		}
+		// After the group roles: a hook that reads the person's roles to
+		// decide an organisation role needs them applied first.
+		roles := strings.Index(src, "h.applyGroupRoles(")
+		hooks := strings.Index(src, "services.RunSSOLoginHooks(")
+		if roles >= 0 && hooks < roles {
+			t.Errorf("%s runs the login hooks before applyGroupRoles, so a hook "+
+				"reading the person's roles sees them unapplied (grit#127)", name)
+		}
+	}
+
+	hooks := apiSSOHooksGo()
+	for _, want := range []string{
+		"func OnSSOLogin(",
+		"func RunSSOLoginHooks(",
+		"func ResetSSOLoginHooks(",
+		"conn *models.SSOConnection",
+		"groups []string",
+	} {
+		if !strings.Contains(hooks, want) {
+			t.Errorf("services/sso_hooks.go is missing %s", want)
+		}
+	}
+}

@@ -59,6 +59,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.437.0 */}
+            <div className="mb-12" id="v3.437.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.437.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An SSO sign-in you can act on</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/127">#127</a>.
+                  Social sign-in has <code>OnOAuthLogin</code>, run after the
+                  account is resolved. Enterprise SSO had nothing equivalent:
+                  the OIDC callback and the SAML ACS went from{' '}
+                  <code>applyGroupRoles</code> straight to the token pair, so
+                  a project had no supported place to act on an SSO sign-in.
+                  The only way in was to edit a handler Grit owns and rewrites
+                  on upgrade.
+                </p>
+                <p>
+                  That matters most in a multi-tenant app, where the obvious
+                  thing to do there is put the person in their company&apos;s
+                  organisation: an SSO connection belongs to one customer.{' '}
+                  <code>applyGroupRoles</code> only writes platform roles and
+                  an <code>SSOConnection</code> has no organisation of its own,
+                  so every SSO user landed with none, which is what{' '}
+                  <code>grit doctor</code>&apos;s{' '}
+                  <code>tenant-sso-no-organization</code> warning is about.
+                </p>
+                <p>
+                  <code>services.OnSSOLogin</code> takes the connection, the
+                  user and the groups the IdP asserted, which are what an app
+                  needs and what the OAuth hook&apos;s{' '}
+                  <code>goth.User</code> does not carry. It runs from both ways
+                  in, after the group roles, on every sign-in rather than only
+                  the first. A failing hook is logged and the rest still run,
+                  the same choice <code>applyGroupRoles</code> makes a line
+                  earlier.
+                </p>
+                <p>
+                  A registry nothing calls is the failure worth guarding
+                  against, so a test asserts both callbacks run it and that
+                  they run it after the group roles.
+                </p>
+              </div>
+            </div>
+
             {/* v3.436.0 */}
             <div className="mb-12" id="v3.436.0">
               <div className="flex items-center gap-3 mb-4">

@@ -274,6 +274,13 @@ func (h *SSOHandler) Callback(c *gin.Context) {
 		log.Printf("sso %s: role mapping for %s: %v", slug, user.ID, err)
 	}
 
+	// The project's own hooks, with the connection and the asserted groups.
+	// This is where a multi-tenant app puts the person in the organisation
+	// the connection belongs to: applyGroupRoles above only writes platform
+	// roles, and an SSOConnection has no organisation of its own. See
+	// services/sso_hooks.go and grit#127.
+	services.RunSSOLoginHooks(c.Request.Context(), conn, user, ident.Groups)
+
 	// Reload so the token carries any role the mapping just assigned.
 	user, err = h.users().GetByID(c.Request.Context(), user.ID)
 	if err != nil {
