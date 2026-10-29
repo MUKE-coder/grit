@@ -181,6 +181,13 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'load-testing/fundamentals/why-load-test': () => import('@/content/lessons/load-testing/fundamentals/why-load-test'),
   'load-testing/fundamentals/install-k6': () => import('@/content/lessons/load-testing/fundamentals/install-k6'),
   'load-testing/fundamentals/first-script': () => import('@/content/lessons/load-testing/fundamentals/first-script'),
+  'load-testing/scenarios/smoke-load': () => import('@/content/lessons/load-testing/scenarios/smoke-load'),
+  'load-testing/scenarios/stress-spike': () => import('@/content/lessons/load-testing/scenarios/stress-spike'),
+  'load-testing/scenarios/soak-test': () => import('@/content/lessons/load-testing/scenarios/soak-test'),
+  'load-testing/finding-bottlenecks/reading-metrics': () => import('@/content/lessons/load-testing/finding-bottlenecks/reading-metrics'),
+  'load-testing/finding-bottlenecks/common-bottlenecks': () => import('@/content/lessons/load-testing/finding-bottlenecks/common-bottlenecks'),
+  'load-testing/finding-bottlenecks/fix-and-prove': () => import('@/content/lessons/load-testing/finding-bottlenecks/fix-and-prove'),
+  'load-testing/ci-integration/github-actions': () => import('@/content/lessons/load-testing/ci-integration/github-actions'),
 
   /* ─── Security ──────────────────────────────────── */
   'security/mindset/threat-model': () => import('@/content/lessons/security/mindset/threat-model'),

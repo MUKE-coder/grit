@@ -1,0 +1,225 @@
+import { CodeBlock } from '@/components/code-block'
+import { TipBox } from '@/components/course/tip-box'
+import { Exercise } from '@/components/course/exercise'
+import { KnowledgeCheck } from '@/components/course/knowledge-check'
+
+export default function Lesson() {
+  return (
+    <>
+      <p>
+        Grit scaffolds six load tests into <code>tests/k6/</code>. They all
+        run the same user journey from <code>lib/common.js</code> and differ
+        only in their stages, which is the shape of the load over time. This
+        lesson is the first two, and they are the two you will actually run
+        most weeks.
+      </p>
+
+      <h2>Smoke: does the test work?</h2>
+      <p>
+        Two virtual users for thirty seconds. That is not a load test, and it
+        is not meant to be:
+      </p>
+
+      <CodeBlock
+        language="javascript"
+        filename="tests/k6/smoke.js"
+        code={`import { userJourney, defaultThresholds } from './lib/common.js'
+
+// k6 only runs setup() when the entry script exports it.
+export { setup } from './lib/common.js'
+
+export const options = {
+  vus: 2,
+  duration: '30s',
+  thresholds: defaultThresholds,
+}
+
+export default userJourney`}
+      />
+
+      <p>
+        Run it before every other type. A stress test that fails tells you
+        nothing until you know the script itself works, because the two look
+        identical from the outside: requests failing, thresholds breached, a
+        red summary. Smoke separates &quot;the system broke&quot; from
+        &quot;my test was never right&quot;.
+      </p>
+
+      <TipBox tone="danger">
+        <p>
+          This is not hypothetical. The suite Grit shipped until v3.432.0
+          asked for <code>/health</code>, a path no Grit API has ever served,
+          and <code>/api/blogs</code>, which only a project with a Blog
+          resource serves. Every request 404d, every threshold breached, and
+          all six tests reported a broken system before measuring anything
+          about it. Nobody noticed, because nobody ran smoke first and asked
+          why a two user test was failing.
+        </p>
+      </TipBox>
+
+      <h2>What a passing smoke run looks like</h2>
+      <CodeBlock
+        language="text"
+        code={`✓ health: status 200
+✓ profile: status 200
+
+checks_succeeded...: 100.00%  60 out of 60
+http_req_failed....: 0.00%    0 out of 62
+http_req_duration..: p(95)=3.42ms  p(99)=69.28ms
+http_reqs..........: 62      1.98/s`}
+      />
+
+      <p>
+        Two numbers are worth noting now. 62 requests, not 60: the two extra
+        are the sign-in in <code>setup()</code>, which runs once and is not
+        part of any iteration. And p99 is twenty times p95 on a run this
+        small, because one request was the first to touch a cold code path.
+        At 60 requests, p99 is a single request. It becomes a number worth
+        reading at thousands.
+      </p>
+
+      <h2>Average load: the baseline</h2>
+      <CodeBlock
+        language="javascript"
+        filename="tests/k6/average-load.js"
+        code={`export const options = {
+  stages: [
+    { duration: '2m', target: 100 },  // ramp up
+    { duration: '5m', target: 100 },  // hold (steady state)
+    { duration: '2m', target: 0 },    // ramp down
+  ],
+  thresholds: defaultThresholds,
+}`}
+      />
+
+      <p>
+        The hold is the point. A ramp measures a system that is still filling
+        its connection pool, warming its caches and compiling nothing in
+        particular; the five minutes at a hundred users is the only part that
+        describes normal operation. Report p95 from the hold, not from the
+        whole run.
+      </p>
+
+      <p>
+        The thresholds are the same ones smoke uses, and they are what turns
+        this into a regression check rather than a number you write down:
+      </p>
+
+      <CodeBlock
+        language="javascript"
+        filename="tests/k6/lib/common.js"
+        code={`export const defaultThresholds = {
+  http_req_duration: ['p(95)<500', 'p(99)<1000'],
+  http_req_failed:   ['rate<0.01'],
+  checks:            ['rate>0.99'],
+}`}
+      />
+
+      <p>
+        A breached threshold makes k6 exit non-zero, which is the whole
+        reason these two tests belong in CI and the other four do not.
+      </p>
+
+      <h2>Point it at something that costs money</h2>
+      <p>
+        The journey reads <code>/api/health</code> and{' '}
+        <code>/api/profile</code>. Both are cheap, and a journey made of
+        cheap requests reports a system faster than yours is. Name one of
+        your own resources:
+      </p>
+
+      <CodeBlock
+        language="bash"
+        code={`k6 run -e RESOURCE=products tests/k6/average-load.js
+
+# against staging, as an account with a role
+BASE_URL=https://staging.example.com \\
+  k6 run -e RESOURCE=products \\
+         -e LOADTEST_EMAIL=perf@example.com \\
+         -e LOADTEST_PASSWORD=... \\
+         tests/k6/average-load.js`}
+      />
+
+      <TipBox tone="warning">
+        <p>
+          A resource generated by <code>grit generate resource</code> needs
+          ADMIN or its own permission. The throwaway user the journey
+          registers is a USER, so without{' '}
+          <code>LOADTEST_EMAIL</code> you get a run of 403s: fast, consistent
+          and completely meaningless.
+        </p>
+      </TipBox>
+
+      <Exercise
+        prompt={
+          <>
+            <p>
+              <strong>One.</strong> Run <code>k6 run tests/k6/smoke.js</code>{' '}
+              against your local API. Write down p95 and the request count.
+            </p>
+            <p>
+              <strong>Two.</strong> Run it again with{' '}
+              <code>-e RESOURCE=</code> set to one of your resources. Write
+              down p95 again.
+            </p>
+            <p>
+              <strong>Three.</strong> Run the average load test. Compare its
+              p95 to the smoke run&apos;s, and account for the difference.
+            </p>
+          </>
+        }
+        hint={
+          <p>
+            Between steps two and three the only thing that changed is how
+            many users are doing it at once. Anything the difference cannot
+            be explained by concurrency is worth a second look.
+          </p>
+        }
+        solution={
+          <>
+            <p>
+              Step two is almost always slower than step one, by more than
+              people expect: a list endpoint is a query plus serialisation
+              plus whatever your handler does, where health is a map lookup.
+              That delta is the cost of the work, and it is the number worth
+              tracking.
+            </p>
+            <p>
+              Step three should be slower again, but not proportionally. If
+              p95 at 100 users is roughly p95 at 2 users, you have headroom.
+              If it is twenty times worse, you have found something to
+              profile, and the next chapter is about which something.
+            </p>
+          </>
+        }
+      />
+
+      <KnowledgeCheck
+        question="Your stress test fails with a 95% error rate. What do you do first?"
+        choices={[
+          {
+            label: 'Run the smoke test',
+            correct: true,
+            feedback:
+              'Always. A broken script and a broken system fail identically. Two users for thirty seconds answers which one you have in half a minute.',
+          },
+          {
+            label: 'Scale the API up and run it again',
+            feedback:
+              'You might be scaling a system that is already fine. Confirm the test works before you change the thing it is testing.',
+          },
+          {
+            label: 'Loosen the thresholds so the run completes',
+            feedback:
+              'The stress test already uses the looser set. Loosening them further turns a failing test into a passing one without changing anything real.',
+          },
+          {
+            label: 'Read the API logs for errors',
+            feedback:
+              'Worth doing, and more useful once you know requests are reaching the handlers at all. If the paths are wrong, the logs show 404s and nothing else.',
+          },
+        ]}
+      />
+    </>
+  )
+}

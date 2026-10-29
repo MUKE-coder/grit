@@ -59,6 +59,90 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.432.0 */}
+            <div className="mb-12" id="v3.432.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.432.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every load test Grit shipped failed on every project</h3>
+                <p>
+                  The six k6 scripts in <code>tests/k6/</code> share one user
+                  journey. That journey asked for <code>/health</code>, a path
+                  no Grit API has ever served, and <code>/api/blogs</code>,
+                  which only a project with a Blog resource serves.
+                </p>
+                <p>
+                  Run against a real project: 100% of requests failed, every
+                  threshold breached, and all six tests reported a broken
+                  system before measuring anything about it. The suite has
+                  been in the scaffold for a long time, and the reason nobody
+                  noticed is that a failing load test and a failing load{' '}
+                  <em>script</em> look identical from the outside.
+                </p>
+                <p>
+                  One of its checks was worse than failing: it asserted the
+                  response body was non-empty, which an error envelope
+                  satisfies. It reported a passing check on a 500.
+                </p>
+                <p>
+                  The journey now signs in once in <code>setup()</code> and
+                  shares one bearer token, reads <code>/api/health</code> and{' '}
+                  <code>/api/profile</code>, and reads one of your own
+                  resources when you name it:{' '}
+                  <code>k6 run -e RESOURCE=products tests/k6/smoke.js</code>.
+                  Verified against a running project: 100% of checks pass,
+                  p95 3.42ms. <code>grit upgrade</code> brings the fix to an
+                  existing project.
+                </p>
+                <p>
+                  A test now compares the paths the journey asks for against
+                  the routes the template registers, because those are two
+                  things that have to agree and nothing compared them. The
+                  same shape as the Sentinel limits that were written{' '}
+                  <code>/api/auth/login</code> when the router mounts{' '}
+                  <code>/api/v1/auth</code>.
+                </p>
+
+                <h3>The K6 course is written, and three lessons were wrong</h3>
+                <p>
+                  Seven lessons: the six test types and what each one is for,
+                  reading percentiles and why the average is the least useful
+                  number in the summary, the four bottlenecks a Grit API
+                  actually has, the measure-change-measure discipline, and k6
+                  in GitHub Actions.
+                </p>
+                <p>
+                  The three lessons that were already written taught{' '}
+                  <code>/healthz</code>, which 404s, told the reader to write
+                  their script to <code>tests/k6/smoke.js</code>, which
+                  overwrites the one Grit ships, and promised five test types
+                  where there are six. All three are corrected.
+                </p>
+
+                <h3>The em dash rule stopped applying to 215 pages</h3>
+                <p>
+                  Em dashes are banned in this project&apos;s user-facing
+                  writing, on a per-area budget that can only go down. The
+                  checker walked <code>docs/app</code>, and every course
+                  lesson body lives in <code>docs/content/lessons</code>, so
+                  all 215 of them were outside it: 2,078 em dashes nothing was
+                  counting.
+                </p>
+                <p>
+                  They are counted now, per course, at today&apos;s numbers,
+                  so the rule applies from here without demanding a sweep of
+                  everything written before it. The checker also runs in CI,
+                  which it did not: the budgets were a number in a file rather
+                  than a rule anything enforced.
+                </p>
+              </div>
+            </div>
+
             {/* v3.431.0 */}
             <div className="mb-12" id="v3.431.0">
               <div className="flex items-center gap-3 mb-4">

@@ -8,14 +8,20 @@ export default function Lesson() {
     <>
       <p>
         Time to write a real k6 test. We&apos;ll hit your local Grit
-        API&apos;s <code>/healthz</code> endpoint with 10 virtual users
+        API&apos;s <code>/api/health</code> endpoint with 10 virtual users
         for 30 seconds, then read the output.
+      </p>
+      <p>
+        Write it to <code>tests/k6/hello.js</code>. Grit already scaffolds a
+        six test suite into that directory, and the next chapter is about
+        those; this one is a scratch file so you can see every part of a k6
+        script in one screen before reading somebody else&apos;s.
       </p>
 
       <h2>The script</h2>
       <CodeBlock
         language="js"
-        filename="tests/k6/smoke.js"
+        filename="tests/k6/hello.js"
         code={`import http from 'k6/http'
 import { check, sleep } from 'k6'
 
@@ -31,11 +37,11 @@ export const options = {
 
 // The test function runs in a loop for each VU
 export default function () {
-  const res = http.get('http://localhost:8080/healthz')
+  const res = http.get('http://localhost:8080/api/health')
 
   check(res, {
-    'status is 200':   (r) => r.status === 200,
-    'body has "ok"':   (r) => r.body.includes('ok'),
+    'status is 200':      (r) => r.status === 200,
+    'database is ok':     (r) => r.json('database.ok') === true,
   })
 
   sleep(1)   // pause 1s between iterations per VU
@@ -226,14 +232,14 @@ export default function (data) {
                 Boot your local API:{' '}
                 <code>cd apps/api && go run cmd/server/main.go</code>.
               </li>
-              <li>Run k6: <code>k6 run tests/k6/smoke.js</code>.</li>
+              <li>Run k6: <code>k6 run tests/k6/hello.js</code>.</li>
               <li>
                 Capture the p(95) for http_req_duration. Paste in{' '}
                 <code>notes.md</code>.
               </li>
               <li>
                 Now write a SECOND script for{' '}
-                <code>/api/users</code> (requires auth). Use the{' '}
+                <code>/api/profile</code> (requires auth). Use the{' '}
                 <code>setup</code> pattern from this lesson.
               </li>
               <li>Run it. Compare p(95) to the smoke test.</li>
@@ -242,19 +248,22 @@ export default function (data) {
         }
         hint={
           <>
-            For the authed test, create a fixture user in the DB first
-            (via seeder or the admin panel) and use those credentials.
-            Don&apos;t register a new user inside <code>setup</code>{' '}
-            every time — duplicates break.
+            For the authed test, either use credentials you already have
+            or register inside <code>setup</code> with an email that cannot
+            collide, such as{' '}
+            <code>&apos;loadtest+&apos; + Date.now() + &apos;@example.com&apos;</code>.
+            That is what Grit&apos;s own suite does. A fixed address works
+            once and then fails as a duplicate.
           </>
         }
         solution={
           <>
             <p>
-              You should see <code>/healthz</code> at single-digit ms
-              and an authed endpoint at higher latency (DB hit + auth
-              check). That delta IS the cost of auth + a database call
-              — useful to know.
+              You should see <code>/api/health</code> at single-digit ms
+              and the authed endpoint higher, because it runs the auth
+              middleware and reads a row. That delta is the cost of auth
+              plus a database call, and it is worth knowing before you go
+              looking for it somewhere else.
             </p>
           </>
         }
@@ -262,9 +271,9 @@ export default function (data) {
 
       <h2>What&apos;s next</h2>
       <p>
-        Chapter 2 — <strong>The five test types</strong>. We&apos;ll
-        build a full suite: load, stress, spike, soak, with
-        appropriate thresholds for each.
+        Chapter 2, <strong>the test types</strong>. Grit scaffolds six of
+        them into <code>tests/k6/</code>: smoke, average load, stress,
+        spike, soak and breakpoint, each with the thresholds that suit it.
       </p>
     </>
   )

@@ -91,6 +91,13 @@ jobs:
         run: python3 scripts/check-lessons.py
         working-directory: docs
 
+      # The em dash ratchet. It has existed for a while and nothing ran it,
+      # so the budgets were a number in a file rather than a rule: an area
+      # could go up and the only way to find out was to run it by hand.
+      - name: No new em dashes
+        run: python3 scripts/check-em-dashes.py
+        working-directory: docs
+
   flows:
     name: the runnable blocks run
     runs-on: ubuntu-latest

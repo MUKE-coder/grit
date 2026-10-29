@@ -35,6 +35,11 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='repla
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.dirname(HERE)
 APP = os.path.join(DOCS, 'app')
+# The course lesson bodies are pages too. They were outside this walk,
+# so every lesson written since the check went in was unchecked: 215 of
+# them, which is how a rule stops applying without anyone deciding it
+# should.
+LESSONS = os.path.join(DOCS, 'content', 'lessons')
 
 EM = '—'
 SKIP_DIRS = {'node_modules', '.next', 'out', '.git'}
@@ -44,6 +49,15 @@ PLACEHOLDER = re.compile(r'["\'>]\s*' + EM + r'\s*["\'<]')
 
 # area -> the most em dashes it may contain. Only ever lowered.
 BUDGET = {
+    'lessons/concepts': 978,
+    'lessons/go-api': 284,
+    'lessons/desktop': 199,
+    'lessons/multiplatform': 187,
+    'lessons/web-nextjs': 161,
+    'lessons/mobile': 150,
+    'lessons/security': 50,
+    'lessons/benchmarking': 40,
+    'lessons/load-testing': 29,
     'courses': 1281,
     'docs/prerequisites': 179,
     'docs/security': 168,
@@ -100,18 +114,25 @@ def area_of(rel):
     return bits[0] if len(bits) > 1 else '(root)'
 
 
+def lesson_area_of(rel):
+    """lessons/<course>, so a budget can be lowered one course at a time."""
+    return 'lessons/' + rel.split('/')[0]
+
+
 def main():
     counts = {}
     placeholders = 0
 
-    for dirpath, dirs, names in os.walk(APP):
+    roots = [(APP, area_of), (LESSONS, lesson_area_of)]
+    for root, area_for in roots:
+      for dirpath, dirs, names in os.walk(root):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for name in names:
             if not name.endswith(('.tsx', '.ts', '.md')):
                 continue
             path = os.path.join(dirpath, name)
-            rel = os.path.relpath(path, APP).replace('\\', '/')
-            area = area_of(rel)
+            rel = os.path.relpath(path, root).replace('\\', '/')
+            area = area_for(rel)
             if area == EXCLUDED_AREA:
                 continue
             try:

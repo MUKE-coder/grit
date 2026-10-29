@@ -1851,9 +1851,9 @@ const loadTestingCourse: Course = {
         {
           title: 'Scenario types',
           lessons: [
-            { slug: 'smoke-load', title: 'Smoke + load tests', tagline: 'Sanity check + steady-state expected traffic.', minutes: 7, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'stress-spike', title: 'Stress + spike tests', tagline: 'Push to breaking point; sudden traffic surges.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'soak-test', title: 'Soak test', tagline: 'Run for hours to catch leaks the short tests miss.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'smoke-load', title: 'Smoke + load tests', tagline: 'Sanity check + steady-state expected traffic.', minutes: 7, difficulty: 'easy', status: 'available' },
+            { slug: 'stress-spike', title: 'Stress + spike tests', tagline: 'Push to breaking point; sudden traffic surges.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'soak-test', title: 'Soak test', tagline: 'Run for hours to catch leaks the short tests miss.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
@@ -1874,9 +1874,9 @@ const loadTestingCourse: Course = {
         {
           title: 'Diagnosis',
           lessons: [
-            { slug: 'reading-metrics', title: 'Reading the numbers', tagline: 'p50 vs p95 vs p99, what each tells you.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'common-bottlenecks', title: 'Common bottlenecks', tagline: 'DB connection pool, N+1, cold caches, GC pauses.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'fix-and-prove', title: 'Fix and prove it', tagline: 'Make a change, re-run, compare, disciplined performance work.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'reading-metrics', title: 'Reading the numbers', tagline: 'p50 vs p95 vs p99, what each tells you.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'common-bottlenecks', title: 'Common bottlenecks', tagline: 'DB connection pool, N+1, cold caches, GC pauses.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'fix-and-prove', title: 'Fix and prove it', tagline: 'Make a change, re-run, compare, disciplined performance work.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
@@ -1897,7 +1897,7 @@ const loadTestingCourse: Course = {
         {
           title: 'Automation',
           lessons: [
-            { slug: 'github-actions', title: 'Running k6 in GitHub Actions', tagline: 'One workflow, one Docker image, automatic on PR.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'github-actions', title: 'Running k6 in GitHub Actions', tagline: 'One workflow, one Docker image, automatic on PR.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],

@@ -498,6 +498,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairCIWorkflows(root, opts); err != nil {
 			fmt.Printf("  ⚠ updating the CI workflows: %v\n", err)
 		}
+		// The k6 load tests asked for /health, which no Grit API serves, and
+		// /api/blogs, so every one of the six failed on every project before
+		// it measured anything.
+		if err := repairK6Suite(root, opts); err != nil {
+			fmt.Printf("  ⚠ fixing the k6 load tests: %v\n", err)
+		}
 		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
 		// security workflow's audit fails until the patched build is in.
 		warnVulnerableXLSX(root)

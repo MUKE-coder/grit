@@ -33,7 +33,7 @@ export default function Lesson() {
         </li>
       </ul>
 
-      <h2>The five test types</h2>
+      <h2>The six test types</h2>
       <Diagram label="Test types over time" caption="Each test asks a different question. Pick based on what you need to learn.">
 {`     VUs
       │
@@ -50,24 +50,30 @@ export default function Lesson() {
       </Diagram>
       <ul>
         <li>
-          <strong>Smoke</strong> — 10 VUs for 1 min. &quot;Does this
-          basically work?&quot; Run on every PR.
+          <strong>Smoke</strong>: 2 VUs for 30 seconds. &quot;Does this
+          basically work, and is my script right?&quot; Run on every PR, and
+          run it before every other type.
         </li>
         <li>
-          <strong>Load</strong> — expected production traffic for 5-10
-          min. &quot;Does it hold up at planned scale?&quot;
+          <strong>Average load</strong>: ramp to 100 VUs, hold 5 minutes.
+          &quot;Does it hold up at planned scale?&quot; This is the baseline
+          every other run is compared against.
         </li>
         <li>
-          <strong>Stress</strong> — ramp until it breaks. &quot;Where&apos;s
-          the cliff?&quot;
+          <strong>Stress</strong>: 4x normal, held. &quot;How does it
+          behave past its limits: gracefully, or not?&quot;
         </li>
         <li>
-          <strong>Spike</strong> — sudden 10x surge. &quot;Does a
-          marketing email crash us?&quot;
+          <strong>Spike</strong>: 50 to 1000 VUs in ten seconds. &quot;Does
+          a marketing email crash us, and does p95 come back afterwards?&quot;
         </li>
         <li>
-          <strong>Soak</strong> — moderate load for hours. &quot;Do we
-          leak memory / connections over time?&quot;
+          <strong>Soak</strong>: 100 VUs for four hours. &quot;Do we leak
+          memory or connections over time?&quot;
+        </li>
+        <li>
+          <strong>Breakpoint</strong>: a slow climb that aborts on the first
+          breached threshold. &quot;What is our actual capacity number?&quot;
         </li>
       </ul>
 
