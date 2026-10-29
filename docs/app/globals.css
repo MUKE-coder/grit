@@ -59,6 +59,18 @@
     --chart-grit: var(--accent);
     --chart-rival: #3a4049;
 
+    /* Diagram tones. One per role in a flow, tuned to sit with --accent on
+     * the dark surface rather than shouting over it. LaneFlow reads these;
+     * nothing else should need a colour of its own. */
+    --flow-accent: #a99bff;
+    --flow-blue: #8fc7ff;
+    --flow-cyan: #6fd6e0;
+    --flow-green: #5fd99a;
+    --flow-amber: #f0b34f;
+    --flow-rose: #ff8f8f;
+    --flow-violet: #d79bf0;
+    --flow-neutral: #8b929c;
+
     --shadow-pop: 0 24px 48px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--border);
     --shadow-focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 
@@ -84,6 +96,18 @@
     --warning: #a35f00;
     --danger: #c93636;
     --chart-rival: #c8cad0;
+
+    /* Diagram tones, dark enough to read on white. The semantic three reuse
+     * the light --success, --warning and --danger exactly, so a green box in
+     * a diagram is the same green as a success anywhere else. */
+    --flow-accent: #5b47e0;
+    --flow-blue: #2563c7;
+    --flow-cyan: #0e7f93;
+    --flow-green: #0b7a45;
+    --flow-amber: #a35f00;
+    --flow-rose: #c93636;
+    --flow-violet: #8e3fb0;
+    --flow-neutral: #555b64;
     --shadow-pop: 0 24px 48px -16px rgb(16 18 24 / 0.18), 0 0 0 1px var(--border);
 
     color-scheme: light;

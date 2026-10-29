@@ -63,7 +63,7 @@ another package and literally cannot see unexported fields.
 type Product struct {
     ID        int       `json:"id"`
     Name      string    `json:"name"`
-    Price     float64   `json:"price"`
+    PriceCents int      `json:"price_cents"`  // money is never a float
     Notes     string    `json:"notes,omitempty"`   // omitted when ""
     Internal  string    `json:"-"`                 // never encoded
     CreatedAt time.Time `json:"created_at"`

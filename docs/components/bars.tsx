@@ -12,19 +12,26 @@
 
 type BarTone = 'primary' | 'blue' | 'green' | 'amber' | 'rose' | 'cyan' | 'violet' | 'default'
 
+// The same design-system tokens LaneFlow uses, for the same reason: these
+// were HSL triplets with primary set to 'var(--primary)', and once --primary
+// became a hex token every hsl() around it was invalid CSS.
 const TONES: Record<BarTone, string> = {
-  primary: 'var(--primary)',
-  blue: '217 91% 60%',
-  green: '160 84% 39%',
-  amber: '38 92% 50%',
-  rose: '350 89% 60%',
-  cyan: '189 94% 43%',
-  violet: '258 90% 66%',
-  default: '215 16% 55%',
+  primary: '--flow-accent',
+  blue: '--flow-blue',
+  green: '--flow-green',
+  amber: '--flow-amber',
+  rose: '--flow-rose',
+  cyan: '--flow-cyan',
+  violet: '--flow-violet',
+  default: '--flow-neutral',
 }
 
-const hsl = (tone: BarTone, alpha = 1) =>
-  `hsl(${TONES[tone] ?? TONES.default}${alpha === 1 ? '' : ` / ${alpha}`})`
+const hsl = (tone: BarTone, alpha = 1) => {
+  const token = TONES[tone] ?? TONES.default
+  return alpha === 1
+    ? `var(${token})`
+    : `rgb(from var(${token}) r g b / ${alpha})`
+}
 
 export interface StatBarItem {
   label: string

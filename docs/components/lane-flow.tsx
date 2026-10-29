@@ -59,20 +59,33 @@ export interface FlowGroup {
   tone?: FlowTone
 }
 
-// tone → HSL parts (hue sat% light%). Fills use low alpha; strokes are solid.
+// tone -> a design-system token. Fills use low alpha; strokes are solid.
+//
+// These were HSL triplets, from before the site moved to hex, and primary was
+// literally 'var(--primary)'. Once --primary became var(--fg), every
+// hsl(var(--primary) / 0.1) was invalid CSS: the browser resolved it to black
+// with no stroke, so 275 boxes across the docs, the ones marked as Grit's own
+// code, rendered as holes. Tokens now, defined once in globals.css for both
+// themes, so a diagram cannot drift from the rest of the site again.
 const TONES: Record<FlowTone, string> = {
-  primary: 'var(--primary)',
-  blue: '217 91% 60%',
-  green: '160 84% 39%',
-  amber: '38 92% 50%',
-  rose: '350 89% 60%',
-  cyan: '189 94% 43%',
-  violet: '258 90% 66%',
-  default: '215 16% 55%',
+  primary: '--flow-accent',
+  blue: '--flow-blue',
+  green: '--flow-green',
+  amber: '--flow-amber',
+  rose: '--flow-rose',
+  cyan: '--flow-cyan',
+  violet: '--flow-violet',
+  default: '--flow-neutral',
 }
 
-const hsl = (tone: FlowTone, alpha = 1) =>
-  `hsl(${TONES[tone] ?? TONES.default}${alpha === 1 ? '' : ` / ${alpha}`})`
+// rgb(from ...) rather than a second set of alpha variables: it is the same
+// idiom tailwind.config.ts already uses to put alpha on a hex token.
+const hsl = (tone: FlowTone, alpha = 1) => {
+  const token = TONES[tone] ?? TONES.default
+  return alpha === 1
+    ? `var(${token})`
+    : `rgb(from var(${token}) r g b / ${alpha})`
+}
 
 // Geometry (viewBox units).
 const LANE_W = 232

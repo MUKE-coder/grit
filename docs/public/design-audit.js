@@ -256,6 +256,8 @@
   let accentRGB = null;
   if (accentRaw) {
     const probe = document.createElement('div');
+    // colour-tokens: deliberate. The hsl() is the branch for a legacy HSL
+    // triplet, taken only when the value is neither hex nor rgb.
     probe.style.color = accentRaw.startsWith('#') || accentRaw.startsWith('rgb')
       ? accentRaw : `hsl(${accentRaw})`;
     document.body.appendChild(probe);

@@ -59,6 +59,73 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.423.0 */}
+            <div className="mb-12" id="v3.423.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.423.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>275 diagram boxes were black holes</h3>
+                <p>
+                  <code>LaneFlow</code> draws the architecture diagrams on 121
+                  pages. It carried its own colours as HSL triplets, from before
+                  the site moved to hex, with{' '}
+                  <code>primary: &apos;var(--primary)&apos;</code> among them.
+                </p>
+                <p>
+                  When the redesign made <code>--primary</code> an alias for{' '}
+                  <code>--fg</code>, a hex value, every{' '}
+                  <code>hsl(var(--primary) / 0.1)</code> became invalid CSS. A
+                  browser resolves an invalid fill to black and an invalid stroke
+                  to none, so the boxes marked as Grit&apos;s own code, 275 of
+                  them, rendered as unlabelled holes. The most important box in
+                  every architecture diagram. Nothing failed, nothing warned, and
+                  the site built and deployed that way for as long as it took
+                  somebody to say the diagrams looked wrong.
+                </p>
+                <p>
+                  The tones are design-system tokens now, <code>--flow-accent</code>{' '}
+                  through <code>--flow-neutral</code>, defined once for both
+                  themes. They are also chosen to sit with the brand violet
+                  rather than against it: the old set was saturated Tailwind
+                  defaults, which was the other half of the complaint.{' '}
+                  <code>bars.tsx</code> had a byte-identical copy of the same
+                  table and the same bug.
+                </p>
+                <p>
+                  <code>docs/scripts/check-colour-tokens.py</code> stops it
+                  recurring. Worth saying how: the first version looked for a
+                  literal <code>hsl(...var(--</code> on one line, and NEITHER real
+                  bug looked like that, because both built the colour by
+                  interpolation with the <code>var()</code> hiding in a table
+                  above. It passed on the exact code it existed to catch. Found by
+                  putting the bug back and watching the check report success,
+                  which is the only way to know a check works.
+                </p>
+
+                <h3>The book modelled money as a float</h3>
+                <p>
+                  The JSON chapter declared <code>Price float64</code> in its
+                  struct-tag example, and two hundred lines later explained that a
+                  float64 cannot represent 0.10 exactly. Both in front of the same
+                  reader, and the one they copy is the struct.
+                </p>
+                <p>
+                  It is also the one rule Grit enforces on its own samples:{' '}
+                  <code>internal/docscheck</code> fails the build on float money
+                  anywhere on the site. The book had been the only place it still
+                  happened, and it only surfaced once the book started generating
+                  the Go Full course&apos;s pages, which brought it inside the
+                  check&apos;s reach. v3.422.0 failed CI on exactly this and never
+                  shipped a binary.
+                </p>
+              </div>
+            </div>
+
             {/* v3.422.0 */}
             <div className="mb-12" id="v3.422.0">
               <div className="flex items-center gap-3 mb-4">
