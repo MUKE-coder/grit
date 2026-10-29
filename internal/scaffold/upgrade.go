@@ -1147,6 +1147,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		green.Printf("  ✓ brand.css for %d app(s): your colours, never overwritten\n", made)
 		updated += made
 	}
+	// Separately, and every time: the file only does anything if the layout
+	// imports it, and the layout is framework-owned, so a project that has
+	// edited its own gets the file and not the line.
+	if wired := ensureBrandCSSImport(root); wired > 0 {
+		green.Printf("  ✓ brand.css is imported by %d app(s)\n", wired)
+		updated += wired
+	}
 
 	// --- Docs ---
 	if hasDocs {

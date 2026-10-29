@@ -3,6 +3,7 @@ package scaffold
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // brand.css: the one stylesheet in a Grit project that Grit will never write
@@ -139,6 +140,60 @@ func writeBrandCSS(root string, opts Options) int {
 		created++
 	}
 	return created
+}
+
+// ensureBrandCSSImport makes sure the app actually loads brand.css.
+//
+// Writing the file is half the job. It only wins over globals.css because it
+// is imported AFTER it, and that import lives in the layout, which is
+// framework-owned: on an upgrade, a project that has edited its layout keeps
+// its own copy and never gets the line. The file then exists, contains the
+// right rules, and changes nothing.
+//
+// That is what happened to the WhatsApp blueprint: painted green, still blue,
+// with no warning anywhere. So the import is repaired in place instead of
+// being left to the template.
+//
+// Anchored on the globals.css import rather than on a line number or the
+// top of the file, because the anchor is the thing that has to be true for
+// the ordering to work in the first place.
+func ensureBrandCSSImport(root string) int {
+	fixed := 0
+	for _, app := range frontendRoots(root) {
+		css := brandCSSPath(app)
+		if css == "" {
+			continue
+		}
+		// The entry file is whichever one pulls in globals.css.
+		for _, rel := range []string{
+			filepath.Join("app", "layout.tsx"),
+			filepath.Join("src", "main.tsx"),
+			filepath.Join("src", "index.tsx"),
+			filepath.Join("src", "App.tsx"),
+		} {
+			path := filepath.Join(app, rel)
+			data, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+			body := string(data)
+			if strings.Contains(body, `"./brand.css"`) {
+				break // already there
+			}
+			const anchor = `import "./globals.css";`
+			if !strings.Contains(body, anchor) {
+				continue
+			}
+			body = strings.Replace(body, anchor,
+				anchor+"\n// Yours, and never written over. Imported last so what it sets wins.\n"+
+					`import "./brand.css";`, 1)
+			if err := os.WriteFile(path, []byte(body), 0o644); err == nil {
+				fixed++
+			}
+			break
+		}
+	}
+	return fixed
 }
 
 // frontendRoots lists the directories that could hold a frontend, whatever

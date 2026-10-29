@@ -59,6 +59,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.426.0 */}
+            <div className="mb-12" id="v3.426.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.426.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>brand.css arrived without its import</h3>
+                <p>
+                  v3.421.0 gave every frontend a <code>brand.css</code> that
+                  Grit creates once and never writes again, so an app can carry
+                  its own colours and still receive every upgrade. It was
+                  verified on a new project, where it works.
+                </p>
+                <p>
+                  <strong>On an upgrade it did nothing.</strong> The file only
+                  wins over <code>globals.css</code> because it is imported
+                  after it, and that import lives in the layout, which is
+                  framework-owned. A project that has edited its own layout,
+                  which is most of them, keeps its copy and never gets the line.
+                  So the file arrived, held the right rules, and changed no
+                  pixel. Nothing warned, because nothing was wrong: both halves
+                  did exactly what they were told.
+                </p>
+                <p>
+                  Found by painting the WhatsApp blueprint green and watching it
+                  stay blue. The import is a repair now, anchored on the
+                  globals.css import and applied on every upgrade whether or not
+                  the layout itself is rewritten. The blueprint is green.
+                </p>
+                <p>
+                  The same shape as the bug it was meant to fix, one level down:
+                  two things that have to agree, with nothing comparing them. A
+                  test compares them now.
+                </p>
+              </div>
+            </div>
+
             {/* v3.425.0 */}
             <div className="mb-12" id="v3.425.0">
               <div className="flex items-center gap-3 mb-4">

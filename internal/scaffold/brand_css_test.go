@@ -161,3 +161,88 @@ func stripCSSComments(css string) string {
 		css = css[start+end+2:]
 	}
 }
+
+// Writing brand.css is half the job: it only wins because it is imported
+// after globals.css, and that import lives in the layout, which is
+// framework-owned. On an upgrade a project that has edited its layout keeps
+// its own copy, so v3.421.0 delivered the file and not the line, and the
+// WhatsApp blueprint was painted green and stayed blue with nothing saying
+// why.
+func TestTheLayoutGetsTheImportEvenWhenGritDoesNotRewriteIt(t *testing.T) {
+	root := t.TempDir()
+	app := filepath.Join(root, "apps", "web", "app")
+	if err := os.MkdirAll(app, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{
+		"globals.css": ":root{}",
+		"brand.css":   "/* yours */",
+		// A layout the developer has edited: Grit will not overwrite it.
+		"layout.tsx": "import type { Metadata } from \"next\";\n" +
+			"import \"./globals.css\";\n" +
+			"export default function RootLayout() { return null }\n",
+	} {
+		if err := os.WriteFile(filepath.Join(app, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if fixed := ensureBrandCSSImport(root); fixed != 1 {
+		t.Fatalf("repaired %d layouts, want 1", fixed)
+	}
+
+	body, err := os.ReadFile(filepath.Join(app, "layout.tsx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(body)
+
+	globals := strings.Index(text, `import "./globals.css";`)
+	brand := strings.Index(text, `import "./brand.css";`)
+	if brand < 0 {
+		t.Fatalf("brand.css is still not imported:\n%s", text)
+	}
+	if brand < globals {
+		t.Fatalf("brand.css is imported BEFORE globals.css, so it loses:\n%s", text)
+	}
+
+	// Twice is the normal case: every upgrade runs this.
+	if fixed := ensureBrandCSSImport(root); fixed != 0 {
+		t.Fatalf("a second run repaired %d layouts, want 0", fixed)
+	}
+	again, err := os.ReadFile(filepath.Join(app, "layout.tsx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(again) != text {
+		t.Fatalf("a second run changed the file:\n%s", again)
+	}
+}
+
+// An app with no brand.css has nothing to import, and a layout with no
+// globals.css import has no anchor to put it after. Neither is an error.
+func TestTheImportRepairLeavesAnUnrelatedLayoutAlone(t *testing.T) {
+	root := t.TempDir()
+	app := filepath.Join(root, "apps", "web", "app")
+	if err := os.MkdirAll(app, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(app, "globals.css"), []byte(":root{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	original := "export default function RootLayout() { return null }\n"
+	if err := os.WriteFile(filepath.Join(app, "layout.tsx"), []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if fixed := ensureBrandCSSImport(root); fixed != 0 {
+		t.Fatalf("repaired %d layouts, want 0", fixed)
+	}
+	body, err := os.ReadFile(filepath.Join(app, "layout.tsx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != original {
+		t.Fatalf("the layout was changed:\n%s", body)
+	}
+}
