@@ -59,6 +59,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.440.0 */}
+            <div className="mb-12" id="v3.440.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.440.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Generated tests passed on SQLite and failed on Postgres</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/137">#137</a>.
+                  Every resource with a <code>belongs_to</code> had a handler
+                  test that failed on the database the project actually runs
+                  on:
+                </p>
+                <pre><code>{`insert or update on table "books" violates foreign key
+constraint "fk_books_author" (SQLSTATE 23503)`}</code></pre>
+                <p>
+                  The factory leaves a <code>belongs_to</code> column empty on
+                  purpose, and its doc comment says to pass the parent in. The
+                  generated test did not: it called{' '}
+                  <code>factory.CreateBook(t, db)</code> and the row went in
+                  with <code>author_id = &quot;&quot;</code>, an empty string
+                  rather than NULL, because the column is a string. The test
+                  now creates each parent first and points the record at it.
+                </p>
+
+                <h3>And the reason nobody saw it</h3>
+                <p>
+                  SQLite does not enforce foreign keys unless the connection
+                  asks, and the test database never asked. So the suite was
+                  green on the database nobody ships and red on the one
+                  everybody does, which is the worst way round for a test
+                  suite to be wrong.
+                </p>
+                <p>
+                  <code>testkit.DB</code> sets{' '}
+                  <code>PRAGMA foreign_keys = ON</code> now, before migrating,
+                  so the tables are built with it on. With the old fixture put
+                  back, SQLite reports what Postgres reported:{' '}
+                  <code>FOREIGN KEY constraint failed</code>.
+                </p>
+                <p>
+                  This is the more useful half. A test database that cannot
+                  see a broken foreign key is worth less than it looks, and
+                  every future bug of this shape now fails where people
+                  actually run their tests rather than waiting for a
+                  deployment.
+                </p>
+                <p>
+                  A self-reference is left alone: a resource whose parent is
+                  its own kind is created with none, because making one first
+                  would need the same override and recurse. A resource with
+                  several parents gets one fixture each.
+                </p>
+              </div>
+            </div>
+
             {/* v3.439.0 */}
             <div className="mb-12" id="v3.439.0">
               <div className="flex items-center gap-3 mb-4">

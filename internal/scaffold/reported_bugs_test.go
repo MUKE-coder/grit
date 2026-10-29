@@ -199,3 +199,23 @@ func TestBothSSOCallbacksRunTheLoginHooks(t *testing.T) {
 		}
 	}
 }
+
+// grit#137: the SQLite test database did not enforce foreign keys, so a
+// generated test that inserted a child with an empty parent id passed there
+// and failed on Postgres. The test suite was green on the database nobody
+// ships and red on the one everybody does.
+func TestSQLiteTestDatabaseEnforcesForeignKeys(t *testing.T) {
+	src := apiTestKitGo()
+
+	if !strings.Contains(src, "PRAGMA foreign_keys = ON") {
+		t.Fatal("the SQLite test database does not enforce foreign keys, so a " +
+			"broken one passes locally and fails on Postgres (grit#137)")
+	}
+
+	// Before AutoMigrate, so the tables are built with it already on.
+	pragma := strings.Index(src, "PRAGMA foreign_keys = ON")
+	migrate := strings.Index(src, "db.AutoMigrate(models.Models()...)")
+	if migrate > 0 && pragma > migrate {
+		t.Error("foreign keys are enabled after the tables are migrated")
+	}
+}

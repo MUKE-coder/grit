@@ -92,6 +92,21 @@ func sqliteDB(tb testing.TB) *gorm.DB {
 	}
 	sqlDB.SetMaxOpenConns(1)
 
+	// Foreign keys, enforced.
+	//
+	// SQLite does not enforce them unless the connection asks, and this one
+	// did not. A generated test inserted a child row with an empty parent id
+	// and passed here, then failed on Postgres against the real constraint:
+	// green on the database nobody ships, red on the one everybody does
+	// (grit#137).
+	//
+	// Set before AutoMigrate so the tables are created with the pragma
+	// already on, and on the single connection above, which is the only one
+	// this database will ever have.
+	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
+		tb.Fatalf("enabling foreign keys on the test database: %v", err)
+	}
+
 	if err := db.AutoMigrate(models.Models()...); err != nil {
 		tb.Fatalf("migrating the test database: %v", err)
 	}

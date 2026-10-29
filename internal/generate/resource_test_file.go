@@ -43,6 +43,16 @@ func (g *Generator) writeResourceTest(names Names) error {
 func (g *Generator) resourceTestSource(names Names) string {
 	var b strings.Builder
 
+	// Every belongs_to parent, made first and passed in.
+	//
+	// The factory deliberately leaves the column empty and its doc comment
+	// says to pass the parent in; this test did not, so the row went in with
+	// an empty foreign key. SQLite accepted it because the test database did
+	// not enforce foreign keys, and Postgres, which is what the project runs
+	// on, refused it. Green where nobody ships, red where everybody does.
+	// See grit#137.
+	parentFixtures, parentOverride := g.parentFixtures(names)
+
 	fmt.Fprintf(&b, `package handlers
 
 import (
@@ -102,7 +112,7 @@ func Test%s_AdminSeesWhatWasCreated(t *testing.T) {
 	client, db, auth := mount%s(t)
 
 	admin := testkit.User(t, db, "admin@example.com", models.RoleAdmin)
-	record := factory.Create%s(t, db)
+%s	record := factory.Create%s(t, db%s)
 
 	client.As(testkit.SignIn(t, db, auth, admin)).
 		Get("/api/v1/%s").
@@ -130,14 +140,63 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 		g.Module+"/internal/models",
 		g.Module+"/internal/services",
 		g.Module+"/internal/testkit",
+		// 6, 7, 8: mount's doc comment, mount, the handler type.
 		names.Pascal, names.Pascal, names.Pascal,
+		// 9 to 12: the two routes.
 		names.PluralKebab, names.PluralSnake,
 		names.PluralKebab, names.PluralSnake,
+		// 13 to 15, 16 to 18: the two refusal tests.
 		names.Pascal, names.Pascal, names.PluralKebab,
 		names.Pascal, names.Pascal, names.PluralKebab,
-		names.Pascal, names.Pascal, names.Pascal, names.PluralKebab,
+		// 19 to 24: the round-trip test, whose fixture line creates every
+		// belongs_to parent first (grit#137).
+		names.Pascal, names.Pascal,
+		parentFixtures, names.Pascal, parentOverride,
+		names.PluralKebab,
+		// 25 to 27: the 404 test.
 		names.Pascal, names.Pascal, names.PluralKebab,
 	)
 
 	return b.String()
+}
+
+// parentFixtures returns the lines that create this resource's belongs_to
+// parents, and the override that points the record at them.
+//
+// A self-reference is skipped: a resource whose parent is its own kind can be
+// created with none, and making one first would need the same override and
+// recurse.
+func (g *Generator) parentFixtures(names Names) (fixtures, override string) {
+	var created []string
+	var assignments []string
+	seen := map[string]bool{}
+
+	for _, f := range g.Definition.Fields {
+		if !f.IsBelongsTo() {
+			continue
+		}
+		related := f.RelatedModelName()
+		if related == "" || related == names.Pascal {
+			continue
+		}
+		variable := toCamelCase(f.Name)
+		if seen[variable] {
+			continue
+		}
+		seen[variable] = true
+
+		created = append(created, fmt.Sprintf("\t%s := factory.Create%s(t, db)\n",
+			variable, related))
+		assignments = append(assignments, fmt.Sprintf("\t\tm.%s = %s.ID\n",
+			toPascalCase(f.FKColumnName()), variable))
+	}
+
+	if len(created) == 0 {
+		return "", ""
+	}
+
+	fixtures = strings.Join(created, "") + "\n"
+	override = fmt.Sprintf(", func(m *models.%s) {\n%s\t}",
+		names.Pascal, strings.Join(assignments, ""))
+	return fixtures, override
 }
