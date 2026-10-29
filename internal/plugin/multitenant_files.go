@@ -642,6 +642,115 @@ func TestScoping_IgnoresNonTenantModels(t *testing.T) {
 		t.Errorf("non-tenant query returned %d rows, want 1", len(got))
 	}
 }
+
+// ── Scan, Rows and Row ───────────────────────────────────────────────────
+//
+// GORM's Scan does NOT go through the Query callback. It calls Rows(), which
+// executes the ROW processor:
+//
+//	func (db *DB) Scan(dest any) *DB      { ... tx.Rows() ... }
+//	func (db *DB) Rows() (*sql.Rows, err) { tx.callbacks.Row().Execute(tx) }
+//
+// Scoping was once registered on Query, Update, Delete and Create but not
+// Row, so Find and First behaved while Scan read every organization's rows.
+// The ordinary reads behaving is what hid it: the leak was only on the
+// aggregate paths, and the generated insights are built entirely from those.
+//
+// Reported by a Grit user who found it in their own multi-tenant project.
+
+func seedBothOrgs(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	seed(t, db, "org-a", "a1", "alpha")
+	seed(t, db, "org-b", "b1", "bravo")
+	seed(t, db, "org-b", "b2", "charlie")
+}
+
+func TestScan_IsScoped(t *testing.T) {
+	db := newDB(t)
+	seedBothOrgs(t, db)
+
+	ctx := tenant.WithOrg(context.Background(), "org-a")
+	var got []Widget
+	if err := db.WithContext(ctx).Model(&Widget{}).Scan(&got).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("Scan returned %d rows, want 1.\n\n"+
+			"This organization can read another's data. Check that "+
+			"RegisterScoping still registers the Row callback: Scan goes "+
+			"through Row, not Query.", len(got))
+	}
+}
+
+func TestRows_IsScoped(t *testing.T) {
+	db := newDB(t)
+	seedBothOrgs(t, db)
+
+	ctx := tenant.WithOrg(context.Background(), "org-a")
+	rows, err := db.WithContext(ctx).Model(&Widget{}).Rows()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	seen := 0
+	for rows.Next() {
+		seen++
+	}
+	if seen != 1 {
+		t.Fatalf("Rows() yielded %d rows, want 1", seen)
+	}
+}
+
+// The shape the generated insights use: a grouped COUNT(*) through Scan.
+// paginate/insights.go does this for the time series and for every breakdown
+// column, so an unscoped Row callback means an organization's own admin
+// screen counts everybody's rows.
+func TestAggregateScan_IsScoped(t *testing.T) {
+	db := newDB(t)
+	seedBothOrgs(t, db)
+
+	type slice struct {
+		Value string
+		Count int64
+	}
+
+	ctx := tenant.WithOrg(context.Background(), "org-a")
+	var out []slice
+	err := db.WithContext(ctx).Model(&Widget{}).
+		Select("name AS value, COUNT(*) AS count").
+		Group("value").
+		Scan(&out).Error
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var total int64
+	for _, s := range out {
+		total += s.Count
+	}
+	if total != 1 {
+		t.Fatalf("the breakdown counted %d rows, want 1. This organization's "+
+			"insights are counting every organization's rows.", total)
+	}
+}
+
+// Raw SQL has no parsed schema, so it is not scoped and is not meant to be.
+// Pinned so that scoping Row is never mistaken for making raw queries safe.
+func TestRaw_IsNotScoped(t *testing.T) {
+	db := newDB(t)
+	seedBothOrgs(t, db)
+
+	ctx := tenant.WithOrg(context.Background(), "org-a")
+	var n int64
+	if err := db.WithContext(ctx).Raw("SELECT COUNT(*) FROM widgets").Scan(&n).Error; err != nil {
+		t.Fatal(err)
+	}
+	if n != 3 {
+		t.Fatalf("raw count is %d, want 3. Raw SQL is deliberately unscoped: "+
+			"write the org filter yourself, or go through the model.", n)
+	}
+}
 `
 	return strings.ReplaceAll(strings.ReplaceAll(src, "~", "`"), "{{MODULE}}", ctx.Module)
 }

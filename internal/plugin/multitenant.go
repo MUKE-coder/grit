@@ -34,8 +34,12 @@ func init() { Register(multitenantPlugin()) }
 //     opt OUT explicitly, which is visible in review.
 func multitenantPlugin() Plugin {
 	return Plugin{
-		Name:    "multitenant",
-		Version: "1.0.0",
+		Name: "multitenant",
+		// 1.0.1 scopes the GORM Row callback. Before it, Scan and Rows read
+		// across organizations on tenant-owned models while Find and First
+		// were scoped correctly. If a project reports 1.0.0, it is affected:
+		// grit plugin update multitenant.
+		Version: "1.0.1",
 		Summary: "Organizations, per-org roles, and automatic query scoping",
 		Description: `Adds multi-tenancy where one user belongs to many organizations, holding a
 different role in each.
@@ -377,6 +381,28 @@ func RegisterScoping(db *gorm.DB) error {
 		return err
 	}
 	if err := db.Callback().Delete().Before("gorm:delete").Register("tenant:delete", scope); err != nil {
+		return err
+	}
+	// Row, and it is not optional.
+	//
+	// GORM's Scan does not go through the Query callback. It calls Rows(),
+	// which executes the ROW processor:
+	//
+	//	func (db *DB) Scan(dest any) *DB { ... tx.Rows() ... }
+	//	func (db *DB) Rows() (*sql.Rows, error) { tx.callbacks.Row().Execute(tx) }
+	//
+	// So without this line db.Model(&Order{}).Scan(&out) reads every
+	// organization's rows while Find, First and Pluck are all scoped
+	// correctly. The ordinary reads behaving is what hides it.
+	//
+	// It is the aggregate paths that use Scan, which is the worst case: the
+	// generated insights (paginate/insights.go) build their series and their
+	// breakdowns with it, so an org's own admin screen counted everybody's
+	// rows.
+	//
+	// Raw SQL has no parsed schema, so hasOrgColumn is false and a
+	// db.Raw(...).Scan(...) is still the caller's own responsibility.
+	if err := db.Callback().Row().Before("gorm:row").Register("tenant:row", scope); err != nil {
 		return err
 	}
 	// Create stamps the org id rather than filtering, so a new row can't be

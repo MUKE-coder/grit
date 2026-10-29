@@ -59,6 +59,81 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.429.0 */}
+            <div className="mb-12" id="v3.429.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-danger/15 px-3 py-1 text-sm font-semibold text-danger">
+                  v3.429.0 &middot; security
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Cross-tenant reads through Scan, in the multitenant plugin</h3>
+                <p>
+                  <strong>
+                    If your project uses the multitenant plugin, update it:
+                  </strong>{' '}
+                  <code>grit plugin update multitenant</code>. The plugin
+                  reports 1.0.1 once you have the fix; 1.0.0 is affected.
+                </p>
+                <p>
+                  <code>RegisterScoping</code> installed the organization
+                  filter on GORM&apos;s Query, Update, Delete and Create
+                  callbacks. GORM has a fifth processor, Row, and it is the one{' '}
+                  <code>Scan</code> goes through:
+                </p>
+                <p>
+                  <code>
+                    func (db *DB) Scan(dest any) *DB &#123; ... tx.Rows() ... &#125;
+                  </code>
+                  <br />
+                  <code>
+                    func (db *DB) Rows() (*sql.Rows, error) &#123;
+                    tx.callbacks.Row().Execute(tx) &#125;
+                  </code>
+                </p>
+                <p>
+                  So <code>db.Model(&amp;Order&#123;&#125;).Scan(&amp;out)</code>{' '}
+                  on a tenant-owned model ran with no organization filter and
+                  returned every organization&apos;s rows. <code>Find</code>,{' '}
+                  <code>First</code> and <code>Pluck</code> were all scoped
+                  correctly, and that is what hid it: the ordinary reads behave,
+                  and only the aggregate paths leak.
+                </p>
+                <p>
+                  Which is the bad case, because the aggregates are what the
+                  admin shows. The generated per-resource insights use{' '}
+                  <code>Scan</code> twice, in{' '}
+                  <code>paginate/insights.go</code>: once for the time series
+                  and once per breakdown column. On a tenant-owned model, an
+                  organization&apos;s own insights counted every
+                  organization&apos;s rows.
+                </p>
+                <p>
+                  The fix is one callback. <code>scope</code> was already
+                  generic, so it does the right thing on Row unchanged. Raw SQL
+                  has no parsed schema and stays unscoped, exactly as before:{' '}
+                  <code>db.Raw(...).Scan(...)</code> is still yours to filter,
+                  and there is now a test pinning that so the two are never
+                  confused.
+                </p>
+                <p>
+                  Four regression tests ship with the plugin, so they run in
+                  your project against your copy of the scoping: Scan, Rows, an
+                  insights-shaped grouped count, and raw SQL staying unscoped.
+                </p>
+                <p>
+                  <strong>Reported privately by a Grit user</strong> who found
+                  it while testing an organization switcher in their own
+                  project, and who asked that it be treated as a user report
+                  rather than an expert finding. It was correct in every
+                  particular: the missing callback, the Scan path, and the
+                  insights queries as the place it shows. Thank you.
+                </p>
+              </div>
+            </div>
+
             {/* v3.428.0 */}
             <div className="mb-12" id="v3.428.0">
               <div className="flex items-center gap-3 mb-4">

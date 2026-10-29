@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 42,
+    count: 43,
     entries: [
+      { version: "3.429.0", title: "Cross-tenant reads through Scan, in the multitenant plugin" },
       { version: "3.428.0", title: "The FormBuilder takes 31 field types, not 8" },
       { version: "3.427.0", title: "grit docs search could not find a single course" },
       { version: "3.426.0", title: "brand.css arrived without its import" },
