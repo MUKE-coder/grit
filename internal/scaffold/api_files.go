@@ -3426,6 +3426,27 @@ func fetchPage[T any](query *gorm.DB, dest *[]T, offset, limit int, sortBy, sort
 	// with the table name because a handler may have joined another table
 	// that also has an id.
 	stmt := query.Statement
+	// Parse the schema rather than hoping something else has left it behind.
+	//
+	// A statement's Schema is filled when something runs on it. countTotal
+	// used to do that incidentally, by running Count on the caller's
+	// statement. With the count cache installed a cache HIT counts on a
+	// dry-run copy, so nothing touches this statement and the schema is
+	// still nil: the first view of a deep page took the deferred join and
+	// every one after it fell back to a plain OFFSET, which is the slow path
+	// this function exists to avoid. Fast once, 2.4s thereafter, on the same
+	// page. See grit#123.
+	if stmt != nil && stmt.Schema == nil {
+		model := stmt.Model
+		if model == nil {
+			model = dest
+		}
+		if model != nil {
+			// An error here leaves Schema nil and the check below falls back,
+			// which is the same answer as before and still correct.
+			_ = stmt.Parse(model)
+		}
+	}
 	if stmt == nil || stmt.Schema == nil || stmt.Schema.PrioritizedPrimaryField == nil {
 		// No schema to work from: fall back rather than guess at a key name.
 		return orderStably(query, sortBy, sortOrder).

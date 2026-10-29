@@ -563,5 +563,53 @@ func TestDeepPagePastTheEndIsEmpty(t *testing.T) {
 		t.Errorf("total is %d, want %d", res.Meta.Total, djRows)
 	}
 }
+
+// TestDeepPageDefersWithTheCountCacheInstalled: a deep page takes the
+// deferred join every time, not only the first.
+//
+// The deferred join needs the statement's Schema, and a statement's Schema is
+// filled when something runs on it. countTotal used to fill it incidentally,
+// by counting on the caller's statement. With the count cache installed, which
+// is what database.Connect does on every real project, a cache HIT counts on a
+// dry-run copy and nothing touches the caller's statement: the schema was still
+// nil, fetchPage fell back to a plain OFFSET, and the same deep page was fast
+// once and slow every time after. See grit#123.
+//
+// Every other test here runs without Install, which is the configuration no
+// project runs, and that is why they all passed.
+func TestDeepPageDefersWithTheCountCacheInstalled(t *testing.T) {
+	db := newDeferredJoinDB(t)
+	if err := Install(db); err != nil {
+		t.Fatalf("installing the count cache: %v", err)
+	}
+
+	var ran []string
+	db.Callback().Query().After("gorm:query").Register("test:deep_cache", func(tx *gorm.DB) {
+		ran = append(ran, tx.Statement.SQL.String())
+	})
+	defer db.Callback().Query().Remove("test:deep_cache")
+
+	p := Params{
+		Page: deepPageOffset/djPageSize + 1, PageSize: djPageSize,
+		SortBy: "title", SortOrder: "asc",
+	}
+	// Twice: the second is answered from the cached total.
+	for i := 1; i <= 2; i++ {
+		ran = nil
+		if _, err := List[djPost](db.Model(&djPost{}), p, djConfig()); err != nil {
+			t.Fatalf("run %d: %v", i, err)
+		}
+		var walk string
+		for _, q := range ran {
+			if strings.Contains(q, "OFFSET") {
+				walk = q
+			}
+		}
+		if !strings.Contains(walk, "SELECT dj_posts.id FROM") {
+			t.Fatalf("run %d took a plain OFFSET rather than the deferred join, "+
+				"so a deep page is slow on every view after the first: %q", i, walk)
+		}
+	}
+}
 `
 }

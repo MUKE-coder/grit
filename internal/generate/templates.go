@@ -112,7 +112,9 @@ func (g *Generator) writeGoModel(names Names) error {
 		}
 	}
 	std := []string{`"time"`}
-	if hasSlug || isTree {
+	// A tenant-owned auto-number refuses the write when there is no
+	// organization on the context, and that refusal is an fmt.Errorf.
+	if hasSlug || isTree || (hasAuto && g.Definition.TenantOwned) {
 		std = append(std, `"fmt"`)
 	}
 	if isTree {
@@ -192,6 +194,40 @@ func (g *Generator) writeGoModel(names Names) error {
 		if prefix == "" {
 			prefix = defaultPrefix(names.Pascal)
 		}
+		counter := names.Snake + "_" + toSnakeCase(f.Name)
+		if g.Definition.TenantOwned {
+			// One counter per organization, not one for the platform.
+			//
+			// sequence.Counter is keyed by (name, bucket), so a fixed name
+			// means every organization draws from the same counter: A gets
+			// 0001, B gets 0002, and A's next is 0003. A sees a gap it cannot
+			// explain, and each organization can work out how many numbers the
+			// others issue. Gap-free numbering per business is a legal
+			// requirement in many countries, which is what auto is for.
+			//
+			// It fails closed. With no organization on the context the write is
+			// refused rather than drawing from a shared counter, because a
+			// number from the wrong counter is worse than a write that did not
+			// happen. See grit#131.
+			autoHook += fmt.Sprintf(`	if m.%s == "" {
+		orgID, ok := tenant.FromContext(tx.Statement.Context)
+		if !ok {
+			return fmt.Errorf("%s: no organization on the context, so there is no counter to number from")
+		}
+		n, err := sequence.Next(tx, sequence.Config{
+			Name:   %q + ":" + orgID,
+			Prefix: %q,
+			Reset:  sequence.ResetMonthly,
+			Width:  4,
+		}, time.Now())
+		if err != nil {
+			return err
+		}
+		m.%s = n
+	}
+`, goName, counter, counter, prefix, goName)
+			continue
+		}
 		autoHook += fmt.Sprintf(`	if m.%s == "" {
 		n, err := sequence.Next(tx, sequence.Config{
 			Name:   %q,
@@ -204,7 +240,7 @@ func (g *Generator) writeGoModel(names Names) error {
 		}
 		m.%s = n
 	}
-`, goName, names.Snake+"_"+toSnakeCase(f.Name), prefix, goName)
+`, goName, counter, prefix, goName)
 	}
 
 	// A workflow's initial state, applied in the same hook.

@@ -59,6 +59,72 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.436.0 */}
+            <div className="mb-12" id="v3.436.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.436.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A deep page was fast once and slow every time after</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/123">#123</a>,
+                  a follow-up to #121. The deferred join reads the primary key
+                  out of the statement&apos;s schema, and a statement&apos;s
+                  schema is filled when something runs on it. Counting used to
+                  fill it incidentally. With the count cache installed, which
+                  is what <code>database.Connect</code> does on every real
+                  project, a cache <em>hit</em> counts on a dry-run copy and
+                  nothing touches the caller&apos;s statement, so the schema
+                  was still nil and <code>fetchPage</code> fell back to a plain
+                  OFFSET.
+                </p>
+                <p>
+                  On 499,975 rows that is 2.4s a page, every time the same deep
+                  page is opened twice inside the cache&apos;s lifetime. The
+                  schema is parsed now rather than inherited from a side
+                  effect.
+                </p>
+                <p>
+                  The reporter&apos;s own note is the more useful half: &quot;the
+                  paginate tests do not install the cache, which is why they
+                  pass&quot;. Every deferred-join test in the scaffolded file
+                  ran without it, which is a configuration no project runs. The
+                  test that would have caught this now ships with every
+                  project, and was confirmed by putting the bug back.
+                </p>
+
+                <h3>Every organization drew invoice numbers from one counter</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/131">#131</a>.
+                  A sequence counter is keyed by name and bucket, and the
+                  generated hook passed a fixed name, so on a multitenant
+                  project organization A got INV-202610-0001, B got 0002, and
+                  A&apos;s next invoice was 0003. A sees a gap it cannot
+                  explain, and each organization can work out how many invoices
+                  the others issue.
+                </p>
+                <p>
+                  Gap-free numbering per business is a legal requirement in
+                  many countries, Uganda&apos;s EFRIS among them, which is most
+                  of what <code>auto</code> is for.
+                </p>
+                <p>
+                  On a <code>--tenant-owned</code> resource the counter now
+                  carries the organization, read from the context rather than
+                  the struct so it does not depend on which hook stamps first.
+                  It fails closed: with no organization the write is refused,
+                  because a number drawn from somebody else&apos;s counter is
+                  worse than a write that did not happen. Verified with two
+                  organizations issuing interleaved: 0001, 0002, 0003 and 0001,
+                  0002, no gaps.
+                </p>
+              </div>
+            </div>
+
             {/* v3.435.0 */}
             <div className="mb-12" id="v3.435.0">
               <div className="flex items-center gap-3 mb-4">
