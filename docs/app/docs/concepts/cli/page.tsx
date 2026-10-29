@@ -452,7 +452,7 @@ grit rm resource <Name>`} />
 
   ⚠ Left alone, because you have edited these files since Grit wrote them:
       apps/admin/components/tables/data-table.tsx
-      apps/admin/components/app-sidebar.tsx
+      apps/admin/components/chrome/CollapsibleSidebar.tsx
 
     grit upgrade --diff     # see what the new version would change
     grit upgrade --force    # take the new version and lose your edits`} />

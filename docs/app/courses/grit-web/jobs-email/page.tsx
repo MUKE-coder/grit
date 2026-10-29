@@ -314,7 +314,7 @@ type ReportPayload struct {
             when it sees a task with this type:
           </p>
 
-          <CodeBlock filename="apps/api/internal/jobs/worker.go">
+          <CodeBlock filename="apps/api/internal/jobs/workers.go">
 {`mux.HandleFunc(TypeReportGenerate, HandleReportGenerate)`}
           </CodeBlock>
 
@@ -493,7 +493,7 @@ client.Enqueue(task,
             Here{"'"}s how Grit registers scheduled tasks in the scheduler:
           </p>
 
-          <CodeBlock filename="apps/api/internal/jobs/scheduler.go">
+          <CodeBlock filename="apps/api/internal/cron/cron.go">
 {`scheduler := asynq.NewScheduler(redisOpt, nil)
 
 // Clean up orphaned files every day at 2am

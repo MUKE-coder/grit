@@ -68,6 +68,17 @@ jobs:
           mkdir -p /tmp/canary && cd /tmp/canary
           grit new app ${{ matrix.flags }}
 
+      # Every project path the docs name, against the project Grit just
+      # wrote. The templates are what Grit means to write and this is what
+      # it wrote; the gap is what sends a reader looking for a file that is
+      # not there. Only on --full, because a path missing from a narrower
+      # scaffold is noise rather than a finding.
+      - name: Paths the docs name exist
+        if: matrix.name == 'full'
+        env:
+          GRIT_REFERENCE_PROJECT: /tmp/canary/app
+        run: python3 scripts/check-docs-paths.py
+
       # Go modules float too (MVS picks the highest minor within a major), so a
       # Go dependency can drift exactly like an npm one.
       - name: Build Go API

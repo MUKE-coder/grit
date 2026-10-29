@@ -59,6 +59,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.434.0 */}
+            <div className="mb-12" id="v3.434.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.434.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every path the docs name now exists, and CI says so nightly</h3>
+                <p>
+                  v3.430.0 started checking the paths the documentation names
+                  against a scaffolded project instead of against the
+                  templates. Twenty-nine were still flagged, and this release
+                  closes the list.
+                </p>
+                <p>
+                  Nine were wrong. Background jobs live in{' '}
+                  <code>internal/jobs/workers.go</code>, not{' '}
+                  <code>jobs.go</code> or <code>worker.go</code>. The cron
+                  scheduler is its own package,{' '}
+                  <code>internal/cron/cron.go</code>, named in two pages as a
+                  file inside jobs and as one inside config. The web
+                  app&apos;s providers are <code>components/providers.tsx</code>,
+                  not <code>components/shared/providers.tsx</code>.{' '}
+                  <code>RequestID</code> is in{' '}
+                  <code>middleware/logger.go</code>. Sentinel is configured
+                  where it is mounted, in the router. The admin sidebar is{' '}
+                  <code>components/chrome/CollapsibleSidebar.tsx</code>, which
+                  the CLI page had as <code>app-sidebar.tsx</code> in sample
+                  output.
+                </p>
+                <p>
+                  The performance page was the worst of them: it showed a rich
+                  text editor lazy-loaded from{' '}
+                  <code>components/rich-text-editor.tsx</code>, a file that
+                  does not exist, importing{' '}
+                  <code>@/components/editor</code>, which also does not. The
+                  admin does lazy load it, in{' '}
+                  <code>forms/form-builder.tsx</code>, and the real code is
+                  better teaching than the invented one because it shows the
+                  placeholder that holds the layout while the chunk arrives.
+                </p>
+                <p>
+                  The other nineteen are correct pages: a file the reader
+                  writes in a tutorial, one an opt-in plugin creates, the
+                  destination of a <code>cp</code> on the same page. Those are
+                  now listed in the checker with the reason, so its output
+                  reaches zero. A checker that prints the same twenty-three
+                  lines every run is one people stop reading, and then the
+                  twenty-fourth arrives unnoticed. An exemption for a path no
+                  page names any more is reported too.
+                </p>
+                <p>
+                  It needs a real generated project, which is why it had only
+                  ever run on a laptop. The nightly canary already scaffolds
+                  the widest project there is, so it runs there now and drift
+                  is caught within a day.
+                </p>
+              </div>
+            </div>
+
             {/* v3.433.0 */}
             <div className="mb-12" id="v3.433.0">
               <div className="flex items-center gap-3 mb-4">

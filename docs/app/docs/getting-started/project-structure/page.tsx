@@ -377,7 +377,7 @@ export default function ProjectStructurePage() {
                     { what: 'Auth middleware', where: 'apps/api/internal/middleware/auth.go' },
                     { what: 'API route registration', where: 'apps/api/internal/routes/routes.go' },
                     { what: 'Environment config', where: 'apps/api/internal/config/config.go' },
-                    { what: 'Background job', where: 'apps/api/internal/jobs/jobs.go' },
+                    { what: 'Background job', where: 'apps/api/internal/jobs/workers.go' },
                     { what: 'Email template', where: 'apps/api/internal/mail/templates/' },
                     { what: 'Zod validation schema', where: 'packages/shared/schemas/<name>.ts' },
                     { what: 'TypeScript type', where: 'packages/shared/types/<name>.ts' },

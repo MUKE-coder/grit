@@ -142,7 +142,7 @@ export default function RootLayout({
                   and wraps children with the QueryClientProvider. Toast notifications use Sonner.
                 </p>
 
-                <CodeBlock language="tsx" filename="apps/web/components/shared/providers.tsx" code={`"use client";
+                <CodeBlock language="tsx" filename="apps/web/components/providers.tsx" code={`"use client";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";

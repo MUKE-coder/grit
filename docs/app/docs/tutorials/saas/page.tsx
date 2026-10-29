@@ -470,7 +470,7 @@ projects.GET("/stats", projectHandler.GetStats)`} />
                   stats on the admin dashboard:
                 </p>
 
-                <CodeBlock language="tsx" filename="apps/admin/components/widgets/project-stats.tsx" code={`'use client'
+                <CodeBlock language="tsx" filename="apps/admin/components/dashboard/project-stats.tsx" code={`'use client'
 
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'

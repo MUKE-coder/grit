@@ -852,7 +852,7 @@ func (h *OrderHandler) GetRevenueStats(c *gin.Context) {
     })
 }`} />
 
-                <CodeBlock language="tsx" filename="apps/admin/components/widgets/revenue-stats.tsx" code={`'use client'
+                <CodeBlock language="tsx" filename="apps/admin/components/dashboard/revenue-stats.tsx" code={`'use client'
 
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'

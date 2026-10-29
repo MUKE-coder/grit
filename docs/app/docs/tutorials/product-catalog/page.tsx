@@ -521,7 +521,7 @@ apps/admin/components/tables/data-table.tsx
 apps/admin/components/tables/column-header.tsx
 apps/admin/components/tables/table-pagination.tsx
 apps/admin/components/tables/cell-renderers.tsx
-apps/admin/components/tables/formatters.ts`} />
+apps/admin/components/tables/table-toolbar.tsx`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now create the public product catalog page:

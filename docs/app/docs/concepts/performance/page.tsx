@@ -104,7 +104,7 @@ r.Use(middleware.Gzip())`} />
                       included in every structured log line — making it trivial to trace a specific
                       request through logs, Pulse, and your reverse proxy.
                     </p>
-                    <CodeBlock language="go" filename="apps/api/internal/middleware/middleware.go" code={`func RequestID() gin.HandlerFunc {
+                    <CodeBlock language="go" filename="apps/api/internal/middleware/logger.go" code={`func RequestID() gin.HandlerFunc {
     return func(c *gin.Context) {
         id := c.GetHeader("X-Request-ID")
         if id == "" {
@@ -272,7 +272,7 @@ protected.GET("/orders", orderHandler.List)`} />
                       <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/studio</code>) are
                       excluded from rate limiting so health checks never trigger false positives.
                     </p>
-                    <CodeBlock language="go" filename="apps/api/internal/config/sentinel.go" code={`sentinel.Init(sentinel.Config{
+                    <CodeBlock language="go" filename="apps/api/internal/routes/routes.go" code={`sentinel.Init(sentinel.Config{
     RateLimit: &sentinel.RateLimitConfig{
         Enabled:       true,
         RequestsPerSecond: 10,
@@ -457,13 +457,23 @@ export function useCreateProduct() {
                       they don&apos;t inflate the initial bundle. Combined with Server Components, the
                       JS sent to the browser is kept to an absolute minimum.
                     </p>
-                    <CodeBlock language="tsx" filename="apps/admin/components/rich-text-editor.tsx" code={`import dynamic from 'next/dynamic'
+                    <CodeBlock language="tsx" filename="apps/admin/components/forms/form-builder.tsx" code={`import dynamic from "next/dynamic";
 
-// Loaded only when the component is actually rendered
-const RichTextEditor = dynamic(() => import('@/components/editor'), {
-  loading: () => <div className="h-40 animate-pulse rounded-lg bg-accent/30" />,
-  ssr: false, // editor requires browser APIs
-})`} />
+// The three heaviest fields, each loaded only when a form uses it. The
+// loading placeholder holds the layout so the form does not jump when the
+// chunk arrives.
+const PhoneField = dynamic(
+  () => import("./fields/phone-field").then((m) => m.PhoneField),
+  { ssr: false, loading: FieldPlaceholder },
+);
+const CountryField = dynamic(
+  () => import("./fields/country-field").then((m) => m.CountryField),
+  { ssr: false, loading: FieldPlaceholder },
+);
+const RichTextField = dynamic(
+  () => import("./fields/rich-text-field").then((m) => m.RichTextField),
+  { ssr: false, loading: RichTextPlaceholder },
+);`} />
                   </div>
 
                 </div>
