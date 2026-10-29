@@ -133,7 +133,7 @@ log.Printf("[%s] %s %s %d", requestID, c.Request.Method, c.Request.URL.Path, sta
                       unlimited connections and keep them forever — which exhausts Postgres under load
                       and causes stale connection errors after network interruptions.
                     </p>
-                    <CodeBlock language="go" filename="apps/api/internal/config/database.go" code={`sqlDB, _ := db.DB()
+                    <CodeBlock language="go" filename="apps/api/internal/config/config.go" code={`sqlDB, _ := db.DB()
 
 sqlDB.SetMaxIdleConns(10)          // keep 10 idle connections warm
 sqlDB.SetMaxOpenConns(100)         // never open more than 100 connections

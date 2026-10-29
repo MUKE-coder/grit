@@ -151,7 +151,7 @@ export default function SecurityDeepDiveCourse() {
             </li>
           </ol>
 
-          <CodeBlock filename="apps/api/internal/service/auth_service.go">
+          <CodeBlock filename="apps/api/internal/services/auth.go">
 {`// Hashing a password during registration
 hashedPassword, err := bcrypt.GenerateFromPassword(
     []byte(input.Password),

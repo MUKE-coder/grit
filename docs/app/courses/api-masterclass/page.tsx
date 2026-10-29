@@ -184,7 +184,7 @@ export default function APIMasterclassCourse() {
                 <tr className="border-b border-border/20"><td className="px-3 py-2 font-mono text-foreground">internal/config/</td><td className="px-3 py-2">Environment variables → Go struct</td><td className="px-3 py-2">config.go</td></tr>
                 <tr className="border-b border-border/20"><td className="px-3 py-2 font-mono text-foreground">internal/database/</td><td className="px-3 py-2">DB connection, migrations, seeding</td><td className="px-3 py-2">database.go</td></tr>
                 <tr className="border-b border-border/20"><td className="px-3 py-2 font-mono text-foreground">internal/model/</td><td className="px-3 py-2">GORM struct definitions</td><td className="px-3 py-2">user.go, upload.go</td></tr>
-                <tr className="border-b border-border/20"><td className="px-3 py-2 font-mono text-foreground">internal/handler/</td><td className="px-3 py-2">HTTP request handlers (thin layer)</td><td className="px-3 py-2">auth_handler.go, user_handler.go</td></tr>
+                <tr className="border-b border-border/20"><td className="px-3 py-2 font-mono text-foreground">internal/handlers/</td><td className="px-3 py-2">HTTP request handlers (thin layer)</td><td className="px-3 py-2">auth_handler.go, user_handler.go</td></tr>
                 <tr className="border-b border-border/20"><td className="px-3 py-2 font-mono text-foreground">internal/service/</td><td className="px-3 py-2">Business logic (called by handlers)</td><td className="px-3 py-2">auth_service.go, cache_service.go</td></tr>
                 <tr className="border-b border-border/20"><td className="px-3 py-2 font-mono text-foreground">internal/middleware/</td><td className="px-3 py-2">Request pipeline (auth, CORS, etc.)</td><td className="px-3 py-2">auth.go, cors.go, logger.go</td></tr>
                 <tr><td className="px-3 py-2 font-mono text-foreground">internal/router/</td><td className="px-3 py-2">Route registration</td><td className="px-3 py-2">router.go</td></tr>
@@ -311,7 +311,7 @@ grit generate resource Category --fields "name:string:unique,color:string"`}
           <ul className="space-y-2 text-muted-foreground mb-4">
             <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Model</strong> — <Code>internal/model/task.go</Code> with GORM struct and field tags</li>
             <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Service</strong> — <Code>internal/service/task_service.go</Code> with CRUD operations + pagination + filtering</li>
-            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Handler</strong> — <Code>internal/handler/task_handler.go</Code> with HTTP endpoints</li>
+            <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Handler</strong> — <Code>internal/handlers/task_handler.go</Code> with HTTP endpoints</li>
             <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Routes</strong> — injected into <Code>internal/router/router.go</Code></li>
             <li className="flex gap-2"><span className="text-accent">•</span> <strong className="text-foreground">Migration</strong> — auto-migrated by GORM on startup</li>
           </ul>

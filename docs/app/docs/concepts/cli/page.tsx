@@ -451,7 +451,7 @@ grit rm resource <Name>`} />
   ✓ Upgrade complete. Updated 87 files.
 
   ⚠ Left alone, because you have edited these files since Grit wrote them:
-      apps/admin/components/data-table.tsx
+      apps/admin/components/tables/data-table.tsx
       apps/admin/components/app-sidebar.tsx
 
     grit upgrade --diff     # see what the new version would change

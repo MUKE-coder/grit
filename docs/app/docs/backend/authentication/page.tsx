@@ -599,7 +599,7 @@ if cookieValue, err := c.Cookie("grit_access"); err == nil && cookieValue != "" 
                 The Next.js client doesn&apos;t touch tokens at all — the browser handles them.
                 Use <code>credentials: &apos;include&apos;</code> on every request:
               </p>
-              <CodeBlock language="typescript" filename="apps/web/lib/api-client.ts" code={`import axios from 'axios'
+              <CodeBlock language="typescript" filename="apps/web/lib/api.ts" code={`import axios from 'axios'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
@@ -645,7 +645,7 @@ export default api`} />
                 <strong>not</strong> HttpOnly, so JS can read it) and echoes it back in the{' '}
                 <code>X-CSRF-Token</code> header. With Axios:
               </p>
-              <CodeBlock language="ts" filename="apps/web/lib/api-client.ts" code={`import axios from 'axios'
+              <CodeBlock language="ts" filename="apps/web/lib/api.ts" code={`import axios from 'axios'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,

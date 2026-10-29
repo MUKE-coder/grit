@@ -494,7 +494,7 @@ grit generate resource Post --fields "title:string"`} className="mb-0" />
                 <li>
                   <strong>Let <code>grit</code> handle Go dependencies.</strong> Running{' '}
                   <code>grit start</code> (or <code>grit start server</code>) downloads and tidies Go
-                  modules for you — no manual <code>go mod tidy</code> step is needed.
+                  modules for you, so no manual <code>go mod tidy</code> step is needed.
                 </li>
                 <li>
                   <strong>Check the <code>.env</code> file.</strong> Most connection errors are caused by

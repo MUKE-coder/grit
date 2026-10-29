@@ -424,7 +424,7 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                 {[
                   {
                     title: "Add Authentication",
-                    desc: "Register, login, JWT, OAuth & 2FA — built in",
+                    desc: "Register, login, JWT, OAuth and 2FA, built in",
                     href: "/docs/backend/authentication",
                   },
                   {
@@ -474,8 +474,8 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                 Found a bug or something doesn&apos;t work? Please open an issue at{' '}
                 <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                   https://github.com/MUKE-coder/grit/issues
-                </a>{' '}
-                — your feedback helps us improve Grit for everyone.
+                </a>
+                . Your feedback helps us improve Grit for everyone.
               </p>
             </div>
 
@@ -483,14 +483,14 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
             <div className="mt-10 rounded-lg border border-accent/20 bg-accent/5 p-5">
               <h3 className="text-sm font-semibold text-foreground mb-2">Example Projects</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                See the same Job Portal app built with every architecture — full source code, setup guide, and deployment config.
+                See the same Job Portal app built with every architecture: full source code, setup guide, and deployment config.
               </p>
               <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors">
                 Browse all 6 examples on GitHub &rarr;
               </a>
             </div>
 
-            {/* Community — placed at the end of the first thing anyone reads,
+            {/* Community, placed at the end of the first thing anyone reads,
                 where "it didn't work on my machine" is most likely. */}
             <CommunityCTA className="mt-10" />
 

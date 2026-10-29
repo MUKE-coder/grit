@@ -377,7 +377,7 @@ The bucket is now ready to receive files.`}
             that generates the presigned URL:
           </p>
 
-          <CodeBlock filename="apps/api/internal/handler/upload_handler.go">
+          <CodeBlock filename="apps/api/internal/handlers/upload.go">
 {`func (h *UploadHandler) Presign(c *gin.Context) {
     var req struct {
         Filename    string \`json:"filename" binding:"required"\`
@@ -543,7 +543,7 @@ The bucket is now ready to receive files.`}
             The image processing worker in your Go API looks like this:
           </p>
 
-          <CodeBlock filename="apps/api/internal/worker/image_worker.go">
+          <CodeBlock filename="apps/api/internal/media/image.go">
 {`func (w *ImageWorker) ProcessImage(ctx context.Context, t *asynq.Task) error {
     var payload struct {
         Key         string \`json:"key"\`
@@ -727,7 +727,7 @@ S3_REGION=us-west-2`}
             When the frontend confirms a successful upload, the API creates an Upload record:
           </p>
 
-          <CodeBlock filename="apps/api/internal/handler/upload_handler.go">
+          <CodeBlock filename="apps/api/internal/handlers/upload.go">
 {`func (h *UploadHandler) ConfirmUpload(c *gin.Context) {
     var req struct {
         Key         string \`json:"key" binding:"required"\`
@@ -927,9 +927,9 @@ const columns = [
             <p>Trace the full lifecycle of a file upload by finding and reading these files in
             your project:</p>
             <ol className="mt-2 space-y-2 list-decimal list-inside">
-              <li><Code>apps/api/internal/handler/upload_handler.go</Code> — the Presign and ConfirmUpload handlers</li>
+              <li><Code>apps/api/internal/handlers/upload.go</Code> — the Presign and ConfirmUpload handlers</li>
               <li><Code>apps/api/internal/storage/storage.go</Code> — the PresignPut method</li>
-              <li><Code>apps/api/internal/worker/image_worker.go</Code> — the background image processor</li>
+              <li><Code>apps/api/internal/media/image.go</Code> — the background image processor</li>
               <li><Code>apps/api/internal/models/upload.go</Code> — the Upload model</li>
             </ol>
             <p className="mt-2">Write down the complete journey of a file from the user{"'"}s browser

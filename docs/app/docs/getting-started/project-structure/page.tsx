@@ -174,7 +174,7 @@ export default function ProjectStructurePage() {
                     <File name="cron.go" comment="Asynq cron scheduler" />
                   </Folder>
                   <Folder name="ai" defaultOpen>
-                    <File name="ai.go" comment="AI integration (Vercel AI Gateway — one key, many models)" />
+                    <File name="ai.go" comment="AI integration (Vercel AI Gateway: one key, many models)" />
                   </Folder>
                 </Folder>
               </Files>

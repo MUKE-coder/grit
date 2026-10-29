@@ -589,7 +589,7 @@ async function sendMessage() {
           </Tip>
 
           <Challenge number={9} title="Trace the AI Handler">
-            <p>Look at the AI handler code in <Code>apps/api/internal/handler/ai_handler.go</Code>. What
+            <p>Look at the AI handler code in <Code>apps/api/internal/handlers/ai_handler.go</Code>. What
             happens if <Code>AI_GATEWAY_API_KEY</Code> is empty? What HTTP status code and error code
             does the handler return? (Hint: it returns <Code>503</Code> with error code{' '}
             <Code>AI_UNAVAILABLE</Code>.)</p>

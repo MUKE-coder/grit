@@ -59,6 +59,88 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.430.0 */}
+            <div className="mb-12" id="v3.430.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.430.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Nine paths the docs named that no project has</h3>
+                <p>
+                  Every project path the documentation mentions is now checked
+                  against a <em>scaffolded project</em> rather than against the
+                  templates. The templates are what Grit means to write; a
+                  project is what it wrote, and the gap is what this finds.
+                </p>
+                <p>
+                  <code>internal/handler/</code> and{' '}
+                  <code>internal/service/</code> were singular and the
+                  directories are plural. <code>internal/worker/image_worker.go</code>{' '}
+                  is <code>internal/media/image.go</code>.{' '}
+                  <code>internal/config/database.go</code> is{' '}
+                  <code>config.go</code>. <code>apps/web/lib/api-client.ts</code>{' '}
+                  is <code>api.ts</code>, and the query client lives in{' '}
+                  <code>components/providers.tsx</code>. The admin data table
+                  moved into <code>components/tables/</code>.
+                </p>
+                <p>
+                  A reader who opens a path that is not there does not conclude
+                  the page is wrong. They conclude they scaffolded it
+                  incorrectly, which is the expensive kind of error.
+                </p>
+
+                <h3>The web app has no tailwind.config.ts</h3>
+                <p>
+                  The frontend page showed a Tailwind 3 config: a TypeScript
+                  default export with content globs and{' '}
+                  <code>require(&quot;tailwindcss-animate&quot;)</code>.
+                  Scaffolded projects are on Tailwind 4, which is configured in
+                  CSS. Anyone following that page created a file Tailwind
+                  ignores. Replaced with the real <code>@theme</code> block out
+                  of <code>globals.css</code>, plus the thing worth knowing:
+                  a utility whose token is not mapped there renders nothing at
+                  all, silently.
+                </p>
+                <p>
+                  Twenty-nine paths are deliberately left: they are tutorials
+                  telling you to <em>create</em> a file, and pointing those at
+                  existing framework files would be wrong. Telling a stale
+                  claim from an instruction needs the prose read one page at a
+                  time, and <code>docs/AUDIT.md</code> says where to start.
+                </p>
+
+                <h3>Em dashes, on a ratchet</h3>
+                <p>
+                  Banned in this project&apos;s writing, and there were 3,457
+                  of them. A check that simply fails on the first run is a
+                  check somebody disables, so{' '}
+                  <code>docs/scripts/check-em-dashes.py</code> holds a budget
+                  per area and fails when an area goes <em>up</em>. The rule is
+                  enforceable today and the backlog can only shrink.
+                </p>
+                <p>
+                  It cannot be a find and replace. An em dash does several
+                  jobs: an appositive wants a colon, a consequence wants a
+                  comma and a conjunction, an independent clause wants a full
+                  stop, and a <em>pair</em> of them wants commas or brackets
+                  and is ruined by a colon. A lone one in a table cell is not
+                  punctuation at all, it means &quot;no value&quot;, and the
+                  checker ignores those 32.
+                </p>
+                <p>
+                  The site title went first, since it is the browser tab and
+                  the search result, then the pages a new reader hits before
+                  any other: quick start, create a project, project structure,
+                  troubleshooting. 2,735 remain outside the changelog, which is
+                  excluded because rewriting past entries is rewriting history.
+                </p>
+              </div>
+            </div>
+
             {/* v3.429.0 */}
             <div className="mb-12" id="v3.429.0">
               <div className="flex items-center gap-3 mb-4">

@@ -33,7 +33,7 @@ import { readyCount, TOTAL_ROWS } from '@/config/capabilities'
 import { GRIT_VERSION } from '@/config/site'
 
 export const metadata: Metadata = {
-  title: 'Grit — The full-stack framework for Go & React',
+  title: 'Grit: the full-stack framework for Go and React',
   description:
     'Describe a resource once. Grit writes the Go model, API, migrations, TypeScript types, React hooks and admin screen, then ships it to the web, desktop and mobile from one repo.',
   alternates: { canonical: 'https://gritframework.dev' },
@@ -44,7 +44,7 @@ const GO_INSTALL = 'go install github.com/MUKE-coder/grit/v3/cmd/grit@latest'
 /*
  * The landing page: twelve sections.
  *
- * It was thirty-one. The cut is not an aesthetic preference — a page nobody
+ * It was thirty-one. The cut is not an aesthetic preference: a page nobody
  * reaches the bottom of cannot persuade anybody of anything, and the sections
  * that went were the ones repeating an argument an earlier section had already
  * made better. Everything removed has a home: the architectures live in the

@@ -113,7 +113,7 @@ pnpm install
 grit migrate
 grit seed
 grit start                       # api + web + admin
-grit start expo                  # second terminal — Expo dev server`}
+grit start expo                  # second terminal: Expo dev server`}
           />
           <WhatYouGet
             rows={[
@@ -221,8 +221,8 @@ docker compose up -d
 pnpm install
 grit migrate
 grit seed
-grit start server          # terminal 1 — the API
-grit start expo            # terminal 2 — the Expo dev server (scan the QR)`}
+grit start server          # terminal 1: the API
+grit start expo            # terminal 2: the Expo dev server (scan the QR)`}
           />
           <WhatYouGet
             rows={[
@@ -301,7 +301,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                   </p>
                 </Step>
 
-                {/* Scaffold — tabs */}
+                {/* Scaffold: tabs */}
                 <Step title="Scaffold your app">
                   <p className="text-muted-foreground leading-relaxed mb-2">
                     Pick what you&apos;re building. Each tab is a complete, copy-pasteable sequence
@@ -316,7 +316,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </Step>
 
                 {/* Next */}
-                <Step title="You're running — now build">
+                <Step title="You're running: now build">
                   <p className="text-muted-foreground leading-relaxed mb-4">
                     Register a user, log into the admin panel, and browse your database in GORM Studio.
                     Then generate your first full-stack resource &mdash; model, API, admin page, types

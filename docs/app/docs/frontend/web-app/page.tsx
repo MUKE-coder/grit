@@ -363,7 +363,7 @@ export default function DashboardPage() {
                   can&apos;t be read by scripts, so they&apos;re immune to token-stealing XSS.
                 </p>
 
-                <CodeBlock language="typescript" filename="apps/web/lib/api-client.ts" code={`import axios from "axios";
+                <CodeBlock language="typescript" filename="apps/web/lib/api.ts" code={`import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -408,7 +408,7 @@ export const apiClient = api;`} />
                   window focus in development, stale time of 30 seconds, and retry of 1 attempt on failure.
                 </p>
 
-                <CodeBlock language="typescript" filename="apps/web/lib/query-client.ts" code={`import { QueryClient } from "@tanstack/react-query";
+                <CodeBlock language="typescript" filename="apps/web/components/providers.tsx" code={`import { QueryClient } from "@tanstack/react-query";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -453,39 +453,40 @@ export const queryClient = new QueryClient({
   --info:          #74b9ff;
 }`} />
 
-                <CodeBlock language="typescript" filename="apps/web/tailwind.config.ts" code={`import type { Config } from "tailwindcss";
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  There is no <code>tailwind.config.ts</code>. Tailwind 4 is
+                  configured in CSS, so the theme lives in{' '}
+                  <code>app/globals.css</code> next to the tokens it maps:
+                </p>
 
-const config: Config = {
-  darkMode: "class",
-  content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        background: "var(--bg-primary)",
-        "bg-secondary": "var(--bg-secondary)",
-        "bg-tertiary": "var(--bg-tertiary)",
-        border: "var(--border)",
-        foreground: "var(--text-accent)",
-        accent: {
-          DEFAULT: "var(--accent)",
-          hover: "var(--accent-hover)",
-        },
-        success: "var(--success)",
-        danger: "var(--danger)",
-      },
-      fontFamily: {
-        sans: ["Onest", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
-      },
-    },
-  },
-  plugins: [require("tailwindcss-animate")],
-};
+                <CodeBlock language="css" filename="apps/web/app/globals.css" code={`@import "tailwindcss";
+/* Successor to tailwindcss-animate for v4. */
+@import "tw-animate-css";
 
-export default config;`} />
+/* The same token mapping the admin uses, so a single THEME=<name> still
+ * paints both surfaces. */
+@theme {
+  --color-background: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+}`} />
+
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  Each <code>--color-*</code> here is what makes a utility
+                  class resolve: <code>--color-bg-secondary</code> is what{' '}
+                  <code>bg-bg-secondary</code> reads. A class whose token is
+                  not mapped renders nothing at all, silently, which is the
+                  usual reason a colour appears to do nothing.
+                </p>
               </div>
 
               {/* Dark Theme Default */}

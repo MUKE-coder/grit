@@ -136,6 +136,62 @@ mobile course's code sample, which is the reader's own app.
 
 ---
 
+## 2026-10-29, third round: paths
+
+`check_paths.py` reads every project path the docs name and looks for it in
+a scaffolded project. Not in the templates: the templates are what Grit
+means to write and a project is what it wrote, and the gap between them is
+what this is for.
+
+A reader who opens `apps/api/internal/handler/` and finds nothing does not
+conclude the page is wrong. They conclude they scaffolded it incorrectly.
+
+### Fixed
+
+| The docs said | It is actually |
+|---|---|
+| `internal/handler/` | `internal/handlers/` |
+| `internal/service/auth_service.go` | `internal/services/auth.go` |
+| `internal/worker/image_worker.go` | `internal/media/image.go` |
+| `internal/handler/upload_handler.go` | `internal/handlers/upload.go` |
+| `internal/config/database.go` | `internal/config/config.go` |
+| `apps/web/lib/api-client.ts` | `apps/web/lib/api.ts` |
+| `apps/web/lib/query-client.ts` | `apps/web/components/providers.tsx` |
+| `apps/admin/components/data-table.tsx` | `apps/admin/components/tables/data-table.tsx` |
+
+And one that was not in the wrong place but does not exist:
+**`apps/web/tailwind.config.ts`**. Scaffolded projects are on Tailwind 4,
+which is configured in CSS. The page showed a Tailwind 3 default export with
+content globs and `require("tailwindcss-animate")`, so a reader following it
+created a file Tailwind 4 ignores. Replaced with the real `@theme` block out
+of `globals.css`.
+
+### The checker had to be taught three things first
+
+Its first run reported 143 misses and nearly all were its own fault, which
+is worth recording because an unreliable checker gets switched off:
+
+- **Generated files.** `models/post.go` is a fine example on a page about
+  generating a Post; it is simply absent from a project where nobody
+  generated one. Those directories are excluded.
+- **Ordered alternation.** The extension pattern listed `ts` before `tsx`,
+  so every `.tsx` path matched as `.ts` and came back missing. Longest
+  extension first.
+- **Apps the reference lacks.** A path under `apps/expo` is not wrong
+  because the reference project has no Expo app.
+
+### Left alone, deliberately
+
+29 paths remain and most are tutorials telling the reader to **create** a
+file: `components/widgets/revenue-stats.tsx` in the ecommerce tutorial,
+`jobs/order_confirmation.go`, the chat components. Rewriting those to point
+at existing framework files would be wrong.
+
+Telling those apart from a stale claim needs the surrounding prose read, one
+page at a time. That is the next pass, and the list above is where to start.
+
+---
+
 ## Not yet audited
 
 Everything else. The sections most likely to have rotted, in order, are the
