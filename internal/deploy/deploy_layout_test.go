@@ -24,6 +24,12 @@ func TestDryRunPrintsThePlanForAMonorepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// A .env to upload, because the plan names the file it would read and
+	// the deploy fails without one.
+	if err := os.WriteFile(filepath.Join(api, ".env"), []byte("APP_ENV=production\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
 	out := capture(t, func() error {
 		return Run(Config{
 			Host:    "user@example.com",
@@ -37,14 +43,35 @@ func TestDryRunPrintsThePlanForAMonorepo(t *testing.T) {
 	for _, want := range []string{
 		"Nothing below has been run.",
 		"go build -o bin/contacts ./cmd/server",
-		"ssh user@example.com 'mkdir -p /opt/contacts'",
-		"scp bin/contacts user@example.com:/opt/contacts/",
+		// A release of its own, never over the binary that is running: scp
+		// onto a running executable is ETXTBSY on Linux, so the second deploy
+		// to a box failed where the first had worked.
+		"ssh user@example.com 'mkdir -p /opt/contacts/releases/<timestamp>'",
+		"scp bin/contacts user@example.com:/opt/contacts/releases/<timestamp>/",
+		// The file the unit has always named and nothing ever uploaded.
+		".env   (0600)",
+		// The unit points at current, so a deploy moves one symlink.
+		"pointing at /opt/contacts/current",
+		"ln -sfn /opt/contacts/releases/<timestamp> /opt/contacts/current",
 		"contacts.service",
+		// This app's site block, not the whole Caddyfile: that used to be
+		// rewritten, so any other site on the box was gone without a word.
+		"/etc/caddy/sites/contacts.caddy",
 		"contacts.example.com -> :8080",
+		"caddy validate",
+		// A release that comes back up and answers 500 is a failed release.
+		"/api/health",
+		"point current back at the release before this one",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("the plan does not mention %q:\n%s", want, out)
 		}
+	}
+
+	// The thing the old plan did and this one must not: one upload, straight
+	// over whatever is at the remote root.
+	if strings.Contains(out, "user@example.com:/opt/contacts/\n") {
+		t.Errorf("the plan still copies the binary over the running one:\n%s", out)
 	}
 
 	// A monorepo's frontends are Next.js apps with their own hosting, so there
@@ -61,6 +88,9 @@ func TestDryRunBuildsTheFrontendForAnEmbeddedSingle(t *testing.T) {
 	root := t.TempDir()
 	api := filepath.Join(root, "api")
 	if err := os.MkdirAll(filepath.Join(api, "web"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(api, ".env"), []byte("APP_ENV=production\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 

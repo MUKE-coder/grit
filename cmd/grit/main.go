@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.451.0"
+var version = "3.452.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -2859,6 +2859,9 @@ func upCmd() *cobra.Command {
 
 func deployCmd() *cobra.Command {
 	var host, port, keyFile, domain, appPort string
+	var envFile, healthPath string
+	var keepReleases int
+	var rollbackDeploy bool
 	var railway, railwayProvision, railwayNoDomain, dryRun bool
 	var railwayService, railwayEnv string
 
@@ -2929,6 +2932,21 @@ func deployCmd() *cobra.Command {
 			// nothing for the binary being uploaded.
 			webDir := ""
 			if projectRoot, rootErr := scaffold.FindProjectRoot(); rootErr == nil {
+				// The .env the release gets, resolved against the project rather
+				// than the working directory. A monorepo keeps it at the root and
+				// a single keeps it beside the module, and deploy run from a
+				// subdirectory would otherwise find neither.
+				if envFile == "" {
+					for _, candidate := range []string{
+						filepath.Join(apiDir, ".env"),
+						filepath.Join(projectRoot, ".env"),
+					} {
+						if statOK(candidate) {
+							envFile = candidate
+							break
+						}
+					}
+				}
 				switch {
 				case statOK(filepath.Join(apiDir, "web", "index.html")):
 					webDir = projectRoot
@@ -2939,17 +2957,25 @@ func deployCmd() *cobra.Command {
 			}
 
 			cfg := deploy.Config{
-				Host:    host,
-				Port:    port,
-				KeyFile: keyFile,
-				AppName: appName,
-				Domain:  domain,
-				AppPort: appPort,
-				APIDir:  apiDir,
-				WebDir:  webDir,
-				DryRun:  dryRun,
+				Host:       host,
+				Port:       port,
+				KeyFile:    keyFile,
+				AppName:    appName,
+				Domain:     domain,
+				AppPort:    appPort,
+				APIDir:     apiDir,
+				WebDir:     webDir,
+				EnvFile:    envFile,
+				Keep:       keepReleases,
+				Rollback:   rollbackDeploy,
+				HealthPath: healthPath,
+				DryRun:     dryRun,
 			}
-			cHeading.Printf("\n  Deploying %s to %s\n\n", appName, host)
+			if rollbackDeploy {
+				cHeading.Printf("\n  Rolling %s back on %s\n\n", appName, host)
+			} else {
+				cHeading.Printf("\n  Deploying %s to %s\n\n", appName, host)
+			}
 
 			if err := deploy.Run(cfg); err != nil {
 				color.Red("\n  Deploy failed: %v\n", err)
@@ -2964,6 +2990,10 @@ func deployCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgHiGreen, color.Bold)
+			if rollbackDeploy {
+				green.Println("\n  Rolled back.")
+				return nil
+			}
 			green.Println("\n  Deployment successful!")
 			if domain != "" {
 				color.New(color.FgHiBlack).Printf("  Live at: https://%s\n\n", domain)
@@ -2977,6 +3007,10 @@ func deployCmd() *cobra.Command {
 	cmd.Flags().StringVar(&keyFile, "key", "", "Path to SSH private key or DEPLOY_KEY_FILE env var")
 	cmd.Flags().StringVar(&domain, "domain", "", "Domain for Caddy reverse proxy or DEPLOY_DOMAIN env var")
 	cmd.Flags().StringVar(&appPort, "app-port", "8080", "Port the app runs on")
+	cmd.Flags().StringVar(&envFile, "env-file", "", "Local .env uploaded into the release (default: the API's own .env)")
+	cmd.Flags().IntVar(&keepReleases, "keep", 5, "How many old releases to keep on the server")
+	cmd.Flags().StringVar(&healthPath, "health-path", "/api/health", "Path probed after the restart; a release that fails it is rolled back")
+	cmd.Flags().BoolVar(&rollbackDeploy, "rollback", false, "Put the previous release back, without building or uploading anything")
 
 	cmd.Flags().BoolVar(&railway, "railway", false, "Deploy to Railway instead of a server over SSH")
 	cmd.Flags().StringVar(&railwayService, "service", "api", "Railway service to deploy into")

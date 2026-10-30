@@ -59,6 +59,165 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.452.0 */}
+            <div className="mb-12" id="v3.452.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.452.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit deploy was a first deploy only</h3>
+                <p>
+                  Enterprise review 2.2. Seven faults in one command, and the
+                  thing they have in common is that the first deploy to a fresh
+                  box worked, so none of them showed up until the second one.
+                </p>
+                <CodeBlock language="text" code={`the shell          every value interpolated unquoted, from .env
+the second deploy  scp over a running binary is ETXTBSY on Linux
+the restart        nothing checked whether the app came back
+a bad deploy       nothing to roll back to
+the schema         no migration step at all
+the environment    EnvironmentFile named a .env nothing uploaded
+the web server     the whole /etc/caddy/Caddyfile overwritten`} />
+
+                <h4>Releases and a symlink</h4>
+                <p>
+                  Most of the list is answered by one change of shape. A
+                  release is a directory of its own and{' '}
+                  <code>current</code> is a symlink to it:
+                </p>
+                <CodeBlock language="text" code={`/opt/app/releases/20261030-150405/{app,grit-migrate,.env}
+/opt/app/current -> releases/20261030-150405`} />
+                <p>
+                  Nothing is written over a running binary, so the second
+                  deploy works. The switch is one symlink, so a request in
+                  flight sees the old release or the new one and never half of
+                  a copy. The previous directory is still there, so a rollback
+                  is the same move backwards. The systemd unit names{' '}
+                  <code>current</code> rather than a release, so it is written
+                  once instead of rewritten on every deploy.
+                </p>
+
+                <h4>A deploy that does not come up undoes itself</h4>
+                <p>
+                  After the restart, <code>grit deploy</code> fetches the
+                  health endpoint on the server through the app&apos;s own
+                  port, for up to a minute. From the server deliberately: a
+                  deploy that works and a certificate that has not issued yet
+                  are different problems and should not look the same. A
+                  release that never answers is put back and the failure says
+                  how to read the logs, with the broken release left on disk to
+                  read them against. <code>grit deploy --rollback</code> does
+                  the same thing on demand, without building or uploading
+                  anything.
+                </p>
+
+                <h4>The schema travels with the code</h4>
+                <p>
+                  The deploy builds <code>cmd/migrate</code> alongside the
+                  server, uploads both, and runs the migration before the
+                  symlink moves. Before the move, because the old binary is
+                  still serving and a migration that fails must not leave the
+                  new one running against a schema it does not expect. A
+                  project with no <code>cmd/migrate</code> skips the step
+                  rather than failing on it.
+                </p>
+
+                <h4>The .env the unit always named</h4>
+                <p>
+                  The unit has said{' '}
+                  <code>EnvironmentFile=&lt;path&gt;/.env</code> since the
+                  command shipped and nothing ever put one there, so the
+                  service started with none of the project&apos;s
+                  configuration: no database URL, no secrets, defaults
+                  everywhere. systemd does not complain about a missing{' '}
+                  <code>EnvironmentFile</code>, so it looked fine. It is now
+                  uploaded into each release at 0600, owned by the service
+                  user, over SSH rather than scp so the mode is never briefly
+                  wider.
+                </p>
+
+                <h4>Your other sites survive</h4>
+                <p>
+                  <code>setupCaddy</code> wrote the whole{' '}
+                  <code>/etc/caddy/Caddyfile</code>. Deploying a second app to
+                  a box, or a first one to a box that already served anything,
+                  threw the other site away without a word. For a command whose
+                  pitch is a server you own, that is the opposite of owning it.
+                  This app&apos;s site block now lives in{' '}
+                  <code>/etc/caddy/sites/&lt;app&gt;.caddy</code>, the main
+                  Caddyfile gets one <code>import</code> line appended if it
+                  does not have one, and the configuration is validated before
+                  the reload, because a Caddyfile that does not parse takes
+                  every site on the box down.
+                </p>
+
+                <h4>Two defences on the shell</h4>
+                <p>
+                  <code>AppName</code>, <code>RemotePath</code>,{' '}
+                  <code>Domain</code> and the ports went straight into{' '}
+                  <code>ssh host &quot;...%s...&quot;</code> by string
+                  interpolation, and <code>DEPLOY_HOST</code> and{' '}
+                  <code>DEPLOY_DOMAIN</code> come from <code>.env</code>. Every
+                  interpolated value is now single-quoted, and every value that
+                  becomes a path, a unit name, a domain or a port is checked
+                  against what it is allowed to be before a single command is
+                  built. Two defences rather than one, because quoting alone is
+                  a single point of failure in code that assembles shell
+                  strings, and a deploy that refuses is recoverable while one
+                  that has already run is not.
+                </p>
+                <p>
+                  Files go over SSH inside a heredoc, so their contents are
+                  never a shell argument and a <code>.env</code> holding{' '}
+                  <code>$(id)</code> or a backtick arrives as written. The one
+                  thing that breaks a heredoc is its own delimiter alone on a
+                  line, and the <code>.env</code> is the project&apos;s file
+                  rather than ours, so that case is refused with a message
+                  naming the line to change.
+                </p>
+
+                <h4>And the dry run tells the truth</h4>
+                <p>
+                  <code>--dry-run</code> printed the old plan: one scp, the
+                  whole Caddyfile, no migration, no .env, no health check. A
+                  dry run that lies is worse than no dry run, so it now prints
+                  the release path, every artifact, the env upload, the
+                  migration, the symlink move, the site file, the validate, and
+                  what happens if the health check fails.
+                </p>
+                <p>
+                  <code>--keep</code> sets how many old releases stay on the
+                  server, five by default, and they are pruned only after the
+                  new release has answered: a tidy-up that runs first is one
+                  that deletes the release you are about to need.
+                </p>
+
+                <h3>The release build set a version variable that does not exist</h3>
+                <p>
+                  Review 2.26. <code>release.yml</code> built every binary with{' '}
+                  <code>-X main.Version=$&#123;TAG&#125;</code>, and the variable
+                  is <code>version</code>, lowercase. The ldflag set nothing,
+                  silently, so a released binary reported whatever the source
+                  constant said. That was right every time, because the release
+                  ritual bumps the constant by hand, which is the kind of
+                  correctness that holds until the one time somebody forgets.
+                </p>
+                <p>
+                  The ldflag is gone rather than fixed: the constant is what the
+                  ritual bumps, so it should be what the binary reports. In its
+                  place, the release build refuses a tag that disagrees with the
+                  constant, and a test compares the three places in the source
+                  that carry the version. A release ritual with four spots and
+                  nothing comparing them was one typo from shipping a binary
+                  that lies about which version it is.
+                </p>
+              </div>
+            </div>
+
             {/* v3.451.0 */}
             <div className="mb-12" id="v3.451.0">
               <div className="flex items-center gap-3 mb-4">

@@ -30,19 +30,22 @@ export default function DeployCommandPage() {
                 { id: 'build', lane: 1, row: 0, title: 'Build', sub: 'binary + assets', tone: 'cyan', badge: 1 },
                 { id: 'upload', lane: 1, row: 1, title: 'Upload', sub: 'to the server', tone: 'blue', badge: 2 },
                 { id: 'configure', lane: 1, row: 2, title: 'Configure', sub: 'systemd · Caddy', tone: 'amber', badge: 3 },
-                { id: 'live', lane: 1, row: 3, title: 'Live', sub: 'running + SSL', tone: 'green', badge: 4 },
+                { id: 'switch', lane: 1, row: 3, title: 'Switch', sub: 'current -> release', tone: 'violet', badge: 4 },
+                { id: 'check', lane: 1, row: 4, title: 'Health check', sub: 'or roll back', tone: 'green', badge: 5 },
               ]}
               edges={[
                 { from: 'cmd', to: 'build', label: 'runs', tone: 'cyan' },
                 { from: 'build', to: 'upload', tone: 'blue' },
                 { from: 'upload', to: 'configure', tone: 'amber' },
-                { from: 'configure', to: 'live', tone: 'green' },
+                { from: 'configure', to: 'switch', tone: 'violet' },
+                { from: 'switch', to: 'check', tone: 'green' },
+                { from: 'check', to: 'switch', label: 'fails: back one release', tone: 'amber' },
               ]}
               legend={[
                 { tone: 'primary', label: 'One command' },
                 { tone: 'green', label: 'Live server' },
               ]}
-              caption="grit deploy builds, uploads, and configures your server — one command to production"
+              caption="grit deploy builds, uploads, switches and checks: a release that does not answer is put back"
             />
           </div>
 
@@ -66,18 +69,64 @@ export default function DeployCommandPage() {
 
             <StepWithCode
               number="02"
-              title="Upload"
-              description={<p>Uploads the compiled binary to the remote server via SCP. Creates the deployment directory if it does not exist.</p>}
-              code={`# Binary uploaded to /opt/my-app/my-app
-# via: scp -P 22 bin/my-app user@server.com:/opt/my-app/`}
-              filename="Terminal"
-              language="bash"
+              title="Upload into a new release"
+              description={
+                <p>
+                  Each deploy gets a timestamped directory of its own, and{' '}
+                  <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">current</code>{' '}
+                  is a symlink to one of them. Nothing is ever written over the binary
+                  that is running, which is what used to make the second deploy to a
+                  Linux box fail with <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">ETXTBSY</code>.
+                  The <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> goes
+                  up with it, at 0600, owned by the service user.
+                </p>
+              }
+              code={`/opt/my-app/releases/20261030-150405/
+  my-app
+  grit-migrate
+  .env                      (0600, www-data)
+
+/opt/my-app/current -> releases/20261030-150405`}
+              filename="On the server"
+              language="text"
             />
 
             <StepWithCode
               number="03"
+              title="Migrate, then switch"
+              description={
+                <p>
+                  If the project has a{' '}
+                  <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">cmd/migrate</code>,
+                  it is built and uploaded alongside the server and run{' '}
+                  <strong>before</strong> the symlink moves: the old binary is still
+                  serving, and a migration that fails must not leave the new one running
+                  against a schema it does not expect. The switch itself is one symlink,
+                  so a request in flight sees the old release or the new one and never
+                  half of a copy.
+                </p>
+              }
+              code={`cd /opt/my-app/releases/20261030-150405 && ./grit-migrate
+ln -sfn /opt/my-app/releases/20261030-150405 /opt/my-app/current
+systemctl restart my-app`}
+              filename="On the server"
+              language="bash"
+            />
+
+            <StepWithCode
+              number="04"
               title="Systemd service"
-              description={<p>Creates and enables a systemd service unit. The service auto-restarts on failure and reads environment variables from your <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> file.</p>}
+              description={
+                <p>
+                  Written once, and it names{' '}
+                  <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">current</code>{' '}
+                  rather than a release, so a deploy moves a symlink instead of rewriting
+                  and reloading the unit. The service restarts on failure and reads its
+                  configuration from the{' '}
+                  <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code>{' '}
+                  inside the release.
+                </p>
+              }
               code={`[Unit]
 Description=my-app
 After=network.target
@@ -85,10 +134,16 @@ After=network.target
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/opt/my-app
-ExecStart=/opt/my-app/my-app
+WorkingDirectory=/opt/my-app/current
+ExecStart=/opt/my-app/current/my-app
 Restart=on-failure
-EnvironmentFile=/opt/my-app/.env
+EnvironmentFile=/opt/my-app/current/.env
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/my-app
 
 [Install]
 WantedBy=multi-user.target`}
@@ -97,9 +152,22 @@ WantedBy=multi-user.target`}
             />
 
             <StepWithCode
-              number="04"
+              number="05"
               title="Caddy reverse proxy"
-              description={<p>If <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">--domain</code> is provided, configures Caddy as a reverse proxy with automatic HTTPS via Let{"'"}s Encrypt.</p>}
+              description={
+                <p>
+                  With <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">--domain</code>,
+                  this app{"'"}s site block is written to{' '}
+                  <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">/etc/caddy/sites/my-app.caddy</code>{' '}
+                  and the main Caddyfile gets one{' '}
+                  <code className="text-accent bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">import sites/*.caddy</code>{' '}
+                  line appended if it does not have one. Appended, never rewritten: that
+                  file is yours, and every other site in it stays. The configuration is
+                  validated before the reload, because a Caddyfile that does not parse
+                  takes every site on the box down. HTTPS is automatic, through Let{"'"}s
+                  Encrypt.
+                </p>
+              }
               code={`myapp.com {
     reverse_proxy localhost:8080
     encode gzip
@@ -109,8 +177,33 @@ WantedBy=multi-user.target`}
         -Server
     }
 }`}
-              filename="Caddyfile"
+              filename="/etc/caddy/sites/my-app.caddy"
               language="nginx"
+            />
+
+            <StepWithCode
+              number="06"
+              title="Health check, or roll back"
+              description={
+                <p>
+                  The health endpoint is fetched on the server itself, through the app{"'"}s
+                  own port, for up to a minute. From the server deliberately: a deploy
+                  that works and a certificate that has not issued yet are different
+                  problems and should not look the same. A release that never answers is
+                  put back, and the failed release is left on disk so you can read its
+                  logs. Old releases are pruned only after the new one has answered.
+                </p>
+              }
+              code={`  -> Checking the app answers on /api/health...
+  !  the app answered 500 on /api/health for 60 seconds
+  -> Rolling back to /opt/my-app/releases/20261029-094512...
+
+the new release did not come up, so the server was rolled back to the
+one before it. The failed release is still at
+/opt/my-app/releases/20261030-150405. Read why with:
+  ssh user@server.com 'journalctl -u my-app -n 50'`}
+              filename="Terminal"
+              language="text"
             />
           </div>
 
@@ -133,6 +226,11 @@ WantedBy=multi-user.target`}
                     { flag: '--key', env: 'DEPLOY_KEY_FILE', desc: 'Path to SSH private key' },
                     { flag: '--domain', env: 'DEPLOY_DOMAIN', desc: 'Domain for Caddy reverse proxy' },
                     { flag: '--app-port', env: '-', desc: 'Port the app runs on (default: 8080)' },
+                    { flag: '--env-file', env: '-', desc: "Local .env uploaded into the release (default: the API's own)" },
+                    { flag: '--health-path', env: '-', desc: 'Probed after the restart (default: /api/health)' },
+                    { flag: '--keep', env: '-', desc: 'How many old releases to keep (default: 5)' },
+                    { flag: '--rollback', env: '-', desc: 'Put the previous release back, building and uploading nothing' },
+                    { flag: '--dry-run', env: '-', desc: 'Print every command that would run, and run none of them' },
                   ].map((row) => (
                     <tr key={row.flag} className="hover:bg-surface-2 transition-colors">
                       <td className="px-4 py-3 font-mono text-sm text-accent">{row.flag}</td>
