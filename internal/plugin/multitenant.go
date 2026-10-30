@@ -57,7 +57,7 @@ Requires the roles system (Grit v3.66.0+).`,
 			"Run migrations:  cd apps/api && go run cmd/migrate/main.go",
 			"Add `tenant.Owned` to every model that belongs to an organization",
 			"Until you do, a model is shared: scoping only applies to models that have OrgID",
-			"Clients send the active org as the X-Organization-ID header",
+			"Clients send the active org as X-Organization-ID; the admin gets a switcher, which appears once somebody belongs to two",
 			"Read internal/tenant/tenant.go for how to opt a query OUT of scoping",
 		},
 
@@ -107,13 +107,30 @@ func multitenantFiles(ctx Context) map[string]string {
 		return api + "/" + rel
 	}
 
-	return map[string]string{
+	files := map[string]string{
 		p("internal/models/organization.go"):   mtOrganizationModel(ctx),
 		p("internal/tenant/tenant.go"):         mtTenantPackage(ctx),
 		p("internal/tenant/tenant_test.go"):    mtTenantTests(ctx),
 		p("internal/middleware/tenant.go"):     mtMiddleware(ctx),
 		p("internal/handlers/organization.go"): mtHandler(ctx),
 	}
+
+	// The switcher, for a project that has an admin to put it in.
+	//
+	// Without it the plugin is unusable by the reader it exists for: the API
+	// resolves the active organization from a header, and nothing in a
+	// generated client ever set one, so somebody who belongs to two
+	// organizations could not choose between them (grit#141).
+	//
+	// The header itself is the framework's, in lib/active-org.ts and the
+	// api-core interceptor, and is inert until something sets a value. Only
+	// the part that is genuinely about organizations lives here.
+	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
+		files[adminFile(ctx, "hooks/use-organizations.ts")] = adminSource(ctx, mtOrganizationsHook())
+		files[adminFile(ctx, "components/chrome/OrganizationSwitcher.tsx")] = adminSource(ctx, mtOrganizationSwitcher())
+	}
+
+	return files
 }
 
 func multitenantInjections(ctx Context) []Injection {
@@ -128,7 +145,7 @@ func multitenantInjections(ctx Context) []Injection {
 		return api + "/" + rel
 	}
 
-	return []Injection{
+	injections := []Injection{
 		{
 			File:   p("internal/models/user.go"),
 			Marker: "// grit:models",
@@ -203,6 +220,28 @@ func multitenantInjections(ctx Context) []Injection {
 		protected.DELETE("/organizations/:id/roles/:roleId", orgHandler.DeleteRole)`,
 		},
 	}
+
+	// And the bar the switcher sits in, where the admin layout has a marker
+	// the upgrade respects. The navbar would be the obvious home and is the
+	// wrong one: it is rewritten by every upgrade and has no marker, so the
+	// switcher would vanish from a project that upgraded (grit#141).
+	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
+		layout := adminDir(ctx) + "/components/layout/admin-layout.tsx"
+		injections = append(injections,
+			Injection{
+				File:   layout,
+				Marker: "// grit:layout:imports",
+				Code:   `import { OrganizationSwitcher } from "@/components/chrome/OrganizationSwitcher";`,
+			},
+			Injection{
+				File:   layout,
+				Marker: "{/* grit:layout:banner */}",
+				Code:   "        <OrganizationSwitcher />",
+			},
+		)
+	}
+
+	return injections
 }
 
 // mtOrganizationModel emits the Organization + membership models.

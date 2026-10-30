@@ -236,6 +236,25 @@ curl -X POST https://api.example.com/api/v1/organizations/01H.../members \\
               it broke.
             </p>
 
+            <h2>Choosing the active organization</h2>
+            <p>
+              Clients send it as <code>X-Organization-ID</code>. A user who belongs to exactly
+              one organization has it activated automatically and never sends the header at all.
+            </p>
+            <p>
+              A user who belongs to two gets a switcher in the admin, which the plugin installs.
+              It renders nothing below two organizations, so a single-tenant project looks as it
+              did. Switching clears the React Query cache rather than invalidating it: an
+              invalidated query serves its old data while it refetches, and that data belongs to
+              the organization being left.
+            </p>
+            <p>
+              The header itself is the framework&apos;s, in <code>lib/active-org.ts</code> and
+              the <code>api-core</code> interceptor, and it is present in every project whether
+              or not the plugin is. It sends nothing until something sets a value, so a
+              single-tenant project carries a few inert lines and nothing else.
+            </p>
+
             <h2>An organization has roles of its own</h2>
             <p>
               A role&apos;s name is unique per owner, not across the platform, so two customers

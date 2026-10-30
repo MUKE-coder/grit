@@ -328,6 +328,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 
 		// Lib
 		filepath.Join(adminRoot, "lib", "api-core.ts"):          apiCoreTS(opts),
+		filepath.Join(adminRoot, "lib", "active-org.ts"):        activeOrgTS(),
 		filepath.Join(adminRoot, "lib", "detail-href.ts"): adminDetailHrefTS(opts),
 		filepath.Join(adminRoot, "lib", "api-client.ts"):        adminAPIClient(),
 		filepath.Join(adminRoot, "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),

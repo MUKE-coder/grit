@@ -53,6 +53,8 @@ func apiBaseExpr(opts Options) string {
 func apiCoreTS(opts Options) string {
 	src := `import axios, { type AxiosInstance, type CreateAxiosDefaults } from "axios";
 
+import { getActiveOrg } from "@/lib/active-org";
+
 // The API's address, written down once.
 //
 // Every module that needs it imports it from here. Before this, the same
@@ -126,6 +128,18 @@ export function createApiClient(config: CreateAxiosDefaults = {}): AxiosInstance
       if (m && cfg.headers) {
         cfg.headers["X-CSRF-Token"] = decodeURIComponent(m[1]);
       }
+    }
+
+    // The organization the reader is working in, when they have chosen one.
+    // Null in a project with no organizations, and then no header is sent:
+    // the multitenant middleware is what reads this, and a project without it
+    // ignores the header anyway.
+    //
+    // Membership is verified by the API on every request, so this is a view
+    // preference rather than a credential. A forged id answers 404.
+    const activeOrg = getActiveOrg();
+    if (activeOrg && cfg.headers) {
+      cfg.headers["X-Organization-ID"] = activeOrg;
     }
 
     // Auto-attach Idempotency-Key on unsafe methods so any mutation gets

@@ -398,6 +398,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "lib", "api-core.ts"):          adminTanStackAPICore(opts),
 		filepath.Join(adminRoot, "src", "lib", "detail-href.ts"): nextToTanStack(adminDetailHrefTS(opts)),
 		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):        adminTanStackAPIClient(),
+		filepath.Join(adminRoot, "src", "lib", "active-org.ts"):       activeOrgTS(),
 		filepath.Join(adminRoot, "src", "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"):      adminQueryClient(),
 		filepath.Join(adminRoot, "src", "lib", "utils.ts"):             adminUtils(),

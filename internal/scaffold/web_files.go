@@ -69,6 +69,7 @@ func webFileMap(root string, opts Options) map[string]string {
 		// auth-aware navbar and the customer area are opt-in via
 		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
 		filepath.Join(webRoot, "lib", "api-core.ts"):                     apiCoreTS(opts),
+		filepath.Join(webRoot, "lib", "active-org.ts"):                   activeOrgTS(),
 		filepath.Join(webRoot, "lib", "api.ts"):                          webAPIClient(),
 		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                  webUseBlogsHook(),
 		filepath.Join(webRoot, "app", "(marketing)", "blog", "page.tsx"): webBlogListPage(opts),

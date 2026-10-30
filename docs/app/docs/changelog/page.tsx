@@ -59,6 +59,92 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.449.0 */}
+            <div className="mb-12" id="v3.449.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.449.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An organization switcher, because nothing set the header</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/141">#141</a>.
+                  The multitenant plugin resolves the active organization from{' '}
+                  <code>X-Organization-ID</code>, and nothing in a generated
+                  client ever set it. A user who belongs to one organization is
+                  fine, because the middleware activates it automatically. A
+                  user who belongs to two had no way to choose, which is the
+                  case the plugin exists for.
+                </p>
+                <p>
+                  The admin gets a switcher now. It renders nothing at all
+                  below two organizations: a control offering one choice is
+                  furniture that implies a decision nobody has, and a
+                  single-tenant project looks exactly as it did.
+                </p>
+
+                <h3>The header is the framework&apos;s, the choice is the plugin&apos;s</h3>
+                <p>
+                  <code>lib/active-org.ts</code> and the <code>api-core</code>{' '}
+                  interceptor ship in every project, with or without the
+                  plugin, and send nothing until something sets a value. That
+                  split is deliberate: <code>api-client.ts</code> is rewritten
+                  by every upgrade, so a plugin that injected the header into it
+                  would make the file read as the developer&apos;s own edit. The
+                  injection would survive and the file would stop receiving the
+                  fixes that actually matter in it, which are CSRF, token
+                  refresh and the 401 retry.
+                </p>
+                <p>
+                  It is in <code>api-core.ts</code> specifically, which the
+                  admin and the web app share. One writer, two consumers.
+                </p>
+
+                <h3>Switching clears the cache rather than invalidating it</h3>
+                <p>
+                  An invalidated query serves its old data while it refetches,
+                  and that data belongs to the organization being left: React
+                  Query would go on rendering one tenant&apos;s rows under
+                  another tenant&apos;s name. Showing a spinner is better.
+                </p>
+                <p>
+                  And a stored id for an organization the reader no longer
+                  belongs to is dropped when the list comes back without it. A
+                  membership can be revoked while the id sits in a browser;
+                  sending it then means every request carries an organization
+                  the API refuses, and the reader sees an app that is broken
+                  rather than one that moved them back.
+                </p>
+
+                <h3>Found by running it</h3>
+                <p>
+                  The hook called <code>/organizations</code>, and{' '}
+                  <code>versionedPath</code> only rewrites a path that starts
+                  with <code>/api/</code>, so the request went to the host root
+                  and answered 404. It compiled, <code>tsc --noEmit</code>{' '}
+                  passed, and six new tests passed. The browser did not. There
+                  is a seventh test now.
+                </p>
+                <p>
+                  Verified end to end in a browser against a running project:
+                  the switcher appears with two organizations and not with one,
+                  switching changes the label and clears the cache, the choice
+                  survives a reload, and{' '}
+                  <code>x-organization-id</code> is on the request headers of
+                  calls the app makes by itself.
+                </p>
+                <p>
+                  Still open in #141: the invitation flow.{' '}
+                  <code>POST /organizations/:id/members</code> takes a user id,
+                  so somebody must already have an account and you must already
+                  know their id.
+                </p>
+              </div>
+            </div>
+
             {/* v3.448.0 */}
             <div className="mb-12" id="v3.448.0">
               <div className="flex items-center gap-3 mb-4">
