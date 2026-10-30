@@ -555,7 +555,7 @@ func CSRF() gin.HandlerFunc {
 				token, gerr := newCSRFToken()
 				if gerr == nil {
 					c.SetSameSite(http.SameSiteStrictMode)
-					c.SetCookie(cookieName, token, 86400, "/", "", c.Request.TLS != nil, false)
+					c.SetCookie(cookieName, token, 86400, "/", "", requestIsHTTPS(c), false)
 				}
 			}
 			c.Next()
@@ -572,6 +572,24 @@ func CSRF() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+// requestIsHTTPS reports whether the browser reached us over TLS.
+//
+// Not c.Request.TLS alone: the usual deployment terminates TLS at a proxy and
+// the Go server sees plain HTTP, so that check is false on exactly the
+// production setup it matters for. Every auth cookie in this project already
+// reads the forwarded header; the CSRF cookie did not, which left the
+// double-submit token as the one cookie without Secure behind a proxy.
+//
+// The header is only trustworthy because a proxy sets it and a direct client
+// cannot reach this server in that deployment. Running without a proxy, TLS
+// is non-nil and the header is not consulted.
+func requestIsHTTPS(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+	return strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https")
 }
 
 func newCSRFToken() (string, error) {
@@ -632,7 +650,7 @@ func AutoCSRF() gin.HandlerFunc {
 				token, gerr := newCSRFToken()
 				if gerr == nil {
 					c.SetSameSite(http.SameSiteLaxMode)
-					c.SetCookie(csrfCookie, token, 86400, "/", "", c.Request.TLS != nil, false)
+					c.SetCookie(csrfCookie, token, 86400, "/", "", requestIsHTTPS(c), false)
 				}
 			}
 			c.Next()

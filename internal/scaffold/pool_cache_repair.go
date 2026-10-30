@@ -442,6 +442,20 @@ func shareableResponse(h http.Header) bool {
 		case "Accept-Encoding":
 			// Compression happens after this, per response, so a stored body
 			// is the uncompressed one either way.
+		case "Origin":
+			// Every CORS response carries Vary: Origin since v3.450.0, and
+			// without this case that one header turns the whole URL cache
+			// into a no-op: no error, no log, just a cache that never hits.
+			//
+			// Safe for a specific reason, not a general one.
+			// serveCachedResponse replays the status, the content type and
+			// the body, and nothing else. Access-Control-Allow-Origin is
+			// written per request by the CORS middleware, which runs ahead of
+			// this one on a hit as well as a miss, so a stored entry can
+			// never hand one origin's allow header to another.
+			//
+			// If a stored entry ever starts carrying headers, take this case
+			// back out.
 		default:
 			return false
 		}
@@ -686,6 +700,20 @@ func shareableResponse(h http.Header) bool {
 		case "Accept-Encoding":
 			// Compression happens after this, per response, so a stored body
 			// is the uncompressed one either way.
+		case "Origin":
+			// Every CORS response carries Vary: Origin since v3.450.0, and
+			// without this case that one header turns the whole URL cache
+			// into a no-op: no error, no log, just a cache that never hits.
+			//
+			// Safe for a specific reason, not a general one.
+			// serveCachedResponse replays the status, the content type and
+			// the body, and nothing else. Access-Control-Allow-Origin is
+			// written per request by the CORS middleware, which runs ahead of
+			// this one on a hit as well as a miss, so a stored entry can
+			// never hand one origin's allow header to another.
+			//
+			// If a stored entry ever starts carrying headers, take this case
+			// back out.
 		default:
 			return false
 		}

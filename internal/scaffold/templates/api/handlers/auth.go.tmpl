@@ -613,13 +613,34 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		}
 	}
 
-	// Revoke the server-side session BEFORE clearing cookies — once they're
+	// Revoke the server-side session BEFORE clearing cookies: once they are
 	// gone we can no longer identify which session to kill. This is what makes
-	// logout real: the refresh token is dead immediately, not merely forgotten
-	// by this browser.
+	// logout real, so the refresh token is dead immediately rather than merely
+	// forgotten by this browser.
+	//
+	// Two ways to name the session, because not every client has a cookie. A
+	// browser sends grit_refresh. A mobile or desktop client holds a bearer
+	// token, and until v3.450.0 its logout revoked nothing at all and
+	// answered "Logged out successfully": the session stayed usable until the
+	// idle or absolute timeout, which is hours.
+	revoked := false
 	if rt, err := c.Cookie("grit_refresh"); err == nil && rt != "" {
 		if err := services.RevokeSessionByToken(h.DB, rt); err != nil {
 			log.Printf("auth: failed to revoke session on logout: %v", err)
+		} else {
+			revoked = true
+		}
+	}
+	if !revoked {
+		// The sid claim the access token carries, put on the context by the
+		// auth middleware. Scoped to its owner by RevokeSession, so a forged
+		// id revokes nothing.
+		if sid, ok := c.Get("session_id"); ok {
+			if id, _ := sid.(string); id != "" && actorID != "" {
+				if err := services.RevokeSession(h.DB, actorID, id); err != nil {
+					log.Printf("auth: failed to revoke bearer session on logout: %v", err)
+				}
+			}
 		}
 	}
 

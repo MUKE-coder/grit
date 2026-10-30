@@ -36,11 +36,26 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.449.0"
+var version = "3.450.0"
+
+// usageError marks the errors where showing usage is the helpful thing: an
+// unknown flag, a missing argument. Everything else is a runtime failure, and
+// a flag table is noise in front of it.
+type usageError struct {
+	cmd string
+	err error
+}
+
+func (e usageError) Error() string { return e.err.Error() }
+func (e usageError) Unwrap() error { return e.err }
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		var ue usageError
+		if errors.As(err, &ue) {
+			fmt.Fprintf(os.Stderr, "\nRun '%s --help' for usage.\n", ue.cmd)
+		}
 		os.Exit(1)
 	}
 }
@@ -56,11 +71,26 @@ func rootCommand() *cobra.Command {
 		Short: "Grit: Describe your data. Get the whole app.",
 		Long:  "Grit is a full-stack meta-framework that fuses Go (Gin + GORM) with Next.js (React + TypeScript).",
 		// Cobra prints a failing RunE's error itself, and main prints it again
-		// below — so every failed command reported the same message twice.
+		// below, so every failed command reported the same message twice.
 		// Silencing cobra's copy leaves exactly one, printed where the exit
 		// code is decided.
 		SilenceErrors: true,
+
+		// And cobra prints the whole usage block ABOVE that error unless this
+		// is set. It was set inside nine individual RunE bodies, which is too
+		// late for anything that fails before reaching the line and for
+		// everything raised anywhere else: the sentence worth reading landed
+		// under twenty lines of flags. Set here it is inherited by every
+		// subcommand, and a usage error still gets a pointer from main.
+		SilenceUsage: true,
 	}
+
+	// A flag or argument error is the one case where usage genuinely helps.
+	// Marked rather than printed, so main can put the pointer after the
+	// message rather than the table before it.
+	rootCmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		return usageError{cmd: c.CommandPath(), err: err}
+	})
 
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(pluginCmd())
@@ -1717,6 +1747,8 @@ func upgradeCmd() *cobra.Command {
 
 func updateCmd() *cobra.Command {
 	var forceRelease bool
+	var wantVersion string
+	var allowDowngrade bool
 
 	cmd := &cobra.Command{
 		Use:     "update",
@@ -1755,16 +1787,20 @@ Flags:
 				// strategy that may have a cached copy.
 				yellow.Printf("  ! Couldn't query GitHub: %v\n", verr)
 				yellow.Println("  ! Proceeding with the update anyway.")
-			} else if upToDate {
+			} else if upToDate && wantVersion == "" {
 				fmt.Println()
 				green.Printf("  ✓ Already on the latest version (v%s). Nothing to do.\n\n", version)
 				return nil
-			} else {
+			} else if wantVersion == "" {
 				spinner.Printf("  → New version available: v%s → v%s\n", version, latest)
 			}
 
 			// 2. Pick a strategy: GitHub binary swap or `go install`.
-			useRelease := forceRelease
+			//
+			// A named version forces the release path. `go install` resolves
+			// @latest and nothing else here, so honouring --version through it
+			// would install the wrong thing and say it had worked.
+			useRelease := forceRelease || wantVersion != "" || allowDowngrade
 			if !useRelease {
 				if _, err := exec.LookPath("go"); err != nil {
 					spinner.Println("  → Go toolchain not on PATH — using GitHub binary.")
@@ -1773,7 +1809,10 @@ Flags:
 			}
 
 			if useRelease {
-				if err := selfupdate.Run(version); err != nil {
+				if err := selfupdate.RunWith(version, selfupdate.Options{
+					Version:        wantVersion,
+					AllowDowngrade: allowDowngrade,
+				}); err != nil {
 					return fmt.Errorf("self-update: %w", err)
 				}
 				fmt.Println()
@@ -1900,6 +1939,12 @@ Flags:
 
 	cmd.Flags().BoolVar(&forceRelease, "from-release", false,
 		"Skip 'go install' and download the binary directly from the GitHub release")
+	cmd.Flags().StringVar(&wantVersion, "version", "",
+		"Install this release instead of the latest (e.g. --version 3.440.0). "+
+			"Implies --from-release, because 'go install' can only resolve @latest here")
+	cmd.Flags().BoolVar(&allowDowngrade, "allow-downgrade", false,
+		"Permit installing a release older than the one you are running. Off by "+
+			"default: moving backwards silently is how a fixed vulnerability comes back")
 	return cmd
 }
 

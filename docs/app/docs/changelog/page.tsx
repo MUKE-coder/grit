@@ -59,6 +59,126 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.450.0 */}
+            <div className="mb-12" id="v3.450.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.450.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit update verifies what it is about to run</h3>
+                <p>
+                  It did not. The updater downloaded the release artifact and
+                  handed it straight to <code>update.Apply</code> with no
+                  checksum and no signature, while the release workflow had
+                  been publishing <code>SHA256SUMS</code>, a cosign signature
+                  over it and the certificate all along. Everything needed to
+                  check the download existed and nothing read it. This is the
+                  first command the README suggests after install.
+                </p>
+                <p>Now, before a byte is written over the running binary:</p>
+                <ul>
+                  <li>the certificate chains to Fulcio&apos;s root, pinned in
+                    the binary rather than fetched, because a trust root you
+                    download at verification time is not one;</li>
+                  <li>its subject is this repository&apos;s release workflow{' '}
+                    <em>on a tag</em>, so a run from a branch cannot sign a
+                    release;</li>
+                  <li>its issuer extension is GitHub&apos;s OIDC provider;</li>
+                  <li>the signature over the checksums verifies;</li>
+                  <li>the artifact&apos;s SHA-256 is one of those checksums.</li>
+                </ul>
+                <CodeBlock language="text" code={`Downloading:    grit-windows-amd64.zip (9.0 MiB)
+Verifying signature...
+Verified:       grit-windows-amd64.zip, signed by the release workflow`} />
+                <p>
+                  What is <em>not</em> checked, said plainly because the
+                  alternative is implying more than is true: there is no Rekor
+                  inclusion proof, so there is no trusted timestamp for the
+                  signature. Adding sigstore-go would take this CLI from 56
+                  modules to 129, which is a poor trade in the binary whose
+                  supply chain this protects, and the property that matters is
+                  held without it: forging a signature needs Fulcio&apos;s CA
+                  key or control of this repository&apos;s release workflow.
+                </p>
+                <p>
+                  Tested against the real artifacts of the real v3.448.0
+                  release. A genuine release verifies; tampered checksums, a
+                  signature over other content, and a self-signed certificate
+                  claiming to be the release workflow are each refused with a
+                  reason.
+                </p>
+
+                <h3>And it will not take you backwards</h3>
+                <p>
+                  <code>grit update</code> refuses a release older than the one
+                  running, because moving backwards silently is how a fixed
+                  vulnerability comes back. <code>--version 3.440.0</code>{' '}
+                  installs a named release, and <code>--allow-downgrade</code>{' '}
+                  is how you mean it. The refusal prints the exact command.
+                </p>
+
+                <h3>A bearer client&apos;s logout left the session alive</h3>
+                <p>
+                  Logout revoked the server-side session only when the{' '}
+                  <code>grit_refresh</code> cookie was there. A browser has one;
+                  a mobile or desktop client holding a bearer token does not, so
+                  its logout cleared nothing and answered &quot;Logged out
+                  successfully&quot; while the session stayed usable until the
+                  idle or absolute timeout.
+                </p>
+                <p>
+                  The access token already carried its session as the{' '}
+                  <code>sid</code> claim and <code>Refresh</code> already read
+                  it; the middleware simply never passed it on. It does now, and
+                  Logout falls back to it. Measured on a running project:{' '}
+                  <code>GET /auth/me</code> answers 200 before a bearer-only
+                  logout and 401 with the same token after it.
+                </p>
+
+                <h3>Two headers, and the cache they nearly broke</h3>
+                <p>
+                  The CSRF cookie set its <code>Secure</code> flag from{' '}
+                  <code>c.Request.TLS</code> alone while every auth cookie
+                  honoured <code>X-Forwarded-Proto</code>. Behind the usual
+                  TLS-terminating proxy that left the double-submit token as
+                  the one cookie without <code>Secure</code>. Four places, not
+                  the one reported.
+                </p>
+                <p>
+                  CORS now sets <code>Vary: Origin</code>, before the allow
+                  decision rather than inside it, because a refusal is also a
+                  response that varies by origin.
+                </p>
+                <p>
+                  That second one would have switched the URL cache off for
+                  every response at once, silently:{' '}
+                  <code>shareableResponse</code> refuses to store anything whose{' '}
+                  <code>Vary</code> names a header its key does not include,
+                  which is correct. It is safe to cache here for a specific
+                  reason, not a general one: a cache hit replays the status,
+                  the content type and the body and nothing else, so the
+                  origin-dependent header is written per request by middleware
+                  that runs ahead of the cache on a hit as well as a miss. The
+                  test asserts that replay stays header-free, and says to take
+                  the exception back out if it ever does not.
+                </p>
+
+                <h3>The error, above the flags</h3>
+                <p>
+                  <code>SilenceUsage</code> was set inside nine individual
+                  command bodies, which is too late for anything that fails
+                  before reaching the line. The sentence worth reading landed
+                  under twenty lines of flags. It is set on the root now, and a
+                  genuine usage error gets a one-line pointer after the message
+                  instead of the table before it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.449.0 */}
             <div className="mb-12" id="v3.449.0">
               <div className="flex items-center gap-3 mb-4">

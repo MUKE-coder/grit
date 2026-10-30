@@ -2359,6 +2359,13 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		c.Set("user_id", user.ID)
 		c.Set("user_email", user.Email)
 		c.Set("user_role", user.Role)
+		// The session this access token belongs to. Logout needs it: a client
+		// holding a bearer token has no grit_refresh cookie to identify the
+		// session by, and without this its logout revoked nothing and said it
+		// had worked.
+		if claims.SessionID != "" {
+			c.Set("session_id", claims.SessionID)
+		}
 
 		// Resolve the caller's permission grants once per request so route
 		// guards and handlers don't each hit the database. authz.GrantsFor is
@@ -2429,6 +2436,13 @@ func Identify(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		c.Set("user_id", user.ID)
 		c.Set("user_email", user.Email)
 		c.Set("user_role", user.Role)
+		// The session this access token belongs to. Logout needs it: a client
+		// holding a bearer token has no grit_refresh cookie to identify the
+		// session by, and without this its logout revoked nothing and said it
+		// had worked.
+		if claims.SessionID != "" {
+			c.Set("session_id", claims.SessionID)
+		}
 		if grants, err := authz.GrantsFor(db, user.ID); err == nil {
 			c.Set("user_grants", grants)
 		}
@@ -2732,6 +2746,17 @@ func CORSDynamic(resolve func() []string) gin.HandlerFunc {
 				break
 			}
 		}
+		// Before the decision, and whatever the decision is: the response
+		// body and this header both depend on the Origin header, so any cache
+		// between here and the browser has to key on it. Without Vary a
+		// shared cache can hand one origin's Allow-Origin to another, and with
+		// credentials enabled that header is what decides whether the browser
+		// lets the page read the response.
+		//
+		// Set even when the origin is refused, because the refusal is also a
+		// response that varies by origin.
+		c.Header("Vary", "Origin")
+
 		if allowed || isWailsOrigin(origin) {
 			c.Header("Access-Control-Allow-Origin", origin)
 		} else {

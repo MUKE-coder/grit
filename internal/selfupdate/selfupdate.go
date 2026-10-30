@@ -1,7 +1,16 @@
-// Package selfupdate replaces the running grit binary with the latest GitHub
-// release. It detects OS+arch, picks the matching release artifact, downloads
-// it, extracts the binary, and atomically swaps it via inconshreveable/go-update
-// (which handles the Windows "can't overwrite a running binary" dance for us).
+// Package selfupdate replaces the running grit binary with a GitHub release.
+// It detects OS+arch, picks the matching artifact, verifies it, extracts the
+// binary, and atomically swaps it via inconshreveable/go-update (which handles
+// the Windows "can't overwrite a running binary" dance for us).
+//
+// Verification is not optional and happens before anything is written: the
+// release's checksums must carry a cosign signature from this repository's
+// release workflow, and the downloaded artifact must be the one those
+// checksums name. See verify.go for what that does and does not prove.
+//
+// Until v3.450.0 none of this happened. The download went straight to
+// update.Apply, while release.yml had been publishing the signature all
+// along.
 package selfupdate
 
 import (
@@ -15,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,20 +60,58 @@ func LatestVersion(current string) (latest string, upToDate bool, err error) {
 	return latest, normalize(current) == normalize(latest), nil
 }
 
+// Options narrows what Run does. The zero value is "move to the latest
+// release, refusing to go backwards", which is what `grit update` means.
+type Options struct {
+	// Version pins the release to install, with or without a leading "v".
+	// Empty means the latest.
+	Version string
+
+	// AllowDowngrade permits installing a release older than the running
+	// binary. Off by default: an update that silently moves you backwards is
+	// how a fixed vulnerability comes back, and the only reason to do it on
+	// purpose is to reproduce a bug.
+	AllowDowngrade bool
+}
+
 // Run performs the self-update flow. `current` is the version string compiled
 // into the binary (e.g. "3.24.0"). Returns nil when the update succeeded or
-// the binary was already on the latest version.
-func Run(current string) error {
-	fmt.Println("Checking GitHub for the latest release...")
-	rel, err := fetchLatest()
-	if err != nil {
-		return fmt.Errorf("fetch latest release: %w", err)
+// the binary was already on the requested version.
+func Run(current string) error { return RunWith(current, Options{}) }
+
+// RunWith is Run with the choices made explicit.
+func RunWith(current string, opts Options) error {
+	var rel *release
+	var err error
+
+	if opts.Version != "" {
+		want := "v" + strings.TrimPrefix(opts.Version, "v")
+		fmt.Printf("Looking for %s...\n", want)
+		rel, err = fetchTag(want)
+		if err != nil {
+			return fmt.Errorf("fetch release %s: %w", want, err)
+		}
+	} else {
+		fmt.Println("Checking GitHub for the latest release...")
+		rel, err = fetchLatest()
+		if err != nil {
+			return fmt.Errorf("fetch latest release: %w", err)
+		}
 	}
 
 	latest := strings.TrimPrefix(rel.TagName, "v")
 	if normalize(current) == normalize(latest) {
-		fmt.Printf("Already on the latest version: v%s\n", current)
+		fmt.Printf("Already on v%s\n", current)
 		return nil
+	}
+
+	// Backwards is a decision, not a default. Without this, a release that is
+	// yanked or a tag that moves takes every machine that runs `grit update`
+	// back past a fix.
+	if !opts.AllowDowngrade && isOlder(latest, current) {
+		return fmt.Errorf("v%s is older than the v%s you are running.\n\n"+
+			"If you mean it: grit update --version %s --allow-downgrade",
+			latest, current, latest)
 	}
 
 	fmt.Printf("Updating grit  v%s → v%s\n", current, latest)
@@ -82,6 +130,22 @@ func Run(current string) error {
 	if err != nil {
 		return fmt.Errorf("download artifact: %w", err)
 	}
+
+	// Before anything is written over the running binary.
+	fmt.Println("Verifying signature...")
+	sums, err := signedChecksums(rel)
+	if err != nil {
+		return err
+	}
+	want, ok := sums[a.Name]
+	if !ok {
+		return fmt.Errorf("%s is not in the release's signed checksums, so there "+
+			"is nothing to check it against. Do not install it", a.Name)
+	}
+	if err := matchesChecksum(archive, want); err != nil {
+		return err
+	}
+	fmt.Printf("Verified:       %s, signed by the release workflow\n", a.Name)
 
 	bin, err := extractBinary(archive, a.Name)
 	if err != nil {
@@ -103,9 +167,50 @@ func Run(current string) error {
 	return nil
 }
 
-func fetchLatest() (*release, error) {
+func fetchLatest() (*release, error) { return fetchRelease(releaseAPI) }
+
+// fetchTag reads one release by its tag, for `grit update --version`.
+func fetchTag(tag string) (*release, error) {
+	return fetchRelease(fmt.Sprintf(
+		"https://api.github.com/repos/%s/releases/tags/%s", repoSlug, tag))
+}
+
+// signedChecksums downloads SHA256SUMS and the cosign artifacts beside it and
+// returns the checksums only if the signature holds.
+//
+// A release without them is refused rather than installed unverified. Every
+// release since the workflow gained cosign has all three; one that does not
+// is either very old or not a real release, and neither is worth running.
+func signedChecksums(rel *release) (map[string]string, error) {
+	find := func(name string) *asset {
+		for i := range rel.Assets {
+			if rel.Assets[i].Name == name {
+				return &rel.Assets[i]
+			}
+		}
+		return nil
+	}
+
+	var parts [3][]byte
+	for i, name := range []string{"SHA256SUMS", "SHA256SUMS.sig", "SHA256SUMS.pem"} {
+		a := find(name)
+		if a == nil {
+			return nil, fmt.Errorf("this release has no %s, so the download cannot "+
+				"be verified. Install it by hand from %s if you trust it",
+				name, rel.HTMLURL)
+		}
+		b, err := download(a.DownloadURL)
+		if err != nil {
+			return nil, fmt.Errorf("download %s: %w", name, err)
+		}
+		parts[i] = b
+	}
+	return verifiedChecksums(parts[0], parts[1], parts[2])
+}
+
+func fetchRelease(apiURL string) (*release, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, releaseAPI, nil)
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +357,27 @@ func extractFromZip(archive []byte, candidates []string) ([]byte, error) {
 // "3.24.0" compare equal.
 func normalize(v string) string {
 	return strings.TrimSpace(strings.TrimPrefix(v, "v"))
+}
+
+// isOlder reports whether version a is behind version b.
+//
+// Compared field by field as integers, because "3.9.0" sorts after "3.10.0"
+// as a string and that is the comparison a downgrade guard cannot get wrong.
+// A field that is not a number (a "-rc1" suffix, say) makes the answer false:
+// refusing to guess is better than refusing a release somebody asked for.
+func isOlder(a, b string) bool {
+	as, bs := strings.Split(normalize(a), "."), strings.Split(normalize(b), ".")
+	for i := 0; i < len(as) && i < len(bs); i++ {
+		ai, err1 := strconv.Atoi(as[i])
+		bi, err2 := strconv.Atoi(bs[i])
+		if err1 != nil || err2 != nil {
+			return false
+		}
+		if ai != bi {
+			return ai < bi
+		}
+	}
+	return len(as) < len(bs)
 }
 
 func humanSize(b int) string {
