@@ -518,6 +518,11 @@ export default function CLICheatsheetPage() {
                           desc: "Scope rows to their owner (e.g. user). Adds the field if absent; ADMIN is exempt",
                         },
                         {
+                          flag: "--unique",
+                          type: "string",
+                          desc: 'Columns a row is unique by (e.g. email, or "name,company"). Re-importing a CSV then skips rows instead of duplicating them, and a duplicate write answers 409',
+                        },
+                        {
                           flag: "--audit-reads",
                           type: "bool",
                           desc: "Record every read (who, which rows, when) in the tamper-evident activity log",

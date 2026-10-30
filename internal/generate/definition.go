@@ -84,6 +84,19 @@ type ResourceDefinition struct {
 	// would ask you to prove never happened.
 	AppendOnly bool `yaml:"append_only,omitempty"`
 
+	// Unique is the columns a composite unique index covers, set by --unique.
+	//
+	// It is what makes the importer's OnConflict{DoNothing} mean anything: a
+	// generated resource has no unique index but its primary key, and the
+	// importer assigns a fresh id per row, so nothing ever conflicts and the
+	// same CSV imported twice produces two of every row. The job then reports
+	// "skipped 0", and the 0 is structural rather than a fact (grit#140).
+	//
+	// Which columns is a decision per resource, which is why it is a flag and
+	// not a default: a contact might be unique by email, by phone, or by name
+	// within a company.
+	Unique []string `yaml:"unique,omitempty"`
+
 	// AuditReads records every read of this resource in the tamper-evident
 	// activity log, set by --audit-reads: who read which rows, when, and from
 	// where. For health records, and anything else where access itself has to

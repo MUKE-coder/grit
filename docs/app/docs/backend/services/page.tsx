@@ -168,6 +168,16 @@ Bulk(ctx, action string, ids []string, patch map[string]interface{}) (PostBulkRe
                   supply, because creating it from the key alone violates the model&apos;s own rules
                   once per row.
                   <br />
+                  Whether a re-imported row is <em>skipped</em> depends on the resource having a
+                  unique index: the importer writes with{' '}
+                  <code>OnConflict&#123;DoNothing&#125;</code>, which does nothing unless the
+                  database has a constraint to conflict with, and a generated resource has one
+                  on its primary key alone. Generate it with{' '}
+                  <code>--unique email</code> (or <code>--unique &quot;name,company&quot;</code>)
+                  and the same file imported twice reports{' '}
+                  <code>Imported 0, skipped 2</code> instead of writing two of everything.
+                  Without it, <code>skipped</code> is always 0, and that 0 is structural.
+                  <br />
                   A <code>User</code> column is resolved by email, and in a project with the
                   multitenant plugin only among the active organisation&apos;s members. Unnarrowed
                   that was a cross-tenant read through an importer: a spreadsheet could file rows

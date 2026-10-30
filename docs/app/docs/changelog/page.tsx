@@ -59,6 +59,83 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.447.0 */}
+            <div className="mb-12" id="v3.447.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.447.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An import could not skip a row that was already there</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/140">#140</a>.
+                  The generated importer writes rows with{' '}
+                  <code>clause.OnConflict&#123;DoNothing: true&#125;</code>,
+                  which only does something when the database has a constraint
+                  to conflict with. A generated resource had a unique index on
+                  its primary key and nothing else, and the importer assigns a
+                  fresh id per row, so nothing ever conflicted: the same CSV
+                  imported twice produced two copies of every row, and the job
+                  reported <code>Imported 4, skipped 0</code> where the 0 was
+                  structural rather than a fact.
+                </p>
+                <p>
+                  Every part of the machinery was already there and correct.
+                  What was missing is the constraint, and which columns it
+                  covers is a decision per resource that no generator can make:
+                  a contact might be unique by email, by phone, or by name
+                  within a company. So <code>--unique</code> names them.
+                </p>
+                <CodeBlock language="bash" code={`grit generate resource Contact \\
+  --fields "name:string,email:email,company:belongs_to:Company" \\
+  --unique email
+
+grit generate resource Member \\
+  --fields "name:string,company:belongs_to:Company" \\
+  --unique "name,company"      # unique within a company`} />
+                <p>
+                  One composite index over the columns in the order named, so a
+                  foreign key can be part of it, which is how &quot;unique
+                  within a company&quot; is spelled. The relation keeps its
+                  ordinary index as well: the unique one is composite, so it
+                  does not serve a lookup by company alone.
+                </p>
+                <p>
+                  Measured on a running project, importing the same two-row file
+                  twice: <code>Imported 2, skipped 0</code> then{' '}
+                  <code>Imported 0, skipped 2</code>, with two rows in the
+                  table. A duplicate write through the API answers{' '}
+                  <code>409 CONFLICT</code> with the field named, which the
+                  framework already did and had no index to do it on.
+                </p>
+
+                <h3>What it refuses, and why at generation time</h3>
+                <p>
+                  A unique index that fails to create leaves a resource whose
+                  importer silently duplicates every row, which is the bug the
+                  flag exists to fix. So the spellings that cannot work are
+                  refused when the resource is generated rather than when it is
+                  migrated: a many-to-many, which has no column on this table; a
+                  money field, which is two; a list stored in one column, where
+                  two rows holding the same values in a different order would be
+                  distinct; rich text, which most databases refuse to index; and
+                  the same column named twice, including once as{' '}
+                  <code>company</code> and once as <code>company_id</code>. Each
+                  refusal says which column and why, and a column that is not
+                  there at all lists the ones that are.
+                </p>
+                <p>
+                  New resources only, deliberately. Adding the index to a
+                  resource that already has rows has to say what it will do
+                  about the duplicates already in there, which is a migration
+                  and a conversation rather than a flag.
+                </p>
+              </div>
+            </div>
+
             {/* v3.446.0 */}
             <div className="mb-12" id="v3.446.0">
               <div className="flex items-center gap-3 mb-4">

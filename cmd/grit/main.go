@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.446.0"
+var version = "3.447.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -985,6 +985,7 @@ func generateResourceCmd() *cobra.Command {
 	var tenantOwned bool
 	var appendOnly bool
 	var auditReads bool
+	var unique string
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -1120,6 +1121,17 @@ func generateResourceCmd() *cobra.Command {
 				fmt.Println("  • --tree added parent:belongs_to:" + gen.Names().Pascal)
 			}
 
+			// --unique, after the fields are final, because --owned-by and
+			// --tree add fields and a unique index may name one of them.
+			if unique != "" {
+				cols, err := resolveUniqueColumns(def, unique)
+				if err != nil {
+					return err
+				}
+				def.Unique = cols
+				fmt.Printf("  • --unique: a row is unique by (%s)\n", strings.Join(cols, ", "))
+			}
+
 			if err := gen.Run(); err != nil {
 				return err
 			}
@@ -1149,6 +1161,10 @@ func generateResourceCmd() *cobra.Command {
 		"Scope the resource to an organization (requires the multitenant plugin): embeds tenant.Owned, so queries are filtered by the active org and OrgID is stamped on insert")
 	cmd.Flags().StringVar(&ownedBy, "owned-by", "",
 		"Scope the resource to its owner: the named belongs_to-User field decides who may read or write each row (e.g. --owned-by user). Adds the field if absent. ADMIN is exempt")
+	cmd.Flags().StringVar(&unique, "unique", "",
+		"Columns a row is unique by, comma-separated (e.g. --unique email, or --unique \"name,company\"). "+
+			"Gives the CSV importer something to conflict with, so re-importing the same file skips rows "+
+			"instead of duplicating them, and a duplicate write answers 409 rather than succeeding")
 	cmd.Flags().BoolVar(&appendOnly, "append-only", false,
 		"Rows are created and read, never changed or deleted: no update or delete routes, a GORM guard, and a database trigger installed by grit migrate. For ledgers, audit trails and consent records")
 	cmd.Flags().BoolVar(&auditReads, "audit-reads", false,
@@ -2934,4 +2950,78 @@ func upgradeInstalledPlugins() {
 		}
 		printUpdate(res)
 	}
+}
+
+// resolveUniqueColumns turns --unique into the column names the index covers,
+// and refuses the spellings that would produce a model nothing can migrate.
+//
+// Checked here rather than at migrate time, because a unique index that fails
+// to create leaves a resource whose importer silently duplicates every row,
+// which is the bug this flag exists to fix (grit#140).
+func resolveUniqueColumns(def *generate.ResourceDefinition, unique string) ([]string, error) {
+	var cols []string
+	seen := map[string]bool{}
+
+	for _, raw := range strings.Split(unique, ",") {
+		name := strings.TrimSpace(raw)
+		if name == "" {
+			continue
+		}
+		field := uniqueFieldNamed(def, name)
+		if field == nil {
+			return nil, fmt.Errorf("--unique names %q, which is not a field of this resource.\n\n"+
+				"The columns available are: %s", name, strings.Join(uniqueFieldNames(def), ", "))
+		}
+		// A column the database cannot index, or can index and should not.
+		switch generate.FieldType(field.Type) {
+		case generate.FieldManyToMany:
+			return nil, fmt.Errorf("--unique names %q, which is a many-to-many relation. "+
+				"It has no column on this table: it lives in a join table, and a row's "+
+				"uniqueness cannot depend on it", name)
+		case generate.FieldMoney:
+			return nil, fmt.Errorf("--unique names %q, which is a money field. It is two "+
+				"columns, an amount and a currency, and a unique index over a price is "+
+				"almost never what somebody means", name)
+		case generate.FieldFiles, generate.FieldStringArray:
+			return nil, fmt.Errorf("--unique names %q, which stores a list in one column. "+
+				"Two rows holding the same values in a different order would be distinct, "+
+				"so the index would not mean what it says", name)
+		case generate.FieldRichtext:
+			return nil, fmt.Errorf("--unique names %q, which is rich text. Most databases "+
+				"refuse to index a column that long, and the migration would fail", name)
+		}
+
+		key := strings.TrimSuffix(name, "_id")
+		if seen[key] {
+			return nil, fmt.Errorf("--unique names %q twice", name)
+		}
+		seen[key] = true
+		cols = append(cols, name)
+	}
+
+	if len(cols) == 0 {
+		return nil, fmt.Errorf("--unique was given no columns")
+	}
+	return cols, nil
+}
+
+// uniqueFieldNamed finds a field by the name --unique used, accepting either
+// spelling of a relation: "company" and "company_id" are the same column.
+func uniqueFieldNamed(def *generate.ResourceDefinition, name string) *generate.Field {
+	want := strings.TrimSuffix(strings.ToLower(name), "_id")
+	for i := range def.Fields {
+		if strings.TrimSuffix(strings.ToLower(def.Fields[i].Name), "_id") == want {
+			return &def.Fields[i]
+		}
+	}
+	return nil
+}
+
+// uniqueFieldNames lists what the caller could have named, for the error.
+func uniqueFieldNames(def *generate.ResourceDefinition) []string {
+	out := make([]string, 0, len(def.Fields))
+	for _, f := range def.Fields {
+		out = append(out, f.Name)
+	}
+	return out
 }

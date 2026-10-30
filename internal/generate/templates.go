@@ -265,6 +265,25 @@ func (g *Generator) writeGoModel(names Names) error {
 		autoHook += treeCreateHook()
 	}
 
+	// --unique: one composite unique index over the named columns, in the
+	// order they were named. It is what gives the importer's
+	// OnConflict{DoNothing} something to conflict with, so a re-imported CSV
+	// skips rows instead of duplicating them (grit#140).
+	uniquePriority := map[string]int{}
+	for i, col := range g.Definition.Unique {
+		uniquePriority[toSnakeCase(strings.TrimSuffix(col, "_id"))] = i + 1
+	}
+	uniqueIndexName := "idx_" + names.Snake + "_unique"
+	// uniqueTag returns the fragment to append to a column's gorm tag, by the
+	// column's base name. Empty for a column the index does not cover.
+	uniqueTag := func(base string) string {
+		p, ok := uniquePriority[base]
+		if !ok {
+			return ""
+		}
+		return fmt.Sprintf(";uniqueIndex:%s,priority:%d", uniqueIndexName, p)
+	}
+
 	structFields := ""
 	for _, f := range fields {
 		// belongs_to: emit FK column + association struct
@@ -321,10 +340,13 @@ func (g *Generator) writeGoModel(names Names) error {
 			if owner != nil && f.Name == owner.Name {
 				ownerTag = ` owner:"true"`
 			}
+			// A foreign key can be part of the unique index too, which is how
+			// "unique within a company" is spelled: --unique "name,company".
+			fkUnique := uniqueTag(strings.TrimSuffix(fkJson, "_id"))
 			if g.relOptional(f) {
-				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;%s;default:null\" json:\"%s\"%s`\n", fkGoName, fkIndex, fkJson, ownerTag)
+				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;%s%s;default:null\" json:\"%s\"%s`\n", fkGoName, fkIndex, fkUnique, fkJson, ownerTag)
 			} else {
-				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;%s\" json:\"%s\" binding:\"required\"%s`\n", fkGoName, fkIndex, fkJson, ownerTag)
+				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;%s%s\" json:\"%s\" binding:\"required\"%s`\n", fkGoName, fkIndex, fkUnique, fkJson, ownerTag)
 			}
 			// Association struct.
 			//
@@ -362,6 +384,12 @@ func (g *Generator) writeGoModel(names Names) error {
 			// <name>_amount and <name>_currency. The amount stays an integer
 			// column the database can SUM and index.
 			gormTag = "embedded;embeddedPrefix:" + toSnakeCase(f.Name) + "_"
+		}
+		if u := uniqueTag(jsonTag); u != "" {
+			// The fragment carries its own leading semicolon, so a column with
+			// no other gorm tag must not start with one.
+			gormTag += u
+			gormTag = strings.TrimPrefix(gormTag, ";")
 		}
 		if gormTag != "" {
 			tags = fmt.Sprintf(`gorm:"%s" %s`, gormTag, tags)
