@@ -28,8 +28,20 @@ var guard struct {
 	force    bool
 	root     string
 	manifest *manifest.Manifest
-	written  int
-	skipped  []SkippedFile
+	// tracked is whether the project has a manifest at all, which is a
+	// different question from whether a given file has an entry in it. See
+	// manifest.Exists and guardAllows.
+	tracked bool
+	written int
+	skipped []SkippedFile
+	// unowned are files Grit has no record of writing, which differ from what
+	// it would write, in a project that does have a manifest. Reported apart
+	// from skipped because the sentence is different: you did not edit these,
+	// they were never Grit's.
+	unowned []SkippedFile
+	// deleted are files Grit wrote and the project has since removed. Not put
+	// back, and listed so that is a decision rather than a silence.
+	deleted []string
 }
 
 // SkippedFile is one file left alone because it had been edited since Grit
@@ -58,20 +70,33 @@ func startGuard(root string, force bool) error {
 	guard.force = force
 	guard.root = root
 	guard.manifest = m
+	guard.tracked = manifest.Exists(root)
 	guard.written = 0
 	guard.skipped = nil
+	guard.unowned = nil
+	guard.deleted = nil
 	return nil
 }
 
 // stopGuard leaves protective mode and reports what happened.
 func stopGuard() (written int, skipped []SkippedFile) {
+	written, skipped, _, _ = stopGuardFull()
+	return written, skipped
+}
+
+// stopGuardFull is the same with the two kinds of held-back file the upgrade
+// report words differently.
+func stopGuardFull() (written int, skipped, unowned []SkippedFile, deleted []string) {
 	guard.mu.Lock()
 	defer guard.mu.Unlock()
 	written, skipped = guard.written, guard.skipped
+	unowned, deleted = guard.unowned, guard.deleted
 	guard.active = false
 	guard.manifest = nil
 	guard.skipped = nil
-	return written, skipped
+	guard.unowned = nil
+	guard.deleted = nil
+	return written, skipped, unowned, deleted
 }
 
 // guardAdopt tells the guard a file is Grit's after all, as it stands now.
@@ -95,14 +120,29 @@ func guardAdopt(path, content string) {
 
 // guardAllows decides whether a write may proceed, and records the decision.
 //
-// The rule is narrow on purpose: only a file Grit is recorded as having
-// written, whose bytes have changed since, and which would change again, is
-// held back. Everything else is written as before.
+// Four answers, by what the manifest says about the file:
 //
-// A project with no manifest has every file Untracked, so it upgrades exactly
-// as it did before v3.147.0. That is the honest outcome: with no provenance
-// there is no basis for claiming a file was edited, and silently refusing to
-// update an entire pre-manifest project would be worse than the problem.
+//   - Grit wrote it and it has changed since: held back, as it has been since
+//     v3.147.0. The upgrade reports it as yours.
+//   - Grit wrote it and it is gone, along with the directory it lived in: the
+//     project removed a feature, so it is NOT put back. "Missing" and "never
+//     written" used to be the same answer here, which is how six deleted Expo
+//     screens returned on every upgrade (grit#125).
+//   - Grit wrote it and it is gone but its directory is still there: written,
+//     because deleting one framework file out of a directory full of them is
+//     how people ask for the stock version back, and has been the documented
+//     way since v3.147.0. The directory is the discriminator: removing one is
+//     a bigger statement than removing a file, and the only one of the two
+//     that reads as "I do not want this".
+//   - Grit has no record of it, in a project that HAS a manifest: the file is
+//     not Grit's. If it differs from what Grit would write, held back and
+//     reported. An Expo app copied in from another project is the whole of
+//     this case, and overwriting it was the serious half of grit#125.
+//   - Grit has no record of it and the project has no manifest: written,
+//     exactly as before v3.147.0. With no provenance anywhere there is no
+//     basis for claiming any file was edited, and refusing to update an
+//     entire pre-manifest project would be worse than the problem. This is
+//     why the Untracked case could not simply be protected.
 func guardAllows(path, proposed string) bool {
 	guard.mu.Lock()
 	defer guard.mu.Unlock()
@@ -118,27 +158,65 @@ func guardAllows(path, proposed string) bool {
 	if !inside {
 		return true
 	}
-	if guard.manifest.StatusOf(guard.root, rel) != manifest.Modified {
+
+	switch guard.manifest.StatusOf(guard.root, rel) {
+	case manifest.Missing:
+		// Grit wrote it; it is not there now. Whether that was a decision or a
+		// request for the stock file back is read from the directory.
+		if dirExists(filepath.Dir(path)) {
+			guard.written++
+			return true
+		}
+		guard.deleted = append(guard.deleted, rel)
+		return false
+
+	case manifest.Untracked:
+		if !guard.tracked {
+			guard.written++
+			return true
+		}
+		current, err := os.ReadFile(path)
+		if err != nil {
+			// Not there, and never ours: nothing to lose by writing it.
+			guard.written++
+			return true
+		}
+		if manifest.Hash(string(current)) == manifest.Hash(proposed) {
+			// Already what Grit would write. Adopt it rather than report it:
+			// the bytes are identical, so there is nothing to decide, and a
+			// record means the next upgrade knows whose it is.
+			guard.manifest.Record(rel, "upgrade", "", proposed)
+			guard.written++
+			return true
+		}
+		guard.unowned = append(guard.unowned, SkippedFile{
+			Rel:      rel,
+			Current:  string(current),
+			Proposed: proposed,
+		})
+		return false
+
+	case manifest.Modified:
+		current, err := os.ReadFile(path)
+		if err != nil {
+			return true
+		}
+		// An edit that happens to leave the file identical to the new template
+		// is not a conflict, and reporting it as one would be noise.
+		if manifest.Hash(string(current)) == manifest.Hash(proposed) {
+			return true
+		}
+		guard.skipped = append(guard.skipped, SkippedFile{
+			Rel:      rel,
+			Current:  string(current),
+			Proposed: proposed,
+		})
+		return false
+
+	default: // Unchanged
 		guard.written++
 		return true
 	}
-
-	current, err := os.ReadFile(path)
-	if err != nil {
-		return true
-	}
-	// An edit that happens to leave the file identical to the new template is
-	// not a conflict, and reporting it as one would be noise.
-	if manifest.Hash(string(current)) == manifest.Hash(proposed) {
-		return true
-	}
-
-	guard.skipped = append(guard.skipped, SkippedFile{
-		Rel:      rel,
-		Current:  string(current),
-		Proposed: proposed,
-	})
-	return false
 }
 
 // guardedWrite is writeFile's protected form: it asks the guard first and

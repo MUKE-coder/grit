@@ -86,6 +86,19 @@ func Path(root string) string {
 	return filepath.Join(root, Dir, FileName)
 }
 
+// Exists reports whether the project has a manifest on disk.
+//
+// Not the same question as whether a file has an entry, and the difference
+// decides what an upgrade may overwrite. A project generated before v3.147.0
+// has no manifest, and every file in it reads as Untracked: there is no basis
+// for claiming any of them was edited, so the upgrade writes them all. A
+// project that HAS a manifest and no entry for a file is saying something
+// else, that the file is not Grit's, and overwriting it is what grit#125 was.
+func Exists(root string) bool {
+	_, err := os.Stat(Path(root))
+	return err == nil
+}
+
 // Load reads a project's manifest. A project without one is not an error: it
 // is every project generated before v3.147.0, and it gets an empty manifest in
 // which every file reads as Untracked.

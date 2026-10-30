@@ -62,7 +62,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 		// An upgrade, so the writers can tell a resource this project has
 		// removed from one it has not been given yet (grit#111).
 		Upgrading: true,
-		Style:       readProjectStyle(root),
+		Style:     readProjectStyle(root),
 		// The theme the project was scaffolded with. Upgrade wrote files that
 		// bake colour values in -- the mobile app's Tailwind config is one --
 		// and with no theme here they all came out atlas, which quietly
@@ -1233,7 +1233,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// read as the user's edit and the next upgrade left those files alone.
 	pinReactVersions(root, spinner)
 
-	written, skipped := stopGuard()
+	written, skipped, unowned, deletedFiles := stopGuardFull()
 	if saveErr := release(); saveErr != nil {
 		spinner.Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
 	}
@@ -1271,6 +1271,50 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// Said every time, because the cache above cannot be removed while a dev
 	// server holds it open, which is exactly when it matters.
 	cyan.Printf("  Restart any dev server that was running: it compiled the routes as they were.\n")
+
+	// A file Grit has no record of writing is not a file you edited, so it
+	// does not belong under that heading. This is the half of grit#125 that
+	// destroyed work: an Expo app copied in from another project has no
+	// records at all, so every file in it was written through in silence.
+	if len(unowned) > 0 {
+		fmt.Println()
+		yellow := color.New(color.FgHiYellow)
+		yellow.Printf("  ⚠ Left alone, because Grit has no record of writing %s and %s differ%s\n",
+			plural(len(unowned), "this file", "these files"),
+			plural(len(unowned), "it", "they"),
+			plural(len(unowned), "s:", ":"))
+		for _, s := range unowned {
+			fmt.Printf("      %s\n", s.Rel)
+		}
+		fmt.Println()
+		cyan.Println("    These are yours as far as the manifest is concerned: copied in,")
+		cyan.Println("    written by hand, or added by a command that did not record them.")
+		if uOpts.ShowDiff {
+			for _, s := range unowned {
+				cyan.Printf("  ── %s ──\n", s.Rel)
+				fmt.Println(diffIndent(s.Diff()))
+			}
+		} else {
+			cyan.Println("    grit upgrade --diff     # see what the new version would write")
+		}
+		cyan.Println("    grit upgrade --force    # take the new version and lose what is there")
+	}
+
+	// And a file the project deleted stays deleted. Writing it back overrules
+	// a decision without saying so, which is how six deleted Expo screens
+	// came back on every upgrade (grit#125).
+	if len(deletedFiles) > 0 {
+		fmt.Println()
+		yellow := color.New(color.FgHiYellow)
+		yellow.Printf("  ⚠ Not put back, because Grit wrote %s and %s been deleted since:\n",
+			plural(len(deletedFiles), "this file", "these files"),
+			plural(len(deletedFiles), "it has", "they have"))
+		for _, rel := range deletedFiles {
+			fmt.Printf("      %s\n", rel)
+		}
+		fmt.Println()
+		cyan.Println("    grit upgrade --force    # write them back")
+	}
 
 	if len(skipped) > 0 {
 		fmt.Println()
@@ -1543,7 +1587,11 @@ func pruneUnwiredI18n(adminRoot string) int {
 		"messages/fr.json",
 		"messages/sw.json",
 	} {
-		if err := os.Remove(filepath.Join(adminRoot, filepath.FromSlash(dead))); err == nil {
+		path := filepath.Join(adminRoot, filepath.FromSlash(dead))
+		if err := os.Remove(path); err == nil {
+			// Forget it too: a recorded file that is absent reads as one the
+			// project deleted, and the guard will not re-create it.
+			manifest.Drop(path)
 			removed++
 		}
 	}
@@ -1591,6 +1639,7 @@ func pruneAdminStrays(adminRoot string) int {
 			continue // the real one is missing — leave the copy alone
 		}
 		if err := os.Remove(strayPath); err == nil {
+			manifest.Drop(strayPath)
 			removed++
 		}
 	}
@@ -1675,6 +1724,7 @@ func removeNextPanelFromViteApp(root string, opts Options, green *color.Color) {
 			continue
 		}
 		if err := os.RemoveAll(dead); err == nil {
+			manifest.DropTree(dead)
 			removed++
 		}
 	}
@@ -1758,7 +1808,9 @@ func migrateWebRouteGroups(root string, spinner, green, cyan *color.Color) {
 	green.Printf("  ✓ The site layout is the (marketing) group's now, so /admin keeps its own\n")
 
 	// AppChrome decided this by path prefix and nothing imports it any more.
-	if err := os.Remove(filepath.Join(root, "apps", "web", "components", "AppChrome.tsx")); err == nil {
+	chrome := filepath.Join(root, "apps", "web", "components", "AppChrome.tsx")
+	if err := os.Remove(chrome); err == nil {
+		manifest.Drop(chrome)
 		green.Printf("  ✓ Removed components/AppChrome.tsx: the layouts decide now\n")
 	}
 

@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.443.0"
+var version = "3.444.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -714,17 +714,74 @@ func addCmd() *cobra.Command {
 	cmd.AddCommand(addOfflineCmd())
 	cmd.AddCommand(addVariantsCmd())
 	cmd.AddCommand(addScoutCmd())
+	cmd.AddCommand(addExpoCmd())
+	cmd.AddCommand(addDesktopCmd())
 
 	return cmd
 }
 
-// addWebAuthCmd — v3.31.22+ Phase 4 of PLAN_FORMS_AND_SHARING.
-// Drops two files into apps/web/ that close the "how do I protect a
-// customer-facing page" gap:
-//   - middleware.ts          — SSR cookie check, redirects to /login
-//   - components/ProtectedWebRoute.tsx — client wrapper using useMe()
-//
-// Idempotent: pre-existing files are skipped with a notice.
+// addExpoCmd and addDesktopCmd close the gap grit#125 was reported through:
+// there was no way to add either app to a project that already existed, so
+// the way in was to scaffold a second project and copy the directory across.
+// A copied-in app has no manifest records, and until v3.444.0 the next upgrade
+// treated every file in it as Grit's and unedited.
+func addExpoCmd() *cobra.Command {
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "expo",
+		Short: "Add the Expo mobile app to an existing project",
+		Long: "Writes apps/expo with the same files `grit new --expo` writes, sets\n" +
+			"expo: true in grit.json so `grit upgrade` maintains it, and rewires\n" +
+			"pnpm-workspace.yaml, the root package.json and grit.config.ts.\n\n" +
+			"Every file is recorded in the manifest as it is written, which is\n" +
+			"the reason to use this rather than copying apps/expo from another\n" +
+			"project. With records, a later upgrade can tell your edits from the\n" +
+			"template and leaves them alone, and a screen you delete stays\n" +
+			"deleted. Without them, the first upgrade after a copy writes your\n" +
+			"deleted screens back (grit#125).",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+			cHeading.Println("\n  Adding the Expo app")
+			return scaffold.AddExpo(root, force)
+		},
+	}
+	cmd.Flags().BoolVar(&force, "force", false, "Write over an apps/expo that is already there")
+	return cmd
+}
+
+func addDesktopCmd() *cobra.Command {
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "desktop",
+		Short: "Add the Wails desktop app to an existing project",
+		Long: "Writes apps/desktop with the same files `grit new --desktop`\n" +
+			"writes, sets desktop: true in grit.json so `grit upgrade`\n" +
+			"maintains it, and rewires pnpm-workspace.yaml, the root\n" +
+			"package.json and grit.config.ts.\n\n" +
+			"Recorded in the manifest as it is written, for the same reason as\n" +
+			"`grit add expo`: a directory copied in from another project has no\n" +
+			"provenance, and an upgrade cannot then tell your work from the\n" +
+			"template.\n\n" +
+			"Building it needs the Wails CLI:\n" +
+			"  go install github.com/wailsapp/wails/v2/cmd/wails@latest",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+			cHeading.Println("\n  Adding the desktop app")
+			return scaffold.AddDesktop(root, force)
+		},
+	}
+	cmd.Flags().BoolVar(&force, "force", false, "Write over an apps/desktop that is already there")
+	return cmd
+}
+
 func addWebAuthCmd() *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{

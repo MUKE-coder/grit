@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -157,6 +158,31 @@ func StatusOfPath(absPath string) Status {
 
 // Drop removes a path from the recording, for a generator that deletes a file
 // it previously wrote.
+// DropTree forgets every recorded file under a directory, for the case where
+// Grit removes a whole one.
+//
+// Needed for the same reason as Drop: the upgrade guard reads a recorded file
+// that is absent, in a directory that is also absent, as a feature the project
+// removed, and refuses to re-create it. A directory Grit removed itself is not
+// that.
+func DropTree(absDir string) {
+	recording.mu.Lock()
+	defer recording.mu.Unlock()
+	if !recording.active || recording.manifest == nil {
+		return
+	}
+	rel, inside := Rel(recording.root, absDir)
+	if !inside {
+		return
+	}
+	prefix := Key(rel) + "/"
+	for key := range recording.manifest.Files {
+		if strings.HasPrefix(key, prefix) {
+			delete(recording.manifest.Files, key)
+		}
+	}
+}
+
 func Drop(absPath string) {
 	recording.mu.Lock()
 	defer recording.mu.Unlock()

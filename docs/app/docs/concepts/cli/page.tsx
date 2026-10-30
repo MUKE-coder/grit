@@ -35,8 +35,8 @@ export default function CLICommandsPage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Four commands carry a Grit project from empty folder to production. Everything
-                  else &mdash; <code>migrate</code>, <code>seed</code>, <code>sync</code>,{' '}
-                  <code>studio</code> &mdash; slots in between these stages.
+                  else, meaning <code>migrate</code>, <code>seed</code>, <code>sync</code>,{' '}
+                  <code>studio</code>, slots in between these stages.
                 </p>
                 <LaneFlow
                   id="cli-life"
@@ -119,7 +119,7 @@ export default function CLICommandsPage() {
                       <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Article --fields &quot;title:string,slug:slug,body:text,published:bool&quot;</span></div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground/40"># Invoice with inline line-items — an editable child table inside the form, saved atomically</span>
+                      <span className="text-muted-foreground/40"># Invoice with inline line-items: an editable child table inside the form, saved atomically</span>
                       <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit g resource Invoice --fields &quot;number:string,status:string&quot; --items &quot;InvoiceItem:description:string,qty:int,unit_rate:float&quot;</span></div>
                     </div>
                   </div>
@@ -132,8 +132,8 @@ export default function CLICommandsPage() {
                   grit plugin
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Install and remove plugins. A plugin generates code into your project
-                  &mdash; models, routes, pages &mdash; which you then own and can edit.
+                  Install and remove plugins. A plugin generates code into your project,
+                  models, routes and pages, which you then own and can edit.
                   Everything an install does is recorded in{' '}
                   <code>.grit/plugins.lock.json</code>, and removal replays that record
                   backwards, so uninstalling is exact rather than best-effort. Commit the
@@ -194,8 +194,8 @@ grit rm resource <Name>`} />
                   The resource name should be the singular PascalCase name (e.g.,{" "}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Post</code>,{" "}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Product</code>,{" "}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BlogCategory</code>)
-                  — the same name you used with{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BlogCategory</code>),
+                  the same name you used with{" "}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>.
                 </p>
               </div>
@@ -207,7 +207,7 @@ grit rm resource <Name>`} />
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Add a new role to your project. This command updates all relevant files across the stack
-                  in one step — Go model constants, TypeScript types, Zod schemas, shared constants, and
+                  in one step: Go model constants, TypeScript types, Zod schemas, shared constants, and
                   admin panel resource definitions (badge, filter, and form options).
                 </p>
 
@@ -307,9 +307,9 @@ grit rm resource <Name>`} />
                   grit test
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Runs every test suite in the project &mdash; Go, the frontend suites, and with{' '}
+                  Runs every test suite in the project: Go, the frontend suites, and with{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--e2e</code>{' '}
-                  the Playwright tests &mdash; then prints one report. Which suites exist depends on
+                  the Playwright tests, then prints one report. Which suites exist depends on
                   the architecture you scaffolded, and this command works that out for you.
                 </p>
 
@@ -325,7 +325,7 @@ grit rm resource <Name>`} />
                     <div className="text-muted-foreground/40">&nbsp;&nbsp;──────────&nbsp;&nbsp;──────&nbsp;&nbsp;────────</div>
                     <div className="text-foreground/80">&nbsp;&nbsp;Go&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-emerald-400">PASS</span>&nbsp;&nbsp;&nbsp;&nbsp;14.6s</div>
                     <div className="text-foreground/80">&nbsp;&nbsp;web&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-emerald-400">PASS</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1s</div>
-                    <div className="text-muted-foreground/60">&nbsp;&nbsp;End-to-end&nbsp;&nbsp;SKIP&nbsp;&nbsp;&nbsp;&nbsp;not requested &mdash; pass --e2e</div>
+                    <div className="text-muted-foreground/60">&nbsp;&nbsp;End-to-end&nbsp;&nbsp;SKIP&nbsp;&nbsp;&nbsp;&nbsp;not requested, pass --e2e</div>
                   </div>
                 </div>
 
@@ -356,7 +356,7 @@ grit rm resource <Name>`} />
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
                   End-to-end tests are opt-in because they need the API and frontends already
-                  running &mdash; failing against a server that was never started tells you nothing
+                  running. Failing against a server that was never started tells you nothing
                   about your code. The command exits non-zero if any suite fails, so it drops
                   straight into CI.
                 </p>
@@ -457,6 +457,50 @@ grit rm resource <Name>`} />
     grit upgrade --diff     # see what the new version would change
     grit upgrade --force    # take the new version and lose your edits`} />
                 <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  Since v3.444.0 there are two more answers it can give, both from the same
+                  record. A file Grit has <strong>no record of writing</strong>, in a project
+                  that has a manifest, is not Grit&apos;s: if it differs from the template it is
+                  left alone under a heading that says so, because &quot;you have edited
+                  this&quot; is the wrong sentence for a file Grit never wrote. And a file Grit{' '}
+                  <strong>did</strong> write that is gone <em>along with the directory it lived
+                  in</em> is a feature the project removed, so it is not written back. One file
+                  deleted out of a directory that is still there still comes back, because that
+                  is how you reset a framework component.
+                </p>
+                <CodeBlock language="bash" code={`grit upgrade
+
+  ⚠ Left alone, because Grit has no record of writing these files and they differ:
+      apps/expo/app/(tabs)/_layout.tsx
+      apps/expo/package.json
+
+    These are yours as far as the manifest is concerned: copied in,
+    written by hand, or added by a command that did not record them.
+
+  ⚠ Not put back, because Grit wrote these files and they have been deleted since:
+      apps/expo/app/blogs/index.tsx
+      apps/expo/app/blogs/new.tsx
+
+    grit upgrade --force    # write them back`} />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  The directory is what tells the two apart: removing one is a bigger statement
+                  than removing a file, and the only one of the two that reads as &quot;I do not
+                  want this&quot;.{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--force</code>{' '}
+                  writes a removed directory back, and the upgrade lists what it left absent, so
+                  it is a decision rather than a silence. A screen you removed on purpose
+                  returning on every upgrade is what used to happen.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  This is also why there is{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit add expo</code>{' '}
+                  and{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit add desktop</code>.
+                  Copying an app in from another project gives it no records at all, and the
+                  first upgrade after a copy cannot tell a file you deleted from one this version
+                  has newly added, so a deleted screen comes back once. These commands write the
+                  app and record it, so the provenance is right from the first upgrade.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
                   It also raises the libraries every API mounts, Sentinel, GORM Studio and Pulse, to
                   at least the versions this CLI was tested with. One below its floor is raised with{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go get</code>{' '}
@@ -506,7 +550,7 @@ grit rm resource <Name>`} />
                   <div className="p-5 font-mono text-sm">
                     <div><span className="text-accent/50 select-none">$ </span><span className="text-foreground/80">grit update</span></div>
                     <div className="mt-1 text-muted-foreground/40 text-xs space-y-0.5">
-                      <div>  Grit self-update — current: v3.55.0</div>
+                      <div>  Grit self-update, current: v3.55.0</div>
                       <div>  → Checking GitHub for the latest release...</div>
                       <div>  → New version available: v3.55.0 → v3.56.0</div>
                       <div>  → Running: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.56.0</div>
@@ -787,6 +831,14 @@ grit deploy`} />
                         <td className="px-4 py-2.5">Auth pages, the guard, and the customer area at /account</td>
                       </tr>
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit add expo</td>
+                        <td className="px-4 py-2.5">Add the Expo mobile app to a project that does not have one</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit add desktop</td>
+                        <td className="px-4 py-2.5">Add the Wails desktop app to a project that does not have one</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit expose form &lt;Resource&gt;</td>
                         <td className="px-4 py-2.5">Scaffold a public form page for a resource</td>
                       </tr>
@@ -891,7 +943,7 @@ grit deploy`} />
                 <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                   https://github.com/MUKE-coder/grit/issues
                 </a>{' '}
-                — we fix bugs fast and appreciate every report.
+                and we fix bugs fast and appreciate every report.
               </p>
             </div>
 

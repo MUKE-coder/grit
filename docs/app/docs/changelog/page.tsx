@@ -59,6 +59,129 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.444.0 */}
+            <div className="mb-12" id="v3.444.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.444.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The upgrade stops overwriting files it never wrote</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/125">#125</a>,
+                  and the only one of the batch that destroyed work rather than
+                  failing to do some. The guard held back a file Grit had
+                  written and the project had since edited. Everything else it
+                  wrote, including a file Grit had never written at all, because
+                  &quot;no record&quot; and &quot;mine to overwrite&quot; were
+                  the same answer.
+                </p>
+                <p>
+                  An Expo app copied into a project has no records, because
+                  copying it was the only way in: <code>grit add</code> had no{' '}
+                  <code>expo</code>, and <code>--expo</code> lives only on{' '}
+                  <code>grit new</code>. So the next upgrade replaced the tab
+                  bar, the API client that adds the organization header, the
+                  auth provider and the query client, wrote back six screens the
+                  project had deleted, and said{' '}
+                  <code>Updated 603 files</code>. The app still compiled,
+                  against endpoints the project does not have.
+                </p>
+
+                <h3>Four answers where there were two</h3>
+                <p>
+                  The reason the unrecorded case was not simply protected still
+                  holds: a project generated before v3.147.0 has no records for
+                  anything, and refusing to update all of it would be worse than
+                  the problem. So the question is not whether the file has an
+                  entry, it is whether the project has a manifest at all.
+                </p>
+                <ul>
+                  <li>
+                    Grit wrote it and it has changed: held back, as since
+                    v3.147.0, under &quot;you have edited these&quot;.
+                  </li>
+                  <li>
+                    Grit wrote it and it is gone,{' '}
+                    <em>along with the directory it lived in</em>: the project
+                    removed a feature, so it is not put back.
+                    &quot;Missing&quot; and &quot;never written&quot; used to be
+                    the same answer here, which is why six deleted screens
+                    returned on every upgrade.
+                  </li>
+                  <li>
+                    Grit wrote it, it is gone, and its directory is still there:
+                    written. Deleting one framework file out of a directory full
+                    of them is how you ask for the stock version back, and has
+                    been since v3.147.0.
+                  </li>
+                  <li>
+                    No record, in a project that has a manifest: the file is not
+                    Grit&apos;s. If it differs from the template it is held back
+                    and listed under a heading that says so, because &quot;you
+                    have edited this&quot; is the wrong sentence for a file Grit
+                    never wrote. If it is identical there is nothing to decide,
+                    so it is written and adopted.
+                  </li>
+                  <li>
+                    No record and no manifest: written, exactly as before
+                    v3.147.0.
+                  </li>
+                </ul>
+                <p>
+                  The directory is the discriminator, and it exists because a
+                  test already in the suite said why the first version of this
+                  was wrong: deleting a framework component is how people ask
+                  for the stock one back, documented since v3.147.0. Two wanted
+                  behaviours in direct conflict, told apart by the only thing
+                  that differs between the two reports. Removing a directory is
+                  a bigger statement than removing a file, and the only one of
+                  the two that reads as &quot;I do not want this&quot;.
+                </p>
+                <p>
+                  <code>grit upgrade --force</code> writes a removed directory
+                  back, and the upgrade lists what it left absent, so it is a
+                  decision rather than a silence. Grit&apos;s own deletions now
+                  forget their manifest entries as they go, so a file the
+                  framework removed is never reported as one you did.
+                </p>
+
+                <h3>grit add expo, grit add desktop</h3>
+                <p>
+                  The guard is a safety net for however the files got there. It
+                  cannot fix the first upgrade after a manual copy, because a
+                  file with no record and nothing on disk is indistinguishable
+                  from one this version has newly added, so a deleted screen
+                  comes back once.
+                </p>
+                <p>
+                  These two commands remove the copying. They write the app with
+                  the same function <code>grit new</code> uses, set the flag in{' '}
+                  <code>grit.json</code> so the upgrade maintains it, rewire{' '}
+                  <code>pnpm-workspace.yaml</code>, the root{' '}
+                  <code>package.json</code> and <code>grit.config.ts</code>, and
+                  record every file as it goes. With records the provenance is
+                  right from the first upgrade rather than the second.
+                </p>
+                <p>
+                  <code>grit.json</code> is edited as text, not decoded and
+                  re-encoded, because a round trip through a struct drops every
+                  key this version of Grit does not know about, including a
+                  project&apos;s own.
+                </p>
+                <p>
+                  Verified by reproducing the report, then by the proper route.
+                  A copied-in app keeps its edited tab bar and reports it; added
+                  with <code>grit add expo</code>, an edited screen is left
+                  alone and a deleted one stays deleted on the very first
+                  upgrade.
+                </p>
+              </div>
+            </div>
+
             {/* v3.443.0 */}
             <div className="mb-12" id="v3.443.0">
               <div className="flex items-center gap-3 mb-4">
