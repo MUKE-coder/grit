@@ -53,7 +53,9 @@ go install github.com/MUKE-coder/grit/v3/cmd/grit@latest    # with a Go toolchai
 GRIT_VERSION=v3.320.0 curl -fsSL https://gritframework.dev/install.sh | sh   # pin a release
 ```
 
-You need Go 1.21+, Node 20+, pnpm, and Docker for Postgres, Redis, MinIO and Mailhog.
+You need Go 1.26+, Node 20+, pnpm, and Docker for Postgres, Redis, MinIO and Mailhog.
+The generated `go.mod` pins the exact patch release, for the vulnerability fixes in it.
+An older toolchain downloads that version, which needs a network.
 [Full prerequisites](https://gritframework.dev/docs/prerequisites)
 
 </details>
@@ -205,10 +207,14 @@ pnpm install
 **2. Model the domain.** One command per noun. The field types decide the database column,
 the validation, the TypeScript type and the admin input, all at once.
 
+(`Issue` rather than `Ticket`: Grit ships a support desk, so `Ticket` is one of
+about forty names the generator reserves. It tells you, and names the feature
+that holds it, rather than writing over it.)
+
 ```bash
 grit generate resource Customer --fields "name:string,email:email,company:string:optional"
 
-grit generate resource Ticket --fields "subject:string,body:richtext,priority:select:low=Low|normal=Normal|high=High,status:select:open=Open|closed=Closed,customer:belongs_to:Customer" --seed --faker --count 50
+grit generate resource Issue --fields "subject:string,body:richtext,priority:select:low=Low|normal=Normal|high=High,status:select:open=Open|closed=Closed,customer:belongs_to:Customer" --seed --faker --count 50
 ```
 
 Each of those writes nine files and injects the wiring: a GORM model, a service, a handler,
@@ -223,7 +229,7 @@ grit seed
 grit start
 ```
 
-**4. Look at what you have.** At http://localhost:3001 there is a Tickets screen with
+**4. Look at what you have.** At http://localhost:3001 there is an Issues screen with
 sorting, filtering, search, pagination and bulk selection; a create form with a rich-text
 editor, two dropdowns and a searchable customer picker; and full CRUD behind role guards.
 At http://localhost:8080/docs is the API reference for the endpoints that back it, and at
@@ -234,7 +240,7 @@ the TypeScript type, the admin form and the table, and GORM adds the column on t
 `grit migrate`:
 
 ```bash
-grit generate field Ticket resolved_at:datetime
+grit generate field Issue resolved_at:datetime
 ```
 
 Scalar, select and toggle columns work this way. For a relationship, file, slug or array
@@ -400,8 +406,8 @@ grit upgrade                           # this project's templates
 
 | Layer | Technology |
 |---|---|
-| Backend | Go 1.21+ · Gin · GORM |
-| Frontend | Next.js 14+ (App Router) **or** TanStack Router (Vite) |
+| Backend | Go 1.26+ · Gin · GORM |
+| Frontend | Next.js 16 (App Router, pinned exactly) **or** TanStack Router (Vite) |
 | Styling | Tailwind CSS · shadcn/ui |
 | Database | PostgreSQL · MySQL 8+ / MariaDB · SQLite |
 | Cache / queue | Redis · asynq |

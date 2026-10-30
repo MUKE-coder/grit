@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.456.0"
+var version = "3.457.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -413,9 +413,9 @@ func newCmd() *cobra.Command {
 	}
 
 	// Shorthand architecture flags
-	cmd.Flags().Bool("single", false, "Shorthand for --arch=single: one folder, the Go module at its root, the frontend in frontend/, no Turborepo. Defaults to a Vite SPA the binary embeds, so the project ships as one file; add --next for a Next.js frontend, which runs as its own process")
-	cmd.Flags().Bool("double", false, "Shorthand for --arch=double")
-	cmd.Flags().Bool("triple", false, "Shorthand for --arch=triple")
+	cmd.Flags().Bool("single", false, "Shorthand for --arch=single: one folder, the frontend at its root and the Go module in api/, no Turborepo. Defaults to a Vite SPA the binary embeds, so the project ships as one file; add --next for a Next.js frontend, which runs as its own process")
+	cmd.Flags().Bool("double", false, "Shorthand for --arch=double: the Go API and one frontend, with the admin as a route group inside it")
+	cmd.Flags().Bool("triple", false, "Shorthand for --arch=triple: the Go API, a customer-facing frontend and a separate admin, in one pnpm monorepo")
 	cmd.Flags().BoolVar(&inPlace, "here", false, "Scaffold into the current directory instead of creating a new folder")
 	cmd.Flags().BoolVar(&force, "force", false, "Allow scaffolding into a non-empty directory (use with --here)")
 

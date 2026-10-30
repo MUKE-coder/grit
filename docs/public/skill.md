@@ -37,7 +37,7 @@ Already installed? `grit update` self-updates the CLI. `grit upgrade`, run
 inside a project, brings that project's templates up to the CLI's version, and
 is a different command. Do not confuse them.
 
-Prerequisites: Go 1.21+, Node 20+, pnpm, and Docker if you want Postgres, Redis,
+Prerequisites: Go 1.26+, Node 20+, pnpm, and Docker if you want Postgres, Redis,
 MinIO and Mailhog locally. Full list: https://gritframework.dev/docs/prerequisites
 
 ---

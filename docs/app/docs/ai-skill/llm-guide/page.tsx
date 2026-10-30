@@ -517,14 +517,17 @@ grit migrate`} />
                           one&quot; is a comment rather than a constraint.
                           The admin form renders a single-select dropdown, as belongs_to does.
                         </p>
-                        <CodeBlock language="bash" filename="Example — Profile has one User" code={`# 1. User model already exists (built in)
+                        <CodeBlock language="bash" filename="Example: Author has one User" code={`# 1. User model already exists (built in)
 
-# 2. Generate Profile with a belongs_to to User
-grit generate resource Profile \\
+# 2. Generate Author with a belongs_to to User
+#    (not "Profile": that name belongs to authentication, and the
+#     generator refuses it. grit generate resource names the feature
+#     holding any reserved name it turns down.)
+grit generate resource Author \\
   --fields "bio:text,avatar:file[image],website:string,user:belongs_to[User]"
 
 # For strict one-to-one, add uniqueIndex to the UserID gorm tag in
-# apps/api/internal/models/profile.go, then run grit migrate
+# apps/api/internal/models/author.go, then run grit migrate
 
 grit migrate`} />
                       </div>

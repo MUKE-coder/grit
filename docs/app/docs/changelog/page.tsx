@@ -59,6 +59,89 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.457.0 */}
+            <div className="mb-12" id="v3.457.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.457.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The five-minute tutorial stopped on step two</h3>
+                <p>
+                  Review 2.24. The README builds a helpdesk, and step 2 runs{' '}
+                  <code>grit generate resource Ticket</code>. Grit ships a
+                  support desk, so <code>Ticket</code> is one of about forty
+                  names the generator reserves: it refuses, names the feature
+                  holding it, and the tutorial ends there. The refusal is the
+                  right behaviour; the tutorial was the problem.
+                </p>
+                <p>
+                  It generates <code>Issue</code> now, and every step of it was
+                  run against a fresh project before this shipped: both
+                  resources generate, the later{' '}
+                  <code>grit generate field</code> goes in, and the API builds.
+                </p>
+                <p>
+                  A test now compares the reserved list against every{' '}
+                  <code>grit generate resource</code> in the README, the skill
+                  file and every page of this site. It found a second one the
+                  review had not: the LLM guide, which is what an agent reads
+                  before writing commands on somebody&apos;s behalf, told it to
+                  generate <code>Profile</code>. That name belongs to
+                  authentication.
+                </p>
+
+                <h3>Three dead links in the file that orients you</h3>
+                <p>
+                  Review 2.25. <code>AGENTS.md</code> is in the repository and
+                  its first table pointed at <code>GRIT.md</code>,{' '}
+                  <code>PHASES.md</code> and <code>CLAUDE.md</code>, all three
+                  of which are in <code>.gitignore</code> on purpose. So anybody
+                  who cloned Grit opened the file whose whole job is to orient
+                  them and got three links to nothing.
+                </p>
+                <p>
+                  The table points at things that exist now, and says in one
+                  line what the private ones were for so nobody wonders what
+                  they are missing. A test resolves every link in every{' '}
+                  <code>AGENTS.md</code> against what git tracks, which is the
+                  only check that would have caught this: all three files exist
+                  locally, which is exactly why nobody noticed.
+                </p>
+
+                <h3>Go 1.21, four releases after the floor became 1.26</h3>
+                <p>
+                  Review 2.11. The README and the skill file asked for{' '}
+                  <code>Go 1.21+</code> while the generated{' '}
+                  <code>go.mod</code> pins <code>1.26.10</code>. The pin is
+                  deliberate and stays, for the vulnerability fixes in that
+                  patch release; on an older toolchain Go downloads it, which
+                  works online and fails offline. The number somebody reads
+                  before they start now matches the one they get.
+                </p>
+                <p>
+                  <code>Next.js 14+</code> in the same table was stale the same
+                  way: Next is pinned exactly, because a floor let a one-day-old
+                  release in and broke every generated app.
+                </p>
+
+                <h3>A flag that described a layout from before v3.380.0</h3>
+                <p>
+                  Review 2.21. <code>--single</code> help said &quot;the Go
+                  module at its root, the frontend in{' '}
+                  <code>frontend/</code>&quot;. Scaffolding one and looking: the
+                  frontend is at the root, the Go module is in{' '}
+                  <code>api/</code>, and there is no{' '}
+                  <code>frontend/</code> directory at all.{' '}
+                  <code>--double</code> and <code>--triple</code> said nothing
+                  beyond naming themselves, so they now say what they build.
+                </p>
+              </div>
+            </div>
+
             {/* v3.456.0 */}
             <div className="mb-12" id="v3.456.0">
               <div className="flex items-center gap-3 mb-4">

@@ -15,10 +15,16 @@ rules.
 
 | Document | What it gives you |
 |---|---|
-| [GRIT.md](GRIT.md) | The master specification: what Grit is, its architecture and its folder structure. |
-| [PHASES.md](PHASES.md) | The live remaining-work list. Read it before answering "what's left". |
 | [TERMINOLOGY.md](TERMINOLOGY.md) | One name per thing. Settles the words with two meanings here, and the predicate traps that cost the most. |
 | [API_DESIGN.md](API_DESIGN.md) | The HTTP contract the generated API honours, as a contract. |
+| [docs/](docs/) | The documentation site, which is the specification a user reads. What Grit is, every feature, every command: `cd docs && pnpm dev`, or read it at gritframework.dev. |
+| [the changelog](docs/app/docs/changelog/page.tsx) | Why each change was made, newest first. The fastest way to understand a piece of this codebase is usually to find the release that introduced it. |
+
+The master specification and the phase list are kept out of this repository on
+purpose, so they are not linked here: they carry positioning and planning that
+is not a contributor's business. Nothing in them is needed to make a change
+safely. What is needed is this file, the directory file below, and the docs
+site, which is the same specification written for the people who use Grit.
 
 Then the file for the directory you are editing:
 

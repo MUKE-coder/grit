@@ -21,7 +21,7 @@ The issue tracker is for defects and agreed work.
 
 ## Getting set up
 
-You need Go 1.21+, Node 20+, pnpm and Docker.
+You need Go 1.26+, Node 20+, pnpm and Docker.
 
 ```bash
 git clone https://github.com/MUKE-coder/grit.git

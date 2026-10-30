@@ -38,7 +38,7 @@ Let's build it.
 ## What you'll need
 
 - **Grit v3.54.0+**: `grit update`, then `grit version` to confirm
-- The [Wails](https://wails.io) toolchain (`wails doctor` green), **Go 1.21+**, **Node 18+**, **pnpm**
+- The [Wails](https://wails.io) toolchain (`wails doctor` green), **Go 1.26+**, **Node 18+**, **pnpm**
 - **Docker** (for Postgres: the "online" database the desktop app syncs to)
 - For the installer at the end: **NSIS** on Windows (`winget install NSIS.NSIS`)
 
