@@ -63,7 +63,14 @@ func pluginContext() (plugin.Context, error) {
 	if err != nil {
 		return plugin.Context{}, fmt.Errorf("not inside a Grit project: %w", err)
 	}
+	return pluginContextAt(root)
+}
 
+// pluginContextAt is the same for a project whose root is already known, which
+// is the case when `grit new` installs a plugin into the project it has just
+// written: there is nothing to walk up from, because the working directory is
+// still the one `grit new` was run in.
+func pluginContextAt(root string) (plugin.Context, error) {
 	ctx := plugin.Context{
 		Root:         root,
 		Architecture: "triple",
@@ -660,4 +667,33 @@ func printUpdate(res *plugin.UpdateResult) {
 			fmt.Printf("      %s\n", f)
 		}
 	}
+}
+
+// installMultitenantAt installs the multitenant plugin into a project that has
+// just been scaffolded, for `grit new --multitenant` (grit#62).
+//
+// It goes through plugin.Install, the same call `grit plugin add multitenant`
+// makes, so the flag and the command cannot produce different projects. The
+// dirty-tree check that command makes is deliberately skipped: this project
+// was created a second ago by the process doing the installing, so there is no
+// work of anybody's to lose.
+func installMultitenantAt(root string) error {
+	p, err := plugin.Get("multitenant")
+	if err != nil {
+		return err
+	}
+	ctx, err := pluginContextAt(root)
+	if err != nil {
+		return err
+	}
+	record, err := plugin.Install(ctx, p)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("  ✓ Multi-tenancy added (%d files, %d patches)\n",
+		len(record.Files), len(record.Injections))
+	fmt.Println("    Models are shared until you say otherwise: add tenant.Owned to")
+	fmt.Println("    the ones that belong to an organization, or generate them with")
+	fmt.Println("    --tenant-owned. Clients send the active org as X-Organization-ID.")
+	return nil
 }

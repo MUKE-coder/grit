@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.447.0"
+var version = "3.448.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -154,7 +154,7 @@ after a major framework upgrade to refresh the rules.`,
 func newCmd() *cobra.Command {
 	// New architecture/frontend flags
 	var archFlag, frontendFlag, style, theme, dbProvider string
-	var inPlace, force, includeDesktop, withI18n bool
+	var inPlace, force, includeDesktop, withI18n, withMultitenant bool
 
 	// Legacy flags (backward compatibility)
 	var apiOnly, includeExpo, mobileOnly, full bool
@@ -303,6 +303,20 @@ func newCmd() *cobra.Command {
 					len(res.Written), len(res.Wired))
 			}
 
+			// Multi-tenancy, by the same route `grit plugin add multitenant`
+			// takes. Before the access table is read, so the organization
+			// routes are in it on a brand new project (grit#62).
+			if withMultitenant {
+				root := projectName
+				if inPlace {
+					root = "."
+				}
+				if err := installMultitenantAt(root); err != nil {
+					color.Red("\n  Error adding multi-tenancy: %v\n", err)
+					return err
+				}
+			}
+
 			// The access table is read out of the route files, which exist only
 			// now that the scaffold is on disk. Without this the routes screen
 			// has no access column on a brand new project, which is the first
@@ -338,6 +352,10 @@ func newCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app")
 	cmd.Flags().BoolVar(&includeDesktop, "desktop", false, "Include a Wails desktop app that shares the monorepo API")
 	cmd.Flags().BoolVar(&withI18n, "i18n", false, "Add internationalisation (next-intl, translated API messages, en/fr/sw)")
+	cmd.Flags().BoolVar(&withMultitenant, "multitenant", false,
+		"Add multi-tenancy: organizations, memberships, per-organization roles, "+
+			"and query scoping for the models you mark tenant.Owned. The same as "+
+			"running grit plugin add multitenant afterwards")
 
 	// Shorthand frontend flags
 	cmd.Flags().Bool("vite", false, "Shorthand for --frontend=vite (TanStack Router)")

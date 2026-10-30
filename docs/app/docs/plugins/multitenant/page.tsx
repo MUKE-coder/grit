@@ -221,6 +221,21 @@ curl -X POST https://api.example.com/api/v1/organizations/01H.../members \\
               <code>grit doctor</code> reminds you when both are present.
             </p>
 
+            <h2>Adding it</h2>
+            <p>
+              <code>grit new &lt;name&gt; --multitenant</code> at scaffold time, or{' '}
+              <code>grit plugin add multitenant</code> in a project that already exists. Both go
+              through the same install, so they write the same project.
+            </p>
+            <p>
+              Either way, nothing is scoped until you say which models are owned. Add{' '}
+              <code>tenant.Owned</code> to a model, or generate it with{' '}
+              <code>--tenant-owned</code>. That is deliberate: putting <code>org_id</code> on
+              every table is a schema decision no framework should make for you, and a model
+              that is shared on purpose (a currency table, a country list) would be the thing
+              it broke.
+            </p>
+
             <h2>An organization has roles of its own</h2>
             <p>
               A role&apos;s name is unique per owner, not across the platform, so two customers

@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 61,
+    count: 62,
     entries: [
+      { version: "3.448.0", title: "grit new --multitenant" },
       { version: "3.447.0", title: "An import could not skip a row that was already there" },
       { version: "3.446.0", title: "A webhook secret that differs per tenant" },
       { version: "3.445.0", title: "An import resolved an owner against every user on the platform" },

@@ -59,6 +59,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.448.0 */}
+            <div className="mb-12" id="v3.448.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.448.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit new --multitenant</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/62">#62</a>.
+                  Everything the flag needs has existed since the multitenant
+                  plugin did: organizations, memberships, the middleware, the
+                  scoping callbacks, and per-organization roles since v3.442.0.
+                  What was missing is the flag, so the way in was to scaffold
+                  and then remember a second command, and the reporter had six
+                  starter kits that need it from the first one.
+                </p>
+                <CodeBlock language="bash" code={`grit new acme --triple --next --multitenant`} />
+                <p>
+                  Installed by calling the same function{' '}
+                  <code>grit plugin add multitenant</code> calls, the way{' '}
+                  <code>--i18n</code> calls <code>AddI18n</code>. Two code paths
+                  that write the same project are how they start writing
+                  different ones, which this codebase has learned more than
+                  once.
+                </p>
+                <p>
+                  It runs before the access table is read out of the route
+                  files, so the nine organization routes are in it on a brand
+                  new project rather than appearing only after the next{' '}
+                  <code>grit generate</code>.
+                </p>
+                <p>
+                  Models stay shared until you say otherwise, which is the one
+                  thing the original request asked to be automatic and Grit
+                  deliberately does not do. Putting <code>org_id</code> on every
+                  table is a schema decision no framework should make on your
+                  behalf: add <code>tenant.Owned</code> to the models that
+                  belong to an organization, or generate them with{' '}
+                  <code>--tenant-owned</code>. The flag says so when it
+                  finishes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.447.0 */}
             <div className="mb-12" id="v3.447.0">
               <div className="flex items-center gap-3 mb-4">
