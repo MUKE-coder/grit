@@ -299,6 +299,12 @@ func (g *Generator) Run() error {
 		fmt.Printf("\n  Continuing parent resource: %s\n\n", names.Pascal)
 	}
 
+	// Before the model is written, because afterwards the old field list is
+	// gone. A regenerate with fewer fields than last time is legitimate and is
+	// not refused; it is also the thing nobody notices, because the output of
+	// the second run looks exactly like the output of the first (review 2.23).
+	g.reportDroppedFields(names)
+
 	// 1. Create new Go files
 	if err := g.writeGoModel(names); err != nil {
 		return fmt.Errorf("writing Go model: %w", err)

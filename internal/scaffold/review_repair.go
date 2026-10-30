@@ -248,8 +248,8 @@ func scrubEnvExample(root string) error {
 	}
 	out := generatedSecret.ReplaceAllString(src, "${1}=CHANGE_ME${2}")
 	out = encryptionKeyLine.ReplaceAllString(out, "${1}=CHANGE_ME${2}")
-	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
-		return fmt.Errorf("writing .env.example: %w", err)
+	if err := writeRepaired(path, out); err != nil {
+		return err
 	}
 	fmt.Printf("  ✓ .env.example: %d generated %s replaced with CHANGE_ME\n", found, plural(found, "secret", "secrets"))
 	fmt.Println("    They are the values in .env. If .env.example was ever committed or shared, rotate them.")
@@ -290,8 +290,8 @@ func ignoreLocalDatabases(root string) error {
 	if src != "" && !strings.HasSuffix(src, "\n") {
 		src += nl
 	}
-	if err := os.WriteFile(path, []byte(src+nl+block), 0o644); err != nil {
-		return fmt.Errorf("writing .gitignore: %w", err)
+	if err := writeRepaired(path, src+nl+block); err != nil {
+		return err
 	}
 	fmt.Println("  ✓ .gitignore: local databases (*.db, *.sqlite) are ignored")
 	fmt.Println("    A database already committed stays in history until you git rm --cached it.")

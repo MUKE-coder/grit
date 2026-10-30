@@ -29,7 +29,7 @@ const (
 	// What projects written before v3.395.0 have. Kept so the repairs below
 	// still recognise a config they wrote, and so an upgrade can replace it.
 	nextAPIOriginLineOld = "const API_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_API_URL || \"http://localhost:8080\");\n"
-	nextAPIWSOrigin   = `// The realtime socket is the API origin over ws: or wss:. A CSP source matches
+	nextAPIWSOrigin      = `// The realtime socket is the API origin over ws: or wss:. A CSP source matches
 // its scheme exactly, so API_ORIGIN does not admit it, and without this the
 // browser blocks every live update once the dev-only ws: wss: below is gone.
 const API_WS_ORIGIN = API_ORIGIN.replace(/^http/, "ws");
@@ -176,8 +176,8 @@ func ignoreBuildArtefacts(root string) error {
 	if src != "" && !strings.HasSuffix(src, "\n") {
 		src += nl
 	}
-	if err := os.WriteFile(path, []byte(src+nl+block), 0o644); err != nil {
-		return fmt.Errorf("writing .gitignore: %w", err)
+	if err := writeRepaired(path, src+nl+block); err != nil {
+		return err
 	}
 	fmt.Printf("  ✓ .gitignore: %s ignored\n", strings.Join(missing, ", "))
 	fmt.Println("    One already committed stays tracked until you git rm --cached it.")

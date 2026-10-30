@@ -2,7 +2,6 @@ package scaffold
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -225,7 +224,11 @@ func repairDeployHardening(root string, opts Options) error {
 	}
 	if dockerfile := filepath.Join(apiRoot, "Dockerfile"); fileExists(dockerfile) {
 		if path := filepath.Join(apiRoot, ".dockerignore"); !fileExists(path) {
-			if err := os.WriteFile(path, []byte(apiDockerIgnore), 0o644); err != nil {
+			// writeFile, not a raw write: this is a whole framework-owned file
+			// arriving, so it goes through the upgrade guard and the manifest
+			// records it. Written raw, it would read as hand-edited from the
+			// moment it landed and never receive another fix (review 2.5).
+			if err := writeFile(path, apiDockerIgnore); err != nil {
 				return err
 			}
 			fmt.Println("  ✓ apps/api/.dockerignore keeps local databases, .env files and binaries out of the API image")

@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.453.0"
+var version = "3.454.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1725,6 +1725,14 @@ func upgradeCmd() *cobra.Command {
 			// how the Stripe plugin could learn to record what a renewal
 			// charged and no existing shop could have it.
 			upgradeInstalledPlugins()
+
+			// The access table, now that every route exists. Read out of the route
+			// files, so it has to come after the three steps above that add routes:
+			// written at the end of Upgrade it recorded 219 routes for a project
+			// with 225, and the routes screen and grit add scout both read it.
+			if root, err := os.Getwd(); err == nil {
+				scaffold.RegenerateAccessTable(root)
+			}
 
 			// Last, because a plugin update rewrites routes.go and this is the
 			// one check that catches an upgrade which has left the project not

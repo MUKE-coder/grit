@@ -129,8 +129,8 @@ func ensureDependency(path, name, version string) (bool, error) {
 	if rest := strings.TrimLeft(src[at:], " \t\r\n"); !strings.HasPrefix(rest, "}") {
 		entry += ","
 	}
-	if err := os.WriteFile(path, []byte(src[:at]+entry+src[at:]), 0o644); err != nil {
-		return false, fmt.Errorf("writing %s: %w", path, err)
+	if err := writeRepaired(path, src[:at]+entry+src[at:]); err != nil {
+		return false, err
 	}
 	return true, nil
 }

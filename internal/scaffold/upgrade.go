@@ -10,7 +10,6 @@ import (
 
 	"github.com/fatih/color"
 
-	"github.com/MUKE-coder/grit/v3/internal/accessgen"
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
@@ -517,6 +516,21 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBenchTestGo(root, opts); err != nil {
 			fmt.Printf("  ⚠ fixing the handler benchmarks: %v\n", err)
 		}
+		// The CORS allow list becomes a list with AllowRequestHeader, so the
+		// header a plugin introduces arrives with the file that reads it instead
+		// of being a line somebody has to remember to add.
+		//
+		// BEFORE repairReportedBugs, and that ordering is the whole point: that
+		// repair inserts If-Match into this list and adds the exposed-headers
+		// block beside it, and it used to run 350 lines earlier, when the list did
+		// not exist yet. So it did nothing, the list was then built without
+		// If-Match, and an upgraded project silently lost optimistic locking from
+		// the browser: the bug grit#124 was filed for, reintroduced by the upgrade
+		// that was meant to carry its fix. A second grit upgrade fixed it, which
+		// is how the idempotency harness in ci.yml found it (review 2.5).
+		if err := repairCORSHeaderList(root, opts); err != nil {
+			fmt.Printf("  ⚠ making the CORS allow list extensible: %v\n", err)
+		}
 		// Bugs reported against projects in the field: optimistic locking that
 		// no browser could use, downloads answering 404 with the file in the
 		// body, a Message-ID the SMTP driver threw away, and a sequence that
@@ -866,12 +880,6 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairTrashRoutes(root, opts); err != nil {
 			fmt.Printf("  ⚠ wiring the trash routes: %v\n", err)
 		}
-		// The CORS allow list becomes a list with AllowRequestHeader, so the
-		// header a plugin introduces arrives with the file that reads it
-		// instead of being a line somebody has to remember to add.
-		if err := repairCORSHeaderList(root, opts); err != nil {
-			fmt.Printf("  ⚠ making the CORS allow list extensible: %v\n", err)
-		}
 		// The port is bound before the database and the routes, so a port
 		// already in use is the first thing printed rather than one line after
 		// the route dump, and in development a previous build that should have
@@ -924,9 +932,6 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := repairFieldTypes(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding the field type checks: %v\n", err)
-		}
-		if err := repairCORSHeaderList(root, opts); err != nil {
-			fmt.Printf("  ⚠ making the CORS allow list extensible: %v\n", err)
 		}
 		// The port is bound before the database and the routes, so a port
 		// already in use is the first thing printed rather than one line after
@@ -1404,17 +1409,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 	}
 	fmt.Println()
 
-	// The access table: what each route demands of a caller, read out of the
-	// route files because the running process cannot work it out. An upgrade
-	// is the one moment a project that has never had this table gets one, and
-	// the one moment a repaired routes.go could have changed it.
-	if res, err := accessgen.Generate(root); err != nil {
-		spinner.Printf("  ! the access table could not be regenerated: %v\n", err)
-		spinner.Printf("    the routes screen will show access as unknown until it is\n")
-	} else if res.Changed {
-		green.Printf("  ✓ %s covers %d routes, so the routes screen can show what each one needs\n",
-			res.Path, res.Routes)
-	}
+	// The access table is NOT written here. It is read out of the route files,
+	// and three steps that add routes run after this function returns: the
+	// money repair, which adds the grid's bulk-create and bulk-edit routes, the
+	// write-checks repair, and the plugin update, which rewrites routes.go
+	// outright. Written here it recorded 219 routes for a project that has 225,
+	// and that table is what the routes screen reads and what grit add scout
+	// hands the scanner, so those routes were invisible to both. See
+	// RegenerateAccessTable, called from the command after the last write
+	// (review 2.5).
 
 	spinner.Println("  Note: Resource definitions and API code were preserved.")
 	spinner.Println("  Run 'grit sync' to regenerate TypeScript types from Go models.")

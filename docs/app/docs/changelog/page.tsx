@@ -59,6 +59,143 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.454.0 */}
+            <div className="mb-12" id="v3.454.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.454.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An injection could launder your edit into Grit&apos;s</h3>
+                <p>
+                  Review 2.6. The manifest exists so <code>grit upgrade</code>{' '}
+                  can overwrite the files nobody has touched and leave the rest
+                  alone. <code>manifest.Refresh</code> re-hashes a file after
+                  Grit injects into it, which is right: adding a route to{' '}
+                  <code>routes.go</code> is an edit Grit made, and without it
+                  every injected file would read as hand-edited from then on.
+                </p>
+                <p>
+                  It was wrong when the file had <strong>already</strong> been
+                  edited. Change <code>routes.go</code>, run{' '}
+                  <code>grit generate resource</code>, and the injection
+                  recorded your work as Grit&apos;s; the next upgrade saw an
+                  untouched file and overwrote it without a word. The one thing
+                  the manifest is for.
+                </p>
+                <p>
+                  Fixed inside <code>Refresh</code> rather than at its
+                  thirty-seven call sites, because the answer it needs is the
+                  status before the write and that is gone by the time it runs.
+                  A session now records which tracked files were already edited
+                  when the command started, and <code>Refresh</code> declines to
+                  re-hash those. One pass over the project&apos;s own source at
+                  startup, 829 files and 4.9 MB in a real project, against a
+                  command that writes thirty files and runs gofmt.
+                </p>
+
+                <h3>grit upgrade is now run twice in CI, and diffed</h3>
+                <p>
+                  Review 2.5. &quot;A repair is idempotent or it is a bug&quot;
+                  is rule 8 in the scaffold&apos;s own AGENTS.md, and across
+                  ninety-six repair passes it was enforced by convention alone.
+                  A repair that appends on every run, or rewrites a line it
+                  rewrote last time, is invisible to every other test: the
+                  project still builds, the tests still pass, and a file quietly
+                  grows a duplicate block per upgrade.
+                </p>
+                <p>
+                  CI now upgrades the checked-in <code>examples/library</code>{' '}
+                  once, upgrades a second copy twice, and diffs them. It found
+                  two real bugs on its first run, and neither was cosmetic.
+                </p>
+
+                <h4>Upgrading removed optimistic locking from the browser</h4>
+                <p>
+                  The repair that adds <code>If-Match</code> to the CORS allow
+                  list and exposes <code>ETag</code> ran 350 lines before the
+                  repair that turns the old string literal into that list. So on
+                  a project from before the list shape it found nothing to
+                  insert into and did nothing, the list was then built without{' '}
+                  <code>If-Match</code>, and the upgrade reported success.
+                </p>
+                <p>
+                  A browser on another origin then could not use optimistic
+                  locking at all: the preflight stripped the header it needed to
+                  send, and <code>ETag</code> was invisible to{' '}
+                  <code>fetch()</code> so it had no version to send anyway. That
+                  is grit#124, reintroduced by the upgrade meant to carry its
+                  fix. Running <code>grit upgrade</code> a second time fixed it,
+                  which is exactly why nobody had noticed.
+                </p>
+
+                <h4>The access table was six routes short</h4>
+                <p>
+                  <code>internal/access/registry.go</code> is read out of the
+                  route files, and it was written at the end of the upgrade.
+                  Three steps that add routes run after that: the money repair,
+                  which adds the grid&apos;s bulk-create and bulk-edit routes,
+                  the write-checks repair, and the plugin update, which rewrites{' '}
+                  <code>routes.go</code> outright.
+                </p>
+                <p>
+                  So an upgraded project recorded 219 routes where it has 225.
+                  That table is what the admin&apos;s routes screen reads and
+                  what <code>grit add scout</code> hands the scanner, so six
+                  routes were invisible to both. It is now written after the last
+                  thing that writes code, in the same place and for the same
+                  reason as the build check.
+                </p>
+
+                <h3>Eleven repairs wrote behind the manifest</h3>
+                <p>
+                  The other half of 2.5. Most repairs go through one helper that
+                  checks the manifest before writing and refreshes it after.
+                  Eleven used <code>os.WriteFile</code> and told the manifest
+                  nothing, which cost in both directions: the file read as
+                  hand-edited afterwards, so every later framework fix to it was
+                  skipped, and nothing consulted the upgrade guard. A repair
+                  poisoned the file it fixed.
+                </p>
+                <p>
+                  There are now two helpers, one for editing a file that exists
+                  and one for a whole framework-owned file arriving, and a test
+                  that scans all ninety-six repair files and names any that
+                  write around them. A convention with a hundred call sites is
+                  enforced by a test or it is not enforced.
+                </p>
+
+                <h3>A regenerate says which columns it stops reading</h3>
+                <p>
+                  Review 2.23. A model somebody has edited is refused rather
+                  than overwritten, which is the good half. The unedited case is
+                  the likelier one: you generate <code>Contact</code> with name,
+                  email and company, and a week later run the same command from
+                  your shell history with name alone, because that is the line
+                  you still have. The model was rewritten with one field and
+                  nothing said so, because the output of the second run looks
+                  exactly like the output of the first.
+                </p>
+                <CodeBlock language="text" code={`$ grit generate resource Widget --fields "name:string"
+
+  ! This regenerate stops reading 2 columns: Price, Qty
+    They are still in the database with their data, because migrations
+    are additive. Nothing in the API, the admin or the types will read
+    them after this. If that is not what you meant, the previous model
+    is in git, and the field list to pass is the one in it.`} />
+                <p>
+                  Not a refusal: regenerating with fewer fields is a legitimate
+                  thing to do and the files are in git. The framework&apos;s own
+                  columns are never named, because no definition mentions them
+                  and a warning that fires on every run is a warning nobody
+                  reads.
+                </p>
+              </div>
+            </div>
+
             {/* v3.453.0 */}
             <div className="mb-12" id="v3.453.0">
               <div className="flex items-center gap-3 mb-4">

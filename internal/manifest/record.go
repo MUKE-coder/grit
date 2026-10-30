@@ -21,6 +21,17 @@ var recording struct {
 	grit      string
 	generator string
 	active    bool
+
+	// edited is every tracked file that was already hand-edited when this
+	// session began, by project-relative key.
+	//
+	// Taken once, at the start, because that is the only moment the answer is
+	// knowable: Refresh runs after the write, when the bytes on disk are the
+	// ones Grit just put there and an edit is indistinguishable from an
+	// injection. Without it, injecting into a file somebody had edited
+	// re-hashed it as pristine and the next upgrade overwrote their work
+	// (review 2.6).
+	edited map[string]bool
 }
 
 // Start begins recording every write under root as having been made by
@@ -53,12 +64,17 @@ func Start(root, gritVersion, generator string) (release func() error, err error
 		return func() error { return nil }, loadErr
 	}
 
+	// Before anything is written, while "has somebody edited this" still has
+	// an answer. See recording.edited.
+	edited := editedFiles(root, m)
+
 	recording.mu.Lock()
 	recording.manifest = m
 	recording.root = root
 	recording.grit = gritVersion
 	recording.generator = generator
 	recording.active = true
+	recording.edited = edited
 	recording.mu.Unlock()
 
 	return Stop, nil
@@ -111,11 +127,53 @@ func Refresh(absPath string) {
 	if !tracked {
 		return
 	}
+	// Already edited when this command started, so its hash stays as it was
+	// and the file keeps reading as modified. The injection still happened and
+	// the project still works; what does not happen is the next upgrade
+	// deciding the file is Grit's and overwriting it (review 2.6).
+	if recording.edited[Key(rel)] {
+		return
+	}
 	data, err := os.ReadFile(absPath)
 	if err != nil {
 		return
 	}
 	recording.manifest.Record(rel, existing.Generator, recording.grit, string(data))
+}
+
+// WasEditedBeforeThisCommand reports whether a tracked file had already been
+// hand-edited when the current command started.
+//
+// For a caller that wants to say so rather than only avoid making it worse: an
+// injection into somebody's edited file is worth a line of output, and after
+// the write there is no other way to tell.
+func WasEditedBeforeThisCommand(absPath string) bool {
+	recording.mu.Lock()
+	defer recording.mu.Unlock()
+	if !recording.active {
+		return false
+	}
+	rel, inside := Rel(recording.root, absPath)
+	if !inside {
+		return false
+	}
+	return recording.edited[Key(rel)]
+}
+
+// editedFiles is every tracked file whose bytes on disk are not the bytes Grit
+// last wrote there.
+//
+// Missing and untracked files are not in it: a file Grit wrote and somebody
+// deleted is not an edit to preserve, and a file Grit never wrote is not
+// Refresh's business anyway.
+func editedFiles(root string, m *Manifest) map[string]bool {
+	edited := make(map[string]bool)
+	for rel := range m.Files {
+		if m.StatusOf(root, rel) == Modified {
+			edited[Key(rel)] = true
+		}
+	}
+	return edited
 }
 
 // IsUnchanged reports whether a tracked file still holds exactly what Grit last
@@ -201,6 +259,10 @@ func Stop() error {
 	m, root, grit, active := recording.manifest, recording.root, recording.grit, recording.active
 	recording.active = false
 	recording.manifest = nil
+	// The snapshot belongs to the session that took it. Left behind, the next
+	// Start in the same process (a test, or a command that runs two
+	// generators) would read one project's edits against another's files.
+	recording.edited = nil
 	recording.mu.Unlock()
 
 	if !active || m == nil {

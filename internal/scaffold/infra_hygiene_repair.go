@@ -265,8 +265,8 @@ func ensureExpoMinioBind(root string, opts Options) error {
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(path, []byte(src+add), info.Mode().Perm()); err != nil {
-			return fmt.Errorf("writing %s: %w", path, err)
+		if err := writeRepairedMode(path, src+add, info.Mode().Perm()); err != nil {
+			return err
 		}
 		fmt.Printf("  ✓ %s: added MINIO_BIND_ADDRESS=0.0.0.0, so the Expo app still loads images now that MinIO defaults to 127.0.0.1\n", name)
 	}

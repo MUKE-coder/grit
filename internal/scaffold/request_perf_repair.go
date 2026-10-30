@@ -2,7 +2,6 @@ package scaffold
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -439,7 +438,10 @@ func repairRequestPerformance(root string, opts Options) error {
 		return nil
 	}
 	if bucket := filepath.Join(services, "day_bucket.go"); !fileExists(bucket) {
-		if err := os.WriteFile(bucket, []byte(servicesDayBucketGo()), 0o644); err != nil {
+		// writeFile, not a raw write: a whole framework-owned file arriving
+		// goes through the upgrade guard and is recorded, or it reads as
+		// hand-edited forever after (review 2.5).
+		if err := writeFile(bucket, servicesDayBucketGo()); err != nil {
 			return err
 		}
 	}

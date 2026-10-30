@@ -142,8 +142,8 @@ func repairAirKillSettings(root string, opts Options) error {
 	if crlf {
 		out = strings.ReplaceAll(out, "\n", "\r\n")
 	}
-	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
-		return fmt.Errorf("writing %s: %w", path, err)
+	if err := writeRepaired(path, out); err != nil {
+		return err
 	}
 	if rel, rerr := filepath.Rel(root, path); rerr == nil {
 		fmt.Printf("  ✓ %s: %s\n", filepath.ToSlash(rel), fixed[0])

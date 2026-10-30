@@ -132,7 +132,7 @@ func restoreRegistry(index string) ([]string, error) {
 	if crlf {
 		src = strings.ReplaceAll(src, "\n", "\r\n")
 	}
-	if err := os.WriteFile(index, []byte(src), 0o644); err != nil {
+	if err := writeRepaired(index, src); err != nil {
 		return nil, err
 	}
 	manifest.Refresh(index)

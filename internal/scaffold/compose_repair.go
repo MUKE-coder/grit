@@ -154,8 +154,8 @@ func repairTextFile(root string, m *manifest.Manifest, path string, fn func(stri
 	if crlf {
 		out = strings.ReplaceAll(out, "\n", "\r\n")
 	}
-	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
-		return fmt.Errorf("writing %s: %w", path, err)
+	if err := writeRepaired(path, out); err != nil {
+		return err
 	}
 	if pristine {
 		manifest.Refresh(path)
