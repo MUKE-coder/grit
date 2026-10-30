@@ -27,6 +27,53 @@ export default function MigrationsPage() {
             </div>
 
             <div className="prose-grit">
+              {/* What this is not */}
+              <div className="mb-12">
+                <h2 id="additive-only" className="text-2xl font-semibold tracking-tight mb-4">
+                  What migrations here do not do
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Grit migrates with GORM&apos;s <code>AutoMigrate</code> plus a
+                  snapshot history of its own, and the whole thing is{' '}
+                  <strong>additive</strong>. It adds tables, adds columns, adds
+                  indexes and constraints. It does not take anything away, and
+                  that is deliberate: a migration that can drop a column is a
+                  migration that can drop a column by accident.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Worth knowing before you plan a schema change rather than
+                  after. None of the following happens, and none of it fails
+                  loudly either:
+                </p>
+                <ul className="space-y-2.5 mb-4">
+                  {[
+                    ['Renaming a column', 'Rename the field and you get a new column beside the old one, with the data still in the old one. Both exist; only the new one is read.'],
+                    ['Changing a column type', 'Left as it is. The model says one thing and the column is another, and the mismatch shows up as a scan error at runtime.'],
+                    ['Dropping a column or table', 'Never. A field you delete from the model leaves its column behind, and grit generate tells you which columns it has stopped reading.'],
+                    ['Moving data', 'There is no place to put a backfill, an UPDATE or a split of one column into two. Those are code you write and run yourself.'],
+                    ['CREATE INDEX CONCURRENTLY', 'An index is added with a plain CREATE INDEX, which takes a lock. On a large busy table that is an outage, not a migration: add it by hand, concurrently, outside the deploy.'],
+                  ].map(([what, detail]) => (
+                    <li key={what} className="text-[14px] leading-relaxed">
+                      <span className="text-foreground font-medium">{what}.</span>{' '}
+                      <span className="text-muted-foreground">{detail}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  For most applications that is the right trade, and it is why
+                  the deploy can run migrations without anybody watching. When
+                  you need one of the five, write the SQL and run it
+                  deliberately, or put{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">golang-migrate</code> or{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">goose</code>{' '}
+                  alongside GORM for the changes that need ordering and a down
+                  step. In development,{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit migrate --fresh</code>{' '}
+                  drops everything and starts again, which is the fastest way
+                  through a type change on a database you do not mind losing.
+                </p>
+              </div>
+
               {/* Mental model / diagram */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
@@ -559,15 +606,13 @@ grit migrate down --yes       # the table goes; the rest of the schema stays`}
                   ))}
                 </ul>
 
-                <div className="p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-yellow-500/90">Note:</strong> AutoMigrate is great for development and simple schemas.
-                    For production systems that need column renaming, type changes, or data migrations,
-                    consider using a dedicated migration tool like{' '}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">golang-migrate</code> or{' '}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">goose</code> alongside GORM.
-                    Use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--fresh</code> during
-                    development if you need to change column types.
+                <div className="p-4 rounded-lg border border-border/40 bg-surface-2/40">
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-0">
+                    What this cannot do, and what to reach for instead, is in{' '}
+                    <a href="#additive-only" className="text-accent hover:underline">
+                      What migrations here do not do
+                    </a>{' '}
+                    above.
                   </p>
                 </div>
               </div>

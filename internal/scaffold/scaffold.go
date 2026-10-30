@@ -73,16 +73,48 @@ type Options struct {
 	// so a file that asks whether a model exists gets "no" for every project
 	// Grit creates. See removed_resources.go.
 	Upgrading bool
-	Full        bool
+	Full      bool
 }
 
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.457.0"
+const DefaultVersion = "3.458.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
+// tidyFailed says what did not resolve and what to run, in one place so the
+// monorepo and the single say the same thing.
+//
+// Printed rather than returned (review 2.12). Said at the end as well as here,
+// because by the time the scaffold finishes this line has scrolled past a
+// hundred others, and the person reading is about to run a command that will
+// fail for a reason they were told about a minute ago.
+func tidyFailed(apiDir string, err error) {
+	warnings := color.New(color.FgYellow)
+	warnings.Printf("  \u26a0 could not resolve Go dependencies: %v\n", err)
+	warnings.Printf("    The project is complete apart from go.sum. With a network, run:\n")
+	warnings.Printf("      cd %s && go mod tidy\n", apiDir)
+	tidyPending = apiDir
+}
+
+// tidyPending is the directory whose dependencies did not resolve, for the
+// summary to repeat at the end. Empty when everything resolved.
+//
+// Process-wide, like the rest of this package's reporting: one scaffold runs
+// per process, and threading a result through forty writers to carry one
+// string would be a change larger than the message.
+var tidyPending string
+
+// DependenciesPending is the API directory whose `go mod tidy` failed, or ""
+// when it succeeded. The command prints it in Next steps, because by the end
+// of a scaffold the warning has scrolled past a hundred lines (review 2.12).
+func DependenciesPending() string { return tidyPending }
+
+// ResetDependenciesPending clears it. Called before a scaffold, so a second
+// one in the same process does not inherit the first one's failure.
+func ResetDependenciesPending() { tidyPending = "" }
+
 func (o *Options) Normalize() {
 	if o.Version == "" {
 		o.Version = DefaultVersion
@@ -428,6 +460,9 @@ func ensureTargetDirectory(root string, inPlace bool, force bool) error {
 // Run executes the full scaffolding process.
 func Run(opts Options) error {
 	opts.Normalize()
+	// A second scaffold in the same process must not inherit the first one's
+	// dependency failure. One command scaffolds once, but the tests do not.
+	ResetDependenciesPending()
 
 	// Dispatch to single app scaffold if applicable
 	if opts.Architecture == ArchSingle {
@@ -607,7 +642,17 @@ func Run(opts Options) error {
 	steps.Start("Go dependencies")
 	apiDir := filepath.Join(root, "apps", "api")
 	if err := goModTidy(apiDir, steps); err != nil {
-		return err
+		// Reported, not fatal. This used to return, and returning here leaves
+		// 441 files of 731 on disk: no Docker, no shared package, no web, no
+		// admin, nothing cleaned up, and the full `grit new` usage block
+		// printed under the error. A half-written project is worse than either
+		// outcome, because it looks like a project (review 2.12).
+		//
+		// The common cause is no network on a cold module cache, which is a
+		// condition of the machine rather than of the project. Everything
+		// below this line is files, so it all still works, and the one thing
+		// missing is a go.sum that one printed command produces.
+		tidyFailed(apiRelPath(root, opts), err)
 	}
 
 	// Write Docker files
@@ -736,6 +781,11 @@ func Run(opts Options) error {
 // RunSingle executes the single-app scaffolding process.
 // Single app: Go API + embedded React SPA, one binary, no Turborepo.
 func RunSingle(opts Options) error {
+	// Run resets this before dispatching here, but RunSingle is also called
+	// directly, and a stale pending directory would be reported against a
+	// project that resolved fine.
+	ResetDependenciesPending()
+
 	root := opts.ProjectName
 	if opts.InPlace {
 		root = "."
@@ -906,7 +956,10 @@ func RunSingle(opts Options) error {
 	// same reason the triple does: see go_deps.go.
 	steps.Start("Go dependencies")
 	if err := goModTidy(opts.APIRoot(root), steps); err != nil {
-		return err
+		// Reported, not fatal, for the reason spelled out in the monorepo
+		// path above: everything after this is files, and a project missing
+		// only its go.sum is a project (review 2.12).
+		tidyFailed(apiRelPath(root, opts), err)
 	}
 
 	// Write Docker files

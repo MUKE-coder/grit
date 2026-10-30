@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.457.0"
+var version = "3.458.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -149,12 +149,15 @@ func initCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Write CLAUDE.md / AGENTS.md framework convention docs to the project root",
-		Long: `Write the framework's hard-rules documentation as CLAUDE.md and AGENTS.md
-in the current directory. Both files have the same content — different LLM
+		Long: `Write the framework's hard-rules documentation into CLAUDE.md and AGENTS.md
+in the current directory. Both files get the same content: different LLM
 tooling looks for different filenames.
 
-Skips files that already exist unless --force is passed. Re-run with --force
-after a major framework upgrade to refresh the rules.`,
+Grit owns one marked section of each file and nothing outside it, so anything
+you have written in them is kept and this is safe to re-run. A file with no
+marked section yet gets the block appended below what is already there.
+
+--force replaces the whole file, including everything you wrote.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
@@ -165,7 +168,7 @@ after a major framework upgrade to refresh the rules.`,
 				return err
 			}
 			if len(written) == 0 {
-				fmt.Println("\n  CLAUDE.md and AGENTS.md already exist: re-run with --force to overwrite.")
+				fmt.Println("\n  CLAUDE.md and AGENTS.md already hold these conventions: nothing to do.")
 				return nil
 			}
 			fmt.Println()
@@ -177,7 +180,8 @@ after a major framework upgrade to refresh the rules.`,
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&force, "force", false, "Overwrite existing files")
+	cmd.Flags().BoolVar(&force, "force", false,
+		"Replace the whole file, including anything you wrote in it. Not needed to refresh the conventions: that is a merge")
 	return cmd
 }
 
@@ -2582,6 +2586,12 @@ func printSuccess(name string, opts scaffold.Options, took time.Duration) {
 	steps := []step{}
 	if !opts.InPlace {
 		steps = append(steps, step{"cd " + name, ""})
+	}
+	// First, when it applies, because everything below it needs a go.sum and
+	// will fail without one. The scaffold already said this where it happened;
+	// that line is a hundred lines up by now (review 2.12).
+	if dir := scaffold.DependenciesPending(); dir != "" {
+		steps = append(steps, step{"go mod tidy", "in " + dir + ": this did not resolve, and the rest needs it"})
 	}
 	if opts.DBProvider == "postgres" || opts.DBProvider == "mysql" {
 		// Only worth saying when something actually has to be started: with

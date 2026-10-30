@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // WriteAgentsDoc writes CLAUDE.md and AGENTS.md to the project root.
@@ -13,20 +14,93 @@ import (
 //
 // If a file already exists, it's skipped unless force is true. Returns
 // the list of paths written for the CLI to print back.
+// Markers around the part Grit owns.
+//
+// Review 2.27: --force used to replace the whole file. CLAUDE.md is where a
+// project keeps its own instructions for whoever works on it, and refreshing a
+// list of framework rules is not a reason to delete them.
+//
+// HTML comments because they are invisible in every Markdown renderer and
+// every tool that reads these files, so the section reads as part of the
+// document rather than as machinery.
+const (
+	agentsDocStart = "<!-- grit:conventions:start -->"
+	agentsDocEnd   = "<!-- grit:conventions:end -->"
+)
+
+// WriteAgentsDoc writes Grit's conventions into CLAUDE.md and AGENTS.md,
+// keeping whatever else those files hold.
+//
+// Grit owns the marked section and nothing outside it, so re-running this is
+// safe and needs no flag. Three cases, none of which loses anything:
+//
+//   - no file: write it, markers and all
+//   - markers present: replace between them
+//   - no markers: append the marked block below what is there
+//
+// force replaces the whole file, which is what a destructive flag should mean
+// and is now the only thing it means.
 func WriteAgentsDoc(root string, force bool) ([]string, error) {
-	content := agentsDocContent()
+	block := agentsDocStart + "\n" + agentsDocContent() + "\n" + agentsDocEnd + "\n"
 	written := []string{}
 	for _, name := range []string{"CLAUDE.md", "AGENTS.md"} {
 		path := filepath.Join(root, name)
-		if _, err := os.Stat(path); err == nil && !force {
-			continue
+
+		existing, err := os.ReadFile(path)
+		switch {
+		case err != nil:
+			// Not there, or not readable: write it whole.
+			existing = nil
+		case force:
+			existing = nil
 		}
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+
+		next := block
+		if len(existing) > 0 {
+			merged, ok := replaceAgentsSection(string(existing), block)
+			if !ok {
+				// The file is theirs and has no marked section yet. Append
+				// rather than prepend: what they wrote is the more important
+				// half, and it stays at the top where they left it.
+				merged = strings.TrimRight(string(existing), "\n") + "\n\n" + block
+			}
+			if merged == string(existing) {
+				continue // already current, nothing to say
+			}
+			next = merged
+		}
+
+		if err := os.WriteFile(path, []byte(next), 0o644); err != nil {
 			return written, fmt.Errorf("writing %s: %w", path, err)
 		}
 		written = append(written, name)
 	}
 	return written, nil
+}
+
+// replaceAgentsSection swaps the marked section for block, and reports whether
+// there was one.
+//
+// The end marker is found after the start, so a file that mentions the markers
+// in prose above the real section is not cut at the wrong place.
+func replaceAgentsSection(src, block string) (string, bool) {
+	start := strings.Index(src, agentsDocStart)
+	if start < 0 {
+		return src, false
+	}
+	end := strings.Index(src[start:], agentsDocEnd)
+	if end < 0 {
+		// An opening marker with no close is a file somebody edited by hand
+		// and left broken. Replacing from the marker to the end of the file
+		// would delete whatever they wrote after it, so leave it alone and
+		// let the caller append.
+		return src, false
+	}
+	end = start + end + len(agentsDocEnd)
+	// Keep the trailing newline the old section had, so the file does not
+	// gain or lose a blank line on every run.
+	tail := src[end:]
+	return src[:start] + strings.TrimRight(block, "\n") + tail, true
 }
 
 // agentsDocContent returns the canonical Grit conventions doc. Update

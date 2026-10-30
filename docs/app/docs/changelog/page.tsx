@@ -59,6 +59,107 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.458.0 */}
+            <div className="mb-12" id="v3.458.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.458.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A failed go mod tidy left 441 files of 731</h3>
+                <p>
+                  Review 2.12. <code>grit new</code> resolves Go dependencies
+                  about two thirds of the way through, and a failure there
+                  returned. Offline on a cold module cache that means 441 files
+                  written and 290 not: no Docker, no shared package, no web, no
+                  admin, nothing cleaned up, and the full{' '}
+                  <code>grit new</code> usage block printed under the error. A
+                  half-written project is worse than either finishing or not
+                  starting, because it looks like a project.
+                </p>
+                <p>
+                  The desktop path in the same file already handled it the right
+                  way, and its comment said why: everything after that point is
+                  files, so losing the whole scaffold to a network hiccup is the
+                  worse outcome. Both remaining paths now report and carry on.
+                </p>
+                <CodeBlock language="text" code={`$ GOPROXY=off grit new myapp --api
+
+  ! could not resolve Go dependencies: running go mod tidy: exit status 1
+    The project is complete apart from go.sum. With a network, run:
+      cd apps/api && go mod tidy
+
+  Next steps:
+    go mod tidy    in apps/api: this did not resolve, and the rest needs it
+    grit migrate   create database tables
+    ...
+
+424 files. Exit code 0. One command away from working.`} />
+                <p>
+                  Measured by forcing it: an empty module cache and{' '}
+                  <code>GOPROXY=off</code>. The project came out complete apart
+                  from <code>go.sum</code>, and{' '}
+                  <code>go mod tidy &amp;&amp; go build ./...</code> finished it.
+                  The warning is repeated in Next steps because by the end of a
+                  scaffold the first one has scrolled past a hundred lines, and
+                  the next thing somebody runs needs the file that is missing.
+                </p>
+
+                <h3>grit init --force deleted your CLAUDE.md</h3>
+                <p>
+                  Review 2.27. <code>CLAUDE.md</code> is where a project keeps
+                  its own instructions for whoever works on it.{' '}
+                  <code>grit init</code> writes Grit&apos;s conventions there,
+                  and <code>--force</code>, the documented way to refresh them,
+                  replaced the whole file.
+                </p>
+                <p>
+                  Grit owns one marked section now and nothing outside it:
+                </p>
+                <CodeBlock language="markdown" code={`# My project
+
+Never touch the billing module without asking Sarah.
+
+<!-- grit:conventions:start -->
+...Grit's rules, replaced on every refresh...
+<!-- grit:conventions:end -->
+
+Also: the staging database is shared, do not truncate it.`} />
+                <p>
+                  Text on either side survives a refresh, a file with no marked
+                  section yet gets the block appended below what is already
+                  there, and running it twice changes nothing. None of those
+                  loses anything, so the merge needs no flag and{' '}
+                  <code>grit init</code> is now safe to re-run.{' '}
+                  <code>--force</code> still replaces the whole file, which is
+                  what a destructive flag should mean and is now the only thing
+                  it means.
+                </p>
+
+                <h3>Migrations are additive, stated where you decide</h3>
+                <p>
+                  Review 2.20. There was a note about this, in yellow, at the
+                  very bottom of the migrations page, after the section on
+                  rolling back. It undersold the limit as being about
+                  &quot;development and simple schemas&quot;, when additive
+                  migration is a perfectly good production strategy, and it
+                  left out the one that actually bites.
+                </p>
+                <p>
+                  It is a section of its own now, near the top, and it names all
+                  five things that do not happen: renames, type changes, drops,
+                  data moves, and{' '}
+                  <code>CREATE INDEX CONCURRENTLY</code>. That last one is the
+                  one worth reading twice: an index is added with a plain{' '}
+                  <code>CREATE INDEX</code>, which takes a lock, so adding one
+                  to a large busy table is an outage rather than a migration.
+                </p>
+              </div>
+            </div>
+
             {/* v3.457.0 */}
             <div className="mb-12" id="v3.457.0">
               <div className="flex items-center gap-3 mb-4">
