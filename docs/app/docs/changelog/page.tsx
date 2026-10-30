@@ -59,6 +59,74 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.443.0 */}
+            <div className="mb-12" id="v3.443.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.443.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An import stops creating a parent it cannot fill in</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/129">#129</a>.
+                  A generated CSV importer resolves a <code>belongs_to</code>{' '}
+                  column by the related record&apos;s natural key and created a
+                  missing record from that key alone. For a lookup table whose
+                  only column is a name that is exactly right. For a model that
+                  requires anything else it is a constraint violation per row:{' '}
+                  <code>Company.OwnerID</code> is{' '}
+                  <code>binding:&quot;required&quot;</code> with a foreign key
+                  to users, so an imported contact naming a company that does
+                  not exist yet failed. In the reporter&apos;s CRM that was 4 of
+                  4 rows, and in a real contact list it is nearly every row.
+                </p>
+                <p>
+                  The generator reads the related model before it writes the
+                  resolver. If the natural key is all that model needs, a
+                  missing record is still created, so a name-only lookup table
+                  imports exactly as before. If it needs anything else, nothing
+                  is created and the row is refused with something a person can
+                  act on:
+                </p>
+                <CodeBlock language="text" code={`company "Gulu Agro" does not exist. An import cannot create one,
+because Company requires owner_id, which this file has no column for.
+Add the Company first, or import company records before this one`} />
+                <p>
+                  It refuses rather than guesses. The only value an importer
+                  could invent for an owner column is &quot;whoever is running
+                  the import&quot;, which is right for an owner and wrong for
+                  anything else, and a wrong foreign key is worse than a refused
+                  row because nobody finds out. On Postgres the old behaviour
+                  was a visible failure; on SQLite, where the column is not{' '}
+                  <code>NOT NULL</code>, it quietly wrote a company nobody owns.
+                </p>
+                <p>
+                  One function decides it, read from the model file on disk
+                  because that model was generated earlier and may have been
+                  edited since. The generator and <code>grit upgrade</code> both
+                  call that one function, so they cannot answer differently,
+                  which is how two copies of generated code start to disagree.
+                </p>
+                <p>
+                  The upgrade replaces the resolver in projects that already
+                  have it, because a resolver that cannot succeed does not
+                  become correct by being old. Only where the model on disk says
+                  so: a lookup table&apos;s resolver is left creating records,
+                  and a resolver somebody edited by hand no longer matches the
+                  generated text and is left alone.
+                </p>
+                <p>
+                  Verified by reproducing the report: the same two resources,
+                  the same four-row CSV, four refused rows with that message and
+                  no company written, then the same file importing cleanly once
+                  the companies exist.
+                </p>
+              </div>
+            </div>
+
             {/* v3.442.0 */}
             <div className="mb-12" id="v3.442.0">
               <div className="flex items-center gap-3 mb-4">

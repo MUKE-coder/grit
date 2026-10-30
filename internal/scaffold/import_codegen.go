@@ -1,6 +1,10 @@
 package scaffold
 
-import "strings"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+)
 
 // The CSV importer grit generate writes for a resource resolves a belongs_to
 // column by the related record's natural key. These functions write that code,
@@ -17,6 +21,162 @@ const ImportLimitGate = `	// Imports take turns: each holds a database connectio
 	defer release()
 
 `
+
+// ImportUnfillableColumns lists the columns of a related model that a CSV
+// importer cannot supply when it has to CREATE that record, which is what
+// decides whether creating one is safe at all.
+//
+// The importer resolves a belongs_to column by the related record's natural
+// key, and used to create a missing record from that key alone. For a lookup
+// table whose only column is a name that is exactly right. For a model that
+// requires anything else it is a constraint violation per row: Company.OwnerID
+// is binding:"required" with a foreign key to users, so an imported contact
+// naming a company that does not exist yet failed, and in a real contact list
+// that is nearly every row. See grit#129.
+//
+// Required means binding:"required", which is what the generator writes and
+// what the API validates against. A column with a gorm default can be left
+// out, and so can the natural key itself, which the importer does fill. An
+// empty result means creating the record is safe.
+//
+// Read from the model file on disk rather than from the resource definition,
+// because the related model was generated earlier, possibly by hand, possibly
+// edited since. The file is the fact.
+func ImportUnfillableColumns(apiRoot, relModel, naturalKeyJSON string) []string {
+	body, err := os.ReadFile(filepath.Join(apiRoot, "internal", "models", toSnake(relModel)+".go"))
+	if err != nil {
+		return nil
+	}
+	return unfillableRequiredColumns(string(body), relModel, naturalKeyJSON)
+}
+
+// unfillableRequiredColumns is the part of the above that reads source, split
+// out so it can be tested without a project on disk.
+func unfillableRequiredColumns(src, relModel, naturalKeyJSON string) []string {
+	start := strings.Index(src, "type "+relModel+" struct {")
+	if start < 0 {
+		return nil
+	}
+	body := src[start:]
+	// The struct ends at the first closing brace in the first column.
+	if end := strings.Index(body, "\n}"); end > 0 {
+		body = body[:end]
+	}
+
+	// Columns the importer fills itself, or the database does.
+	skip := map[string]bool{
+		"":           true,
+		"-":          true,
+		"id":         true,
+		"created_at": true,
+		"updated_at": true,
+		"deleted_at": true,
+	}
+	if naturalKeyJSON != "" {
+		skip[naturalKeyJSON] = true
+	}
+
+	var out []string
+	for _, line := range strings.Split(body, "\n") {
+		tag := importStructTag(line)
+		if tag == "" || !strings.Contains(importTagValue(tag, "binding"), "required") {
+			continue
+		}
+		if strings.Contains(importTagValue(tag, "gorm"), "default:") {
+			continue
+		}
+		name := importTagValue(tag, "json")
+		if i := strings.Index(name, ","); i >= 0 {
+			name = name[:i]
+		}
+		if skip[name] {
+			continue
+		}
+		out = append(out, name)
+	}
+	return out
+}
+
+// importStructTag returns the backquoted tag of a struct field line, or "".
+func importStructTag(line string) string {
+	open := strings.Index(line, "`")
+	if open < 0 {
+		return ""
+	}
+	close := strings.LastIndex(line, "`")
+	if close <= open {
+		return ""
+	}
+	return line[open+1 : close]
+}
+
+// importTagValue reads one key out of a struct tag.
+func importTagValue(tag, key string) string {
+	at := strings.Index(tag, key+`:"`)
+	if at < 0 {
+		return ""
+	}
+	rest := tag[at+len(key)+2:]
+	if end := strings.Index(rest, `"`); end >= 0 {
+		return rest[:end]
+	}
+	return ""
+}
+
+// ImportNameResolverFor writes the resolver for a belongs_to column, choosing
+// between creating a missing record and refusing to.
+//
+// The choice is here rather than at each call site so the generator and the
+// upgrade cannot answer it differently, which is how two copies of generated
+// code start to disagree.
+func ImportNameResolverFor(base, relModel, keyJSON, keyGo string, unfillable []string) string {
+	if len(unfillable) == 0 {
+		return ImportNameResolver(base, relModel, keyJSON, keyGo)
+	}
+	return ImportNameResolverNoCreate(base, relModel, keyJSON, unfillable)
+}
+
+// ImportNameResolverNoCreate is the resolver for a related model the importer
+// cannot create: it looks the record up and fails the row when it is missing,
+// naming the columns it could not have supplied.
+//
+// It would rather refuse than guess. The only value an importer could invent
+// for an owner column is "whoever is running the import", which is right for
+// an owner and wrong for anything else, and a wrong foreign key is worse than
+// a refused row because nobody finds out. See grit#129.
+func ImportNameResolverNoCreate(base, relModel, keyJSON string, unfillable []string) string {
+	return strings.NewReplacer(
+		"{{name}}", importLowerCamel(base),
+		"{{fn}}", "resolve"+importUpperCamel(base),
+		"{{base}}", base,
+		"{{Rel}}", relModel,
+		"{{key}}", keyJSON,
+		"{{cols}}", strings.Join(unfillable, ", "),
+	).Replace(`	// {{name}}IDs remembers the {{Rel}} each {{key}} in the CSV resolved to, so a
+	// distinct {{key}} costs one lookup rather than one per row.
+	//
+	// A missing {{Rel}} is NOT created here, because {{Rel}} requires {{cols}}
+	// and a {{base}} column holds only the {{key}}. Creating it from the {{key}}
+	// alone fails on the constraint, once per row, which is what grit#129 was.
+	// The row is refused instead, with something a person can act on.
+	{{name}}IDs := map[string]string{}
+	{{fn}} := func(v string) (string, error) {
+		if id, ok := {{name}}IDs[v]; ok {
+			return id, nil
+		}
+		var rel models.{{Rel}}
+		if err := db.Where("{{key}} = ?", v).First(&rel).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", fmt.Errorf("{{base}} %q does not exist. An import cannot create one, because {{Rel}} requires {{cols}}, which this file has no column for. Add the {{Rel}} first, or import {{base}} records before this one", v)
+			}
+			return "", fmt.Errorf("{{base}} %q: %w", v, err)
+		}
+		{{name}}IDs[v] = rel.ID
+		return rel.ID, nil
+	}
+
+`)
+}
 
 // ImportNameResolver is the closure that turns a natural key from the CSV into
 // the related record's id: base is the column ("group"), relModel the model

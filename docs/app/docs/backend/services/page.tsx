@@ -159,6 +159,14 @@ Bulk(ctx, action string, ids []string, patch map[string]interface{}) (PostBulkRe
                   resolves their relations and writes them in batches. It runs after the response,
                   so the handler gives it <code>context.WithoutCancel(h.ctx(c))</code>: the caller
                   and the organization, without the cancellation.
+                  <br />
+                  A <code>belongs_to</code> column is resolved by the related record&apos;s natural
+                  key, once per distinct value. Whether a missing record is <em>created</em> depends
+                  on the related model: if its natural key is all it requires, the importer creates
+                  it, which is what makes a name-only lookup table work. If it requires anything
+                  else, nothing is created and the row is refused naming the columns a CSV cannot
+                  supply, because creating it from the key alone violates the model&apos;s own rules
+                  once per row.
                 </li>
                 <li>
                   <strong><code>--tree</code></strong> has its hierarchy on a{' '}

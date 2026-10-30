@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 56,
+    count: 57,
     entries: [
+      { version: "3.443.0", title: "An import stops creating a parent it cannot fill in" },
       { version: "3.442.0", title: "An organization manages its own roles" },
       { version: "3.441.0", title: "An organization can have roles of its own" },
       { version: "3.440.0", title: "Generated tests passed on SQLite and failed on Postgres" },

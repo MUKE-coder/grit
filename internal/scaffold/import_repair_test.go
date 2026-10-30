@@ -70,7 +70,7 @@ func (s *ContactService) ImportCSV(ctx context.Context, jobID, path string) {
 `
 
 func TestRepairImportService(t *testing.T) {
-	out, fixed, warn := repairImportServiceSource(oldImportService, "demo")
+	out, fixed, warn := repairImportServiceSource(oldImportService, "demo", "")
 	if len(warn) > 0 || len(fixed) != 2 {
 		t.Fatalf("fixed %v, warned %v", fixed, warn)
 	}
@@ -95,7 +95,7 @@ func TestRepairImportService(t *testing.T) {
 	if _, err := format.Source([]byte(out)); err != nil {
 		t.Fatalf("not valid Go: %v\n%s", err, out)
 	}
-	if again, fixed, _ := repairImportServiceSource(out, "demo"); again != out || len(fixed) > 0 {
+	if again, fixed, _ := repairImportServiceSource(out, "demo", ""); again != out || len(fixed) > 0 {
 		t.Error("a second upgrade changed the importer again")
 	}
 }
@@ -104,7 +104,7 @@ func TestRepairImportService(t *testing.T) {
 func TestRepairImportServiceWithoutRecordHelper(t *testing.T) {
 	src := strings.Replace(oldImportService, "\trecord := func(fields map[string]interface{}) {}\n", "", 1)
 	src = strings.Replace(src, "\trecord(nil)\n", "", 1)
-	out, fixed, warn := repairImportServiceSource(src, "demo")
+	out, fixed, warn := repairImportServiceSource(src, "demo", "")
 	if len(warn) > 0 || len(fixed) != 2 {
 		t.Fatalf("fixed %v, warned %v", fixed, warn)
 	}
@@ -114,14 +114,14 @@ func TestRepairImportServiceWithoutRecordHelper(t *testing.T) {
 	if _, err := format.Source([]byte(out)); err != nil {
 		t.Fatalf("not valid Go: %v\n%s", err, out)
 	}
-	if again, fixed, _ := repairImportServiceSource(out, "demo"); again != out || len(fixed) > 0 {
+	if again, fixed, _ := repairImportServiceSource(out, "demo", ""); again != out || len(fixed) > 0 {
 		t.Error("a second upgrade changed the importer again")
 	}
 }
 
 func TestRepairImportServiceLeavesAnEditedLookup(t *testing.T) {
 	src := strings.Replace(oldImportService, "\t\t\t\tdb.Create(&rel)\n\t\t\t}\n\t\t\titem.GroupID", "\t\t\t\tdb.Save(&rel)\n\t\t\t}\n\t\t\titem.GroupID", 1)
-	out, fixed, _ := repairImportServiceSource(src, "demo")
+	out, fixed, _ := repairImportServiceSource(src, "demo", "")
 	if strings.Contains(out, "resolveGroup") {
 		t.Error("an edited lookup was rewritten")
 	}

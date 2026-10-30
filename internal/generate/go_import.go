@@ -152,10 +152,16 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			needLookupErrors = true
 			if lookup.ByName {
 				// The related model has a usable string column: resolve by
-				// that natural key, once per distinct value, and create the
-				// record if it's missing. Column is the relation name.
+				// that natural key, once per distinct value. A missing record
+				// is created when the key is all it needs. Column is the
+				// relation name.
 				headers = append(headers, base)
-				resolvers.WriteString(scaffold.ImportNameResolver(base, relModel, lookup.NaturalKeyJSON, lookup.NaturalKeyGo))
+				// Creating a missing record is only safe when the natural key
+				// is all it needs. Anything else required and the importer
+				// refuses the row rather than writing a record that violates
+				// the model's own rules (grit#129).
+				unfillable := scaffold.ImportUnfillableColumns(g.APIRoot(), relModel, lookup.NaturalKeyJSON)
+				resolvers.WriteString(scaffold.ImportNameResolverFor(base, relModel, lookup.NaturalKeyJSON, lookup.NaturalKeyGo, unfillable))
 				assign.WriteString(scaffold.ImportNameAssign(base, fkGo, assignExpr == "&rel.ID"))
 			} else {
 				// No natural-key string column (e.g. belongs_to:User):

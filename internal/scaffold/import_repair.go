@@ -69,7 +69,7 @@ func repairImportServices(root string, opts Options) error {
 			continue
 		}
 		if err := repairSourceFile(root, m, path, func(src string) (string, []string, []string) {
-			return repairImportServiceSource(src, module)
+			return repairImportServiceSource(src, module, apiRoot)
 		}); err != nil {
 			return err
 		}
@@ -154,7 +154,7 @@ func addImportLikeGenerate(content, path, module string) (string, bool) {
 	return addImportGroup(content, path)
 }
 
-func repairImportServiceSource(src, module string) (string, []string, []string) {
+func repairImportServiceSource(src, module, apiRoot string) (string, []string, []string) {
 	if !strings.Contains(src, ") ImportCSV(ctx context.Context, jobID, path string) {") {
 		return src, nil, nil
 	}
@@ -175,7 +175,8 @@ func repairImportServiceSource(src, module string) (string, []string, []string) 
 					continue
 				}
 				out = out[:loc[0]] + ImportNameAssign(base, fk, amp == "&") + out[loc[1]:]
-				resolvers = append([]string{ImportNameResolver(base, rel, key, keyGo)}, resolvers...)
+				unfillable := ImportUnfillableColumns(apiRoot, rel, key)
+				resolvers = append([]string{ImportNameResolverFor(base, rel, key, keyGo, unfillable)}, resolvers...)
 			}
 			if len(resolvers) > 0 {
 				out = strings.Replace(out, importCountersAnchor, strings.Join(resolvers, "")+importCountersAnchor, 1)
@@ -183,6 +184,16 @@ func repairImportServiceSource(src, module string) (string, []string, []string) 
 				fixed = append(fixed, "each value in a belongs_to column is looked up once per import, and a lookup error fails the row")
 			}
 		}
+	}
+
+	// A resolver generated before v3.443.0 creates a missing parent from the
+	// natural key alone. Where the related model needs more than that, every
+	// row naming a parent that does not exist fails on the constraint, which
+	// in a real contact list is nearly every row (grit#129). The refusal
+	// replaces it, but only when the model on disk says so.
+	if replaced, names := replaceCreatingResolvers(&out, apiRoot); replaced > 0 {
+		fixed = append(fixed, "a belongs_to parent that an import cannot create correctly is no "+
+			"longer created at all, and the row says why ("+strings.Join(names, ", ")+")")
 	}
 
 	if !strings.Contains(out, "imports.Wait(") {
@@ -214,4 +225,46 @@ func repairImportServiceSource(src, module string) (string, []string, []string) 
 		return src, nil, warn
 	}
 	return out, fixed, warn
+}
+
+// creatingResolverRe matches a generated resolver that creates a missing
+// parent. Everything it needs to write the replacement is inside it: the CSV
+// column, the related model, the natural key both ways.
+//
+// Anchored on the generated text rather than parsed, because that text is
+// known: the generator wrote it. A project that edited the resolver by hand no
+// longer matches, and is left alone rather than rewritten.
+var creatingResolverRe = regexp.MustCompile(`(?s)\t(\w+)IDs := map\[string\]string\{\}\n` +
+	`\tresolve\w+ := func\(v string\) \(string, error\) \{.*?` +
+	`db\.Where\("(\w+) = \?", v\)\.First\(&rel\)\.Error\n` +
+	`\t\tif errors\.Is\(err, gorm\.ErrRecordNotFound\) \{\n` +
+	`\t\t\trel = models\.(\w+)\{(\w+): v\}.*?` +
+	`fmt\.Errorf\("(\w+) %q: %w", v, err\).*?\n\t\}\n\n`)
+
+// replaceCreatingResolvers swaps each resolver that creates a parent it cannot
+// fill in for one that refuses the row instead. Returns how many, and which
+// columns, for the upgrade report.
+func replaceCreatingResolvers(out *string, apiRoot string) (int, []string) {
+	matches := creatingResolverRe.FindAllStringSubmatchIndex(*out, -1)
+	if len(matches) == 0 {
+		return 0, nil
+	}
+
+	var names []string
+	replaced := 0
+	// Backwards, so an earlier match's offsets stay valid.
+	for i := len(matches) - 1; i >= 0; i-- {
+		loc := matches[i]
+		group := func(n int) string { return (*out)[loc[2*n]:loc[2*n+1]] }
+		keyJSON, rel, base := group(2), group(3), group(5)
+
+		unfillable := ImportUnfillableColumns(apiRoot, rel, keyJSON)
+		if len(unfillable) == 0 {
+			continue // a name is all it needs: creating one is right
+		}
+		*out = (*out)[:loc[0]] + ImportNameResolverNoCreate(base, rel, keyJSON, unfillable) + (*out)[loc[1]:]
+		names = append([]string{rel + " needs " + strings.Join(unfillable, ", ")}, names...)
+		replaced++
+	}
+	return replaced, names
 }
