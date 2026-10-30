@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -85,8 +84,8 @@ func RepairMoneyUpdates(apiRoot string) (changed []string, blocked []string, err
 		if next == src {
 			continue
 		}
-		if err := os.WriteFile(path, []byte(next), 0o644); err != nil {
-			return changed, blocked, fmt.Errorf("writing %s: %w", path, err)
+		if err := writeRepairedGo(path, next); err != nil {
+			return changed, blocked, err
 		}
 		what := "no money columns, but every map update now goes through one helper"
 		if len(fields) > 0 {
@@ -160,8 +159,8 @@ func repairGridHandler(apiRoot, snake, pascal, lower, plural string) (bool, erro
 		return false, nil
 	}
 	out := strings.TrimRight(src, "\n") + "\n\n" + gridHandlerMethodsSource(pascal, lower, plural)
-	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
-		return false, fmt.Errorf("writing %s: %w", path, err)
+	if err := writeRepairedGo(path, out); err != nil {
+		return false, err
 	}
 	return true, nil
 }
@@ -203,8 +202,8 @@ func repairGridRoutes(apiRoot, snake, plural string) (bool, error) {
 	if out == src {
 		return false, nil
 	}
-	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
-		return false, fmt.Errorf("writing %s: %w", path, err)
+	if err := writeRepairedGo(path, out); err != nil {
+		return false, err
 	}
 	return true, nil
 }

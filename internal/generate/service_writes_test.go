@@ -109,6 +109,15 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 		}
 		out = repaired
 
+		// And the export clause, which the CLI shares with List in the same
+		// pass. A service still carrying its own copy answers an export with
+		// different rows than the screen beside it (review 2.19).
+		shared, ok := repairExportSearchClauseSource(out)
+		if !ok {
+			t.Fatalf("%s did not get the shared export clause", tc.service)
+		}
+		out = shared
+
 		// And the write checks, which the CLI applies after that money repair:
 		// a patch and a bulk action are checked against the model's own rules
 		// and the row policy. Last, because the repair above is what adds the
@@ -133,6 +142,9 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 		}
 		if again, changed := scaffold.RepairGeneratedServiceChecks(settled, module); changed || again != settled {
 			t.Errorf("the write-check repair on %s was not idempotent", tc.service)
+		}
+		if again, ok := repairExportSearchClauseSource(settled); ok || again != settled {
+			t.Errorf("the export-clause repair on %s was not idempotent", tc.service)
 		}
 	}
 	if _, changed := scaffold.RepairGeneratedServiceWrites(linked, ""); changed {

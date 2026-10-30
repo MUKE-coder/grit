@@ -1245,7 +1245,11 @@ func (s *{{Pascal}}Service) List(ctx context.Context, p paginate.Params, archive
 }
 
 // Export hands every matching {{lower}} to each, a batch at a time, so a large
-// table is never in memory at once. search matches the columns List searches.
+// table is never in memory at once.
+//
+// search goes through the same clause builder List uses, so the rows an export
+// contains are the rows the screen showed. It used to be a second copy of that
+// builder, which is how the two came to disagree about escaping a wildcard.
 //
 // No ORDER BY of its own: FindInBatches pages by primary key, which is
 // creation order for the time-ordered ids Grit issues, and a sort in front of
@@ -1253,17 +1257,11 @@ func (s *{{Pascal}}Service) List(ctx context.Context, p paginate.Params, archive
 func (s *{{Pascal}}Service) Export(ctx context.Context, search string, each func(rows []models.{{Pascal}}) error) error {
 	query := s.db(ctx).Model(&models.{{Pascal}}{}){{PRELOADS}}
 	if search != "" {
-		clause := ""
-		args := []any{}
-		wild := "%" + search + "%"
-		for i, col := range {{camel}}ListConfig.Searchable {
-			if i > 0 {
-				clause += " OR "
-			}
-			clause += "LOWER(" + col + ") LIKE LOWER(?)"
-			args = append(args, wild)
-		}
-		if clause != "" {
+		// The clause List uses, not a copy of it. This was a copy, and the
+		// copy had already drifted: neither escaped LIKE wildcards, so a
+		// search for "50%" matched every row, and fixing one would have left
+		// the other (review 2.19).
+		if clause, args := paginate.BuildSearchClause({{camel}}ListConfig.Searchable, search); clause != "" {
 			query = query.Where(clause, args...)
 		}
 	}

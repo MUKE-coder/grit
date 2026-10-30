@@ -24,12 +24,32 @@ import (
 func TestRepairsDoNotWriteBehindTheManifest(t *testing.T) {
 	const allowed = "handler_repair.go" // repairSourceFile lives here
 
-	files, err := filepath.Glob(filepath.Join(".", "*_repair.go"))
-	if err != nil {
-		t.Fatal(err)
+	// Both packages that hold repairs. internal/generate's are the ones that
+	// edit a project's generated services and routes after an upgrade, and
+	// money_update_repair.go had the same three raw writes: a test that looked
+	// only here would have called the convention enforced while half of it was
+	// not.
+	var files []string
+	for _, dir := range []string{".", filepath.Join("..", "generate")} {
+		found, err := filepath.Glob(filepath.Join(dir, "*_repair.go"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		files = append(files, found...)
 	}
 	if len(files) < 50 {
 		t.Fatalf("found %d *_repair.go files, so this test is looking in the wrong place", len(files))
+	}
+	// And at least one from each package, or a renamed directory would make
+	// this pass by finding nothing to check.
+	var fromGenerate int
+	for _, f := range files {
+		if strings.Contains(filepath.ToSlash(f), "/generate/") {
+			fromGenerate++
+		}
+	}
+	if fromGenerate == 0 {
+		t.Fatal("found no repair files in internal/generate, so that package is unchecked")
 	}
 
 	writeRe := regexp.MustCompile(`os\.WriteFile\(`)
@@ -44,14 +64,20 @@ func TestRepairsDoNotWriteBehindTheManifest(t *testing.T) {
 		}
 		for i, line := range strings.Split(string(raw), "\n") {
 			if writeRe.MatchString(line) {
-				offenders = append(offenders, filepath.Base(path)+":"+itoaForTest(i+1))
+				label := filepath.Base(path)
+				if strings.Contains(filepath.ToSlash(path), "/generate/") {
+					label = "internal/generate/" + label
+				}
+				offenders = append(offenders, label+":"+itoaForTest(i+1))
 			}
 		}
 	}
 	if len(offenders) > 0 {
 		t.Errorf("these repairs write without telling the manifest, so the files they fix "+
-			"stop receiving later fixes (review 2.5). Use writeRepaired for an edit to an "+
-			"existing file, or writeFile for a whole framework-owned file:\n  %s",
+			"stop receiving later fixes (review 2.5).\n\n"+
+			"In internal/scaffold: writeRepaired for an edit to a file that exists, "+
+			"writeFile for a whole framework-owned file arriving.\n"+
+			"In internal/generate: writeRepairedGo for Go, writeRepairedFile for anything else.\n\n  %s",
 			strings.Join(offenders, "\n  "))
 	}
 }

@@ -59,6 +59,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.455.0 */}
+            <div className="mb-12" id="v3.455.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.455.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Searching for &quot;50%&quot; returned every row</h3>
+                <p>
+                  Review 2.19. A search term went into a{' '}
+                  <code>LIKE</code> pattern exactly as typed, so the wildcards
+                  in it were the pattern&apos;s wildcards:
+                </p>
+                <CodeBlock language="text" code={`search      matched
+
+50%         every row, because % is the wildcard
+a_b         "axb", because _ is any character
+%%%%        every row, after a full scan`} />
+                <p>
+                  The term is a bound parameter, so this was never injection. It
+                  was a wrong answer, and on a large table a pattern of nothing
+                  but wildcards is work the database does for no result.
+                </p>
+                <p>
+                  Terms are escaped now, and the clause declares the escape
+                  character it uses, because SQLite has no default one.{' '}
+                  <code>!</code> rather than a backslash: in Postgres with{' '}
+                  <code>standard_conforming_strings</code> on,{' '}
+                  <code>ESCAPE &apos;\&apos;</code> is a single backslash, and in
+                  MySQL the same literal escapes the closing quote and the
+                  statement does not parse.
+                </p>
+
+                <h3>And the export searched differently from the screen</h3>
+                <p>
+                  The same finding&apos;s other half, and the reason the first
+                  one could not be fixed in one place. The clause builder was
+                  unexported, so the generated <code>Export</code> carried its
+                  own copy of it. Two copies of a query builder drift, and this
+                  pair had already drifted into the same bug twice over: fixing
+                  one would have left an export of a search for &quot;50%&quot;
+                  returning every row while the list screen beside it showed the
+                  right ones.
+                </p>
+                <p>
+                  <code>Export</code> now calls{' '}
+                  <code>paginate.BuildSearchClause</code>, the same function{' '}
+                  <code>List</code> uses. <code>grit upgrade</code> replaces the
+                  copy in every service that has one, and a test holds the
+                  repaired service to byte equality with a freshly generated one
+                  so the two cannot drift again.
+                </p>
+
+                <h3>Repairs in the generator package wrote behind the manifest too</h3>
+                <p>
+                  v3.454.0 fixed eleven of these in{' '}
+                  <code>internal/scaffold</code> and added a test to keep them
+                  fixed. The test looked in one package;{' '}
+                  <code>internal/generate</code> holds repairs as well, and the
+                  money repair had the same three raw writes. It now scans both,
+                  and fails if it finds no repair files in either, so a renamed
+                  directory cannot make it pass by checking nothing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.454.0 */}
             <div className="mb-12" id="v3.454.0">
               <div className="flex items-center gap-3 mb-4">

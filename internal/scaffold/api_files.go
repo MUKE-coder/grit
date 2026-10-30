@@ -3967,20 +3967,58 @@ func snakeToPascal(s string) string {
 	return strings.Join(parts, "")
 }
 
-// buildSearchClause builds "LOWER(col1) LIKE LOWER(?) OR ..." with the
-// same wildcard-wrapped search term repeated as each arg.
-func buildSearchClause(cols []string, term string) (string, []any) {
+// LikeEscapeChar is the escape character the search clause declares.
+//
+// Not a backslash. In Postgres with standard_conforming_strings on, ESCAPE
+// '\\' is a single backslash; in MySQL the same literal escapes the closing
+// quote and the statement does not parse. "!" needs no escaping in Postgres,
+// MySQL or SQLite, and is rare enough in a search box that escaping it costs
+// nothing.
+const LikeEscapeChar = "!"
+
+// EscapeLike makes a search term literal inside a LIKE pattern.
+//
+// Without it, % matched every row and _ matched any character, so searching
+// for "50%" returned the whole table and "a_b" matched "axb". The term is a
+// bound parameter either way, so this was never injection; it was a wrong
+// answer, and on a large table a pattern of nothing but wildcards is work the
+// database does for no result.
+func EscapeLike(term string) string {
+	var b strings.Builder
+	b.Grow(len(term) + 8)
+	for _, r := range term {
+		if r == '%' || r == '_' || r == '!' {
+			b.WriteString(LikeEscapeChar)
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// BuildSearchClause builds "LOWER(col1) LIKE LOWER(?) ESCAPE '!' OR ..." with
+// the same wildcard-wrapped search term repeated as each arg.
+//
+// Exported because the generated Export needs the same clause List uses.
+// Unexported, it was copied into every resource service instead, and two
+// copies of a query builder drift (review 2.19).
+func BuildSearchClause(cols []string, term string) (string, []any) {
 	clause := ""
 	args := make([]any, 0, len(cols))
-	wild := "%" + term + "%"
+	wild := "%" + EscapeLike(term) + "%"
 	for i, col := range cols {
 		if i > 0 {
 			clause += " OR "
 		}
-		clause += "LOWER(" + col + ") LIKE LOWER(?)"
+		clause += "LOWER(" + col + ") LIKE LOWER(?) ESCAPE '" + LikeEscapeChar + "'"
 		args = append(args, wild)
 	}
 	return clause, args
+}
+
+// buildSearchClause is the old name, kept so a project that calls it still
+// compiles. It is the exported one.
+func buildSearchClause(cols []string, term string) (string, []any) {
+	return BuildSearchClause(cols, term)
 }
 `
 }

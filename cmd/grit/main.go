@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.454.0"
+var version = "3.455.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1708,6 +1708,18 @@ func upgradeCmd() *cobra.Command {
 				}
 				for _, line := range blocked {
 					yellow.Printf("  ⚠ %s\n", line)
+				}
+			}
+
+			// And what they read. Export carried its own copy of the paginate
+			// search clause, and the copy did not escape LIKE wildcards, so an
+			// export of a search for "50%" contained every row while the screen
+			// beside it showed the right ones (review 2.19).
+			if changed, err := generate.RepairExportSearchClause(filepath.Join("apps", "api")); err != nil {
+				color.New(color.FgYellow).Printf("  ⚠ sharing the export search clause: %v\n", err)
+			} else {
+				for _, line := range changed {
+					color.New(color.FgGreen).Printf("  ✓ %s\n", line)
 				}
 			}
 

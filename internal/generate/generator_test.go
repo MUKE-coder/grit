@@ -384,7 +384,9 @@ func TestWriteGoService_BasicFields(t *testing.T) {
 		"func (s *PostService) Bulk(",
 		"func (s *PostService) Export(",
 		`Searchable: []string{"title"`,
-		"LOWER(\" + col + \") LIKE LOWER(?)", // search, portable across Postgres + SQLite
+		// The clause List uses, not a second copy of it in Export. The copy had
+		// drifted into not escaping LIKE wildcards (review 2.19).
+		"paginate.BuildSearchClause(postListConfig.Searchable, search)",
 	}
 	mustParse(t, "services/post.go", got)
 	for _, want := range checks {
