@@ -104,6 +104,12 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	// errors and gorm for the not-found checks the lookups make.
 	var resolvers strings.Builder
 	needLookupErrors := false
+	// Whether this project has the multitenant plugin, which decides whether a
+	// User column may be resolved across the whole platform. PluginInstalled
+	// reads the lockfile, so it answers "installed now" and not "ever was";
+	// this is its first caller since it was written.
+	multitenant := PluginInstalled(g.Root, "multitenant")
+	needTenant := false
 	for _, f := range g.Definition.Fields {
 		t := FieldType(f.Type)
 		if t == FieldSlug || t == FieldFile || t == FieldFiles ||
@@ -145,7 +151,12 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 							"\t\t// ignored, or a CSV could file records under somebody else's name.\n"+
 							"\t\titem.%s = ownerID\n", f.Name, col, fkGo))
 				}
-				assign.WriteString(importUserLookup(col, where, fkGo, cond, g.relOptional(f)))
+				// Narrowed to the organization only where there is one. A
+				// project without the plugin has no organization_members
+				// table and no tenant package to read the scope from.
+				assign.WriteString(scaffold.ImportUserLookup(col, where, fkGo, cond,
+					g.relOptional(f), multitenant))
+				needTenant = needTenant || multitenant
 				continue
 			}
 
@@ -264,6 +275,11 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		gormImport = "\"gorm.io/gorm\"\n\t"
 	}
 
+	tenantImport := ""
+	if needTenant {
+		tenantImport = "\t\"" + g.Module + "/internal/tenant\"\n"
+	}
+
 	// Every importer records who started its job, so authz is always imported.
 	ownerSetup, authzImport := "", "\""+g.Module+"/internal/authz\"\n\t"
 	if owned {
@@ -289,6 +305,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		"{{HEADERS}}", templateHeaders,
 		"{{OWNER_SETUP}}", ownerSetup,
 		"{{AUTHZ_IMPORT}}", authzImport,
+		"{{TENANT_IMPORT}}", tenantImport,
 	)
 
 	handlerPath := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+"_import.go")
@@ -424,7 +441,7 @@ import (
 
 	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/imports"
 	"{{MODULE}}/internal/models"
-)
+{{TENANT_IMPORT}})
 
 // StartImport records a CSV import of {{Plural}} about to run: the job a client
 // polls for progress.
@@ -589,31 +606,3 @@ func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 	checkpoint("completed", fmt.Sprintf("Imported %d, skipped %d, failed %d", created, skipped, failed))
 }
 `
-
-// importUserLookup resolves a CSV cell to an existing user and fails the row
-// when there is none. It never creates one: a users row is an account, and an
-// importer that made one per unrecognised email let any signed-in caller mint
-// accounts around registration, with no password and nothing verified.
-func importUserLookup(col, where, fkGo, cond string, ptr bool) string {
-	// An optional relationship is a nullable column, so the importer has
-	// to assign a pointer to it.
-	assign := "rel.ID"
-	if ptr {
-		assign = "&rel.ID"
-	}
-	return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\"%s {\n"+
-		"\t\t\tvar rel models.User\n"+
-		"\t\t\tif err := db.Where(%q, v).First(&rel).Error; err != nil {\n"+
-		"\t\t\t\tmessage := fmt.Sprintf(\"no user with %s %%q\", v)\n"+
-		"\t\t\t\tif !errors.Is(err, gorm.ErrRecordNotFound) {\n"+
-		"\t\t\t\t\tmessage = err.Error()\n"+
-		"\t\t\t\t}\n"+
-		"\t\t\t\tfailed++\n"+
-		"\t\t\t\tif len(rowErrors) < 50 {\n"+
-		"\t\t\t\t\trowErrors = append(rowErrors, map[string]interface{}{\"row\": rowNum, \"message\": message})\n"+
-		"\t\t\t\t}\n"+
-		"\t\t\t\tcontinue\n"+
-		"\t\t\t}\n"+
-		"\t\t\titem.%s = "+assign+"\n"+
-		"\t\t}\n", col, cond, where+" = ?", where, fkGo)
-}

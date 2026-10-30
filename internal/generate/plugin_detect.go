@@ -1,34 +1,15 @@
 package generate
 
-import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-)
+import "github.com/MUKE-coder/grit/v3/internal/project"
 
 // PluginInstalled reports whether a plugin is recorded in the project's
 // lockfile.
 //
-// Reading the lockfile rather than looking for a file the plugin writes: the
-// lockfile is what `grit plugin remove` maintains, so this answers "is it
-// installed now" and not "was it ever".
+// Kept as a name in this package because callers here read naturally without
+// the prefix, but the answer comes from internal/project, which internal/
+// scaffold reads too: the generator decides what to emit for a new resource
+// and the upgrade decides what to repair in an existing one, and those two
+// must agree about whether a project is multitenant.
 func PluginInstalled(root, name string) bool {
-	data, err := os.ReadFile(filepath.Join(root, ".grit", "plugins.lock.json"))
-	if err != nil {
-		return false
-	}
-	var lock struct {
-		Plugins []struct {
-			Name string `json:"name"`
-		} `json:"plugins"`
-	}
-	if json.Unmarshal(data, &lock) != nil {
-		return false
-	}
-	for _, p := range lock.Plugins {
-		if p.Name == name {
-			return true
-		}
-	}
-	return false
+	return project.PluginInstalled(root, name)
 }

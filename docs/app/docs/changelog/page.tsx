@@ -59,6 +59,82 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.445.0 */}
+            <div className="mb-12" id="v3.445.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.445.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An import resolved an owner against every user on the platform</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/139">#139</a>.
+                  A generated importer looked a user up with{' '}
+                  <code>db.Where(&quot;email = ?&quot;, v)</code> and nothing
+                  narrowed it. In a multitenant project that is a cross-tenant
+                  read through an importer: somebody importing a spreadsheet
+                  into one organization could file rows under a user who belongs
+                  only to another, by knowing or guessing their address, and the
+                  row error told them whether that address exists on the
+                  platform at all.
+                </p>
+                <p>
+                  The ceiling that did exist, <code>canAssignOwner</code>, asks
+                  whether the caller may name an owner. Nothing asked whether
+                  the owner they named is somebody this organization can see.
+                  It is the shape GHSA-4j45-98gm-mv9v is about: a path that
+                  checks a key rather than who owns the row.
+                </p>
+                <p>
+                  Narrowed to the active organization&apos;s members, read from
+                  the context at runtime rather than assumed, because an
+                  administrator importing platform-wide has no active
+                  organization and must still be able to. A project without the
+                  multitenant plugin keeps the lookup it has, where there is no
+                  members table to narrow against and the current behaviour is
+                  correct.
+                </p>
+                <p>
+                  The refusal says the same thing either way, which is the
+                  point: a user who exists in another organization and an
+                  address that exists nowhere both answer{' '}
+                  <code>no user with email &quot;x@y.com&quot; in this
+                  organization</code>. Measured on a running project with two
+                  organizations, one row imported and one refused.
+                </p>
+
+                <h3>One reader, and one writer</h3>
+                <p>
+                  Two things had to agree about this and lived in packages that
+                  cannot import each other: the generator, deciding what to
+                  write for a new resource, and the upgrade, deciding what to
+                  repair in a project that already has one.
+                </p>
+                <p>
+                  <code>PluginInstalled</code> moved to{' '}
+                  <code>internal/project</code>, which both read, so there is
+                  one answer to &quot;is this project multitenant&quot;. It had
+                  been sitting in <code>internal/generate</code> with no callers
+                  at all since it was written; this is its first. And the lookup
+                  itself moved to <code>internal/scaffold</code> beside the
+                  other import codegen, which is where{' '}
+                  <code>ImportNameResolver</code> already lives for exactly this
+                  reason, so a project generated today and one upgraded today
+                  get the same bytes.
+                </p>
+                <p>
+                  The upgrade rewrites the lookup in importers that already have
+                  it, matching the generated text, because an unscoped
+                  cross-tenant read is not something to leave in place for
+                  projects that exist. An importer somebody rewrote by hand no
+                  longer matches and is left alone.
+                </p>
+              </div>
+            </div>
+
             {/* v3.444.0 */}
             <div className="mb-12" id="v3.444.0">
               <div className="flex items-center gap-3 mb-4">

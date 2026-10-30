@@ -167,6 +167,13 @@ Bulk(ctx, action string, ids []string, patch map[string]interface{}) (PostBulkRe
                   else, nothing is created and the row is refused naming the columns a CSV cannot
                   supply, because creating it from the key alone violates the model&apos;s own rules
                   once per row.
+                  <br />
+                  A <code>User</code> column is resolved by email, and in a project with the
+                  multitenant plugin only among the active organisation&apos;s members. Unnarrowed
+                  that was a cross-tenant read through an importer: a spreadsheet could file rows
+                  under somebody who belongs only to another organisation, and the row error said
+                  whether the address existed at all. A user is never created from a CSV, whatever
+                  the column says: a users row is an account.
                 </li>
                 <li>
                   <strong><code>--tree</code></strong> has its hierarchy on a{' '}

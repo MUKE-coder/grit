@@ -1,6 +1,7 @@
 package scaffold
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -216,6 +217,63 @@ func ImportNameResolver(base, relModel, keyJSON, keyGo string) string {
 	}
 
 `)
+}
+
+// ImportUserLookup resolves a CSV cell to an existing user and fails the row
+// when there is none. It never creates one: a users row is an account, and an
+// importer that made one per unrecognised email let any signed-in caller mint
+// accounts around registration, with no password and nothing verified.
+// It writes the row code that resolves a User column.
+//
+// scoped narrows the lookup to the active organization's members, which is
+// what the multitenant plugin needs and what a project without it must not
+// have. Unnarrowed, this resolved an email against every user on the
+// platform: an import running in one organization could file rows under
+// somebody who belongs only to another, and the row error said whether the
+// address exists at all. See grit#139, and GHSA-4j45-98gm-mv9v for the shape.
+func ImportUserLookup(col, where, fkGo, cond string, ptr bool, scoped bool) string {
+	// An optional relationship is a nullable column, so the importer has
+	// to assign a pointer to it.
+	assign := "rel.ID"
+	if ptr {
+		assign = "&rel.ID"
+	}
+	// Read at runtime, not decided here: an administrator importing
+	// platform-wide has no active organization and must still be able to.
+	// Membership is checked unscoped on purpose, since the members table is
+	// how the scope itself is resolved.
+	query, scope := "db", ""
+	if scoped {
+		query = "q"
+		scope = "\t\t\tq, inOrg := db, \"\"\n" +
+			"\t\t\tif orgID, ok := tenant.FromContext(ctx); ok {\n" +
+			"\t\t\t\tq = db.Where(\"id IN (?)\", tenant.Unscoped(db).\n" +
+			"\t\t\t\t\tModel(&models.OrganizationMember{}).\n" +
+			"\t\t\t\t\tSelect(\"user_id\").\n" +
+			"\t\t\t\t\tWhere(\"organization_id = ?\", orgID))\n" +
+			"\t\t\t\tinOrg = \" in this organization\"\n" +
+			"\t\t\t}\n"
+	}
+	message := "\"no user with %s %%q\", v"
+	if scoped {
+		message = "\"no user with %s %%q%%s\", v, inOrg"
+	}
+	return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\"%s {\n"+
+		"\t\t\tvar rel models.User\n"+
+		scope+
+		"\t\t\tif err := "+query+".Where(%q, v).First(&rel).Error; err != nil {\n"+
+		"\t\t\t\tmessage := fmt.Sprintf("+message+")\n"+
+		"\t\t\t\tif !errors.Is(err, gorm.ErrRecordNotFound) {\n"+
+		"\t\t\t\t\tmessage = err.Error()\n"+
+		"\t\t\t\t}\n"+
+		"\t\t\t\tfailed++\n"+
+		"\t\t\t\tif len(rowErrors) < 50 {\n"+
+		"\t\t\t\t\trowErrors = append(rowErrors, map[string]interface{}{\"row\": rowNum, \"message\": message})\n"+
+		"\t\t\t\t}\n"+
+		"\t\t\t\tcontinue\n"+
+		"\t\t\t}\n"+
+		"\t\t\titem.%s = "+assign+"\n"+
+		"\t\t}\n", col, cond, where+" = ?", where, fkGo)
 }
 
 // ImportNameAssign is the row code that uses the resolver: a lookup that fails

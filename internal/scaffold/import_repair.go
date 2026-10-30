@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
+	"github.com/MUKE-coder/grit/v3/internal/project"
 )
 
 // oldImportNameLookupRe is a belongs_to column resolved by natural key as grit
@@ -64,12 +65,15 @@ func repairImportServices(root string, opts Options) error {
 		return err
 	}
 	module := opts.Module()
+	// One reader for "is this project multitenant", shared with the generator,
+	// which decides the same thing when it writes a new importer.
+	multitenant := project.PluginInstalled(root, "multitenant")
 	for _, path := range services {
 		if !strings.HasSuffix(path, "_import.go") {
 			continue
 		}
 		if err := repairSourceFile(root, m, path, func(src string) (string, []string, []string) {
-			return repairImportServiceSource(src, module, apiRoot)
+			return repairImportServiceSource(src, module, apiRoot, multitenant)
 		}); err != nil {
 			return err
 		}
@@ -154,7 +158,7 @@ func addImportLikeGenerate(content, path, module string) (string, bool) {
 	return addImportGroup(content, path)
 }
 
-func repairImportServiceSource(src, module, apiRoot string) (string, []string, []string) {
+func repairImportServiceSource(src, module, apiRoot string, multitenant bool) (string, []string, []string) {
 	if !strings.Contains(src, ") ImportCSV(ctx context.Context, jobID, path string) {") {
 		return src, nil, nil
 	}
@@ -194,6 +198,19 @@ func repairImportServiceSource(src, module, apiRoot string) (string, []string, [
 	if replaced, names := replaceCreatingResolvers(&out, apiRoot); replaced > 0 {
 		fixed = append(fixed, "a belongs_to parent that an import cannot create correctly is no "+
 			"longer created at all, and the row says why ("+strings.Join(names, ", ")+")")
+	}
+
+	// An unscoped User lookup is a cross-tenant read: an import running in one
+	// organization could file rows under somebody who belongs only to
+	// another, and the row error said whether that address exists at all.
+	// Only narrowed where there IS an organization: a project without the
+	// plugin has no members table to narrow against (grit#139).
+	if multitenant {
+		if n := scopeImportUserLookups(&out, module); n > 0 {
+			imports = append(imports, module+"/internal/tenant")
+			fixed = append(fixed, "a user named in a CSV is resolved among this "+
+				"organization's members, not every user on the platform")
+		}
 	}
 
 	if !strings.Contains(out, "imports.Wait(") {
@@ -267,4 +284,44 @@ func replaceCreatingResolvers(out *string, apiRoot string) (int, []string) {
 		replaced++
 	}
 	return replaced, names
+}
+
+// unscopedUserLookupRe matches the generated User lookup that reads every user
+// on the platform. The generator wrote this text, so it is matched rather than
+// parsed; an importer somebody edited by hand no longer matches and is left
+// alone.
+//
+// Group 1 is the CSV column, 2 the column looked up ("email" or "id"), 3 the
+// foreign key field, and 4 the "&" of an optional relationship.
+var unscopedUserLookupRe = regexp.MustCompile(
+	`\t\tif v, ok := get\(rec, "([a-z_]+)"\); ok && v != ""([^{]*)\{\n` +
+		`\t\t\tvar rel models\.User\n` +
+		`\t\t\tif err := db\.Where\("(\w+) = \?", v\)\.First\(&rel\)\.Error; err != nil \{\n` +
+		`\t\t\t\tmessage := fmt\.Sprintf\("no user with \w+ %q", v\)\n` +
+		`(?s).*?` +
+		`\t\t\titem\.(\w+) = (&?)rel\.ID\n` +
+		`\t\t\}\n`)
+
+// scopeImportUserLookups rewrites each one to resolve among the active
+// organization's members. Returns how many it changed.
+func scopeImportUserLookups(out *string, module string) int {
+	if strings.Contains(*out, "tenant.FromContext(ctx)") {
+		return 0 // already scoped
+	}
+	matches := unscopedUserLookupRe.FindAllStringSubmatchIndex(*out, -1)
+	if len(matches) == 0 {
+		return 0
+	}
+	// Backwards, so an earlier match's offsets stay valid.
+	for i := len(matches) - 1; i >= 0; i-- {
+		loc := matches[i]
+		group := func(n int) string { return (*out)[loc[2*n]:loc[2*n+1]] }
+		col, cond, where, fk, amp := group(1), group(2), group(3), group(4), group(5)
+		// cond is whatever sat between the emptiness check and the brace,
+		// which for an --owned-by resource is " && canAssignOwner". The
+		// trailing space belongs to the template, not to the condition.
+		replacement := ImportUserLookup(col, where, fk, strings.TrimRight(cond, " "), amp == "&", true)
+		*out = (*out)[:loc[0]] + replacement + (*out)[loc[1]:]
+	}
+	return len(matches)
 }
