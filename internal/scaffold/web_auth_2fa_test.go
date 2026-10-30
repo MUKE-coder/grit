@@ -82,7 +82,7 @@ func TestWebOAuthCallbackDoesNotTouchTokens(t *testing.T) {
 		}
 	}
 	if !strings.Contains(body, "setWebSessionMarker()") {
-		t.Error("the callback must stamp the web session marker, or middleware.ts " +
+		t.Error("the callback must stamp the web session marker, or proxy.ts " +
 			"bounces the next protected page straight back to /login")
 	}
 	if !strings.Contains(body, `searchParams.get("error")`) {

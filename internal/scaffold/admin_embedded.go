@@ -51,8 +51,12 @@ var adminShellFiles = map[string]bool{
 	"Dockerfile":        true,
 	"vitest.config.ts":  true,
 	"vitest.setup.ts":   true,
-	"app/globals.css":   true, // web's own, plus the dark-mode blocks merged in
-	"app/layout.tsx":    true, // web owns <html> and <body>; see embeddedAdminLayout
+	// The host web app has its own proxy.ts, and it carries adminGate. Only a
+	// Next app's root is read for one, and the one that would land here is not
+	// the root.
+	"proxy.ts":        true,
+	"app/globals.css": true, // web's own, plus the dark-mode blocks merged in
+	"app/layout.tsx":  true, // web owns <html> and <body>; see embeddedAdminLayout
 }
 
 // embeddedAdminFileMap is the admin panel, keyed by where it goes in apps/web.

@@ -40,7 +40,7 @@ import { useMe, useLogout } from "@/hooks/use-auth";
 // sidebar, a header that says who is signed in, and none of the marketing chrome.
 //
 // The group name is in parentheses, so it is not part of the URL. These pages are
-// at /account and /account/profile, which is what middleware.ts protects.
+// at /account and /account/profile, which is what proxy.ts protects.
 //
 // Add a section by adding a line here and a page under app/(app)/. Orders,
 // addresses, invoices, whatever the product has: the shell does not change.

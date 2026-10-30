@@ -7,7 +7,7 @@ package scaffold
 // customer-facing pages as protected. AddWebAuth scaffolds the two
 // pieces that close that gap:
 //
-//   apps/web/middleware.ts                       — SSR cookie redirect
+//   apps/web/proxy.ts                            — SSR cookie redirect
 //   apps/web/components/ProtectedWebRoute.tsx    — client-side guard
 //
 // Both files are idempotent — re-running grit add web-auth without
@@ -104,7 +104,7 @@ func AddWebAuth(root string, force bool) error {
 
 	fmt.Println()
 	fmt.Println("  Web-auth is wired in. Next steps:")
-	fmt.Println("    1. Open apps/web/middleware.ts and add protected paths to the matcher.")
+	fmt.Println("    1. Open apps/web/proxy.ts and add protected paths to the matcher.")
 	fmt.Println("    2. Or wrap a page client-side with <ProtectedWebRoute>.")
 	fmt.Println("    3. The navbar now shows Login / Sign up buttons + a UserMenu.")
 	fmt.Println("    4. See /docs/concepts/protecting-web-pages for both patterns.")
@@ -181,14 +181,14 @@ func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 
 		// The customer area: a route group with its own layout, and the two pages
 		// every signed-in customer expects to find. The user menu has linked to
-		// /account since v3.31.42 and middleware.ts has protected it, with nothing
+		// /account since v3.31.42 and the proxy has protected it, with nothing
 		// there to protect.
 		{filepath.Join(webRoot, "app", "(app)", "layout.tsx"), webAccountLayout(opts)},
 		{filepath.Join(webRoot, "app", "(app)", "account", "page.tsx"), webAccountOverviewPage()},
 		{filepath.Join(webRoot, "app", "(app)", "account", "profile", "page.tsx"), webAccountProfilePage()},
 
 		// Page protection helpers (the original v3.31.22 contents).
-		{filepath.Join(webRoot, "middleware.ts"), webMiddlewareTS()},
+		{filepath.Join(webRoot, "proxy.ts"), webProxyTS()},
 		{filepath.Join(webRoot, "components", "ProtectedWebRoute.tsx"), webProtectedRouteTSX()},
 
 		// REPLACEMENT -- the base scaffold ships a plain navbar; the auth-aware
@@ -217,7 +217,7 @@ func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 	return files
 }
 
-// webMiddlewareTS — runs on every Next.js request. Cheap: checks for
+// webProxyTS — runs on every Next.js request. Cheap: checks for
 // the existence of the grit_access HttpOnly cookie. If the cookie is
 // missing AND the path matches a protected pattern, redirect to /login
 // with the original path as a `next` query param. Otherwise pass
@@ -229,10 +229,11 @@ func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 // cookie still gets bounced — by the API itself when the page makes
 // its first authenticated call. The middleware just stops the
 // "blank page, then 401, then redirect" flicker.
-func webMiddlewareTS() string {
+func webProxyTS() string {
 	return `import { NextResponse, type NextRequest } from "next/server";
 
-// v3.31.22 — apps/web/middleware.ts
+// v3.31.22 — apps/web/proxy.ts (middleware.ts until v3.459.0, which is the
+// same convention under the name Next 16 deprecated)
 //
 // SSR cookie gate for protected pages. Edit PROTECTED_PATHS to add
 // routes that require sign-in. Anything not listed here remains
@@ -287,7 +288,7 @@ function matchesAny(pathname: string, patterns: string[]): boolean {
 }
 
 ` + adminGateTS + `
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const gate = adminGate(request);
   if (gate) return gate;
 
@@ -311,7 +312,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Matcher: limit middleware execution to the paths it might act on
+// Matcher: limit the proxy to the paths it might act on
 // — saves Next.js work on every static asset request. Keep this
 // in sync with PROTECTED_PATHS + AUTH_PATHS above.
 export const config = {
@@ -338,16 +339,16 @@ func webProtectedRouteTSX() string {
 // v3.31.22 — apps/web/components/ProtectedWebRoute.tsx
 //
 // Client-side route guard. Wrap a page's contents to enforce
-// authentication. Pairs with apps/web/middleware.ts — middleware
+// authentication. Pairs with apps/web/proxy.ts — the proxy
 // handles the SSR cookie check; this component handles the
 // post-hydration "is the cookie actually valid?" probe.
 //
 // Use this when you need:
 //   - Role/permission checks beyond cookie existence (the cookie
 //     doesn't carry role; useMe() returns the full user payload).
-//   - Per-page protection without editing middleware.ts.
+//   - Per-page protection without editing proxy.ts.
 //
-// For simple "is the visitor signed in?" pages, middleware.ts is
+// For simple "is the visitor signed in?" pages, proxy.ts is
 // faster — it bounces unauthenticated requests before the page
 // ever loads.
 

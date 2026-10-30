@@ -166,14 +166,13 @@ function adminGate(request: NextRequest): NextResponse | null {
 `
 )
 
-// webAdminMiddlewareTS is the web app's middleware when only the admin panel
-// needs one. grit add web-auth replaces it with webMiddlewareTS, which carries
-// the same gate.
-func webAdminMiddlewareTS() string {
+// webAdminProxyTS is the web app's proxy when only the admin panel needs one.
+// grit add web-auth replaces it with webProxyTS, which carries the same gate.
+func webAdminProxyTS() string {
 	return `import { NextResponse, type NextRequest } from "next/server";
 
 ` + adminGateTS + `
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   return adminGate(request) ?? NextResponse.next();
 }
 
@@ -184,8 +183,8 @@ export const config = {
 }
 
 // writeAdminEdgeGuard gives a Next.js web app with the embedded admin its
-// middleware, when it has none. An existing middleware.ts is the developer's
-// and is never replaced; one without the gate gets a note.
+// proxy, when it has none. An existing one, under either name, is the
+// developer's and is never replaced; one without the gate gets a note.
 func writeAdminEdgeGuard(root string, opts Options) error {
 	if !opts.ShouldEmbedAdmin() || opts.UseTanStack() {
 		return nil
@@ -203,7 +202,7 @@ func writeAdminEdgeGuard(root string, opts Options) error {
 			return nil
 		}
 	}
-	return writeFile(filepath.Join(web, "middleware.ts"), webAdminMiddlewareTS())
+	return writeFile(filepath.Join(web, "proxy.ts"), webAdminProxyTS())
 }
 
 var redisServiceHead = regexp.MustCompile(`(?m)^  redis:\r?\n    image: redis:[^\r\n]*\r?\n(?:    container_name: [^\r\n]*\r?\n)?    restart: unless-stopped\r?\n`)

@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.458.0"
+var version = "3.459.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -846,7 +846,7 @@ func addWebAuthCmd() *cobra.Command {
 			"  the (app) group  its layout, the account overview and profile\n" +
 			"  the chrome       the auth shells, social buttons, UserMenu, and\n" +
 			"                   a navbar that replaces the plain one\n" +
-			"  the guards       middleware.ts (SSR cookie redirect) and\n" +
+			"  the guards       proxy.ts (SSR cookie redirect) and\n" +
 			"                   ProtectedWebRoute.tsx (client guard)\n" +
 			"  the helpers      auth hooks, password rules, strength meter\n\n" +
 			"About thirty files. Running it on a project that already has its\n" +
@@ -854,7 +854,7 @@ func addWebAuthCmd() *cobra.Command {
 			"helpers, which is why this now says so.\n\n" +
 			"Existing files are left alone unless --force is passed, except one\n" +
 			"that is byte-for-byte a file this command wrote.\n\n" +
-			"After running, declare which paths are protected in middleware.ts\n" +
+			"After running, declare which paths are protected in proxy.ts\n" +
 			"by editing the matcher, or wrap a page with <ProtectedWebRoute>.\n" +
 			"For social sign-in, point OAUTH_FRONTEND_URL at the web app: it\n" +
 			"defaults to the admin, so a web OAuth flow lands there instead.",
@@ -870,7 +870,7 @@ func addWebAuthCmd() *cobra.Command {
 			return scaffold.AddWebAuth(root, force)
 		},
 	}
-	cmd.Flags().BoolVar(&force, "force", false, "Overwrite middleware.ts / ProtectedWebRoute.tsx if they already exist")
+	cmd.Flags().BoolVar(&force, "force", false, "Overwrite proxy.ts / ProtectedWebRoute.tsx if they already exist")
 	return cmd
 }
 

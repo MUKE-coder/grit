@@ -100,7 +100,7 @@ export default function SingleArchitecturePage() {
                 path segments, because a SPA resolves them in the browser.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                There is also no <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">middleware.ts</code>:
+                There is also no <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">proxy.ts</code>:
                 an export has no server to run one. The panel&apos;s own auth redirects a
                 signed-out visitor, and every endpoint behind it is checked by the API, which is
                 the check that matters.

@@ -130,7 +130,7 @@ func TestAdminSignInGate(t *testing.T) {
 	if !strings.Contains(src, signedInCookieSet) || !strings.Contains(src, signedInCookieClear) {
 		t.Error("the API does not set and clear grit_signed_in")
 	}
-	for name, mw := range map[string]string{"web-auth middleware": webMiddlewareTS(), "admin middleware": webAdminMiddlewareTS()} {
+	for name, mw := range map[string]string{"web-auth proxy": webProxyTS(), "admin proxy": webAdminProxyTS()} {
 		if !strings.Contains(mw, "adminGate(request)") || !strings.Contains(mw, `"/admin/:path*"`) {
 			t.Errorf("the %s does not gate /admin", name)
 		}

@@ -16,7 +16,7 @@ export default function Lesson() {
         marketing side. <strong><code>grit add web-auth</code></strong>{' '}
         (shipped in <strong>v3.31.22</strong>) gives you a one-shot
         command that drops two opt-in tools into the web app: a
-        cookie-checking middleware and a client-side wrapper.
+        cookie-checking proxy and a client-side wrapper.
       </p>
 
       <h2>Running the command</h2>
@@ -31,11 +31,11 @@ export default function Lesson() {
       <CodeBlock
         language="text"
         code={`  Adding web-auth helpers to apps/web/
-  ✓ wrote apps/web/middleware.ts
+  ✓ wrote apps/web/proxy.ts
   ✓ wrote apps/web/components/ProtectedWebRoute.tsx
 
   Next steps:
-    1. Open apps/web/middleware.ts and add protected paths to the matcher.
+    1. Open apps/web/proxy.ts and add protected paths to the matcher.
     2. Or wrap a page client-side with <ProtectedWebRoute>.
     3. See /docs/concepts/protecting-web-pages for both patterns.`}
       />
@@ -63,28 +63,28 @@ export default function Lesson() {
           </thead>
           <tbody className="divide-y divide-border/20">
             <tr>
-              <td className="px-3 py-2 font-medium">Middleware (SSR)</td>
-              <td className="px-3 py-2 font-mono text-[12px]">middleware.ts</td>
+              <td className="px-3 py-2 font-medium">Proxy (SSR)</td>
+              <td className="px-3 py-2 font-mono text-[12px]">proxy.ts</td>
               <td className="px-3 py-2 text-[12px]">Whole-section gates: <code>/account</code>, <code>/checkout</code>. Fast, no flash.</td>
             </tr>
             <tr>
               <td className="px-3 py-2 font-medium">Wrapper (client)</td>
               <td className="px-3 py-2 font-mono text-[12px]">&lt;ProtectedWebRoute&gt;</td>
-              <td className="px-3 py-2 text-[12px]">Role-gated content. Per-page protection without editing middleware.</td>
+              <td className="px-3 py-2 text-[12px]">Role-gated content. Per-page protection without editing the proxy.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h2>Pattern 1 — Middleware (SSR cookie gate)</h2>
+      <h2>Pattern 1 — Proxy (SSR cookie gate)</h2>
       <p>
-        Open <code>apps/web/middleware.ts</code> and you&apos;ll find
+        Open <code>apps/web/proxy.ts</code> and you&apos;ll find
         two arrays at the top:
       </p>
 
       <CodeBlock
         language="ts"
-        filename="apps/web/middleware.ts (excerpt)"
+        filename="apps/web/proxy.ts (excerpt)"
         code={`// Add paths here that require an authenticated visitor.
 const PROTECTED_PATHS: string[] = [
   "/account",
@@ -103,7 +103,7 @@ const AUTH_PATHS: string[] = [
       />
 
       <p>
-        The middleware runs on every Next.js request matching its
+        The proxy runs on every Next.js request matching its
         config matcher. It checks for the <code>grit_access</code>{' '}
         HttpOnly cookie:
       </p>
@@ -128,10 +128,10 @@ const AUTH_PATHS: string[] = [
         <strong>Why not verify the JWT?</strong> Verifying the cookie
         would require a network call to the API on every page request
         — adding 50-200ms of latency to your homepage too. The
-        middleware checks <em>cookie existence</em>, which is
+        proxy checks <em>cookie existence</em>, which is
         instant. Invalid or expired cookies still bounce — but at
         the next API call (which fails with 401, which is caught by{' '}
-        <code>useMe()</code>, which redirects). The middleware
+        <code>useMe()</code>, which redirects). The proxy
         prevents the unauthenticated-visitor-sees-account-shell flash
         without the per-request cost.
       </TipBox>
@@ -139,10 +139,10 @@ const AUTH_PATHS: string[] = [
       <h3>Editing the matcher</h3>
       <p>
         The <code>config.matcher</code> at the bottom of{' '}
-        <code>middleware.ts</code> tells Next.js which paths to run the
-        middleware on. Keep it in sync with <code>PROTECTED_PATHS</code>{' '}
+        <code>proxy.ts</code> tells Next.js which paths to run the
+        proxy on. Keep it in sync with <code>PROTECTED_PATHS</code>{' '}
         + <code>AUTH_PATHS</code> — anything outside the matcher
-        bypasses the middleware entirely (good for performance on
+        bypasses the proxy entirely (good for performance on
         static assets, blog pages, marketing routes):
       </p>
 
@@ -161,13 +161,13 @@ const AUTH_PATHS: string[] = [
 
       <h2>Pattern 2 — ProtectedWebRoute (client wrapper)</h2>
       <p>
-        The middleware is fast but can only check cookie existence.
+        The proxy is fast but can only check cookie existence.
         Three cases it can&apos;t handle:
       </p>
       <ul>
         <li>
           <strong>Expired cookies</strong> — the cookie is present
-          (middleware passes through) but invalid. The page shell
+          (the proxy passes through) but invalid. The page shell
           renders before the first API call exposes the problem.
         </li>
         <li>
@@ -177,7 +177,7 @@ const AUTH_PATHS: string[] = [
         </li>
         <li>
           <strong>Per-page protection</strong> — you don&apos;t want
-          to add yet another path to the middleware matcher.
+          to add yet another path to the proxy matcher.
         </li>
       </ul>
 
@@ -253,7 +253,7 @@ export default function BillingPage() {
         code={`HTTP request → /account/billing
                   │
                   ▼
-        middleware.ts checks grit_access cookie
+        proxy.ts checks grit_access cookie
             │ missing? → redirect /login?next=/account/billing  ✗
             │ present? → pass through                            ✓
                   │
@@ -267,25 +267,25 @@ export default function BillingPage() {
       />
 
       <p>
-        The middleware catches the "no cookie at all" case (which is
+        The proxy catches the "no cookie at all" case (which is
         99% of unauthorized visitors), shaving network calls and flash.
         The wrapper catches the rare "cookie present but
         invalid/expired/wrong-role" cases.
       </p>
 
       <KnowledgeCheck
-        question="You added `/checkout` to PROTECTED_PATHS in middleware.ts but forgot to add it to the config.matcher at the bottom. What happens when a logged-out visitor hits /checkout?"
+        question="You added `/checkout` to PROTECTED_PATHS in proxy.ts but forgot to add it to the config.matcher at the bottom. What happens when a logged-out visitor hits /checkout?"
         choices={[
           {
             label: "They're redirected to /login, as intended",
             feedback:
-              "Wrong — the middleware never RUNS on a path that isn't in the matcher. Next.js skips the file entirely for unmatched paths.",
+              "Wrong — the proxy never RUNS on a path that isn't in the matcher. Next.js skips the file entirely for unmatched paths.",
           },
           {
-            label: "The page renders normally — middleware was skipped because /checkout isn't in the matcher",
+            label: "The page renders normally — the proxy was skipped because /checkout isn't in the matcher",
             correct: true,
             feedback:
-              "Right. The matcher is the gate that decides whether middleware runs at all. PROTECTED_PATHS only matters once we're inside middleware(). Always update both in tandem.",
+              "Right. The matcher is the gate that decides whether the proxy runs at all. PROTECTED_PATHS only matters once we're inside proxy(). Always update both in tandem.",
           },
           {
             label: "Next.js throws a build error",
@@ -295,7 +295,7 @@ export default function BillingPage() {
           {
             label: "The visitor sees an infinite redirect loop",
             feedback:
-              "Wrong — the middleware would only redirect to /login if it ran, which it doesn't if the path isn't matched.",
+              "Wrong — the proxy would only redirect to /login if it ran, which it doesn't if the path isn't matched.",
           },
         ]}
       />
@@ -319,7 +319,7 @@ export default function BillingPage() {
               <li>
                 Add <code>/account</code> to both{' '}
                 <code>PROTECTED_PATHS</code> and{' '}
-                <code>config.matcher</code> in middleware.ts.
+                <code>config.matcher</code> in proxy.ts.
               </li>
               <li>
                 In an incognito tab, visit{' '}
@@ -378,7 +378,7 @@ export default function AccountPage() {
 }`}
             />
             <p>
-              The middleware bounces unauthenticated visitors at the
+              The proxy bounces unauthenticated visitors at the
               edge (no flash). The wrapper enforces the ADMIN role
               after hydration. The two work together — neither does
               the other&apos;s job.

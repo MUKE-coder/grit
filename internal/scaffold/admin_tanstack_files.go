@@ -398,6 +398,9 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "lib", "api-core.ts"):          adminTanStackAPICore(opts),
 		filepath.Join(adminRoot, "src", "lib", "detail-href.ts"): nextToTanStack(adminDetailHrefTS(opts)),
 		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):        adminTanStackAPIClient(),
+		// api-client.ts imports the marker, so the Vite admin needs the file even
+		// though it has no middleware to read the cookie: it gates in beforeLoad.
+		filepath.Join(adminRoot, "src", "lib", "admin-session.ts"): adminSessionLib(),
 		filepath.Join(adminRoot, "src", "lib", "active-org.ts"):       activeOrgTS(),
 		filepath.Join(adminRoot, "src", "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"):      adminQueryClient(),

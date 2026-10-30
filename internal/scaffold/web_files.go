@@ -2121,7 +2121,7 @@ function CallbackInner() {
     }
 
     // The cookies are already set. All that is left is the web-origin
-    // marker, without which middleware.ts bounces the next protected page
+    // marker, without which proxy.ts bounces the next protected page
     // straight back to /login.
     setWebSessionMarker();
     router.push("/");

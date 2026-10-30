@@ -241,6 +241,53 @@ m.Staff.POST("/products/bulk", middleware.RequireRole("ADMIN", "perm:products.de
               </p>
             </div>
 
+            <h2 id="edge-gate">The panel is not sent to a stranger</h2>
+            <p>
+              The same point, one layer out. Every admin page needs a session,
+              and until v3.459.0 that was decided in the browser: the page
+              arrived, React mounted, asked <code>/api/auth/me</code> who you
+              were, and on a 401 replaced the route with the login. Correct, and
+              it meant the panel was downloaded and run for somebody who had
+              never signed in.
+            </p>
+            <p>
+              A generated project gates it before that. A Next.js admin app has{' '}
+              <code>apps/admin/proxy.ts</code>; a panel inside a web app is
+              covered by that app&apos;s <code>proxy.ts</code>, which carries the
+              same check as <code>adminGate</code>; a Vite admin does it in its
+              router&apos;s <code>beforeLoad</code>.
+            </p>
+            <CodeBlock language="ts" code={`// apps/admin/proxy.ts: the pages a signed-out visitor may reach.
+const PUBLIC_PATHS = [
+  "/login", "/sign-up", "/forgot-password",
+  "/reset-password", "/verify-email", "/magic-link", "/callback",
+];
+
+// Everything else needs one of two cookies, and neither holds a secret:
+//   grit_admin_session  written on the admin's origin after a sign-in
+//   grit_signed_in      set by the API, when the API shares this host`} />
+            <p>
+              The matcher denies by default, so a page you add later, with{' '}
+              <code>grit generate</code> or a plugin, is gated the day it lands.
+              Add a page a visitor must reach without signing in and add its path
+              to <code>PUBLIC_PATHS</code>, or it will redirect to the login.
+            </p>
+
+            <div className="my-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+              <div className="mb-2 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <strong className="text-foreground">
+                  The gate is not access control either
+                </strong>
+              </div>
+              <p className="mb-0 text-sm text-muted-foreground">
+                Those cookies are markers. Anyone can write one from the console,
+                and what it buys them is the HTML of a panel whose every request
+                the API refuses. The gate decides what gets sent; the API decides
+                what is allowed. Do not put a check here and nowhere else.
+              </p>
+            </div>
+
             <h2>Upgrading an existing app</h2>
             <p>Nothing breaks, by construction:</p>
             <ul>

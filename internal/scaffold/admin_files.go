@@ -331,6 +331,11 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "lib", "active-org.ts"):        activeOrgTS(),
 		filepath.Join(adminRoot, "lib", "detail-href.ts"): adminDetailHrefTS(opts),
 		filepath.Join(adminRoot, "lib", "api-client.ts"):        adminAPIClient(),
+		// The session marker and the edge gate that reads it (review 2.15).
+		// proxy.ts is skipped for the embedded panel: the web app it lives inside
+		// has a proxy of its own, carrying adminGate.
+		filepath.Join(adminRoot, "lib", "admin-session.ts"): adminSessionLib(),
+		filepath.Join(adminRoot, "proxy.ts"):                adminProxyTS(),
 		filepath.Join(adminRoot, "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"):      adminQueryClient(),
 		filepath.Join(adminRoot, "lib", "utils.ts"):             adminUtils(),
@@ -1319,6 +1324,7 @@ func adminAPIClient() string {
 	return `import { createUploader, createAxiosTransport } from "@repo/upload";
 import { optimizeImage } from "@repo/upload/web";
 import { createApiClient } from "@/lib/api-core";
+import { setAdminSession, clearAdminSession } from "@/lib/admin-session";
 
 // The API's address, the /api/v1 rewrite, the CSRF header and the idempotency
 // key are in lib/api-core.ts, whose copy in the web app is the same file. What
@@ -1412,10 +1418,50 @@ const processQueue = (error: unknown) => {
   failedQueue = [];
 };
 
+// Endpoints that answer with a session. proxy.ts gates every panel page
+// on a marker cookie written on this origin, and this is where it is written:
+// one list, rather than a call in each of the four auth mutations plus the
+// OAuth callback page plus the magic-link page, where the next route added
+// would have been the one that forgot.
+const SESSION_PATHS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/me",
+  "/auth/totp/verify",
+  "/auth/totp/backup-codes/verify",
+  "/auth/magic-link/consume",
+  "/auth/passkeys/login/finish",
+];
+
+function marksASession(url: string): boolean {
+  return SESSION_PATHS.some((p) => url.includes(p));
+}
+
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const url = response.config?.url || "";
+    if (url.includes("/auth/logout")) {
+      clearAdminSession();
+    } else if (marksASession(url)) {
+      // A 200 carrying totp_required is a challenge, not a session: the cookies
+      // are not set until the code is accepted. Stamping here would open the
+      // panel to a browser that stopped at the second factor.
+      const body = response.data as { data?: { totp_required?: boolean } } | undefined;
+      if (body?.data?.totp_required !== true) setAdminSession();
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+
+    // No session, so no marker: the next page load is stopped at the edge
+    // instead of downloading the panel to be told the same thing again. Both
+    // ways out of a dead session come through here, the 401 from /auth/me on a
+    // page that is open and the failed refresh below.
+    if (error.response?.status === 401 && (originalRequest?.url || "").includes("/auth/me")) {
+      clearAdminSession();
+    }
 
     // Skip refresh on the auth endpoints themselves — a wrong password
     // 401-ing into a refresh attempt would loop and wipe the session.
@@ -1449,6 +1495,7 @@ apiClient.interceptors.response.use(
         // The cookies are HttpOnly so we can't expire them from JS.
         // Forcing a navigation to /login lets the user re-authenticate;
         // the next successful login replaces the cookies via Set-Cookie.
+        clearAdminSession();
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }

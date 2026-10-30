@@ -3,6 +3,7 @@ package scaffold
 import (
 	"bytes"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -100,18 +101,43 @@ func min(a, b int) int {
 	return b
 }
 
-// captureStdout returns what fn printed.
+// captureStdout returns what fn printed, through either writer.
 //
-// color.Output, not os.Stdout. The color package resolves its writer once at
-// init and writes there, so swapping os.Stdout captures nothing: the first
-// version of this test reported that the warning said none of the four things
-// it says, which was the test looking in the wrong place.
+// Both, because the two are not the same place. The color package resolves its
+// writer once at init, so swapping os.Stdout captures nothing a color.New(...)
+// prints: the first version of this test reported that the warning said none of
+// the four things it says, which was the test looking in the wrong place. And
+// the reverse is just as wrong, because most of upgrade's ✓ and ⚠ lines are
+// plain fmt.Printf. A helper that only swaps one is blind to half the output
+// and says so with confidence.
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
-	var buf bytes.Buffer
-	previous := color.Output
-	color.Output = &buf
-	defer func() { color.Output = previous }()
+	var coloured bytes.Buffer
+	previousColor := color.Output
+	color.Output = &coloured
+
+	read, write, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	previousStdout := os.Stdout
+	os.Stdout = write
+
+	plain := make(chan string, 1)
+	go func() {
+		var b bytes.Buffer
+		_, _ = io.Copy(&b, read)
+		plain <- b.String()
+	}()
+
+	defer func() {
+		color.Output = previousColor
+		os.Stdout = previousStdout
+	}()
 	fn()
-	return buf.String()
+
+	if err := write.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return coloured.String() + <-plain
 }

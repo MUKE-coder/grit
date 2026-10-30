@@ -59,6 +59,110 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.459.0 */}
+            <div className="mb-12" id="v3.459.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.459.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 31, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The admin panel loaded for people who were not signed in</h3>
+                <p>
+                  Review 2.15. Type <code>/system/api-keys</code> into a browser
+                  that had never signed in and the whole page arrived: the
+                  JavaScript, the sidebar, the route names. React then mounted,
+                  asked the API who you were, got a 401 and replaced the route
+                  with the login. Nothing leaked, because the API refuses every
+                  request behind that panel and that is the check that decides
+                  anything. But the panel was sent to a stranger, its shape was
+                  readable in the response, and the first thing they saw was a
+                  dashboard they could not use.
+                </p>
+                <p>
+                  The panel inside a web app has had a gate since v3.391.0,
+                  because the app it lives in has a file to put one in.{' '}
+                  <code>apps/admin</code> had no such file at all. It does now.
+                </p>
+                <CodeBlock language="text" code={`$ curl -i localhost:3001/system/api-keys
+HTTP/1.1 307 Temporary Redirect
+location: /login
+
+$ curl -o /dev/null -w "%{http_code}" localhost:3001/grit_logo.png
+200`} />
+                <p>
+                  The gate denies by default. Its matcher is every path except
+                  Next&apos;s own output and anything that looks like a file, so
+                  a page added later, by <code>grit generate</code> or by a
+                  plugin, is protected the day it lands rather than the day
+                  somebody remembers a list. The pages that let you sign in are
+                  let through from one short list inside the file, and the
+                  framework&apos;s own test suite derives that list from the
+                  panel&apos;s file map: a missing auth page would be a page
+                  nobody can open, and that is the one mistake this file can
+                  make which does not correct itself.
+                </p>
+                <p>
+                  The second line of that output matters as much as the first.
+                  The logo on the login page is served out of{' '}
+                  <code>public/</code>, so a gate that covered it would send a
+                  stranger to a login page with a hole where the logo goes.
+                </p>
+
+                <h3>What opens the gate</h3>
+                <p>
+                  A cookie with no secret in it, written on the admin&apos;s own
+                  origin whenever the API hands back a session. It is forgeable
+                  from the console, and that is fine: forging it buys you the
+                  HTML of a panel whose every request is refused. It is not the
+                  session. The session is still the HttpOnly pair the API sets,
+                  which JavaScript cannot read.
+                </p>
+                <p>
+                  It is written in one place, the admin&apos;s API client, from a
+                  list of the endpoints that answer with a session. The
+                  alternative was a call in each of the four auth mutations plus
+                  the OAuth callback page plus the magic-link page, and the next
+                  sign-in route added would have been the one that forgot. A 200
+                  carrying <code>totp_required</code> does not count: that is a
+                  challenge, not a session, and stamping it would open the panel
+                  to a browser that stopped at the second factor.
+                </p>
+                <p>
+                  The cookie&apos;s name is declared once and imported by both
+                  files. Two copies of a cookie name is this project&apos;s
+                  recurring bug: the gate reads one spelling, the thing that
+                  opens it writes another, and each file is correct when you read
+                  it on its own.
+                </p>
+
+                <h3>middleware.ts is now proxy.ts</h3>
+                <p>
+                  Found while measuring the above, which is the argument for
+                  measuring: Next 16 renamed this file convention, and a project
+                  with a <code>middleware.ts</code> prints a deprecation notice
+                  on every dev server start. Rather than ship the new gate under
+                  the deprecated name, both files moved.
+                </p>
+                <CodeBlock language="text" code={`before   ⚠ The "middleware" file convention is deprecated.
+                   Please use "proxy" instead.
+
+after    GET /dashboard 200 in 14.0s (proxy.ts: 36ms)`} />
+                <p>
+                  It is the same file: same request object, same matcher, and the
+                  function it exports is called <code>proxy</code>.{' '}
+                  <code>grit upgrade</code> moves an existing one, keeping its
+                  contents exactly, so any protected paths you added to it move
+                  with it. A file whose export is not the one Grit wrote is left
+                  alone with the one line it takes to do by hand, because
+                  renaming that one would give Next a file to read and no
+                  function behind it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.458.0 */}
             <div className="mb-12" id="v3.458.0">
               <div className="flex items-center gap-3 mb-4">

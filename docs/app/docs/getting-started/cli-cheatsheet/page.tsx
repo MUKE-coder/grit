@@ -981,7 +981,7 @@ export default function CLICheatsheetPage() {
                   </code>
                   : a{" "}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
-                    middleware.ts
+                    proxy.ts
                   </code>{" "}
                   SSR cookie check that redirects to{" "}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
@@ -1000,7 +1000,7 @@ export default function CLICheatsheetPage() {
                 <div className="space-y-3">
                   <TerminalCard
                     cmd="grit add web-auth"
-                    desc="Scaffold middleware.ts + ProtectedWebRoute.tsx"
+                    desc="Scaffold proxy.ts + ProtectedWebRoute.tsx"
                   />
                   <TerminalCard
                     cmd="grit add web-auth --force"

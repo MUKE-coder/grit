@@ -172,6 +172,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// updated its root config and Docker files and nothing else, so no API fix
 	// has ever reached one. internal/routes is the marker because both layouts
 	// have it and a frontend-only project does not.
+	// Next 16 deprecated the middleware filename, so Grit's gate moves to
+	// proxy.ts. Before the API block, because repairDeployHardening inside it
+	// ends in writeAdminEdgeGuard, and that writer stands aside when the web app
+	// has a file under either name: a middleware.ts left in place would stop the
+	// gate it is supposed to deliver from arriving under the new one.
+	if err := repairProxyConvention(root, opts); err != nil {
+		fmt.Printf("  ⚠ moving middleware.ts to the name Next 16 reads: %v\n", err)
+	}
+
 	hasAPI := dirExists(filepath.Join(opts.APIRoot(root), "internal", "routes"))
 	if hasAPI {
 		spinner.Printf("  → Updating migration and seed tools...\n")
