@@ -53,8 +53,25 @@ export default function AuditLogPage() {
               <p>Each row&apos;s hash is</p>
               <CodeBlock
                 language="text"
-                code={`hash = SHA-256( prev_hash || canonical(row) )`}
+                code={`hash = HMAC-SHA256( key, prev_hash || canonical(row) )`}
               />
+              <p>
+                <strong>Keyed</strong>, and that is the part that makes it mean
+                anything. Until v3.456.0 this was a plain{' '}
+                <code>SHA-256</code> with no key, over values anybody can read
+                off the source: somebody with database write access could edit a
+                row, recompute every hash after it, and verification would pass.
+                The chain detected an accident and not an attacker.
+              </p>
+              <p>
+                The key is <code>AUDIT_CHAIN_KEY</code>. Left unset it derives
+                from <code>JWT_SECRET</code> through SHA-256, so a project gets
+                a keyed chain without setting anything and the two are never the
+                same bytes. Set it explicitly when the chain should outlive a{' '}
+                <code>JWT_SECRET</code> rotation, or when the two should be held
+                by different people. Keep it somewhere your database
+                administrator is not: that separation is the whole mechanism.
+              </p>
               <p>
                 where <code>canonical(row)</code> is a stable JSON serialisation of the fields that
                 matter: who, method, path, status, payload digest, address, user agent, duration,
@@ -66,7 +83,18 @@ export default function AuditLogPage() {
                 Edit any field of any row and that row&apos;s hash no longer matches, and neither
                 does every hash after it, because each one was computed over the previous hash.
                 Delete a row and the link from its successor points at nothing. Insert a forged row
-                and it has no valid place in the chain. All three show up the same way.
+                and it has no valid place in the chain. All three show up the same way, and without
+                the key none of them can be papered over.
+              </p>
+              <p>
+                Every row records which algorithm hashed it, in{' '}
+                <code>hash_algo</code>, because a project that upgraded has rows
+                from before the key and rows from after it and both have to
+                verify. Verification honours each row&apos;s own algorithm, with
+                one rule: once a keyed row has been seen, an unkeyed row after
+                it fails. A chain does not go back to being unkeyed, so that is
+                tampering whatever its hash says, and it closes the obvious way
+                around the key.
               </p>
 
               <Callout type="note" title="Writes are serialised, not parallel">
@@ -170,12 +198,23 @@ export default function AuditLogPage() {
 
               <h2 id="limits">What it does not defend against</h2>
               <p>
-                A hash chain proves that the rows have not been changed by somebody with database
-                access. It cannot prove anything against somebody with code execution on the
-                running server: they hold the same key material the writer does and can recompute
+                A keyed hash chain proves that the rows have not been changed by somebody with
+                database access, and nothing more than that. It cannot prove anything against
+                somebody who also holds the key: code execution on the running server, the
+                environment, or your secret store. They have what the writer has and can recompute
                 the entire chain from scratch. Defending against that needs an anchor outside the
                 machine, publishing the daily root hash somewhere append-only that you do not
-                control, which Grit does not do yet.
+                control, which Grit does not do.
+              </p>
+              <p>
+                It also cannot tell you anything about a chain that was never keyed. If this
+                project predates v3.456.0, every row written before{' '}
+                <code>grit upgrade</code> keyed it carries{' '}
+                <code>hash_algo</code> of <code>sha256</code> and could have been
+                rewritten by anybody with database access at the time. Those rows
+                still verify, which is deliberate, and what they verify is that
+                nothing has changed them since: not that nothing changed them
+                before.
               </p>
               <p>
                 It also records what the API was asked to do, not what the database ended up

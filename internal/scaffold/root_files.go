@@ -39,6 +39,17 @@ func randomBase64Key() string {
 }
 
 // fieldEncryptionKeyComment introduces FIELD_ENCRYPTION_KEY in .env.
+const auditChainKeyComment = `# Keys the activity log's hash chain (HMAC-SHA256). Unset, it derives from
+# JWT_SECRET, which is why this is commented out: a project gets a keyed chain
+# without setting anything. Set it when the chain should outlive a JWT_SECRET
+# rotation, or when the two should be held by different people.
+#
+# Unkeyed, the chain is a plain SHA-256 over values anybody can read: somebody
+# with database write access edits a row, re-links what follows it, and
+# verification passes. Keep whichever secret keys it somewhere the database
+# administrator is not.
+`
+
 const fieldEncryptionKeyComment = `# Encrypts two-factor secrets and every crypto.EncryptedString column
 # (AES-256-GCM, 32 bytes in base64). Back it up with the database, but not in the
 # same place: losing it locks every two-factor user out and leaves encrypted
@@ -248,6 +259,7 @@ MINIO_CONSOLE_PORT=9003
 # JWT — generated at scaffold time. Rotate with: openssl rand -hex 32
 JWT_SECRET=%s
 `+fieldEncryptionKeyComment+`FIELD_ENCRYPTION_KEY={{FIELD_ENCRYPTION_KEY}}
+`+auditChainKeyComment+`# AUDIT_CHAIN_KEY=
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
@@ -622,6 +634,7 @@ DATABASE_REPLICA_URLS=
 # ─── JWT ───────────────────────────────────────────────
 JWT_SECRET=change-me-to-a-random-string-at-least-32-chars
 `+fieldEncryptionKeyComment+`FIELD_ENCRYPTION_KEY=CHANGE_ME
+`+auditChainKeyComment+`# AUDIT_CHAIN_KEY=
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 

@@ -178,6 +178,47 @@ export const postsResource = defineResource({
             </div>
 
             <div className="prose-grit">
+              <h2 id="owning-it">Editing any of it, and what that costs</h2>
+              <p>
+                All of that is in your repository, not in a dependency. You can
+                open <code>components/tables/data-table.tsx</code> and change
+                how sorting works, and nothing stops you. That is the point of
+                generating it rather than importing it.
+              </p>
+              <p>
+                It has one cost, and it is worth knowing before rather than
+                after: <strong>a file you edit stops receiving framework
+                fixes</strong>. <code>grit upgrade</code> reads a manifest of
+                what Grit last wrote, overwrites the files that still match it,
+                and leaves the rest alone. That is what protects your work, and
+                it means a later fix to the data table, the form builder or a
+                system page does not reach your copy of it.
+              </p>
+              <p>
+                Two commands make that visible rather than silent:
+              </p>
+              <CodeBlock language="bash" code={`grit upgrade --dry-run   # what would change, changing nothing
+grit upgrade --diff      # what the new version would have written
+                         # into the files it is leaving alone`} />
+              <p>
+                So the practical advice is to put your changes where they
+                survive. A resource&apos;s own definition in{' '}
+                <code>resources/</code> and its{' '}
+                <code>*.custom.tsx</code> overlay are yours by design and are
+                never overwritten, which makes them the right place for custom
+                cells, custom form fields and per-resource behaviour. Reach into
+                a framework component when the overlay genuinely cannot express
+                what you need, and then expect to carry that file yourself.
+              </p>
+              <p>
+                A versioned <code>@gritframework/admin</code> package would cut
+                the surface you carry, and it would also take these files out of
+                your hands. That trade has been considered and not taken: the
+                data table and the form builder are the two things people most
+                often need to change, and a dependency you cannot edit is worse
+                than a file that stops updating.
+              </p>
+
               <h2>Built-in Features</h2>
 
               <h3>Collapsible Sidebar</h3>

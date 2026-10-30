@@ -59,6 +59,101 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.456.0 */}
+            <div className="mb-12" id="v3.456.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.456.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The audit chain protected against nobody</h3>
+                <p>
+                  Review 2.7. Every row of the activity log is hashed over the
+                  row before it, so changing one row breaks every hash after it.
+                  The hash was <code>SHA-256(prev_hash || row)</code> with no
+                  key, over values anybody can read off the source. So the
+                  attack is: edit a row, recompute the rest, and verification
+                  passes.
+                </p>
+                <p>
+                  The package comment said it defended against &quot;a DBA
+                  covering tracks&quot;. That is precisely the one person it did
+                  not defend against. The docs were honest about the missing
+                  external anchoring and overstated everything else.
+                </p>
+                <CodeBlock language="text" code={`hash = SHA-256( prev_hash || canonical(row) )          before
+hash = HMAC-SHA256( key, prev_hash || canonical(row) )  now`} />
+                <p>
+                  The key is <code>AUDIT_CHAIN_KEY</code>, and it derives from{' '}
+                  <code>JWT_SECRET</code> through SHA-256 when unset, so no
+                  project has to set a second secret to get a keyed chain and
+                  the two are never the same bytes. Set it explicitly when the
+                  chain should outlive a <code>JWT_SECRET</code> rotation, or
+                  when the two should be held by different people. Keep it
+                  somewhere your database administrator is not, because that
+                  separation is the entire mechanism.
+                </p>
+
+                <h4>The chain has to verify across the day it was keyed</h4>
+                <p>
+                  Every row records which algorithm hashed it. A project that
+                  upgrades has unkeyed rows before the key and keyed rows after
+                  it, and a chain that reported every historical row as tampered
+                  would be a chain nobody looks at again. So verification
+                  honours each row&apos;s own algorithm, with one rule that is
+                  the whole point: once a keyed row has been seen, an unkeyed row
+                  after it fails. A chain does not go back to being unkeyed, so
+                  that is tampering whatever its hash says, and it closes the
+                  obvious way around the key.
+                </p>
+                <p>
+                  What this proves and what it does not is now written down
+                  rather than implied. It stops someone with database access. It
+                  does not stop someone who also holds the key, there is still
+                  no external anchoring, and rows written before the key prove
+                  only that nothing has changed them <em>since</em>.
+                </p>
+                <p>
+                  Three tests ship with every project and one of them is the
+                  attack: edit a row, re-link every row after it, and verify.
+                  Run against an unkeyed chain that test passes the forgery,
+                  which is what makes it worth having. Measured on a generated
+                  project, with and without the key:
+                </p>
+                <CodeBlock language="text" code={`a row edited and the chain re-linked after it
+
+unkeyed    the whole chain verifies          the attack works
+keyed      refused at the first edited row   the attack fails`} />
+
+                <h3>The admin runtime stays copied into your project</h3>
+                <p>
+                  Review 2.13, considered and declined. The admin is 36-38k
+                  lines generated into your repository rather than imported from
+                  a package, and the review is right that editing one of those
+                  files stops framework fixes reaching it.
+                </p>
+                <p>
+                  What was missing is anybody saying so. The admin overview now
+                  says what the trade costs, points at{' '}
+                  <code>grit upgrade --dry-run</code> and{' '}
+                  <code>--diff</code> for seeing what is being held back, and
+                  says where to put changes so they survive: a resource&apos;s
+                  definition and its <code>*.custom.tsx</code> overlay, which
+                  are never overwritten.
+                </p>
+                <p>
+                  A versioned <code>@gritframework/admin</code> package would cut
+                  the surface you carry and would also take these files out of
+                  your hands. The data table and the form builder are the two
+                  things people most often need to change, and a dependency you
+                  cannot edit is worse than a file that stops updating.
+                </p>
+              </div>
+            </div>
+
             {/* v3.455.0 */}
             <div className="mb-12" id="v3.455.0">
               <div className="flex items-center gap-3 mb-4">

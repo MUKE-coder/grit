@@ -367,6 +367,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 			if err := writeAuditChainFiles(root, opts); err != nil {
 				return fmt.Errorf("updating the audit chain: %w", err)
 			}
+			// And the key it is now written to use. The audit package above is
+			// framework-owned and arrives whole; config.go and main.go are the
+			// developer's, so they are repaired. Without this the project builds
+			// and its tests pass with the chain still unkeyed, which is a safe way
+			// to fail and a useless way to finish (review 2.7).
+			if err := repairAuditChainKey(root, opts); err != nil {
+				fmt.Printf("  ⚠ keying the audit chain: %v\n", err)
+			}
 		}
 		// Replicas behind a load balancer kept separate permission caches and
 		// SSO registries, and each ran every scheduled job. The package and the

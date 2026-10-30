@@ -489,6 +489,7 @@ import (
 	"github.com/markbates/goth/providers/google"
 
 	"` + "{{MODULE}}" + `/internal/ai"
+	"` + "{{MODULE}}" + `/internal/audit"
 	"` + "{{MODULE}}" + `/internal/cache"
 	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/cron"
@@ -510,6 +511,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+
+	// Key the activity log's hash chain, before anything can write to it.
+	//
+	// Unkeyed, the chain was a plain SHA-256 over inputs anybody can read off
+	// this source, so a row edited in the database could be re-hashed and the
+	// chain would still verify: the thing it exists to detect (review 2.7).
+	//
+	// The key is AUDIT_CHAIN_KEY, or derived from JWT_SECRET when that is
+	// unset, so an existing project gets a keyed chain without setting
+	// anything. What it buys and what it does not is written down in
+	// docs/security/audit-log.
+	audit.SetChainKey(cfg.AuditChainKeyBytes())
 
 	// The port, before anything else.
 	//
@@ -835,6 +848,7 @@ func apiConfigGo() string {
 	return `package config
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net"
@@ -974,6 +988,18 @@ type Config struct {
 	// crypto.EncryptedString columns. Empty = disabled (values stored plaintext).
 	FieldEncryptionKey string
 
+	// AuditChainKey keys the activity log's hash chain.
+	//
+	// Empty derives it from JWTSecret, so an existing project keeps working
+	// without setting anything. Set it explicitly when the audit chain should
+	// outlive a JWT_SECRET rotation, or when the two should be held by
+	// different people.
+	//
+	// Without a key the chain is a plain SHA-256 over public inputs, which
+	// anybody with database write access can recompute: the tampering then
+	// verifies, which is the opposite of what the chain is for (review 2.7).
+	AuditChainKey string
+
 	RedisURL string
 
 	// Storage
@@ -1112,6 +1138,7 @@ func Load() (*Config, error) {
 		DatabaseURL: resolveDatabaseURL(),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		FieldEncryptionKey: getEnv("FIELD_ENCRYPTION_KEY", ""),
+		AuditChainKey:      getEnv("AUDIT_CHAIN_KEY", ""),
 		RedisURL:    resolveRedisURL(),
 
 		JWTPrivateKey:        getEnv("JWT_PRIVATE_KEY", ""),
@@ -1636,6 +1663,33 @@ func resolveStorage(driver string) StorageConfig {
 			PublicURL: firstNonEmpty(os.Getenv("MINIO_PUBLIC_URL"), os.Getenv("STORAGE_PUBLIC_URL")),
 		}
 	}
+}
+
+// AuditChainKeyBytes is the key the activity log's hash chain is computed
+// under. main hands it to audit.SetChainKey at startup.
+//
+// AUDIT_CHAIN_KEY when set. Otherwise derived from JWT_SECRET, which every
+// project already has and which checkSecrets already refuses to leave at a
+// default outside development: the chain key is exactly as strong as that
+// secret, and no project has to set a second one to get a keyed chain.
+//
+// Through SHA-256 rather than used directly, so the chain key and the token
+// signing key are never the same bytes. Same shape as the gothic cookie
+// store's key, for the same reason.
+func (c *Config) AuditChainKeyBytes() []byte {
+	material := c.AuditChainKey
+	if material == "" {
+		material = c.JWTSecret
+	}
+	if material == "" {
+		// No secret at all is a development run that has not been configured.
+		// checkSecrets refuses this outside development; here, an unkeyed
+		// chain is better than a chain keyed with nothing, because an empty
+		// key would look keyed and protect nothing.
+		return nil
+	}
+	sum := sha256.Sum256([]byte("audit-chain-key:" + material))
+	return sum[:]
 }
 
 // firstNonEmpty returns the first non-empty string in vals, or "" if all
@@ -4271,9 +4325,15 @@ import (
 )
 
 // ActivityLog records every successful authenticated mutation, with a
-// tamper-evident hash chain — each row's Hash is SHA-256 of (PrevHash
-// || canonical(this_row)). Mutating any row breaks the chain on the
-// next VerifyChain pass.
+// tamper-evident hash chain: each row's Hash is HMAC-SHA256 under a
+// server-held key over (PrevHash || canonical(this_row)). Mutating any
+// row breaks the chain on the next VerifyChain pass, and without the
+// key the break cannot be papered over by recomputing what follows.
+//
+// Keyed since v3.456.0. Before that it was a plain SHA-256 over values
+// anybody can read off this source, so the one attacker it was written
+// for could recompute the whole chain (review 2.7). HashAlgo records
+// which of the two hashed each row.
 //
 // The payload digest is a SHA-256 of the request body so we have
 // evidence of what was sent without storing PII verbatim. Read-only —
@@ -4296,8 +4356,17 @@ type ActivityLog struct {
 	Resource    string ` + "`" + `gorm:"size:100;index" json:"resource,omitempty"` + "`" + `
 	ResourceIDs string ` + "`" + `gorm:"type:text" json:"resource_ids,omitempty"` + "`" + `
 	RecordCount int    ` + "`" + `json:"record_count,omitempty"` + "`" + `
-	PrevHash      string    ` + "`" + `gorm:"size:64" json:"prev_hash"` + "`" + ` // hex sha256, "" for the genesis row
-	Hash          string    ` + "`" + `gorm:"size:64;uniqueIndex" json:"hash"` + "`" + ` // hex sha256(prev_hash || canonical)
+	PrevHash      string    ` + "`" + `gorm:"size:64" json:"prev_hash"` + "`" + ` // hex, "" for the genesis row
+	Hash          string    ` + "`" + `gorm:"size:64;uniqueIndex" json:"hash"` + "`" + ` // hex of (prev_hash || canonical) under HashAlgo
+	// HashAlgo is which algorithm hashed this row: "hmac-sha256" since
+	// v3.456.0, and empty or "sha256" for a row written before the chain
+	// was keyed. Stored per row rather than assumed, because a project
+	// that upgraded has both and both have to verify (review 2.7).
+	//
+	// It is not a security boundary on its own: anybody who can edit a row
+	// can edit this. What stops a downgrade is VerifyChain refusing an
+	// unkeyed row that comes after a keyed one.
+	HashAlgo      string    ` + "`" + `gorm:"size:16" json:"hash_algo,omitempty"` + "`" + `
 	CreatedAt     time.Time ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
 }
 
@@ -4313,30 +4382,43 @@ func (a *ActivityLog) BeforeCreate(tx *gorm.DB) error {
 func apiAuditGo() string {
 	return `// Package audit owns the tamper-evident hash chain over the activity log.
 //
-// Each row's Hash = SHA-256(PrevHash || canonical(row)) where canonical
-// is a stable JSON serialization of the audit-relevant fields. Any
-// mutation to a row breaks every Hash from that row forward, which
+// Each row's Hash = HMAC-SHA256(key, PrevHash || canonical(row)) where
+// canonical is a stable JSON serialization of the audit-relevant fields.
+// Any mutation to a row breaks every Hash from that row forward, which
 // VerifyChain detects.
+//
+// The key is what makes that true against somebody who can write to the
+// database: unkeyed, which is what this was before v3.456.0, they edit a
+// row and recompute the rest, and verification passes. SetChainKey is
+// called from main at startup; see Config.AuditChainKeyBytes.
 //
 // Insert is serialized via a row-level FOR UPDATE lock on the latest
 // row inside the same transaction that does the INSERT — concurrent
 // inserts queue cleanly without forking the chain. Verification walks
 // the chain in created_at + id order; ties broken by id.
 //
-// What this defends against:
-//   - Direct SQL UPDATE / DELETE on activity_logs (most common attack
-//     vector — DBA covering tracks).
+// What this defends against, with a key the database administrator does
+// not hold:
+//   - Direct SQL UPDATE / DELETE on activity_logs, which is the common
+//     case: somebody covering their tracks in the database.
 //   - Out-of-band insertion of forged history.
+//   - A downgrade to the unkeyed algorithm, refused by VerifyChain once
+//     any keyed row has been seen.
 //
 // What this does NOT defend against:
-//   - Compromise of the running server itself (an attacker with code
-//     execution can rewrite the whole chain). External anchoring
-//     (publishing the daily root hash to a public ledger) is the
-//     follow-up — see #48.
+//   - Anybody who also holds the key: code execution on the server, the
+//     environment, or the secret store. They have what the writer has
+//     and can rewrite the chain whole. External anchoring, publishing
+//     the daily root hash somewhere append-only you do not control, is
+//     what answers that, and Grit does not do it. See #48.
+//   - Rows written before the chain was keyed. They still verify, and
+//     what that proves is that nothing has changed them since, not that
+//     nothing changed them before.
 package audit
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -4398,14 +4480,84 @@ type canonicalEntry struct {
 	RecordCount int    ` + "`" + `json:"record_count,omitempty"` + "`" + `
 }
 
-// ComputeHash returns hex(sha256(prevHash || canonical)) — the prev
-// hash is included as a hex string (not raw bytes) so the input is
-// trivially auditable: cat prev_hash | xxd; cat canonical.json.
-func ComputeHash(prevHash string, canonical []byte) string {
+// Chain algorithms. The name is stored on every row, because a project
+// upgrading from before the chain was keyed has rows of both.
+const (
+	// AlgoSHA256 is the original, unkeyed chain: sha256(prevHash || canonical).
+	// Written by every project before v3.456.0, and written by nothing now.
+	AlgoSHA256 = "sha256"
+	// AlgoHMACSHA256 is the keyed chain: HMAC-SHA256 under a server-held key.
+	AlgoHMACSHA256 = "hmac-sha256"
+)
+
+// chainKey is the key the chain is computed under. Set once at boot by
+// SetChainKey, before anything writes an entry.
+//
+// Package state rather than a parameter, because it is process-wide
+// configuration and the three call sites gain nothing from carrying it. One of
+// them is the verify loop, which would have to be handed it through two layers
+// that have no other use for it.
+var chainKey []byte
+
+// SetChainKey keys the audit chain. Called from main at startup.
+//
+// Review 2.7: without a key the chain is sha256 over public inputs, so anybody
+// with database write access recomputes it and the tampering verifies. The
+// code's own comment said it defended against "a DBA covering tracks" and it
+// did not.
+//
+// What this does buy: an edit made with database access alone is detected,
+// because the attacker cannot produce the hashes without the key. What it does
+// not buy: protection from someone who also holds the application's secrets,
+// and no external anchoring, so somebody with both could rewrite the chain
+// whole. Both limits are stated in the docs rather than implied away.
+func SetChainKey(key []byte) {
+	chainKey = key
+}
+
+// Keyed reports whether the chain is being written under a key. For the
+// status endpoint, so an operator can see which they have.
+func Keyed() bool { return len(chainKey) > 0 }
+
+// ComputeHash returns the chain hash for an entry, and the algorithm it used.
+//
+// The prev hash goes in as its hex string rather than raw bytes, so the input
+// stays trivially auditable: cat prev_hash | xxd; cat canonical.json.
+func ComputeHash(prevHash string, canonical []byte) (string, string) {
+	if len(chainKey) > 0 {
+		m := hmac.New(sha256.New, chainKey)
+		m.Write([]byte(prevHash))
+		m.Write(canonical)
+		return hex.EncodeToString(m.Sum(nil)), AlgoHMACSHA256
+	}
 	h := sha256.New()
 	h.Write([]byte(prevHash))
 	h.Write(canonical)
-	return hex.EncodeToString(h.Sum(nil))
+	return hex.EncodeToString(h.Sum(nil)), AlgoSHA256
+}
+
+// computeUnder returns the hash for one named algorithm, for verifying a row
+// that was written before the chain was keyed.
+//
+// A row with no algorithm recorded is from before the column existed, which
+// means it is unkeyed: that is the only thing it can be.
+func computeUnder(algo, prevHash string, canonical []byte) (string, bool) {
+	switch algo {
+	case "", AlgoSHA256:
+		h := sha256.New()
+		h.Write([]byte(prevHash))
+		h.Write(canonical)
+		return hex.EncodeToString(h.Sum(nil)), true
+	case AlgoHMACSHA256:
+		if len(chainKey) == 0 {
+			return "", false
+		}
+		m := hmac.New(sha256.New, chainKey)
+		m.Write([]byte(prevHash))
+		m.Write(canonical)
+		return hex.EncodeToString(m.Sum(nil)), true
+	}
+	return "", false
 }
 
 // MaxReadIDs caps how many ids one read entry lists. A page is a few hundred
@@ -4547,7 +4699,7 @@ func appendBatch(db *gorm.DB, entries []models.ActivityLog) error {
 				return fmt.Errorf("canonicalize: %w", err)
 			}
 			e.PrevHash = prevHash
-			e.Hash = ComputeHash(prevHash, canonical)
+			e.Hash, e.HashAlgo = ComputeHash(prevHash, canonical)
 			prevHash, last = e.Hash, e.CreatedAt
 		}
 		// One multi-row INSERT for the batch. An INSERT per entry kept the chain
@@ -4759,10 +4911,10 @@ func Reseal(ctx context.Context, db *gorm.DB, fromID, userID, ip, userAgent stri
 				if err != nil {
 					return err
 				}
-				hash := ComputeHash(prevHash, canonical)
+				hash, algo := ComputeHash(prevHash, canonical)
 				replaced.Write([]byte(e.Hash))
 				if err := tx.Model(&models.ActivityLog{}).Where("id = ?", e.ID).
-					Updates(map[string]interface{}{"prev_hash": prevHash, "hash": hash}).Error; err != nil {
+					Updates(map[string]interface{}{"prev_hash": prevHash, "hash": hash, "hash_algo": algo}).Error; err != nil {
 					return fmt.Errorf("resealing %s: %w", e.ID, err)
 				}
 				prevHash = hash
@@ -4822,6 +4974,8 @@ const verifyBatchSize = 1000
 func VerifyChain(ctx context.Context, db *gorm.DB) (ChainStatus, error) {
 	prevHash := ""
 	total := 0
+	// Whether a keyed row has been seen yet. See the downgrade check below.
+	sawKeyed := false
 	var lastCreatedAt time.Time
 	var lastID string
 
@@ -4869,7 +5023,39 @@ func VerifyChain(ctx context.Context, db *gorm.DB) (ChainStatus, error) {
 				}
 				prevHash = e.PrevHash
 			}
-			expected := ComputeHash(prevHash, canonical)
+			// Each row under the algorithm it was written with. A project that
+			// upgraded through v3.456.0 has unkeyed rows before the key and
+			// keyed rows after it, and both have to verify (review 2.7).
+			expected, known := computeUnder(e.HashAlgo, prevHash, canonical)
+			if !known {
+				return ChainStatus{
+					Valid:        false,
+					TotalEntries: total + i,
+					BrokenAtID:   e.ID,
+					BrokenAt:     total + i,
+					Got:          e.HashAlgo,
+					Message:      "this row names a hash algorithm this build cannot compute, so the chain cannot be verified past it. A keyed row needs AUDIT_CHAIN_KEY, or the JWT_SECRET it derives from, to be the one that wrote it",
+				}, nil
+			}
+			// The rule that makes keying worth anything. Without it, somebody
+			// with database access rewrites every row in the unkeyed algorithm
+			// and the chain verifies: the unkeyed hash is computable by anyone.
+			// So once a keyed row has been seen, an unkeyed row after it is a
+			// downgrade, and that is tampering whatever its hash says.
+			if sawKeyed && e.HashAlgo != AlgoHMACSHA256 {
+				return ChainStatus{
+					Valid:        false,
+					TotalEntries: total + i,
+					BrokenAtID:   e.ID,
+					BrokenAt:     total + i,
+					Expected:     AlgoHMACSHA256,
+					Got:          e.HashAlgo,
+					Message:      "this row is hashed without the chain key, and an earlier row is hashed with it. A chain does not go back to being unkeyed, so this row was written or rewritten by something that does not hold the key",
+				}, nil
+			}
+			if e.HashAlgo == AlgoHMACSHA256 {
+				sawKeyed = true
+			}
 			if expected != e.Hash {
 				return ChainStatus{
 					Valid:        false,

@@ -33,9 +33,15 @@ func writeAuditChainFiles(root string, opts Options) error {
 	if err := write(model, apiActivityLogModelGo()); err != nil {
 		return err
 	}
-	if !fileContains(model, "ResourceIDs") {
+	// HashAlgo rather than ResourceIDs: the gate has to name the newest field
+	// the audit package reads, not an older one. A gate naming a field that
+	// predates the change lets a held-back model through, and the audit
+	// package written beside it then does not compile (review 2.7).
+	if !fileContains(model, "HashAlgo") {
 		fmt.Println("  ⚠ models/activity_log.go has been edited, so the audit chain fix was not applied.\n" +
-			"    Run grit upgrade --diff to see what it needs.")
+			"    Run grit upgrade --diff to see what it needs. Without the HashAlgo column\n" +
+			"    the chain stays unkeyed, and an unkeyed chain is one anybody with\n" +
+			"    database access can recompute.")
 		return nil
 	}
 
@@ -175,6 +181,137 @@ func TestChainVerifies(t *testing.T) {
 	}
 	if !status.Valid || status.TotalEntries != 51 {
 		t.Fatalf("chain did not verify: %+v", status)
+	}
+}
+
+// Keying the chain is what makes it mean anything (review 2.7).
+//
+// Unkeyed, the hash is SHA-256 over inputs anybody can read off this source.
+// Somebody with database write access edits a row, recomputes the chain from
+// there, and verification passes: the one thing the chain exists to detect.
+// This is that attack, and it has to fail.
+func TestAKeyedChainRefusesARecomputedRow(t *testing.T) {
+	SetChainKey([]byte("a-server-held-key"))
+	defer SetChainKey(nil)
+
+	db := openChain(t)
+	write(t, db, 5)
+
+	if status, err := VerifyChain(context.Background(), db); err != nil || !status.Valid {
+		t.Fatalf("a freshly written keyed chain does not verify: %+v %v", status, err)
+	}
+
+	// The attacker's move, in full. Editing one row is caught by the next
+	// link whether the chain is keyed or not, so that is not the attack: the
+	// attack is to edit a row and then rewrite every row after it so the
+	// links join up again. With an unkeyed chain that works completely,
+	// because the hash is computable by anybody who can read the source.
+	var rows []models.ActivityLog
+	if err := db.Order("created_at, id").Find(&rows).Error; err != nil {
+		t.Fatal(err)
+	}
+	rows[2].Path = "/api/v1/not-what-happened"
+
+	prev := rows[2].PrevHash
+	for i := 2; i < len(rows); i++ {
+		canonical, err := Canonical(&rows[i])
+		if err != nil {
+			t.Fatal(err)
+		}
+		forged, ok := computeUnder(AlgoSHA256, prev, canonical)
+		if !ok {
+			t.Fatal("the unkeyed algorithm is not computable, so this test proves nothing")
+		}
+		if err := db.Model(&models.ActivityLog{}).Where("id = ?", rows[i].ID).
+			Updates(map[string]interface{}{
+				"path":      rows[i].Path,
+				"prev_hash": prev,
+				"hash":      forged,
+				"hash_algo": AlgoSHA256,
+			}).Error; err != nil {
+			t.Fatal(err)
+		}
+		prev = forged
+	}
+
+	status, err := VerifyChain(context.Background(), db)
+	if err != nil {
+		t.Fatalf("verify: %v", err)
+	}
+	if status.Valid {
+		t.Error("a chain rewritten without the key verified, so the key buys nothing: " +
+			"anybody with database access can edit a row and re-link what follows it")
+	}
+	// Reported at the first rewritten row, not somewhere downstream, so
+	// everything before it is still known good.
+	if status.BrokenAtID != rows[2].ID {
+		t.Errorf("the break is reported at %s, want the first rewritten row %s",
+			status.BrokenAtID, rows[2].ID)
+	}
+}
+
+// A project that upgraded has rows from before the chain was keyed, and they
+// still have to verify: a chain that reports every historical row as tampered
+// is a chain nobody will look at again.
+func TestTheChainVerifiesAcrossTheDayItWasKeyed(t *testing.T) {
+	// Written unkeyed, as an older release wrote them.
+	SetChainKey(nil)
+	db := openChain(t)
+	write(t, db, 4)
+
+	// And then the key arrives, mid-chain, as it does on upgrade.
+	SetChainKey([]byte("a-server-held-key"))
+	defer SetChainKey(nil)
+	write(t, db, 4)
+
+	status, err := VerifyChain(context.Background(), db)
+	if err != nil {
+		t.Fatalf("verify: %v", err)
+	}
+	if !status.Valid || status.TotalEntries != 8 {
+		t.Fatalf("a chain keyed part way through does not verify: %+v", status)
+	}
+}
+
+// And the rule that stops the obvious way around the key: rewrite everything
+// in the algorithm you can compute. A chain does not go back to being
+// unkeyed, so an unkeyed row after a keyed one is tampering whatever its hash
+// says.
+func TestTheChainRefusesADowngradeAfterAKeyedRow(t *testing.T) {
+	SetChainKey(nil)
+	db := openChain(t)
+	write(t, db, 2)
+
+	SetChainKey([]byte("a-server-held-key"))
+	defer SetChainKey(nil)
+	write(t, db, 2)
+
+	// Take the last row back to the unkeyed algorithm, correctly hashed under
+	// it. Without the ordering rule this verifies.
+	var rows []models.ActivityLog
+	if err := db.Order("created_at, id").Find(&rows).Error; err != nil {
+		t.Fatal(err)
+	}
+	last := rows[len(rows)-1]
+	canonical, err := Canonical(&last)
+	if err != nil {
+		t.Fatal(err)
+	}
+	downgraded, _ := computeUnder(AlgoSHA256, last.PrevHash, canonical)
+	if err := db.Model(&models.ActivityLog{}).Where("id = ?", last.ID).
+		Updates(map[string]interface{}{"hash": downgraded, "hash_algo": AlgoSHA256}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	status, err := VerifyChain(context.Background(), db)
+	if err != nil {
+		t.Fatalf("verify: %v", err)
+	}
+	if status.Valid {
+		t.Error("a row downgraded to the unkeyed algorithm verified, so the key can be stepped around")
+	}
+	if !strings.Contains(status.Message, "does not go back to being unkeyed") {
+		t.Errorf("the failure does not explain itself: %q", status.Message)
 	}
 }
 
