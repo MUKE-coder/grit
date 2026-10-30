@@ -132,6 +132,13 @@ func EnsureAppendOnlyWiring(apiRoot, module string) error {
 // addImportGroup adds path to the end of the file's import block, as a group
 // of its own so gofmt has nothing to reorder. Reports false when there is no
 // parenthesised import block to add it to.
+// AddImportGroup adds an import to a Go source file's block, exported because
+// the generator needs the same thing and a second implementation of "insert an
+// import" is how the two start disagreeing about where a blank line goes.
+func AddImportGroup(content, path string) (string, bool) {
+	return addImportGroup(content, path)
+}
+
 func addImportGroup(content, path string) (string, bool) {
 	line := "\t\"" + path + "\""
 	start := strings.Index(content, "\nimport (\n")

@@ -109,6 +109,15 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 		}
 		out = repaired
 
+		// And the write checks, which the CLI applies after that money repair:
+		// a patch and a bulk action are checked against the model's own rules
+		// and the row policy. Last, because the repair above is what adds the
+		// grid methods and the encoding/json import they are written against.
+		out, changed = scaffold.RepairGeneratedServiceChecks(out, module)
+		if !changed {
+			t.Fatalf("%s did not get the write checks", tc.service)
+		}
+
 		if got := codefmt.Go(out); got != tc.want {
 			t.Errorf("repairing %s did not produce the generated service.\n--- repaired\n%s\n--- generated\n%s", tc.service, got, tc.want)
 		}
@@ -121,6 +130,9 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 		}
 		if again, changed := scaffold.RepairGeneratedServicePolicies(settled, module); changed || again != settled {
 			t.Errorf("the policy repair on %s was not idempotent", tc.service)
+		}
+		if again, changed := scaffold.RepairGeneratedServiceChecks(settled, module); changed || again != settled {
+			t.Errorf("the write-check repair on %s was not idempotent", tc.service)
 		}
 	}
 	if _, changed := scaffold.RepairGeneratedServiceWrites(linked, ""); changed {

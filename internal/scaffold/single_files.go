@@ -365,6 +365,7 @@ func main() {
 		Jobs:    jobClient,
 	}
 
+	// grit:main:boot
 	// Setup router
 	router := routes.Setup(db, cfg, svc)
 

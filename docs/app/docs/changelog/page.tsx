@@ -59,6 +59,107 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.451.0 */}
+            <div className="mb-12" id="v3.451.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.451.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every policy rule was dead</h3>
+                <p>
+                  <code>policies.Register()</code> had no call site. Not in{' '}
+                  <code>main</code>, not in <code>routes</code>, nowhere in a
+                  generated project. Every rule anybody wrote in{' '}
+                  <code>internal/policies</code> was registered into a map that
+                  nothing ever filled, so no rule ran on any path: a{' '}
+                  <code>PATCH</code> on a row a rule denied answered 200.
+                </p>
+                <p>
+                  That is the worst shape an authorization feature can fail in,
+                  because everything about it looks finished. The package is
+                  generated beside the resource, it is documented, it carries a
+                  worked example, and each resource injects its own
+                  registration into a marker inside it. The only missing piece
+                  was the one nobody looks at twice.
+                </p>
+                <p>
+                  The call cannot be written into <code>main.go</code> at
+                  scaffold time, because the package only exists once a
+                  resource has been generated and a project with none would
+                  stop compiling. So <code>main.go</code> carries a{' '}
+                  <code>grit:main:boot</code> marker and the generator injects
+                  the call beside the registry it already creates.{' '}
+                  <code>grit upgrade</code> adds it to every project that has
+                  the package, which is every project that has ever run{' '}
+                  <code>grit generate resource</code>.
+                </p>
+                <p>
+                  Found while testing the next item, which reported the rules
+                  as evadable through a bulk action. They were evadable through
+                  everything.
+                </p>
+
+                <h3>Patch, BulkEdit and Bulk wrote maps nothing had checked</h3>
+                <p>
+                  Enterprise review 2.4. <code>Create</code> and{' '}
+                  <code>Update</code> bind into the model, so gin runs the
+                  binding tags, and they load their row through{' '}
+                  <code>s.load</code>, which consults a policy. The three
+                  map-shaped paths did neither. A column whitelist answers
+                  &quot;may this column be written at all&quot; and nothing
+                  else, so <code>binding:&quot;required&quot;</code> never
+                  fired, a money value was never checked, and{' '}
+                  <code>&#123;&quot;count&quot;:&quot;x&quot;&#125;</code>{' '}
+                  reached the database as a type error and came back a 500.
+                </p>
+                <p>
+                  All three now apply the whitelisted patch onto a copy of the
+                  row and run the model&apos;s own rules over the result. Onto
+                  a copy of the row rather than an empty struct, so a rule
+                  about a field the patch does not mention still sees the value
+                  already stored; the copy is thrown away, and the write is
+                  still the map, so a column nobody sent is not zeroed. Before
+                  the money expansion, which rewrites a field into two columns
+                  whose names are not json tags.
+                </p>
+                <p>
+                  And both bulk paths run the policy per row. The ability
+                  follows the action, so a rule that refuses a delete and
+                  allows an edit is asked the right question, and a refusal is
+                  a 403 rather than the 422 it would otherwise have been: a
+                  client branching on the status should not see one code for
+                  one row and another for twelve.
+                </p>
+                <CodeBlock language="text" code={`                     before   after
+single PATCH, denied    200      403
+bulk patch, denied      200      403
+bulk delete, denied     200      403
+{"count":"x"}           500      422  count must be a whole number
+{"label":""} required   200      422  label: This field is required`} />
+                <p>
+                  Measured on a running project with a real rule defined. The
+                  first line is the one worth looking at twice: the single
+                  path was never supposed to be affected, and it was, because
+                  of the finding above.
+                </p>
+                <p>
+                  <code>grit upgrade</code> applies all of it to services that
+                  already exist. A security fix only the generator carries
+                  reaches resources nobody has generated yet, which is the one
+                  set that was never at risk. The repair and the generator are
+                  held together by a test that runs the repair over a service
+                  the generator wrote before any of this and compares the
+                  result to what the generator writes now, byte for byte, so
+                  the two cannot drift into an upgraded project being checked
+                  less than a new one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.450.0 */}
             <div className="mb-12" id="v3.450.0">
               <div className="flex items-center gap-3 mb-4">

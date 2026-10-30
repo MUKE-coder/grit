@@ -130,6 +130,80 @@ m.Staff.POST("/products/bulk", middleware.RequireRole("ADMIN", "perm:products.de
               <code>generatedModules()</code> between the marker comments.
             </p>
 
+            <h2 id="policies">Policies: a rule about one row</h2>
+            <p>
+              A permission answers &quot;may this role touch this resource at
+              all&quot;, and it is checked before the handler runs. It cannot
+              answer anything that depends on the record: editable while it is
+              a draft, approvable by anyone but the person who raised it,
+              deletable only once archived. Those are <strong>policies</strong>,
+              and they live in <code>internal/policies</code>.
+            </p>
+            <p>
+              <code>grit generate resource Invoice</code> writes{' '}
+              <code>internal/policies/invoice.go</code> with the three abilities
+              the service checks, every one commented out. A rule you do not
+              write is not a rule that denies, so a project that ignores the
+              package behaves exactly as it did before it had one.
+            </p>
+            <CodeBlock language="go" filename="internal/policies/invoice.go" code={`func registerInvoices() {
+    authz.Define("invoices.update", func(actor authz.Actor, record any) authz.Decision {
+        item, ok := record.(*models.Invoice)
+        if !ok {
+            // Another model reached this rule, which is a wiring mistake
+            // rather than a refusal. Let the ability meant for it decide.
+            return authz.Allow()
+        }
+        if item.Status == "paid" {
+            return authz.Deny("This invoice is paid, so it is corrected with a credit note rather than edited")
+        }
+        return authz.Allow()
+    })
+}`} />
+            <p>
+              The three abilities are{' '}
+              <code>&lt;resource&gt;.read</code>,{' '}
+              <code>&lt;resource&gt;.update</code> and{' '}
+              <code>&lt;resource&gt;.delete</code>. The service consults them
+              around the row it loaded, so they hold on every path into that
+              row: the REST handler, a background job, a CLI command and a test
+              all go through the same service method. The reason a rule gives
+              is the message the client receives, with a 403.
+            </p>
+            <p>
+              An <code>ADMIN</code> is <strong>not</strong> exempt by default.
+              That is deliberate: these rules are about the state of a record
+              rather than the rank of a user, and &quot;this invoice is already
+              paid&quot; is as true for an administrator as for anybody else.{' '}
+              <code>authz.Before</code> adds an exemption for the abilities
+              that want one.
+            </p>
+            <p>
+              Bulk actions and the editable grid ask per row. A policy that
+              refuses twelve of the selected rows refuses the whole action
+              rather than applying nine of them, because a bulk action that
+              reports twelve and changed nine is worse than one that says no
+              and names what it would not touch.
+            </p>
+
+            <div className="my-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+              <div className="mb-2 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <strong className="text-foreground">
+                  Before v3.451.0, no rule ran
+                </strong>
+              </div>
+              <p className="mb-0 text-sm text-muted-foreground">
+                <code>policies.Register()</code> had no call site. The package
+                was generated, documented and injected into correctly, and
+                nothing ever called the function that defines the rules, so
+                every rule anybody wrote was registered into a map that stayed
+                empty. <code>grit upgrade</code> adds the call. If you wrote a
+                rule before that version, upgrade and then check it actually
+                refuses what you expect, because until now it did not.
+              </p>
+            </div>
+
             <h2>Managing roles</h2>
             <p>
               The admin panel has a <strong>Roles &amp; permissions</strong> screen under

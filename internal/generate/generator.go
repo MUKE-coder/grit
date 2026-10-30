@@ -392,6 +392,12 @@ func (g *Generator) Run() error {
 	if err := g.injectPolicyRegistration(names); err != nil {
 		return fmt.Errorf("registering the policy: %w", err)
 	}
+	// And make main call Register, without which every rule in that package
+	// is registered into a map nothing ever fills. It had no caller at all
+	// until v3.451.0: the package was generated, documented and dead.
+	if err := g.injectPolicyBoot(); err != nil {
+		return fmt.Errorf("wiring the policies into main: %w", err)
+	}
 	fmt.Printf("  ✓ %sinternal/policies/%s.go\n", apiPrefix, names.Snake)
 
 	if err := g.ensureFactoryCounter(); err != nil {

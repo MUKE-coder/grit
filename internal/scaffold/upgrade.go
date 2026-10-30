@@ -536,6 +536,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairWebhookIndexMigration(root, opts); err != nil {
 			fmt.Printf("  ⚠ migrating the webhook idempotency key: %v\n", err)
 		}
+		// policies.Register() had no call site anywhere in a generated
+		// project, so every rule in internal/policies was dead: registered
+		// into a map nothing filled, and never consulted on any path.
+		if err := repairPoliciesBoot(root, opts); err != nil {
+			fmt.Printf("  ⚠ wiring the policies into main: %v\n", err)
+		}
 		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
 		// security workflow's audit fails until the patched build is in.
 		warnVulnerableXLSX(root)

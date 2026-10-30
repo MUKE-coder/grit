@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.450.0"
+var version = "3.451.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1709,6 +1709,15 @@ func upgradeCmd() *cobra.Command {
 				for _, line := range blocked {
 					yellow.Printf("  ⚠ %s\n", line)
 				}
+			}
+
+			// And what those services write. A patch or a bulk action applied the
+			// column whitelist and wrote the map, so binding:"required" never fired
+			// on either path and a rule in internal/policies was evadable by
+			// selecting the rows. After the repair above, which is what adds the
+			// grid methods these checks also cover.
+			if err := scaffold.RepairServiceChecks(); err != nil {
+				color.New(color.FgYellow).Printf("  ⚠ checking what a patch and a bulk action write: %v\n", err)
 			}
 
 			// Plugins are part of the project too. Left to a command of its

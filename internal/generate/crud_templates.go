@@ -765,7 +765,8 @@ func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}Grid
 			// a thing people do.
 			continue
 		}
-		expand{{Pascal}}Embedded(updates)
+		// Not expanded yet: s.checked below decodes these keys as json tags,
+		// and a money field's two columns are not that.
 		writes = append(writes, write{id: edit.ID, updates: updates})
 	}
 	if len(rowErrors) > 0 {
@@ -786,17 +787,56 @@ func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}Grid
 	if err := s.db(ctx).Model(&models.{{Pascal}}{}).Where("id IN ?", ids).Find(&allowed).Error; err != nil {
 		return nil, nil, fmt.Errorf("loading {{plural}} to edit: %w", err)
 	}
+	// A policy rule narrows this further than the route's permission did.
+	// Without it, a rule in internal/policies was evadable by selecting the
+	// rows in the grid and editing them here: Patch consults the policy
+	// through s.load and this path did not (review 2.4).
+	permittedRows, denied := s.permitted(ctx, allowed, "update")
+	allowed = permittedRows
+
 	exists := make(map[string]bool, len(allowed))
 	for _, row := range allowed {
 		exists[row.ID] = true
 	}
+	deniedSet := make(map[string]bool, len(denied))
+	for _, id := range denied {
+		deniedSet[id] = true
+	}
 	for i, w := range writes {
-		if !exists[w.id] {
+		switch {
+		case deniedSet[w.id]:
+			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: "not allowed to edit this {{lower}}"})
+		case !exists[w.id]:
 			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: "no such {{lower}}"})
 		}
 	}
 	if len(rowErrors) > 0 {
 		return nil, rowErrors, nil
+	}
+
+	// And the model's own rules, per row, against the row as it will be.
+	// Reported by index so a grid can put the message on the cell.
+	current := make(map[string]*models.{{Pascal}}, len(allowed))
+	for i := range allowed {
+		current[allowed[i].ID] = &allowed[i]
+	}
+	for i, w := range writes {
+		row, ok := current[w.id]
+		if !ok {
+			continue
+		}
+		if err := s.checked(row, w.updates); err != nil {
+			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: err.Error()})
+		}
+	}
+	if len(rowErrors) > 0 {
+		return nil, rowErrors, nil
+	}
+
+	// Expanded after validation: a money field becomes two columns whose
+	// names are not json tags, so a decode after this drops them.
+	for i := range writes {
+		expand{{Pascal}}Embedded(writes[i].updates)
 	}
 
 	saved := make([]string, 0, len(writes))
@@ -1135,7 +1175,11 @@ import (
 	// Grid rows arrive as maps and are decoded into the model here, through
 	// the same JSON path a single create takes.
 	"encoding/json"
+	// checked reads the decode failure to name the field and the type it
+	// wanted, rather than letting a wrong type reach the database as a 500.
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"{{GORM_CLAUSE}}
@@ -1264,6 +1308,84 @@ func (s *{{Pascal}}Service) load(ctx context.Context, id, ability string) (*mode
 	return &item, nil
 }
 
+// checked applies a whitelisted patch onto a copy of the row and runs the
+// model's own rules over the result.
+//
+// The whitelist answers "may this column be written at all". It does not
+// answer "is this a legal value", and before v3.450.0 nothing did on this
+// path: binding:"required" fired on Create and Update and nowhere else, so
+// {"seats":"x"} reached the database as a type error and came back a 500
+// rather than a 422 naming the field. See review 2.4.
+//
+// Onto a COPY of the current row, not onto an empty struct, so a rule about a
+// field the patch does not mention still sees the value already stored. The
+// copy is thrown away; the write still goes through Updates with the map, so
+// a column the caller did not send is not overwritten with a zero.
+//
+// Before expand{{Pascal}}Embedded, deliberately: that rewrites a money field
+// into its two columns, and those names are not json tags, so a decode after
+// it would silently drop them.
+func (s *{{Pascal}}Service) checked(current *models.{{Pascal}}, updates map[string]interface{}) error {
+	raw, err := json.Marshal(updates)
+	if err != nil {
+		return respond.Rule("could not read the fields to write")
+	}
+	patched := *current
+	if err := json.Unmarshal(raw, &patched); err != nil {
+		var typeErr *json.UnmarshalTypeError
+		if errors.As(err, &typeErr) && typeErr.Field != "" {
+			return respond.Rule(fmt.Sprintf("%s must be %s", typeErr.Field, s.readableType(typeErr.Type.String())))
+		}
+		return respond.Rule("one of the fields is the wrong type")
+	}
+	return respond.ValidateStruct(&patched)
+}
+
+// readableType turns a Go type into something worth showing a person.
+//
+// A method rather than a function, because the generator writes one of these
+// per resource: a package-level helper of the same name twice over is a
+// project with two generated resources that does not compile.
+func (s *{{Pascal}}Service) readableType(t string) string {
+	switch {
+	case strings.HasPrefix(t, "int"), strings.HasPrefix(t, "uint"):
+		return "a whole number"
+	case strings.HasPrefix(t, "float"):
+		return "a number"
+	case t == "bool":
+		return "true or false"
+	case t == "string":
+		return "text"
+	case strings.HasPrefix(t, "time."):
+		return "a date"
+	default:
+		return "of type " + t
+	}
+}
+
+// permitted keeps only the rows a policy allows this caller to act on.
+//
+// The single-row paths go through s.load, which runs authz.Inspect. The bulk
+// paths loaded with Find and wrote, so a rule in internal/policies was
+// evadable by selecting the rows and using a bulk action: the route's
+// permission was the only check (review 2.4).
+//
+// Denied rows are reported rather than silently skipped. A bulk action that
+// says it changed twelve rows and changed nine is worse than one that refuses
+// and says which.
+func (s *{{Pascal}}Service) permitted(ctx context.Context, rows []models.{{Pascal}}, ability string) ([]models.{{Pascal}}, []string) {
+	allowed := make([]models.{{Pascal}}, 0, len(rows))
+	var denied []string
+	for i := range rows {
+		if d := authz.Inspect(ctx, "{{plural}}."+ability, &rows[i]); !d.Allowed() {
+			denied = append(denied, rows[i].ID)
+			continue
+		}
+		allowed = append(allowed, rows[i])
+	}
+	return allowed, denied
+}
+
 // conflict is the answer to a write whose precondition failed: the version
 // the row is at now.
 func (s *{{Pascal}}Service) conflict(ctx context.Context, id string) error {
@@ -1311,6 +1433,11 @@ func (s *{{Pascal}}Service) Patch(ctx context.Context, id string, body map[strin
 	}
 {{PATCH_M2M}}	if len(updates) == 0 && !touchedRelations {
 		return nil, nil, respond.Rule("No writable fields in request body")
+	}
+
+	// The model's own rules, before anything is written. See checked.
+	if err := s.checked(item, updates); err != nil {
+		return nil, nil, err
 	}
 
 	expand{{Pascal}}Embedded(updates)
@@ -1365,6 +1492,31 @@ func (s *{{Pascal}}Service) Bulk(ctx context.Context, action string, ids []strin
 	if err := scope.Find(&items).Error; err != nil {
 		return result, fmt.Errorf("loading {{plural}}: %w", err)
 	}
+	// A policy rule narrows this further than the route's permission did.
+	// Without it, any rule in internal/policies was evadable by selecting the
+	// rows and using a bulk action (review 2.4).
+	//
+	// The ability is the one the action performs, so a policy that allows
+	// archiving and refuses deleting is honoured by both.
+	ability := "update"
+	switch action {
+	case "delete":
+		ability = "delete"
+	case "archive", "restore":
+		ability = "update"
+	}
+	items, denied := s.permitted(ctx, items, ability)
+	if len(denied) > 0 {
+		// Refused whole rather than partly applied. A bulk action that
+		// reports twelve and changed nine is worse than one that says no.
+		//
+		// As a denial, not a rule violation: this is 403, the same answer the
+		// single-row path gives, and a client that branches on the status
+		// should not see one code for one row and another for twelve.
+		return {{Pascal}}BulkResult{}, authz.Denied("{{plural}}."+ability, authz.Deny(fmt.Sprintf(
+			"not allowed to %s %d of the selected {{plural}}", action, len(denied))))
+	}
+
 	for _, item := range items {
 		result.IDs = append(result.IDs, item.ID)
 	}
@@ -1383,6 +1535,14 @@ func (s *{{Pascal}}Service) Bulk(ctx context.Context, action string, ids []strin
 		}
 		if len(result.Updates) == 0 {
 			return {{Pascal}}BulkResult{}, respond.Rule("No writable fields in patch")
+		}
+		// And the model's own rules, against each row as it will be. One
+		// patch over many rows can still be invalid for some of them: a
+		// conditional field's requirement depends on the row it lands on.
+		for i := range items {
+			if err := s.checked(&items[i], result.Updates); err != nil {
+				return {{Pascal}}BulkResult{}, err
+			}
 		}
 	}
 

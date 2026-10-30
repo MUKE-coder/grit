@@ -2,8 +2,11 @@ package generate
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // writePolicy emits internal/policies/<snake>.go: where this resource's rules go.
@@ -176,6 +179,44 @@ func (g *Generator) ensurePoliciesRegistry() error {
 		return fmt.Errorf("writing the policy registry: %w", err)
 	}
 	return nil
+}
+
+// injectPolicyBoot makes main call policies.Register().
+//
+// Without it the package is dead: every rule somebody writes is registered
+// into a map that nothing ever fills, because Register has no caller. A
+// single Patch on a row a rule denies answered 200. The package is generated,
+// documented, carries a worked example and a marker each resource injects
+// into, and never ran once.
+//
+// Not written into main.go at scaffold time, because the policies package
+// only exists once a resource has been generated and a project with none
+// would not compile. So it is injected here, beside the registry it belongs
+// to, every time rather than only on creation: injectBefore skips a call that
+// is already there, and a project that lost it gets it back.
+func (g *Generator) injectPolicyBoot() error {
+	path := filepath.Join(g.APIRoot(), "cmd", "server", "main.go")
+	if !fileExists(path) {
+		return nil // --api without a server command, or a layout we do not know
+	}
+	if err := injectBefore(path, "// grit:main:boot",
+		"\tpolicies.Register()\n"); err != nil {
+		return err
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("reading main.go to import the policies: %w", err)
+	}
+	content := string(raw)
+	if strings.Contains(content, g.Module+"/internal/policies") {
+		return nil
+	}
+	updated, ok := scaffold.AddImportGroup(content, g.Module+"/internal/policies")
+	if !ok {
+		return fmt.Errorf("could not add the policies import to %s: add it by hand, "+
+			"or every rule in internal/policies stays dead", path)
+	}
+	return os.WriteFile(path, []byte(updated), 0o644)
 }
 
 // injectPolicyRegistration adds this resource's register call to Register().

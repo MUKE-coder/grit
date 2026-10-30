@@ -674,6 +674,7 @@ func main() {
 		SecObs:  secObsBridge,
 	}
 
+	// grit:main:boot
 	// Setup router
 	router := routes.Setup(db, cfg, svc)
 
