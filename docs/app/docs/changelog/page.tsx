@@ -59,6 +59,139 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.442.0 */}
+            <div className="mb-12" id="v3.442.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.442.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An organization manages its own roles</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/130">#130</a>.
+                  v3.441.0 gave an organization roles of its own and left out
+                  the endpoints, because who inside an organization may author a
+                  role is a product decision rather than a technical one. It has
+                  been made: the organization&apos;s owner, a platform
+                  administrator, or a member holding{' '}
+                  <code>orgroles.manage</code>. Four routes under{' '}
+                  <code>/organizations/:id/roles</code>, and any member may read
+                  the list, because picking a role for a colleague means seeing
+                  the names.
+                </p>
+                <p>
+                  A read is scoped by owner and not only by id, so another
+                  organization&apos;s role answers &quot;not found&quot; rather
+                  than &quot;forbidden&quot;: a different answer tells the
+                  caller the id is real. A role somebody still holds is refused
+                  rather than deleted.
+                </p>
+
+                <h3>Three keys that could never be held</h3>
+                <p>
+                  A permission key is <code>&lt;feature&gt;.&lt;action&gt;</code>,
+                  two segments, and <code>authz.Keys()</code> builds every valid
+                  one from the catalogue. The key v3.438.0 invented for member
+                  management had three. No catalogue entry could produce it, so
+                  the roles UI called it an unknown permission; the prefix list
+                  v3.441.0 added refused it in an organization role; and it was
+                  never in the catalogue at all. Three layers disagreeing about
+                  one string, and the role the feature existed for could not be
+                  saved.
+                </p>
+                <p>
+                  It is <code>orgmembers.manage</code> now, with{' '}
+                  <code>orgroles.manage</code> beside it. Nothing can be holding
+                  the old name, because every path that writes a role rejected
+                  it. A test in the plugin reads the forbidden prefixes out of
+                  the role service and the keys out of the handler, and fails on
+                  a key that cannot be held.
+                </p>
+
+                <h3>What an owner may hand out, and why the schema decides</h3>
+                <p>
+                  The ceiling on authoring a role is the author&apos;s own
+                  grants, which is right on the platform and wrong for an
+                  organization: an owner holds no role by default, so that
+                  ceiling refused them every role they tried to write. The first
+                  fix was &quot;the two organization keys and nothing else&quot;,
+                  which is safe and useless, because a customer wanting an
+                  Editor with <code>blogs.edit</code> could not have one.
+                </p>
+                <p>
+                  The real test was already in the project, in the only place
+                  that knows: <code>tenant.Owned</code>. A permission on a model
+                  carrying <code>org_id</code> is scoped by the tenant callback
+                  to the organization in the request, so handing it to a member
+                  gives them their own rows. Without that column nothing scopes
+                  the query and the same grant hands them every
+                  organization&apos;s. Same permission, same role, opposite
+                  blast radius, and only the schema knows which. So the schema
+                  is asked, per permission, at the moment the role is written.
+                </p>
+                <p>
+                  The refusal says that, at length, because the first version of
+                  it said &quot;you cannot grant permissions you do not
+                  hold&quot;: true, not the reason, and the fix it implies is to
+                  grant the owner that permission, which opens the very hole the
+                  refusal exists to close.
+                </p>
+
+                <h3>Two ceilings that between them made it impossible</h3>
+                <p>
+                  One decided what an owner could write into a role. The other
+                  decided what they could hand out. Each was defensible alone.
+                  Together they meant the owner could author the role that
+                  delegates member management and then could not give it to
+                  anybody, because handing it out was measured against grants
+                  they personally hold. The feature existed and refused its only
+                  user, and a test per ceiling passed throughout.
+                </p>
+                <p>
+                  There is one ceiling now, with two call sites, and a test that
+                  asserts both reach it. Closing that also closed something the
+                  old version allowed: the role was read by id alone, so one
+                  customer could hand their member a role another customer owns,
+                  and that customer&apos;s next edit changed what the first
+                  one&apos;s people could do, which is the complaint #130 opens
+                  with arriving by a different door.
+                </p>
+
+                <h3>And the upgrade</h3>
+                <p>
+                  A plugin&apos;s files are written at install time, so{' '}
+                  <code>grit upgrade</code> carries a second copy of this API
+                  and delivers it to projects that already exist, along with the
+                  renamed key and <code>tenant.ColumnName</code>, which the
+                  handler reads and an older <code>internal/tenant</code> does
+                  not have. Two copies of security-shaped code is the thing that
+                  goes wrong quietly, so the repair&apos;s copy is sliced out of
+                  the plugin and a test fails when the two drift.
+                </p>
+                <p>
+                  Verified by putting a generated project back into the shape
+                  v3.438.0 left it in, upgrading it, and compiling. Every fault
+                  above was found by running the flow, not by a test.
+                </p>
+
+                <h3>A checker that could not see the plugins</h3>
+                <p>
+                  <code>VALIDATION_ERROR</code> is 422 in the catalogue and this
+                  handler returned it with 400, in two places before today and
+                  four more added with the role endpoints. The test that keeps
+                  one code to one status walked <code>internal/scaffold</code>{' '}
+                  and <code>internal/generate</code>, so every plugin&apos;s
+                  error codes went unchecked since plugins existed. It walks{' '}
+                  <code>internal/plugin</code> now, and the ten mismatches it
+                  found are fixed. A checker blind to a directory reports
+                  success about it, which is worse than not having one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.441.0 */}
             <div className="mb-12" id="v3.441.0">
               <div className="flex items-center gap-3 mb-4">

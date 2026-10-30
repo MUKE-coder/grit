@@ -88,8 +88,11 @@ func TestMemberWritesAreGuardedTwice(t *testing.T) {
 	for _, want := range []string{
 		"func (h *OrganizationHandler) canManageMembers(",
 		"func (h *OrganizationHandler) roleBeyondCaller(",
-		"authz.CannotGrant(c, role.GrantsList())",
-		`const PermissionMembersManage = "organizations.members.manage"`,
+		// The ceiling on handing a role out is the same one that decides what
+		// may be written into a role. Two separate ceilings is what made
+		// delegation impossible (grit#130).
+		"h.grantsBeyondAuthor(c, orgID, role.GrantsList())",
+		`PermissionMembersManage = "orgmembers.manage"`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("the organization handler is missing %s", want)

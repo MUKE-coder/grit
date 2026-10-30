@@ -192,7 +192,15 @@ func multitenantInjections(ctx Context) []Injection {
 		protected.POST("/organizations", orgHandler.Create)
 		protected.GET("/organizations/:id/members", orgHandler.Members)
 		protected.POST("/organizations/:id/members", orgHandler.AddMember)
-		protected.DELETE("/organizations/:id/members/:userId", orgHandler.RemoveMember)`,
+		protected.DELETE("/organizations/:id/members/:userId", orgHandler.RemoveMember)
+
+		// An organization's own roles. Any member may read them; the owner, a
+		// platform administrator, or a member holding orgroles.manage may
+		// write them. See grit#130.
+		protected.GET("/organizations/:id/roles", orgHandler.Roles)
+		protected.POST("/organizations/:id/roles", orgHandler.CreateRole)
+		protected.PUT("/organizations/:id/roles/:roleId", orgHandler.UpdateRole)
+		protected.DELETE("/organizations/:id/roles/:roleId", orgHandler.DeleteRole)`,
 		},
 	}
 }
@@ -314,6 +322,15 @@ func (noOrganizationError) Error() string {
 
 // ErrorCode makes this a respond.Coded error.
 func (noOrganizationError) ErrorCode() respond.Code { return respond.CodeNoOrganization }
+
+// ColumnName is the column that marks a row as belonging to an organization.
+//
+// One name, in one place, because three things have to agree about it: the
+// struct tag on Owned, the WHERE clause the callbacks add, and anything that
+// asks whether a table is tenant-owned at all (the per-organization role
+// endpoints do, to decide what an owner may delegate). They were three
+// separate literals.
+const ColumnName = "org_id"
 
 // Owned marks a model as belonging to an organization.
 //
@@ -500,7 +517,7 @@ func orgClause(db *gorm.DB, orgID string) clause.Where {
 	}
 	return clause.Where{Exprs: []clause.Expression{
 		clause.Eq{
-			Column: clause.Column{Table: table, Name: "org_id"},
+			Column: clause.Column{Table: table, Name: ColumnName},
 			Value:  orgID,
 		},
 	}}

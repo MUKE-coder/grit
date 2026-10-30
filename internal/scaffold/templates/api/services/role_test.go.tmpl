@@ -136,3 +136,85 @@ func TestDeleteLeavesNoTombstone(t *testing.T) {
 	again := models.Role{Name: "AUDITOR"}
 	assert.NoError(t, roles.Create(ctx, &again), "a role with the deleted name could not be created")
 }
+
+// All means the PLATFORM's roles. Without the narrowing the operator's roles
+// page listed every customer's roles beside its own, with nothing on screen to
+// tell them apart and a delete button next to each. See grit#130.
+func TestAllIsThePlatformsRolesOnly(t *testing.T) {
+	db, roles := roleServiceDB(t)
+	ctx := context.Background()
+
+	theirs := models.Role{OwnerOrgID: "org-a", Name: "Accountant"}
+	require.NoError(t, db.Create(&theirs).Error)
+
+	all, err := roles.All(ctx)
+	require.NoError(t, err)
+	for _, r := range all {
+		assert.Empty(t, r.OwnerOrgID, "All returned a role owned by %q", r.OwnerOrgID)
+	}
+
+	mine, err := roles.ForOrg(ctx, "org-a")
+	require.NoError(t, err)
+	require.Len(t, mine, 1)
+	assert.Equal(t, theirs.ID, mine[0].ID)
+
+	// And an organization with no roles of its own sees none of anybody's.
+	none, err := roles.ForOrg(ctx, "org-b")
+	require.NoError(t, err)
+	assert.Empty(t, none)
+}
+
+// OwnedBy is what stops one organization editing another's role by passing its
+// id, so it answers "not found" rather than "forbidden": a different answer
+// tells the caller the id is real.
+func TestOwnedByRefusesAnotherOrganizationsRole(t *testing.T) {
+	db, roles := roleServiceDB(t)
+	ctx := context.Background()
+
+	theirs := models.Role{OwnerOrgID: "org-a", Name: "Accountant"}
+	require.NoError(t, db.Create(&theirs).Error)
+
+	got, err := roles.OwnedBy(ctx, "org-a", theirs.ID)
+	require.NoError(t, err)
+	assert.Equal(t, theirs.ID, got.ID)
+
+	_, err = roles.OwnedBy(ctx, "org-b", theirs.ID)
+	assert.ErrorIs(t, err, gorm.ErrRecordNotFound,
+		"another organization read a role that is not theirs")
+
+	// A platform role is not an organization's either.
+	admin := roleNamed(t, db, models.RoleAdmin)
+	_, err = roles.OwnedBy(ctx, "org-a", admin.ID)
+	assert.ErrorIs(t, err, gorm.ErrRecordNotFound,
+		"an organization reached the platform's ADMIN role through its own endpoint")
+}
+
+// What an organization's own role may hold. A platform role is not checked:
+// that is the operator authoring their own system.
+func TestCheckOrgRoleGrants(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		owner   string
+		grants  []string
+		refused bool
+	}{
+		{"the platform may hold anything", "", []string{"*"}, false},
+		{"an organization may not hold everything", "org-a", []string{"*"}, true},
+		{"nor the platform's users", "org-a", []string{"users.view"}, true},
+		{"nor its roles", "org-a", []string{"roles.edit"}, true},
+		{"nor its settings", "org-a", []string{"settings.edit"}, true},
+		{"but may hold its own resources", "org-a", []string{"uploads.view", "blogs.create"}, false},
+		{"and may administer itself", "org-a", []string{"orgmembers.manage", "orgroles.manage"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			role := models.Role{OwnerOrgID: tc.owner}
+			require.NoError(t, role.SetGrants(tc.grants))
+			err := CheckOrgRoleGrants(&role)
+			if tc.refused {
+				assert.Error(t, err, "%v was allowed in an organization role", tc.grants)
+			} else {
+				assert.NoError(t, err, "%v was refused", tc.grants)
+			}
+		})
+	}
+}

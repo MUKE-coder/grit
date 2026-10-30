@@ -64,6 +64,12 @@ func scanTemplates(t *testing.T) []emission {
 	roots := []string{
 		filepath.Join("..", "scaffold"),
 		filepath.Join("..", "generate"),
+		// The plugins emit handlers too, and this checker could not see any of
+		// them until v3.442.0: every plugin's error codes went unchecked, which
+		// is how the organization handler shipped VALIDATION_ERROR with 400
+		// while the catalogue said 422. A checker blind to a directory is
+		// worse than no checker, because it reports success about it.
+		filepath.Join("..", "plugin"),
 	}
 
 	var out []emission

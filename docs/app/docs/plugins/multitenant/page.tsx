@@ -7,7 +7,7 @@ import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
 import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
-  title: 'Multi-tenancy plugin — Grit',
+  title: 'Multi-tenancy plugin: Grit',
   description:
     'Organizations, per-organization roles, and automatic query scoping that fails closed.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/multitenant' },
@@ -68,7 +68,7 @@ export default function MultitenantPage() {
             Multi-tenancy
           </h1>
           <p className="mb-10 text-lg text-muted-foreground">
-            One user, many organizations, a different role in each &mdash; with query
+            One user, many organizations, a different role in each, with query
             scoping that can&apos;t be forgotten.
           </p>
 
@@ -113,7 +113,7 @@ cd apps/api && go run cmd/migrate/main.go`} />
               </p>
             </div>
 
-            <p>Then just query normally — scoping is applied for you:</p>
+            <p>Then just query normally: scoping is applied for you:</p>
             <CodeBlock language="go" code={`// Only the active organization's invoices.
 db.WithContext(ctx).Find(&invoices)
 
@@ -127,7 +127,7 @@ db.WithContext(ctx).Create(&Invoice{Amount: 100})`} />
               </div>
               <p className="mb-0 text-sm text-muted-foreground">
                 A query against a tenant-owned model with <em>no</em> active organization
-                returns an error &mdash; it does not quietly return every tenant&apos;s
+                returns an error. It does not quietly return every tenant&apos;s
                 rows. Hand-written scoping fails the other way: forget one{' '}
                 <code>WHERE</code> and you get a silent cross-tenant leak that no test
                 catches, because the query returns <em>more</em> rows rather than failing.
@@ -137,14 +137,14 @@ db.WithContext(ctx).Create(&Invoice{Amount: 100})`} />
             <h2>Cross-tenant work</h2>
             <p>
               Platform admin screens and background sweeps need to see everything. Opt out
-              explicitly &mdash; each call is deliberate and greppable:
+              explicitly, so each call is deliberate and greppable:
             </p>
             <CodeBlock language="go" code={`tenant.Unscoped(db).Find(&allInvoices)`} />
 
             <h2>How the active organization is chosen</h2>
             <p>
               From the <code>X-Organization-ID</code> header, or automatically when the user
-              belongs to exactly one. <strong>No subdomains</strong> &mdash; they force DNS
+              belongs to exactly one. <strong>No subdomains</strong>: they force DNS
               and TLS decisions on every deployment and make local development awkward.
             </p>
             <CodeBlock language="bash" code={`curl https://api.example.com/api/invoices \\
@@ -157,7 +157,7 @@ db.WithContext(ctx).Create(&Invoice{Amount: 100})`} />
             </p>
             <p>
               Requesting an organization you don&apos;t belong to returns <code>404</code>,
-              not <code>403</code> &mdash; a 403 confirms it exists and lets an attacker
+              not <code>403</code>. A 403 confirms it exists and lets an attacker
               enumerate tenants.
             </p>
 
@@ -221,12 +221,56 @@ curl -X POST https://api.example.com/api/v1/organizations/01H.../members \\
               <code>grit doctor</code> reminds you when both are present.
             </p>
 
+            <h2>An organization has roles of its own</h2>
+            <p>
+              A role&apos;s name is unique per owner, not across the platform, so two customers
+              can each have an &quot;Accountant&quot; and an edit by one does not change the
+              other&apos;s permissions. A role with an empty <code>owner_org_id</code> is the
+              platform&apos;s; one carrying an organization&apos;s id belongs to that
+              organization, is listed only through that organization&apos;s endpoint, and cannot
+              be read, edited or handed out by anybody else.
+            </p>
+            <p>
+              Who may author one: the organization&apos;s owner, a platform administrator, or a
+              member holding <code>orgroles.manage</code>. Who may change the membership: the
+              same three, with <code>orgmembers.manage</code>. Nothing grants either by default,
+              so until the owner authors such a role only they can do these things, which is the
+              safe default rather than the convenient one.
+            </p>
+
+            <h2>What an organization&apos;s role may hold</h2>
+            <p>
+              Never <code>*</code>, and never the platform&apos;s own administration:{' '}
+              <code>users.</code>, <code>roles.</code>, <code>settings.</code>,{' '}
+              <code>apikeys.</code>, <code>audit.</code> and the rest. A membership role&apos;s
+              grants are merged into every request made with that organization active, and the
+              platform&apos;s routes check the permission key rather than who owns the role, so
+              one of those in a customer&apos;s role is that customer reading everybody&apos;s
+              data.
+            </p>
+            <p>
+              Beyond that, the ceiling is the author&apos;s own grants, with one widening for the
+              owner, who holds no role by default and would otherwise be refused every role they
+              tried to write. An owner may hand out a permission they do not hold when the model
+              behind it is tenant-owned: the tenant callback scopes it to the organization in the
+              request, so a member holding it sees their own rows. On a model with no{' '}
+              <code>org_id</code> the identical grant hands them every organization&apos;s rows,
+              so it is refused, and the refusal says which model and what to do about it. The
+              schema is the only thing that knows the difference, so the schema is what gets
+              asked.
+            </p>
+
             <h2>Endpoints</h2>
             <CodeBlock language="text" code={`GET    /api/organizations                       orgs you belong to
 POST   /api/organizations                       create (you become owner)
 GET    /api/organizations/:id/members
 POST   /api/organizations/:id/members
-DELETE /api/organizations/:id/members/:userId`} />
+DELETE /api/organizations/:id/members/:userId
+
+GET    /api/organizations/:id/roles             any member may read
+POST   /api/organizations/:id/roles             owner, admin, or orgroles.manage
+PUT    /api/organizations/:id/roles/:roleId
+DELETE /api/organizations/:id/roles/:roleId     refused while anybody holds it`} />
 
             <div className="my-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
               <div className="mb-2 flex items-center gap-2">
@@ -236,7 +280,7 @@ DELETE /api/organizations/:id/members/:userId`} />
               <p className="mb-0 text-sm text-muted-foreground">
                 Existing rows have no <code>org_id</code>. Before adding{' '}
                 <code>tenant.Owned</code> to a model that already has data, create a default
-                organization and backfill it &mdash; otherwise those rows become invisible
+                organization and backfill it, or those rows become invisible
                 to every scoped query.
               </p>
             </div>

@@ -30,14 +30,49 @@ func (s *RoleService) db(ctx context.Context) *gorm.DB {
 	return s.DB.WithContext(ctx)
 }
 
-// All returns every role, built-in ones first and then alphabetically, which is
-// the order the admin's roles page shows them in.
+// All returns every PLATFORM role, built-in ones first and then
+// alphabetically, which is the order the admin's roles page shows them in.
+//
+// Not every role in the table. An organization's own roles belong to that
+// organization and are read through ForOrg: without the narrowing, the
+// operator's roles page listed every customer's roles alongside its own, with
+// nothing on screen to tell them apart, and the delete button next to each.
+// See grit#130.
 func (s *RoleService) All(ctx context.Context) ([]models.Role, error) {
 	var roles []models.Role
-	if err := s.db(ctx).Order("is_system DESC, name ASC").Find(&roles).Error; err != nil {
+	if err := models.PlatformRoles(s.db(ctx)).
+		Order("is_system DESC, name ASC").Find(&roles).Error; err != nil {
 		return nil, err
 	}
 	return roles, nil
+}
+
+// ForOrg returns the roles one organization defines for itself.
+func (s *RoleService) ForOrg(ctx context.Context, orgID string) ([]models.Role, error) {
+	var roles []models.Role
+	if orgID == "" {
+		return roles, nil
+	}
+	if err := models.OrgRoles(s.db(ctx), orgID).
+		Order("name ASC").Find(&roles).Error; err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+
+// OwnedBy reads one role and confirms the owner, so a handler cannot be made
+// to read, edit or delete another organization's role by passing its id.
+//
+// gorm.ErrRecordNotFound for a role that exists and belongs to somebody else,
+// deliberately: a different answer tells the caller the id is real.
+func (s *RoleService) OwnedBy(ctx context.Context, ownerOrgID, id string) (*models.Role, error) {
+	var role models.Role
+	if err := s.db(ctx).
+		Where("id = ? AND owner_org_id = ?", id, ownerOrgID).
+		First(&role).Error; err != nil {
+		return nil, err
+	}
+	return &role, nil
 }
 
 // HolderCounts returns how many users hold each role, keyed by role id.
