@@ -530,6 +530,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairOrgMemberGuards(root, opts); err != nil {
 			fmt.Printf("  ⚠ guarding organization membership: %v\n", err)
 		}
+		// A webhook delivery used to be unique per (provider, event id), so a
+		// gateway where every organization connects its own account refused
+		// the second one's delivery of a reference the first had used.
+		if err := repairWebhookIndexMigration(root, opts); err != nil {
+			fmt.Printf("  ⚠ migrating the webhook idempotency key: %v\n", err)
+		}
 		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
 		// security workflow's audit fails until the patched build is in.
 		warnVulnerableXLSX(root)

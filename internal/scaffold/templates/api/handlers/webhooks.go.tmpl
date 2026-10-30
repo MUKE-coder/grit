@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -30,17 +29,21 @@ func NewWebhookHandler(db *gorm.DB) *WebhookHandler {
 	return &WebhookHandler{DB: db}
 }
 
-// Receive is mounted at POST /webhooks/:provider. It:
+// Receive is mounted at POST /webhooks/:provider and at
+// POST /webhooks/:provider/:tenant. It:
 //
 //  1. Looks up the provider in the registry (404 if unknown).
 //  2. Reads the raw body + collects headers.
-//  3. Calls Provider.Verify — 401 on signature mismatch.
-//  4. Calls Provider.Extract to get (event_type, external_id).
-//  5. Inserts a WebhookEvent (unique on provider+external_id). A second
+//  3. Resolves the signing secret for THIS delivery: Provider.Secret when the
+//     provider has one, so a gateway whose secret differs per organization can
+//     be verified at all, and the SecretEnv otherwise (grit#138).
+//  4. Calls Provider.Verify, 401 on signature mismatch.
+//  5. Calls Provider.Extract to get (event_type, external_id).
+//  6. Inserts a WebhookEvent (unique on provider+tenant+external_id). A second
 //     delivery of an event already processed is skipped; one that failed, or
 //     that a dead process left pending, is claimed and run again.
-//  6. Calls webhooks.Dispatch in the request context.
-//  7. Updates status=processed or status=failed with HandlerError.
+//  7. Calls webhooks.Dispatch in the request context.
+//  8. Updates status=processed or status=failed with HandlerError.
 //
 // Always returns 200 to the provider on a verified+stored event so
 // they don't retry forever — handler failures are surfaced via the
@@ -60,7 +63,22 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 	}
 
 	headers := flattenHeaders(c.Request.Header)
-	secret := os.Getenv(provider.SecretEnv)
+
+	// The secret for this delivery, not for the deployment. A provider whose
+	// accounts belong to different organizations has a signing secret each,
+	// and Provider.Secret is how it reaches one: it gets the path parameters,
+	// so it can read the tenant segment, and the headers, for a provider that
+	// names the account in one instead. See grit#138.
+	secret, err := webhooks.SecretFor(c.Request.Context(), provider, pathParams(c), headers)
+	if err != nil {
+		// A tenant whose secret cannot be resolved is refused as unsigned
+		// rather than reported in detail: this runs before the signature is
+		// checked, so anybody who can post here can read the answer, and
+		// "no such tenant" is worth more to them than to you.
+		log.Printf("webhooks: %s secret for tenant %q: %v", providerName, c.Param("tenant"), err)
+		respond.Fail(c, respond.CodeInvalidSignature, "signature could not be verified")
+		return
+	}
 	if err := provider.Verify(secret, body, headers); err != nil {
 		respond.Fail(c, respond.CodeInvalidSignature, err.Error())
 		return
@@ -82,7 +100,11 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 	}
 
 	event := models.WebhookEvent{
-		Provider:   providerName,
+		Provider: providerName,
+		// Stored so a handler and a replay know which organization this
+		// delivery belongs to, and part of the idempotency key so two
+		// organizations can each receive the same provider reference.
+		Tenant:     c.Param("tenant"),
 		EventType:  eventType,
 		ExternalID: externalRef,
 		Payload:    datatypes.JSON(body),
@@ -92,7 +114,7 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 		// Already stored. Whether that is the end of it depends on what
 		// happened the first time, which redelivered decides.
 		if webhooks.IsDuplicateError(err) {
-			h.redelivered(c, providerName, externalID)
+			h.redelivered(c, providerName, c.Param("tenant"), externalID)
 			return
 		}
 		respond.ServerError(c, "PERSIST_FAILED", err, "Internal server error")
@@ -100,6 +122,20 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 	}
 
 	h.runHandler(c, &event)
+}
+
+// pathParams is the route's parameters as a map, which is what a provider's
+// secret resolver reads the tenant out of.
+//
+// Every parameter, not just the tenant: a project is free to mount the
+// receiver under a route of its own shape, and a resolver that can only see
+// one hard-coded name would not reach it.
+func pathParams(c *gin.Context) map[string]string {
+	out := make(map[string]string, len(c.Params))
+	for _, p := range c.Params {
+		out[p.Key] = p.Value
+	}
+	return out
 }
 
 // events is the service every method below reads and writes through. Whether an
@@ -130,10 +166,12 @@ const webhookInFlight = 5 * time.Minute
 // pending row is only claimed once it is too old to be a request in flight.
 // Handlers have to be idempotent to survive a provider's retries at all, and
 // this is the case they are idempotent for.
-func (h *WebhookHandler) redelivered(c *gin.Context, provider, externalID string) {
+func (h *WebhookHandler) redelivered(c *gin.Context, provider, tenant, externalID string) {
 	ctx := c.Request.Context()
 
-	event, err := h.events().ByExternalID(ctx, provider, externalID)
+	// By tenant too: without it this can read another organization's row and
+	// claim and re-run their delivery (grit#138).
+	event, err := h.events().ByExternalID(ctx, provider, tenant, externalID)
 	if err != nil {
 		// The unique index just said this row exists, so failing to read it is
 		// a database problem, not a duplicate. Nothing the provider can do

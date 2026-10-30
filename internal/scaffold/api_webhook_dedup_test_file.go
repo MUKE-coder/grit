@@ -143,11 +143,75 @@ func TestTheConstraintIsInTheDatabase(t *testing.T) {
 			continue
 		}
 		cols := idx.Columns()
-		if len(cols) == 2 && cols[0] == "provider" && cols[1] == "external_id" {
+		if len(cols) == 3 && cols[0] == "provider" && cols[1] == "tenant" && cols[2] == "external_id" {
 			return
 		}
 	}
-	t.Error("no unique index on (provider, external_id); deduplication is decoration")
+	t.Error("no unique index on (provider, tenant, external_id); deduplication is " +
+		"decoration, and without the tenant two organizations on one gateway " +
+		"cannot both receive the same reference (grit#138)")
+}
+
+// Two organizations on the same gateway can each receive a delivery with the
+// reference "INV-001", because their accounts are their own. The key used to
+// be (provider, external_id), so the second was refused as a duplicate it is
+// not, and a payment went unrecorded. See grit#138.
+func TestTwoTenantsCanReceiveTheSameReference(t *testing.T) {
+	db := newDedupDB(t)
+
+	ref := "INV-001"
+	for _, tenant := range []string{"org-a", "org-b"} {
+		event := models.WebhookEvent{
+			Provider:   "dgateway",
+			Tenant:     tenant,
+			EventType:  "payment.completed",
+			ExternalID: &ref,
+			Payload:    datatypes.JSON("{}"),
+			Status:     "pending",
+		}
+		if err := db.Create(&event).Error; err != nil {
+			t.Fatalf("%s receiving %s: %v, so one organization's delivery blocks "+
+				"another's (grit#138)", tenant, ref, err)
+		}
+	}
+
+	// And the same organization still cannot receive it twice.
+	again := models.WebhookEvent{
+		Provider:   "dgateway",
+		Tenant:     "org-a",
+		EventType:  "payment.completed",
+		ExternalID: &ref,
+		Payload:    datatypes.JSON("{}"),
+		Status:     "pending",
+	}
+	if err := db.Create(&again).Error; err == nil {
+		t.Error("one organization received the same event twice, so a provider's " +
+			"retry runs the handler again")
+	}
+}
+
+// A provider with no tenant segment is unaffected: Tenant is "" for every
+// delivery, so the key behaves as it always did.
+func TestAProviderWithNoTenantStillDeduplicates(t *testing.T) {
+	db := newDedupDB(t)
+
+	ref := "evt_123"
+	first := models.WebhookEvent{
+		Provider:   "stripe",
+		EventType:  "invoice.paid",
+		ExternalID: &ref,
+		Payload:    datatypes.JSON("{}"),
+		Status:     "pending",
+	}
+	if err := db.Create(&first).Error; err != nil {
+		t.Fatalf("first delivery: %v", err)
+	}
+	second := first
+	second.ID = ""
+	if err := db.Create(&second).Error; err == nil {
+		t.Error("a Stripe retry was stored twice; adding the tenant to the key " +
+			"must not weaken a provider that has no tenant")
+	}
 }
 `
 }

@@ -647,6 +647,10 @@ func docsRedirectAndStreamRoutes(docs *gindocs.GinDocs) {
 		Summary("Inbound webhook from a third party").
 		Response(200, handlers.MessageResponse{}, "Accepted").
 		Response(401, handlers.ErrorResponse{}, "Signature check failed")
+	docs.Route("POST /webhooks/:provider/:tenant").
+		Summary("Inbound webhook for one organization, whose signing secret is its own").
+		Response(200, handlers.MessageResponse{}, "Accepted").
+		Response(401, handlers.ErrorResponse{}, "Signature check failed, or the tenant's secret could not be resolved")
 }
 `
 }

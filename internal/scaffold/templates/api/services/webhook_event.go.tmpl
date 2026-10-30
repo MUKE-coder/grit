@@ -55,9 +55,14 @@ func (s *WebhookEventService) Store(ctx context.Context, event *models.WebhookEv
 }
 
 // ByExternalID reads the event a redelivery collided with.
-func (s *WebhookEventService) ByExternalID(ctx context.Context, provider, externalID string) (*models.WebhookEvent, error) {
+//
+// By tenant as well as by provider and id, because that is the unique index:
+// looking it up without the tenant can return another organization's row, and
+// the caller then claims and re-runs somebody else's delivery. See grit#138.
+func (s *WebhookEventService) ByExternalID(ctx context.Context, provider, tenant, externalID string) (*models.WebhookEvent, error) {
 	var event models.WebhookEvent
-	if err := s.db(ctx).Where("provider = ? AND external_id = ?", provider, externalID).
+	if err := s.db(ctx).
+		Where("provider = ? AND tenant = ? AND external_id = ?", provider, tenant, externalID).
 		First(&event).Error; err != nil {
 		return nil, err
 	}

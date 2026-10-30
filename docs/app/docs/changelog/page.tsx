@@ -59,6 +59,98 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.446.0 */}
+            <div className="mb-12" id="v3.446.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.446.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A webhook secret that differs per tenant</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/138">#138</a>.
+                  A <code>Provider</code> carried <code>SecretEnv</code>, one
+                  environment variable for the whole deployment, and the
+                  receiver read it with <code>os.Getenv</code> at request time.
+                  That is right for Stripe and GitHub, where the deployment has
+                  one account. It is impossible for a gateway where every
+                  organization connects its own, with its own signing secret in
+                  its own row, and the route was{' '}
+                  <code>POST /webhooks/:provider</code> with no further segment,
+                  so the handler could not tell which tenant a delivery was for
+                  before verifying it. The reporter hand-wrote a separate route
+                  and lost the stored deliveries, the dedupe and the admin
+                  replay along with it.
+                </p>
+                <p>
+                  <code>Provider.Secret</code> resolves the secret for{' '}
+                  <em>one</em> delivery and takes precedence over{' '}
+                  <code>SecretEnv</code>. It gets the route&apos;s path
+                  parameters, so it can read the tenant out of{' '}
+                  <code>POST /webhooks/:provider/:tenant</code>, and the
+                  headers, for a provider that names the account in one instead.
+                  An error refuses the delivery rather than verifying it against
+                  the wrong secret, and the receiver answers that the same way
+                  it answers a bad signature: the resolver runs before
+                  verification, so it is reachable by anybody who can post to
+                  the route, and &quot;no such tenant&quot; is worth more to
+                  somebody probing than it is to you. The reason goes to the
+                  log.
+                </p>
+
+                <h3>The dedupe key needed the tenant</h3>
+                <p>
+                  Not in the report, and necessary for the feature to work: two
+                  organizations on one gateway can each receive a reference{' '}
+                  <code>INV-001</code>, because their accounts are their own and
+                  the references are theirs to choose. Under the old{' '}
+                  <code>(provider, external_id)</code> key the second is refused
+                  as a duplicate it is not, answered with a{' '}
+                  <code>status=skipped</code> 200, and that payment is never
+                  recorded. The key is{' '}
+                  <code>(provider, tenant, external_id)</code> now, and{' '}
+                  <code>Tenant</code> is the empty string for a provider that
+                  has none, so Stripe and GitHub behave exactly as they did.
+                </p>
+                <p>
+                  The new index has a different NAME on purpose. AutoMigrate
+                  decides by name, so reusing{' '}
+                  <code>idx_webhook_provider_external</code> with different
+                  columns would have left the old two-column index in place and
+                  never created the new one: the feature present and not
+                  working. The old one is dropped after the replacement exists,
+                  never before, because between the two there is no idempotency
+                  at all and a redelivery arriving in that window runs twice.
+                </p>
+                <p>
+                  And the drop had to go somewhere an upgrade reaches.{' '}
+                  <code>Migrate</code> lives in <code>models/user.go</code>,
+                  which <code>writeAPIFiles</code> writes for new projects only,
+                  so a migration put there reaches nobody who needs it. That is
+                  the trap this exact shape sprang in v3.441.0. The drop lives
+                  in <code>models/webhook_event.go</code>, which upgrades do
+                  deliver, and a repair injects the call. Verified against a
+                  database holding the old index.
+                </p>
+
+                <h3>And one thing the docs never said</h3>
+                <p>
+                  The reporter&apos;s second point, which has no code fix: a
+                  payment gateway posts several events about one transaction,
+                  first <code>pending</code> and later <code>completed</code>,
+                  both carrying the same reference. An extractor that returns
+                  the reference makes the second a duplicate of the first, so
+                  the event that actually matters is dropped with a{' '}
+                  <code>status=skipped</code> 200 and nothing looks wrong. The
+                  extractor has to return something unique per event, and the
+                  deduplication section now says so.
+                </p>
+              </div>
+            </div>
+
             {/* v3.445.0 */}
             <div className="mb-12" id="v3.445.0">
               <div className="flex items-center gap-3 mb-4">

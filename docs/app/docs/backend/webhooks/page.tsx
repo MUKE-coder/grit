@@ -18,9 +18,10 @@ export default function WebhooksPage() {
                 Webhooks
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Stripe, GitHub, Twilio, WhatsApp &mdash; anything that pings you.
+                Stripe, GitHub, Twilio, WhatsApp: anything that pings you.
                 Grit&apos;s <code>webhooks</code> package gives you{' '}
-                <strong>one route</strong>, <code>POST /webhooks/:provider</code>,
+                <strong>one route</strong>, <code>POST /webhooks/:provider</code>{' '}
+                (and <code>/webhooks/:provider/:tenant</code>),
                 that verifies the signature, deduplicates retries, persists every
                 delivery, and dispatches to a handler you register. Built-in
                 verifiers cover Stripe, GitHub, and generic HMAC; adding your own is
@@ -81,7 +82,7 @@ export default function WebhooksPage() {
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Why always 200?</strong> Once
                     a webhook is verified and stored, the provider&apos;s job is
-                    done &mdash; retrying wouldn&apos;t help. A <em>handler</em>{' '}
+                    done, and retrying would not help. A <em>handler</em>{' '}
                     failure is recorded (<code>status=failed</code>) and recovered via
                     the admin replay endpoint, not by making the provider redeliver
                     forever. Only signature/parse failures return 4xx.
@@ -115,7 +116,7 @@ export default function WebhooksPage() {
 
     // Bind a handler to (provider, eventType).
     webhooks.On("stripe", "invoice.paid", func(ctx context.Context, e *models.WebhookEvent) error {
-        // e.Payload is the raw JSON body — unmarshal what you need.
+        // e.Payload is the raw JSON body: unmarshal what you need.
         return fulfillInvoice(ctx, e.Payload)
     })
 
@@ -130,7 +131,7 @@ export default function WebhooksPage() {
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   Dispatch prefers an exact <code>(provider, eventType)</code> match
                   and falls back to the catch-all <code>&quot;&quot;</code> handler.
-                  If nothing is registered the event is still persisted &mdash; it
+                  If nothing is registered the event is still persisted. It
                   just sits at <code>status=processed</code> with no side effect, so
                   you never silently lose a delivery.
                 </p>
@@ -142,7 +143,7 @@ export default function WebhooksPage() {
                   Built-in verifiers
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Signature verification is the whole point &mdash; it proves the
+                  Signature verification is the whole point: it proves the
                   request actually came from the provider and wasn&apos;t forged.
                   Grit ships three verifiers and matching extractors:
                 </p>
@@ -178,11 +179,60 @@ export default function WebhooksPage() {
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The secret comes from <code>os.Getenv(Provider.SecretEnv)</code> at
-                  request time &mdash; set <code>STRIPE_WEBHOOK_SECRET</code>,{' '}
+                  request time: set <code>STRIPE_WEBHOOK_SECRET</code>,{' '}
                   <code>GITHUB_WEBHOOK_SECRET</code>, etc. in your environment. An
                   empty secret is a hard verification error, so a misconfigured
                   deploy fails closed rather than accepting unsigned traffic.
                 </p>
+
+                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-8">
+                  A secret that differs per tenant
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  One env var is right for Stripe and GitHub, where the deployment has
+                  one account. It is impossible for a gateway where every organisation
+                  connects its own account and has its own signing secret, stored in
+                  its own row. For those, set <code>Provider.Secret</code>: it resolves
+                  the secret for <em>one</em> delivery, and takes precedence over{' '}
+                  <code>SecretEnv</code>. The receiver is also mounted at{' '}
+                  <code>POST /webhooks/:provider/:tenant</code>, and the resolver gets
+                  the path parameters, so it can read that segment.
+                </p>
+
+                <CodeBlock
+                  language="go"
+                  filename="internal/handlers/webhook_setup.go"
+                  code={`webhooks.Register("dgateway", webhooks.Provider{
+    Verify:  webhooks.HMACVerifier("X-Signature", sha256.New),
+    Extract: webhooks.JSONFieldExtractor("event", "reference"),
+
+    // POST /webhooks/dgateway/<org-id>
+    Secret: func(ctx context.Context, params, _ map[string]string) (string, error) {
+        var acct models.PaymentAccount
+        if err := db.WithContext(ctx).
+            Where("organization_id = ?", params["tenant"]).
+            First(&acct).Error; err != nil {
+            // Refuse. Never fall back to a default secret: that verifies one
+            // organisation's deliveries against another organisation's key.
+            return "", fmt.Errorf("no payment account for %s", params["tenant"])
+        }
+        return acct.WebhookSecret, nil
+    },
+})`}
+                />
+
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mt-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">The resolver runs before the
+                    signature is checked.</strong>{' '}
+                    It is reachable by anybody who can post to the route, so keep it
+                    cheap, and return an error for a tenant you do not recognise rather
+                    than a default secret. The receiver answers an unresolvable tenant
+                    the same way it answers a bad signature, and logs the reason rather
+                    than returning it: &quot;no such tenant&quot; is worth more to
+                    somebody probing than it is to you.
+                  </p>
+                </div>
 
                 <CodeBlock
                   language="go"
@@ -208,13 +258,22 @@ return fmt.Errorf("webhooks: stripe signature mismatch")`}
                   Deduplication
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Providers retry &mdash; Stripe redelivers until it gets a 2xx,
-                  GitHub pings on every config save. The <code>ExternalID</code>{' '}
-                  (the provider&apos;s own event id) is the idempotency key. A
-                  partial unique index on <code>(provider, external_id)</code> makes
-                  a duplicate INSERT fail, which the handler catches and turns into
-                  an immediate <code>status=skipped</code> 200 &mdash; the handler
-                  never runs twice.
+                  Providers retry: Stripe redelivers until it gets a 2xx, GitHub pings
+                  on every config save. The <code>ExternalID</code>{' '}
+                  (the provider&apos;s own event id) is the idempotency key. A unique
+                  index on <code>(provider, tenant, external_id)</code> makes a
+                  duplicate INSERT fail, which the handler catches and turns into an
+                  immediate <code>status=skipped</code> 200, so the handler never runs
+                  twice.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The tenant is in the key because two organisations on one gateway can
+                  each receive a reference <code>INV-001</code>: their accounts are
+                  their own, and the references are theirs to choose. Without it the
+                  second delivery is refused as a duplicate it is not, and that payment
+                  is never recorded. <code>Tenant</code> is the empty string for a
+                  provider with no tenant segment, so Stripe and GitHub behave exactly
+                  as they did.
                 </p>
 
                 <CodeBlock
@@ -223,6 +282,7 @@ return fmt.Errorf("webhooks: stripe signature mismatch")`}
                   code={`type WebhookEvent struct {
     ID           string         \`gorm:"primarykey;size:36" json:"id"\`
     Provider     string         \`gorm:"size:50;index;not null" json:"provider"\`
+    Tenant       string         \`gorm:"size:64;not null;default:''" json:"tenant,omitempty"\` // route segment, "" when none
     EventType    string         \`gorm:"size:100;index" json:"event_type"\`
     ExternalID   string         \`gorm:"size:255;index" json:"external_id"\` // provider's event id
     Payload      datatypes.JSON \`gorm:"type:jsonb" json:"payload"\`
@@ -233,15 +293,16 @@ return fmt.Errorf("webhooks: stripe signature mismatch")`}
     CreatedAt    time.Time      \`gorm:"index" json:"created_at"\`
 }
 
-// Composite unique index → idempotent receipt.
-// CREATE UNIQUE INDEX ... ON webhook_events(provider, external_id) WHERE external_id <> ''`}
+// Composite unique index → idempotent receipt, per tenant.
+// CREATE UNIQUE INDEX idx_webhook_provider_tenant_external
+//     ON webhook_events(provider, tenant, external_id)`}
                 />
 
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   The status field tracks a delivery through its life:{' '}
                   <code>pending</code> (verified, handler not yet run) &rarr;{' '}
                   <code>processed</code> (handler returned nil) or{' '}
-                  <code>failed</code> (handler errored &mdash;{' '}
+                  <code>failed</code> (handler errored,{' '}
                   <code>HandlerError</code> holds the message), with{' '}
                   <code>skipped</code> for a deduped retry.
                 </p>
@@ -254,8 +315,8 @@ return fmt.Errorf("webhooks: stripe signature mismatch")`}
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Every delivery is inspectable under <code>/api/admin/webhooks</code>{' '}
-                  (admin role). When a handler fails &mdash; a transient outage, or a
-                  bug you&apos;ve since deployed a fix for &mdash; replay re-runs it
+                  (admin role). When a handler fails, whether a transient outage or a
+                  bug you&apos;ve since deployed a fix for, replay re-runs it
                   against the stored payload without asking the provider to redeliver:
                 </p>
 
@@ -289,9 +350,9 @@ return fmt.Errorf("webhooks: stripe signature mismatch")`}
                   Adding a custom verifier
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  A verifier is just a <code>VerifyFunc</code> &mdash;{' '}
+                  A verifier is just a <code>VerifyFunc</code>,{' '}
                   <code>func(secret string, body []byte, headers map[string]string) error</code>{' '}
-                  &mdash; returning <code>nil</code> when the signature is valid. For a
+                  returning <code>nil</code> when the signature is valid. For a
                   provider whose scheme isn&apos;t covered, write one and register it.
                   For a simple hex-HMAC provider you don&apos;t even need to: reach for{' '}
                   <code>HMACVerifier(&quot;X-Signature&quot;)</code>.
@@ -335,6 +396,21 @@ func init() {
                     custom extractor; JSON-envelope providers use{' '}
                     <code>JSONFieldExtractor</code>.
                   </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+                    <strong className="text-foreground">Which means: do not return an
+                    id the provider reuses.</strong>{' '}
+                    A payment gateway posts several events about one transaction, first{' '}
+                    <code>pending</code> and later <code>completed</code>, and both
+                    carry the same reference. An extractor that returns the reference
+                    makes the second one a duplicate of the first, so the event that
+                    actually matters is dropped with a{' '}
+                    <code>status=skipped</code> 200 and nothing looks wrong. Return
+                    something unique per event:{' '}
+                    <code>reference + &quot;:&quot; + status</code> when the provider
+                    gives you no event id of its own, and the empty string when there
+                    is genuinely nothing to deduplicate on, which stores every delivery
+                    as its own row.
+                  </p>
                 </div>
               </div>
 
@@ -345,7 +421,7 @@ func init() {
                     Go deeper
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                    Build a production Stripe webhook receiver from scratch &mdash;
+                    Build a production Stripe webhook receiver from scratch:
                     signature verification, idempotent fulfilment, failure replay, and
                     testing with the Stripe CLI.
                   </p>

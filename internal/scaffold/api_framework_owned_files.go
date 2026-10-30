@@ -143,6 +143,7 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "webhook_event.go"):            apiWebhookEventServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "webhook_event_test.go"):       apiWebhookEventServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "secret_test.go"):              apiWebhookSecretTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "webhooks_redelivery_test.go"): apiWebhookRedeliveryTestGo(),
 		filepath.Join(apiRoot, "internal", "services", "oauth_hooks.go"):              apiOAuthHooksGo(),
 		filepath.Join(apiRoot, "internal", "services", "sso_hooks.go"):                apiSSOHooksGo(),

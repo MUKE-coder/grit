@@ -2227,6 +2227,13 @@ func Migrate(db *gorm.DB) error {
 		return fmt.Errorf("seeding default roles: %w", err)
 	}
 
+	// A webhook delivery is unique per (provider, tenant, event id). The index
+	// this replaces keyed on (provider, event id) alone, which refused a
+	// second organization's delivery of the same reference. See grit#138.
+	if err := MigrateWebhookEventIndexes(db); err != nil {
+		return err
+	}
+
 	log.Println(separator)
 	return nil
 }
@@ -4844,6 +4851,8 @@ func apiWebhookEventModelGo() string {
 	return `package models
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	"{{MODULE}}/internal/ids"
@@ -4862,7 +4871,15 @@ import (
 //   skipped   — duplicate ExternalID — handler was bypassed
 type WebhookEvent struct {
 	ID           string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
-	Provider  string ` + "`" + `gorm:"size:50;not null;uniqueIndex:idx_webhook_provider_external,priority:1" json:"provider"` + "`" + `
+	Provider  string ` + "`" + `gorm:"size:50;not null;uniqueIndex:idx_webhook_provider_tenant_external,priority:1" json:"provider"` + "`" + `
+
+	// Tenant is the route's tenant segment, empty for a provider that has
+	// none. It is stored so a handler and a replay know which organization a
+	// delivery belongs to, and it is in the idempotency key because two
+	// organizations on the same gateway can each receive a reference
+	// "INV-001": without it the second is dropped as a duplicate it is not.
+	// See grit#138.
+	Tenant    string ` + "`" + `gorm:"size:64;not null;default:'';uniqueIndex:idx_webhook_provider_tenant_external,priority:2" json:"tenant,omitempty"` + "`" + `
 	EventType string ` + "`" + `gorm:"size:100;index" json:"event_type"` + "`" + `
 
 	// ExternalID is the provider's own event id, and the second half of the
@@ -4870,7 +4887,7 @@ type WebhookEvent struct {
 	// does not supply one: every database allows repeated NULLs in a unique
 	// index and none allow a repeated empty string, so storing "" would make
 	// two unrelated anonymous events collide and silently drop the second.
-	ExternalID *string ` + "`" + `gorm:"size:255;uniqueIndex:idx_webhook_provider_external,priority:2" json:"external_id,omitempty"` + "`" + `
+	ExternalID *string ` + "`" + `gorm:"size:255;uniqueIndex:idx_webhook_provider_tenant_external,priority:3" json:"external_id,omitempty"` + "`" + `
 	// No explicit type: datatypes.JSON maps to jsonb on Postgres and json on
 	// MySQL by itself. Naming jsonb here fails AutoMigrate on MySQL, which has
 	// no such type.
@@ -4880,6 +4897,41 @@ type WebhookEvent struct {
 	RetryCount   int            ` + "`" + `gorm:"not null;default:0" json:"retry_count"` + "`" + `
 	ProcessedAt  *time.Time     ` + "`" + `json:"processed_at,omitempty"` + "`" + `
 	CreatedAt    time.Time      ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
+}
+
+// MigrateWebhookEventIndexes drops the unique index that keyed deliveries on
+// (provider, external_id) alone.
+//
+// The key is (provider, tenant, external_id) now, under a different NAME on
+// purpose: AutoMigrate decides by name, so reusing idx_webhook_provider_external
+// with different columns would leave the old two-column index in place and
+// never create the new one. The feature would be present and not work.
+//
+// Dropped after the replacement exists, never before: between dropping one and
+// creating the other there is no idempotency at all, and a redelivery arriving
+// in that window is processed twice.
+//
+// A failure is reported rather than swallowed. While the old index is there a
+// second organization's delivery with a reference the first already used is
+// refused as a duplicate, and finding that out months later from a missing
+// payment is worse than a loud migrate. See grit#138.
+func MigrateWebhookEventIndexes(db *gorm.DB) error {
+	mig := db.Migrator()
+	if !mig.HasIndex(&WebhookEvent{}, "idx_webhook_provider_external") {
+		return nil
+	}
+	if !mig.HasIndex(&WebhookEvent{}, "idx_webhook_provider_tenant_external") {
+		log.Println("webhooks: idx_webhook_provider_tenant_external is missing, so the " +
+			"old unique index on (provider, external_id) was left alone. Two " +
+			"organizations cannot receive the same provider reference until the " +
+			"schema is migrated (grit#138).")
+		return nil
+	}
+	if err := mig.DropIndex(&WebhookEvent{}, "idx_webhook_provider_external"); err != nil {
+		return fmt.Errorf("dropping the old unique index on webhook_events: %w", err)
+	}
+	log.Println("webhooks: a delivery is unique per (provider, tenant, event id) now")
+	return nil
 }
 
 func (w *WebhookEvent) BeforeCreate(tx *gorm.DB) error {
@@ -4933,6 +4985,7 @@ package webhooks
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"gorm.io/gorm"
@@ -4952,11 +5005,51 @@ type ExtractFunc func(body []byte, headers map[string]string) (eventType string,
 // deduplicated webhook. Errors are persisted to webhook_events.handler_error.
 type Handler func(ctx context.Context, e *models.WebhookEvent) error
 
+// SecretFunc resolves the signing secret for ONE delivery.
+//
+// params are the route's path parameters, so a provider whose secret differs
+// per tenant can read the tenant segment out of them; headers are the
+// request's, for a provider that identifies the account in a header instead.
+// An error refuses the delivery rather than verifying it against the wrong
+// secret.
+type SecretFunc func(ctx context.Context, params map[string]string, headers map[string]string) (string, error)
+
 // Provider is the per-source configuration.
 type Provider struct {
-	SecretEnv string      // env var holding the signing secret
-	Verify    VerifyFunc  // signature verifier (StripeVerifier, GitHubVerifier, HMACVerifier, etc.)
-	Extract   ExtractFunc // event type + external id extractor
+	SecretEnv string // env var holding the signing secret
+
+	// Secret, when set, is used instead of SecretEnv, and is how a provider
+	// whose secret differs per tenant is verified at all.
+	//
+	// SecretEnv is one secret for the whole deployment, which is right for
+	// Stripe or GitHub and impossible for a gateway where every organization
+	// connects its own account and has its own signing secret. That had no way
+	// in before v3.446.0: the only recourse was a hand-written route, which
+	// loses the stored deliveries, the dedupe and the admin replay. See
+	// grit#138.
+	//
+	// Keep it cheap and keep it honest: it runs before the signature is
+	// checked, so it is reachable by anybody who can post to the route. Look
+	// the secret up by the tenant in the path and return an error for a tenant
+	// you do not know, rather than falling back to a default.
+	Secret SecretFunc
+
+	Verify  VerifyFunc  // signature verifier (StripeVerifier, GitHubVerifier, HMACVerifier, etc.)
+	Extract ExtractFunc // event type + external id extractor
+}
+
+// SecretFor resolves the secret a delivery is verified against: the provider's
+// own resolver when it has one, and the environment otherwise.
+//
+// One function rather than the choice at the call site, because the receiver
+// is not the only caller: a test, a replay and a second route all have to make
+// the same decision, and a provider verified against the wrong secret either
+// refuses everything or accepts anything.
+func SecretFor(ctx context.Context, p Provider, params, headers map[string]string) (string, error) {
+	if p.Secret != nil {
+		return p.Secret(ctx, params, headers)
+	}
+	return os.Getenv(p.SecretEnv), nil
 }
 
 var (
@@ -8289,6 +8382,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// POST /webhooks/:provider routes to whatever was registered via
 	// webhooks.Register(...) at app boot.
 	r.POST("/webhooks/:provider", webhookHandler.Receive)
+	// The same handler with a tenant segment, for a provider whose signing
+	// secret differs per organization: Provider.Secret reads the segment and
+	// returns that organization's secret. See grit#138.
+	r.POST("/webhooks/:provider/:tenant", webhookHandler.Receive)
 
 
 	// ── API version ──────────────────────────────────────────────────────
