@@ -129,17 +129,60 @@ const routesAuthLimitsFunc = `// authRouteLimits are the per-route limits on the
 // SENTINEL_LOCKOUT_EXEMPT_IPS for egress ranges you know about.
 func authRouteLimits(dev bool) map[string]sentinel.Limit {
 	v := "/api/" + APIVersion + "/auth"
+
+	// Every route that takes a password, a one-time code, or an address that
+	// causes mail to be sent. Review 2.8 found five of these missing, and
+	// development dropping all but two: a magic link costs an email per
+	// request, the passkey and backup-code routes are credential checks, and
+	// none of them had a limit.
+	limits := map[string]sentinel.Limit{
+		v + "/login":                    {Requests: 30, Window: 5 * time.Minute},
+		v + "/register":                 {Requests: 10, Window: 15 * time.Minute},
+		v + "/forgot-password":          {Requests: 10, Window: 15 * time.Minute},
+		v + "/reset-password":           {Requests: 10, Window: 15 * time.Minute},
+		v + "/verify-email":             {Requests: 20, Window: 15 * time.Minute},
+		v + "/totp/verify":              {Requests: 20, Window: 5 * time.Minute},
+		v + "/totp/backup-codes/verify": {Requests: 10, Window: 15 * time.Minute},
+		v + "/magic-link":               {Requests: 5, Window: 15 * time.Minute},
+		v + "/magic-link/consume":       {Requests: 20, Window: 15 * time.Minute},
+		v + "/passkeys/login/begin":     {Requests: 30, Window: 5 * time.Minute},
+		v + "/passkeys/login/finish":    {Requests: 30, Window: 5 * time.Minute},
+		v + "/sso/oidc/callback":        {Requests: 30, Window: 5 * time.Minute},
+		v + "/sso/saml/acs":             {Requests: 30, Window: 5 * time.Minute},
+	}
+
+	// Development relaxes them. It does not remove them: a route with no entry
+	// is a route with no limit, and a limit nobody exercises in development is
+	// a limit that surprises somebody in production.
 	if dev {
 		relaxed := sentinel.Limit{Requests: 100, Window: time.Minute}
-		return map[string]sentinel.Limit{v + "/login": relaxed, v + "/register": relaxed}
+		for path := range limits {
+			limits[path] = relaxed
+		}
 	}
-	return map[string]sentinel.Limit{
-		v + "/login":           {Requests: 30, Window: 5 * time.Minute},
-		v + "/register":        {Requests: 10, Window: 15 * time.Minute},
-		v + "/forgot-password": {Requests: 10, Window: 15 * time.Minute},
-		v + "/reset-password":  {Requests: 10, Window: 15 * time.Minute},
-		v + "/totp/verify":     {Requests: 20, Window: 5 * time.Minute},
+	return limits
+}
+
+// builtInAuthLimits is the same table, for the limiter that does not need
+// Sentinel.
+//
+// Review 2.8: every number above was read inside mountSentinel, behind a
+// check on SENTINEL_ENABLED. With Sentinel off, which is the default in
+// development and one environment variable in production, none of these
+// routes had a limiter at all. The per-account lockout still barred a single
+// account, so one account was not guessable, but nothing bounded credential
+// stuffing across many accounts from one address or a forgot-password loop
+// pointed at one mailbox.
+//
+// One table, read twice, so the two cannot disagree. middleware.AuthRateLimit
+// is in-process and per-instance: it is the floor. Sentinel keeps its counters
+// in shared storage and is what you want in front of several replicas.
+func builtInAuthLimits(dev bool) map[string]middleware.AuthLimit {
+	out := make(map[string]middleware.AuthLimit, len(authRouteLimits(dev)))
+	for path, limit := range authRouteLimits(dev) {
+		out[path] = middleware.AuthLimit{Requests: limit.Requests, Window: limit.Window}
 	}
+	return out
 }
 `
 

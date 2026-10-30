@@ -223,7 +223,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{
 			"user":   user,
-			"tokens": tokens,
+			"tokens": tokens.ForClient(c),
 		},
 		"message": "User registered successfully",
 	})
@@ -519,7 +519,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"user":   user,
-			"tokens": tokens,
+			"tokens": tokens.ForClient(c),
 		},
 		"message": "Logged in successfully",
 	})
@@ -593,7 +593,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"tokens": tokens,
+			"tokens": tokens.ForClient(c),
 		},
 		"message": "Token refreshed successfully",
 	})

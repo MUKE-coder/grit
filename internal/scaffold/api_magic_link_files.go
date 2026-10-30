@@ -480,7 +480,7 @@ func (h *AuthHandler) ConsumeMagicLink(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"user":   user,
-			"tokens": tokens,
+			"tokens": tokens.ForClient(c),
 		},
 		"message": "Signed in",
 	})

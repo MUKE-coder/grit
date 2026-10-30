@@ -40,6 +40,41 @@ func (h *AuthHandler) OAuthBegin(c *gin.Context) {
 	gothic.BeginAuthHandler(c.Writer, c.Request)
 }
 
+// providerVerifiedTheEmail is whether the provider says it owns this address.
+//
+// An address a provider has not verified is an address anybody can claim, and
+// claiming one is enough to be matched to somebody else's account by email.
+// goth puts the provider's own userinfo response in RawData, which is where
+// the answer is, and review 2.9 found nothing reading it.
+//
+// Per provider, because they do not agree on how to say it:
+//
+//   - Google returns email_verified, and older responses verified_email. Both
+//     arrive as a bool through encoding/json, but a provider that hands back
+//     "true" as a string is one string compare away, so both are handled.
+//   - GitHub does not say, because it does not need to: the public profile
+//     email must be a verified address, and when that is empty goth falls back
+//     to /user/emails and takes the one that is primary AND verified. There is
+//     no path through goth's github provider that yields an unverified
+//     address.
+//   - Anything else: not asserted. A provider added here without a rule is
+//     treated as unverified rather than trusted by default, so adding one
+//     cannot quietly open the hole this closed.
+func providerVerifiedTheEmail(provider string, raw map[string]interface{}) bool {
+	if provider == "github" {
+		return true
+	}
+	for _, key := range []string{"email_verified", "verified_email"} {
+		switch v := raw[key].(type) {
+		case bool:
+			return v
+		case string:
+			return v == "true"
+		}
+	}
+	return false
+}
+
 // OAuthCallback completes the OAuth flow, finds or creates the user, and redirects with JWT tokens.
 func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 	provider := c.Param("provider")
@@ -63,6 +98,10 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		return
 	}
 
+	// Whether the provider will stand behind the address, which decides what
+	// this callback is allowed to do with it. See providerVerifiedTheEmail.
+	emailVerified := providerVerifiedTheEmail(provider, gothUser.RawData)
+
 	// Find or create user by email
 	var user models.User
 	existing, lookupErr := h.AuthService.UserByEmail(c.Request.Context(), gothUser.Email)
@@ -81,8 +120,16 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 				Avatar:          gothUser.AvatarURL,
 				Provider:        provider,
 				Active:          true,
-				EmailVerifiedAt: &now,
 				IPAddress:       c.ClientIP(),
+			}
+
+			// Only if the provider verified it. Setting this from an
+			// unverified claim turns "somebody typed this address into a
+			// provider" into "this address is confirmed", and the address is
+			// what every later match is made on. Left nil, the account goes
+			// through the same verification email a local sign-up does.
+			if emailVerified {
+				user.EmailVerifiedAt = &now
 			}
 
 			if provider == "google" {
@@ -118,6 +165,29 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 			return
 		}
 	} else {
+		// This provider account has signed in to this user before, so the link
+		// was established deliberately and is not being claimed now. Checked
+		// first: a returning user whose provider does not assert verification
+		// must not be locked out by the refusal below.
+		alreadyLinked := (provider == "google" && user.GoogleID != "" && user.GoogleID == gothUser.UserID) ||
+			(provider == "github" && user.GithubID != "" && user.GithubID == gothUser.UserID)
+
+		// An unverified claim does not reach an account that already exists.
+		// Anybody can put somebody else's address into a provider that does
+		// not check it, and everything below this line treats the address as
+		// proof of who is signing in: it links the provider to the account, and
+		// for an unconfirmed account it removes the password outright.
+		//
+		// Refused with the way forward rather than silently creating a second
+		// account, because a second account with the same address is its own
+		// kind of mess.
+		if !emailVerified && !alreadyLinked {
+			log.Printf("oauth: %s did not verify %s, and an account with that address exists", provider, gothUser.Email)
+			redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Your provider has not confirmed that email address. Sign in with your password, then connect "+provider+" from your profile."))
+			c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+			return
+		}
+
 		// An account whose address was never confirmed may have been registered by
 		// someone else, waiting for the owner to sign in with the provider. The
 		// provider has now shown who owns the address, so the unconfirmed password
@@ -135,6 +205,33 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 			}
 			user.Password = ""
 			user.EmailVerifiedAt = &verifiedAt
+
+			// And say so. In the case this exists for, the person who had the
+			// password was not the owner and should hear nothing useful; in the
+			// benign case somebody registered, never confirmed, and later used
+			// the provider, and their password silently stopped working. The
+			// second case is far more common, and the mail is how they find out
+			// why their password no longer works.
+			//
+			// SendRaw rather than a template: this is one paragraph, and a
+			// project that has not configured a mailer gets a log line instead
+			// of a failed sign-in.
+			if h.Mailer != nil {
+				body := fmt.Sprintf(
+					"<p>You signed in to %s with %s.</p>"+
+						"<p>This account's email address had never been confirmed, so the "+
+						"password on it has been removed and any existing sessions were "+
+						"signed out. Sign in with %s from now on, or set a new password "+
+						"from your profile.</p>"+
+						"<p>If this was not you, reset your password immediately.</p>",
+					h.Config.AppName, provider, provider)
+				if err := h.Mailer.SendRaw(c.Request.Context(), user.Email,
+					"Your password was removed", body); err != nil {
+					log.Printf("oauth: telling %s their password was removed: %v", user.ID, err)
+				}
+			} else {
+				log.Printf("oauth: password removed for %s and no mailer is configured to say so", user.ID)
+			}
 		}
 		// Link OAuth provider to existing account
 		updates := map[string]interface{}{}

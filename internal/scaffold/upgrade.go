@@ -726,6 +726,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairGeneratedPolicies(root, opts); err != nil {
 			fmt.Printf("  ⚠ wiring the policy checks: %v\n", err)
 		}
+		// The sign-in routes are rate limited whether or not Sentinel is mounted.
+		// Every number used to be read inside mountSentinel, so turning Sentinel
+		// off removed the limit rather than loosening it.
+		if err := repairAuthRateLimit(root, opts); err != nil {
+			fmt.Printf("  ⚠ rate limiting the sign-in routes: %v\n", err)
+		}
 		// The dashboard layout and upload handlers check for a signed-in user
 		// instead of asserting one, and the ticket statuses and priorities the
 		// new ticket service uses are declared in models.
@@ -800,6 +806,19 @@ func Upgrade(uOpts UpgradeOptions) error {
 		// project from before v3.339.0 does not have.
 		if err := repairAuthServiceQueries(root, opts); err != nil {
 			fmt.Printf("  ⚠ moving the sign-in queries onto AuthService: %v\n", err)
+		}
+		// Before the sign-in repair too, and for the same reason: the Login it
+		// writes calls tokens.ForClient(c), and a project whose TokenPair has no
+		// such method would stop compiling on an upgrade that reported success.
+		if err := repairTokenForClient(root, opts); err != nil {
+			fmt.Printf("  ⚠ withholding the refresh token from browsers: %v\n", err)
+		}
+		// And the handlers that answer with a pair. The sign-in repair below only
+		// rewrites a Login it recognises, so a project upgraded often enough
+		// already has the current shape and would never get the call: found by
+		// running the upgrade on a real project and reading the result.
+		if err := repairTokenForClientHandlers(root, opts); err != nil {
+			fmt.Printf("  ⚠ routing the token responses through ForClient: %v\n", err)
 		}
 		// After repairThinServices: that one writes auth.go through the manifest
 		// guard, which refuses a file this upgrade has already changed.

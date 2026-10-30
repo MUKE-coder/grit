@@ -2495,6 +2495,10 @@ class ApiClient {
     const token = await this.getToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      // This client keeps the refresh token in SecureStore, so it needs the
+      // token in the response body rather than in a cookie. The API omits it
+      // for browsers (review 2.10) and returns it to a client that says this.
+      "X-Grit-Client": "native",
       ...options.headers,
     };
     if (token) {

@@ -229,7 +229,10 @@ export interface AuthResponse {
   user: User;
   tokens: {
     access_token: string;
-    refresh_token: string;
+    // Absent for a browser: the API returns the refresh token only to a client
+    // that keeps it somewhere better than a cookie (review 2.10). A browser
+    // gets it in an HttpOnly cookie, which is the point of the cookie.
+    refresh_token?: string;
     expires_at: number;
   };
 }

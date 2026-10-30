@@ -4422,7 +4422,14 @@ const API_URL = API_ROOT.replace(/\/+$/, "") + "/" + API_VERSION;
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    // This app runs in a webview, so it looks like a browser to the API, and
+    // it keeps the refresh token in the OS keychain rather than in a cookie.
+    // The API omits that token from the body for browsers (review 2.10), so
+    // this is how a client with a better place to put it asks for it.
+    "X-Grit-Client": "native",
+  },
 });
 
 // Attach JWT from OS keychain (or localStorage in dev) and auto-generate an

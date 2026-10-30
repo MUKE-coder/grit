@@ -188,6 +188,9 @@ func repairAccountSecurity(root string, opts Options) error {
 	}{
 		{filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"), repairIdempotencySource},
 		{filepath.Join(apiRoot, "internal", "handlers", "auth_oauth.go"), repairOAuthLinkSource},
+		// After repairOAuthLinkSource, which writes the block this one puts a
+		// condition on. Review 2.9.
+		{filepath.Join(apiRoot, "internal", "handlers", "auth_oauth.go"), repairOAuthVerifiedEmailSource},
 		{filepath.Join(apiRoot, "cmd", "server", "main.go"), repairGothicStoreSource},
 		{filepath.Join(apiRoot, "internal", "routes", "routes.go"), repairUserByIDRouteSource},
 		{filepath.Join(apiRoot, "internal", "handlers", "user.go"), repairProfileChangeSource},

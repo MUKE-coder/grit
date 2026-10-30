@@ -171,7 +171,7 @@ func (h *PasskeyHandler) FinishLogin(c *gin.Context) {
 	services.LogLogin(h.DB, c, user.ID, user.Email)
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":    gin.H{"user": user, "tokens": tokens},
+		"data":    gin.H{"user": user, "tokens": tokens.ForClient(c)},
 		"message": "Signed in with a passkey",
 	})
 }

@@ -35,11 +35,73 @@ type AuthService struct {
 }
 
 // TokenPair holds access and refresh tokens.
+//
+// RefreshToken is omitempty because a browser does not receive it. See
+// ForClient.
 type TokenPair struct {
 	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 	ExpiresAt    int64  `json:"expires_at"`
 }
+
+// grit:repair:token-for-client:start
+// ForClient is the pair as this particular client should receive it.
+//
+// Review 2.10: the refresh token went into the JSON body for everybody, next
+// to the HttpOnly cookie carrying the same value, while the documentation said
+// scripts never see it. For a browser those two statements cannot both be
+// true, and the cookie is the one worth keeping: the point of HttpOnly is that
+// a script cannot lift the long-lived credential, and handing the same string
+// back in a readable body gives it away.
+//
+// A native client is the reason the field exists, and it is not optional for
+// them. The Expo app puts the token in SecureStore and the desktop app in the
+// OS keychain, both of which are better than a cookie, and neither has a
+// cookie jar worth depending on. The desktop app is the case that rules out
+// sniffing headers alone: it runs in a webview, so it looks exactly like a
+// browser.
+//
+// So a native client says so, with X-Grit-Client: native. A browser does not
+// send it, and the generated Expo and desktop clients do.
+//
+// The heuristic underneath is for clients that predate the header: a request
+// with no browser signal at all (no Sec-Fetch-Site, no Origin) still gets the
+// token, so a CLI, a script or somebody's own native client keeps working
+// across the upgrade. A browser always sends at least one of those, so it
+// always loses the token unless it claims to be native, and a script that can
+// set that header on a login request already has the password.
+func (t TokenPair) ForClient(c *gin.Context) TokenPair {
+	if WantsTokenInBody(c) {
+		return t
+	}
+	t.RefreshToken = ""
+	return t
+}
+
+// NativeClientHeader is how a client without a usable cookie jar says so.
+const NativeClientHeader = "X-Grit-Client"
+
+// WantsTokenInBody is whether this client should be handed the refresh token
+// in the response body rather than relying on the cookie. See ForClient.
+func WantsTokenInBody(c *gin.Context) bool {
+	if strings.EqualFold(c.GetHeader(NativeClientHeader), "native") {
+		return true
+	}
+	return !RequestIsBrowser(c)
+}
+
+// RequestIsBrowser is whether this request carries a header only a browser
+// sends. Every current browser sends Sec-Fetch-Site on fetch and XHR, and a
+// cross-origin or CORS request carries Origin.
+func RequestIsBrowser(c *gin.Context) bool {
+	for _, h := range []string{"Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Origin"} {
+		if c.GetHeader(h) != "" {
+			return true
+		}
+	}
+	return false
+}
+// grit:repair:token-for-client:end
 
 // Token types. An access token lives for minutes and is what every route
 // accepts; a refresh token lives for days and is only exchanged at /auth/refresh.

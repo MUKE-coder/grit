@@ -59,6 +59,149 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.453.0 */}
+            <div className="mb-12" id="v3.453.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.453.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 30, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A provider sign-in trusted an address the provider never verified</h3>
+                <p>
+                  Review 2.9. goth puts the provider&apos;s userinfo response in{' '}
+                  <code>RawData</code>, <code>email_verified</code> is in there,
+                  and nothing read it. An address a provider has not verified is
+                  an address anybody can claim, and the callback treated the
+                  address as proof of who was signing in. Three things followed
+                  from one missing check:
+                </p>
+                <ul>
+                  <li>
+                    a new account was created with{' '}
+                    <code>EmailVerifiedAt</code> set, turning &quot;somebody
+                    typed this address into a provider&quot; into &quot;this
+                    address is confirmed&quot;
+                  </li>
+                  <li>
+                    an existing account had the provider linked to it, which is
+                    account takeover with one more step
+                  </li>
+                  <li>
+                    an existing account whose address was never confirmed had
+                    its password removed and its sessions revoked, which is
+                    account takeover outright
+                  </li>
+                </ul>
+                <p>
+                  Now one predicate decides all three. Google says so in the
+                  payload. GitHub does not need to, because it does not expose
+                  an unverified address: the public profile email must be a
+                  verified one, and when that is empty goth falls back to{' '}
+                  <code>/user/emails</code> and takes the address that is primary
+                  and verified. Any other provider counts as unverified until a
+                  rule is written for it, so adding one cannot quietly reopen
+                  this.
+                </p>
+                <p>
+                  An unverified claim no longer reaches an account that already
+                  exists. The refusal says what to do instead: sign in with your
+                  password, then connect the provider from your profile. A
+                  returning user whose provider account is already linked is not
+                  affected, because the link was established deliberately and is
+                  not being claimed now.
+                </p>
+                <p>
+                  And when a password is removed, the person is told. In the
+                  case that step exists for, whoever had the password was not
+                  the owner; in the far more common case somebody registered,
+                  never confirmed, and later used the provider, and their
+                  password silently stopped working. The mail is how they find
+                  out why.
+                </p>
+
+                <h3>Rate limiting on the sign-in routes needed Sentinel</h3>
+                <p>
+                  Review 2.8. Every limit on the routes that take a password or
+                  a code lived inside <code>mountSentinel</code>, behind a check
+                  on <code>SENTINEL_ENABLED</code>. That is off by default in
+                  development and one environment variable in production, and
+                  with it off <code>/auth/login</code>,{' '}
+                  <code>/auth/forgot-password</code>,{' '}
+                  <code>/auth/totp/verify</code> and the passkey routes had no
+                  limiter at all. The per-account lockout still barred a single
+                  account, so guessing one password was bounded; nothing bounded
+                  credential stuffing across many accounts from one address, or
+                  a forgot-password loop pointed at one mailbox.
+                </p>
+                <p>
+                  There is now a limiter in the project itself, reading the same
+                  table, mounted whether or not Sentinel is. It is in-process and
+                  per-instance, so it is the floor rather than the ceiling:
+                  Sentinel keeps its counters in shared storage and is still what
+                  you want in front of several replicas. The point is that turning
+                  Sentinel off downgrades the protection instead of removing it.
+                </p>
+                <CodeBlock language="text" code={`SENTINEL_ENABLED=false, 110 POSTs to /api/v1/auth/login
+
+                     before   after
+attempts 1-100         401      401
+attempts 101-110       401      429  Retry-After: 31`} />
+                <p>
+                  Measured on a running project. The table also gained seven
+                  routes it never had: a magic link costs an email per request,
+                  backup codes and passkey logins are credential checks, and the
+                  SSO callbacks are a sign-in. Development relaxes the numbers
+                  now rather than dropping all but two, because a route with no
+                  entry is a route with no limit, and a limit nobody exercises in
+                  development is a limit that surprises somebody in production.
+                </p>
+
+                <h3>The refresh token went to browsers in a readable body</h3>
+                <p>
+                  Review 2.10. The refresh token is the long-lived credential: it
+                  mints access tokens for days. It was returned in the JSON body
+                  to every client, next to the <code>HttpOnly</code> cookie
+                  carrying the same value, while the docs said a script never
+                  sees it. For a browser those cannot both be true, and the
+                  cookie is the one worth keeping.
+                </p>
+                <p>
+                  The single architecture&apos;s frontend was the worse half: it
+                  read the token out of that body and put it in{' '}
+                  <code>localStorage</code>, which is the one place a long-lived
+                  credential should never be. It now refreshes with the cookie
+                  and an empty body, and clears whatever an older version of
+                  itself stored.
+                </p>
+                <CodeBlock language="text" code={`POST /api/v1/auth/login        tokens in the body
+
+Sec-Fetch-Site: same-origin    access_token, expires_at
+X-Grit-Client: native          access_token, expires_at, refresh_token
+no browser headers at all      access_token, expires_at, refresh_token`} />
+                <p>
+                  A native client asks, rather than being guessed at: the desktop
+                  app runs in a webview and looks exactly like a browser, and it
+                  keeps the token in the OS keychain, which is better than a
+                  cookie. The Expo app keeps it in <code>SecureStore</code>. Both
+                  generated clients send the header already. A request with no
+                  browser signal at all, which is a CLI or a server-to-server
+                  call, still gets the token, so nothing that worked before this
+                  stopped working.
+                </p>
+                <p>
+                  <code>grit upgrade</code> carries all three. The token change
+                  is two repairs in a deliberate order, because the sign-in
+                  repair writes a <code>Login</code> that calls{' '}
+                  <code>tokens.ForClient(c)</code> and a project whose{' '}
+                  <code>TokenPair</code> has no such method would stop compiling
+                  on an upgrade that reported success.
+                </p>
+              </div>
+            </div>
+
             {/* v3.452.0 */}
             <div className="mb-12" id="v3.452.0">
               <div className="flex items-center gap-3 mb-4">

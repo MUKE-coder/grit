@@ -41,6 +41,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):                 apiCorsMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):               apiLoggerMiddlewareGo(opts),
 		filepath.Join(apiRoot, "internal", "middleware", "limits.go"):               middlewareLimitsGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "authlimit.go"):            middlewareAuthLimitGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "authlimit_test.go"):       middlewareAuthLimitTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "limits_test.go"):          middlewareLimitsTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "gzip.go"):                 middlewareGzipGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "gzip_test.go"):            middlewareGzipTestGo(),
@@ -8424,6 +8426,17 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// the fallback at the bottom of this file, so older clients (and the
 	// generated frontends) keep working untouched.
 	v1 := r.Group("/api/" + APIVersion)
+
+	// The limit on the sign-in routes, whether or not Sentinel is mounted.
+	//
+	// Review 2.8: every one of these numbers was read inside mountSentinel, so
+	// SENTINEL_ENABLED=false left /auth/login, /auth/forgot-password and the
+	// code routes with no limiter at all. This reads the same table and is the
+	// floor under it. Mounted here rather than on the auth group because the
+	// passkey and TOTP routes are mounted elsewhere and the table is keyed by
+	// the whole path: a path it does not list costs one map lookup and is let
+	// through.
+	v1.Use(middleware.AuthRateLimit(builtInAuthLimits(cfg.AppEnv == "development")))
 
 	// Public blog routes (no auth required)
 	blogs := v1.Group("/blogs")

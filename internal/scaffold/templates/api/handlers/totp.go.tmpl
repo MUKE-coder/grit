@@ -596,7 +596,7 @@ func (h *TOTPHandler) completeSecondFactor(c *gin.Context, pending *models.TOTPP
 	// need to handle them in JS. Native bearer clients use the JSON body.
 	h.AuthService.SetAuthCookies(c, tokens)
 
-	data := gin.H{"user": user, "tokens": tokens}
+	data := gin.H{"user": user, "tokens": tokens.ForClient(c)}
 	for k, v := range extra {
 		data[k] = v
 	}

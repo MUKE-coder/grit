@@ -207,7 +207,10 @@ export interface User {
 
 export interface Tokens {
   access_token: string
-  refresh_token: string
+  // Absent for a browser: the API returns the refresh token only to a client
+  // that keeps it somewhere better than a cookie (review 2.10). A browser gets
+  // it in an HttpOnly cookie, which is the point of the cookie.
+  refresh_token?: string
   expires_at: number
 }
 
@@ -234,8 +237,17 @@ export function getAccessToken(): string | null {
   return typeof window === "undefined" ? null : localStorage.getItem(ACCESS_KEY)
 }
 
+/**
+ * The refresh token is not kept here. The API sets it as an HttpOnly cookie
+ * scoped to /api/auth, and /auth/refresh reads that cookie: a browser holding
+ * the long-lived credential in localStorage is handing it to any script on the
+ * page, which is what the cookie exists to prevent (review 2.10).
+ *
+ * Kept as a function returning null rather than deleted, so an app that calls
+ * it still compiles and gets the honest answer.
+ */
 export function getRefreshToken(): string | null {
-  return typeof window === "undefined" ? null : localStorage.getItem(REFRESH_KEY)
+  return null
 }
 
 export function getTokenExpiresAt(): number | null {
@@ -251,8 +263,11 @@ export function isAuthenticated(): boolean {
 
 function persistTokens(tokens: Tokens) {
   localStorage.setItem(ACCESS_KEY, tokens.access_token)
-  localStorage.setItem(REFRESH_KEY, tokens.refresh_token)
   localStorage.setItem(EXPIRES_KEY, String(tokens.expires_at))
+  // Not the refresh token: it arrives as an HttpOnly cookie, and the API no
+  // longer puts it in the body for a browser at all. Any copy left from an
+  // older version of this app is cleared below.
+  localStorage.removeItem(REFRESH_KEY)
 }
 
 export function clearAuth() {
@@ -295,17 +310,15 @@ export async function me(): Promise<User> {
 }
 
 /**
- * refresh() exchanges the stored refresh token for a fresh access+refresh
- * pair. Clears auth on failure so the next request bounces to login
- * instead of looping forever on a dead token.
+ * refresh() exchanges the refresh cookie for a fresh access token. Clears auth
+ * on failure so the next request bounces to login instead of looping forever
+ * on a dead token.
  */
 export async function refresh(): Promise<Tokens | null> {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken) return null
   try {
-    const res = await api.post<Envelope<{ tokens: Tokens }>>("/api/auth/refresh", {
-      refresh_token: refreshToken,
-    })
+    // No body: the grit_refresh cookie is scoped to /api/auth and this is one
+    // of those routes, so the browser sends it and the handler prefers it.
+    const res = await api.post<Envelope<{ tokens: Tokens }>>("/api/auth/refresh", {})
     persistTokens(res.data.data.tokens)
     return res.data.data.tokens
   } catch {
@@ -392,17 +405,20 @@ let inflightRefresh: Promise<string | null> | null = null
 async function refreshAccessToken(): Promise<string | null> {
   if (inflightRefresh) return inflightRefresh
   inflightRefresh = (async () => {
-    const rt = typeof window === "undefined" ? null : localStorage.getItem(REFRESH_KEY)
-    if (!rt) return null
     try {
-      const res = await axios.post(API_URL + "/api/auth/refresh", { refresh_token: rt })
+      // The refresh token travels as the HttpOnly grit_refresh cookie, not in
+      // this body and not in localStorage: a script that can read the
+      // long-lived credential can keep an account forever (review 2.10).
+      // withCredentials because the cookie has to be sent even when the API is
+      // on another origin in development.
+      const res = await axios.post(API_URL + "/api/auth/refresh", {}, { withCredentials: true })
       const tokens = res.data?.data?.tokens as
-        | { access_token: string; refresh_token: string; expires_at: number }
+        | { access_token: string; expires_at: number }
         | undefined
       if (!tokens) return null
       localStorage.setItem(ACCESS_KEY, tokens.access_token)
-      localStorage.setItem(REFRESH_KEY, tokens.refresh_token)
       localStorage.setItem(EXPIRES_KEY, String(tokens.expires_at))
+      localStorage.removeItem(REFRESH_KEY)
       return tokens.access_token
     } catch {
       localStorage.removeItem(ACCESS_KEY)

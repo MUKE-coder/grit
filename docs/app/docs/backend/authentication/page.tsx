@@ -354,12 +354,47 @@ curl https://api.example.com/api/v1/products \\
         },
         "tokens": {
             "access_token": "eyJhbGciOiJIUzI1NiIs...",
+            // Only for a native client. A browser gets this in the HttpOnly
+            // grit_refresh cookie and the field is absent. See below.
             "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
             "expires_at": 1707649200
         }
     },
     "message": "User registered successfully"
 }`} />
+
+              <h3 id="refresh-token-delivery">Who gets the refresh token</h3>
+              <p>
+                The refresh token is the long-lived credential: it mints access
+                tokens for days. A browser receives it in an{' '}
+                <code>HttpOnly</code> cookie and <strong>not</strong> in the
+                response body, so no script on the page can read it. That is the
+                whole point of the cookie, and until v3.453.0 the same token was
+                also handed back in a body any script could read, which made the
+                cookie decorative.
+              </p>
+              <p>
+                A native client is the reason the field exists. The Expo app
+                keeps it in <code>SecureStore</code> and the desktop app in the
+                OS keychain, both better places than a cookie, and neither has a
+                cookie jar worth depending on. The desktop app runs in a webview,
+                so it looks exactly like a browser, which is why a client says so
+                rather than being guessed at:
+              </p>
+              <CodeBlock language="http" code={`POST /api/v1/auth/login
+X-Grit-Client: native`} />
+              <p>
+                The generated Expo and desktop clients send that header already.
+                A request with no browser signal at all, which is a CLI, a script
+                or a server-to-server call, still receives the token without the
+                header, so nothing that worked before this stopped working.
+              </p>
+              <p>
+                For a browser, <code>POST /api/v1/auth/refresh</code> needs no
+                body: the <code>grit_refresh</code> cookie is scoped to{' '}
+                <code>/api/auth</code>, so it is sent to that route and read in
+                preference to anything in the body.
+              </p>
 
               <h3 id="login">Login</h3>
               <CodeBlock filename="POST /api/auth/login" code={`// Request
@@ -374,6 +409,8 @@ curl https://api.example.com/api/v1/products \\
         "user": { ... },
         "tokens": {
             "access_token": "eyJhbGciOiJIUzI1NiIs...",
+            // Only for a native client. A browser gets this in the HttpOnly
+            // grit_refresh cookie and the field is absent. See below.
             "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
             "expires_at": 1707649200
         }
