@@ -291,13 +291,46 @@ export default function PluginAuthoringPage() {
             ))}
           </ol>
 
-          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
+          <h2 id="start-here" className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
             Writing one outside the Grit repo
           </h2>
           <p className="mb-4 leading-relaxed text-muted-foreground">
             The plugins above are Go values compiled into the CLI. You do not need to fork Grit to
             write one: the same shape is expressible as a directory with a JSON manifest, and
             install and removal behave identically.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Start from a working one rather than an empty directory:
+          </p>
+          <CodeBlock
+            language="bash"
+            code={`grit plugin new audit-trail`}
+          />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            That writes a plugin that installs as it stands, which is the point: get the loop
+            working before the plugin does anything interesting. It exercises one file written
+            always, one gated by a <code>when</code> clause, a Go test that runs in the installing
+            project, and two injections, because a route needs its import and neither compiles
+            alone.
+          </p>
+          <CodeBlock
+            language="text"
+            code={`audit-trail/
+  plugin.json                      the manifest
+  files/api/audittrail.go          the endpoint, installed always
+  files/api/audittrail_test.go     its test, which runs in the project
+  files/admin/audit-trail-card.tsx installed only in a triple
+  README.md                        the manifest, the markers, what not to do
+  .github/workflows/plugin.yml     the install and remove loop, in CI`}
+          />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            The skeleton is generated from templates inside the CLI rather than copied from a
+            template repository, so it cannot fall behind the manifest schema: the CLI&apos;s own
+            tests load it with the same function <code>grit plugin add ./dir</code> calls, and
+            check the markers it injects at against the <code>routes.go</code> the scaffold
+            actually writes. A marker typo is the one mistake here with no error message, because
+            an injection at a marker that is not in the file is not refused, it simply does not
+            happen.
           </p>
           <CodeBlock
             language="text"

@@ -59,6 +59,115 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.461.0 */}
+            <div className="mb-12" id="v3.461.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.461.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 31, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit plugin new</h3>
+                <p>
+                  <a
+                    href="https://github.com/MUKE-coder/grit/issues/143"
+                    className="text-accent hover:underline"
+                  >
+                    Issue #143
+                  </a>
+                  , from <code>daljo25</code>. Writing a community plugin meant
+                  starting from an empty directory. The authoring page described
+                  the manifest and then pointed at{' '}
+                  <code>internal/plugin/multitenant.go</code>, which is inside
+                  the CLI and written in Go, so a reader who followed the page
+                  had the shape described to them and nothing to copy.
+                </p>
+                <CodeBlock language="text" code={`$ grit plugin new audit-trail
+
+  ✓ audit-trail/plugin.json
+  ✓ audit-trail/files/api/audittrail.go
+  ✓ audit-trail/files/api/audittrail_test.go
+  ✓ audit-trail/files/admin/audit-trail-card.tsx
+  ✓ audit-trail/README.md
+  ✓ audit-trail/.github/workflows/plugin.yml`} />
+                <p>
+                  It installs as it stands, which is the point: get the loop
+                  working before the plugin does anything interesting. It
+                  exercises the list the issue asked for, one file written
+                  always, one behind a <code>when</code> clause, a Go test that
+                  runs in the installing project, and two injections, because a
+                  route needs its import and neither compiles alone.
+                </p>
+
+                <h3>Generated, not a template repository</h3>
+                <p>
+                  The issue offered either and made the case for the command:
+                  &quot;so the skeleton cannot drift from the manifest
+                  schema&quot;. That is right, and it is the same problem the
+                  two releases before this one were about. A repository falls
+                  behind the first time the schema gains a field. A skeleton
+                  generated from templates inside the CLI can be held to it by
+                  the CLI&apos;s own tests:
+                </p>
+                <ul>
+                  <li>
+                    the skeleton is written to a temporary directory and loaded
+                    with <code>LoadDir</code>, the same function{' '}
+                    <code>grit plugin add ./dir</code> calls, so a schema change
+                    it does not follow fails a build here rather than in
+                    somebody&apos;s terminal
+                  </li>
+                  <li>
+                    the markers it injects at are compared against the{' '}
+                    <code>routes.go</code> the scaffold actually writes. This is
+                    the one mistake in a manifest with no error message: an
+                    injection at a marker that is not in the file is not
+                    refused, it simply does not happen, and the first sign is a
+                    route answering 404
+                  </li>
+                  <li>
+                    every marker the README names is checked the same way, since
+                    a list of markers in prose is a list that goes stale
+                  </li>
+                </ul>
+                <p>
+                  The README is most of the value. It covers the placeholders,{' '}
+                  <code>when</code>, the markers, <code>codeFrom</code>,
+                  dependencies, and a &quot;what not to do&quot; section. And it
+                  leads with the loop, because the loop is the part that cannot
+                  be inferred from the manifest:
+                </p>
+                <CodeBlock language="bash" code={`grit new testbed --triple
+cd testbed
+grit plugin add ../audit-trail
+
+cd apps/api && go build ./... && go test ./...
+cd ../.. && pnpm install && cd apps/admin && npx tsc --noEmit
+
+cd ../.. && grit plugin remove audit-trail --force
+cd apps/api && go build ./...`} />
+                <p>
+                  That last build is the one worth running and the one people
+                  skip. Removal replays the lockfile backwards, so it cannot
+                  take back an edit the lockfile has no record of: a plugin that
+                  changed a file outside an injection installs cleanly and
+                  leaves the project broken on the way out. The generated CI
+                  workflow runs the whole thing on every push, for{' '}
+                  <code>--triple</code> and for <code>--api</code>, which is
+                  where a missing <code>when</code> clause shows up.
+                </p>
+                <p>
+                  Measured by running it: installed into a fresh triple, the Go
+                  side builds and its test passes, the admin type-checks, and
+                  after <code>grit plugin remove</code> the project builds again
+                  with nothing left behind. On an <code>--api</code> project the
+                  admin component is correctly not written at all.
+                </p>
+              </div>
+            </div>
+
             {/* v3.460.0 */}
             <div className="mb-12" id="v3.460.0">
               <div className="flex items-center gap-3 mb-4">

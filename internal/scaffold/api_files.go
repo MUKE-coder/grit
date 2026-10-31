@@ -1756,6 +1756,15 @@ func splitCSV(s string) []string {
 // project that predates it. The generated handlers depend on it.
 func APIDialectGo() string { return apiDialectGo() }
 
+// APIRoutesSource is routes.go as the scaffold writes it.
+//
+// Exported for internal/plugin, whose skeleton injects at markers in this file
+// and needs to compare the markers it uses against the real ones. A copy of
+// the marker list in the test would pass while the pair was broken, which is
+// the whole failure mode: an injection at a marker that is not there is not
+// refused, it just does not happen.
+func APIRoutesSource() string { return apiRoutesGo() }
+
 func apiDialectGo() string {
 	return `package database
 

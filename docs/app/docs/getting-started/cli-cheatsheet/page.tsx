@@ -883,6 +883,10 @@ export default function CLICheatsheetPage() {
                     cmd="grit plugin remove multitenant"
                     desc="Reverse the install using the lockfile record"
                   />
+                  <TerminalCard
+                    cmd="grit plugin new audit-trail"
+                    desc="Start a plugin of your own, from one that already installs"
+                  />
                 </div>
               </div>
 

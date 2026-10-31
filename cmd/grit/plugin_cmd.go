@@ -25,6 +25,7 @@ func pluginCmd() *cobra.Command {
 			"`grit plugin remove` replays that record backwards. Commit the lockfile.",
 	}
 
+	cmd.AddCommand(pluginNewCmd())
 	cmd.AddCommand(pluginListCmd())
 	cmd.AddCommand(pluginSubmitCmd())
 	cmd.AddCommand(pluginInfoCmd())
