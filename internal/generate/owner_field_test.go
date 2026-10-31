@@ -75,18 +75,30 @@ func TestTheOwnerIsStillATableColumn(t *testing.T) {
 func TestTheOwnerIsNotInTheZodSchemas(t *testing.T) {
 	g, names, root := ownedResource(t)
 
+	// The model first: the schema is written from it rather than from the
+	// definition, which is the order Generator.Run uses.
+	if err := g.writeGoModel(names); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeZodSchema(names); err != nil {
 		t.Fatalf("writeZodSchema: %v", err)
 	}
 	src := readTestFile(t, filepath.Join(root, "packages", "shared", "schemas", "contact.ts"))
 
-	if strings.Contains(src, "user_id") {
-		t.Errorf("the create schema requires user_id on a resource whose owner is "+
-			"server-assigned, so anything validating against it has to invent a "+
-			"value that is discarded.\n\n%s", src)
+	for _, schema := range []string{"CreateContactSchema", "UpdateContactSchema"} {
+		if body := zodObject(t, src, schema); strings.Contains(body, "user_id") {
+			t.Errorf("%s asks for user_id on a resource whose owner is "+
+				"server-assigned, so anything validating against it has to invent a "+
+				"value that is discarded.\n\n%s", schema, body)
+		}
 	}
-	if !strings.Contains(src, "group_id") {
-		t.Error("group_id went missing from the schema; only the owner should be dropped")
+	if body := zodObject(t, src, "CreateContactSchema"); !strings.Contains(body, "group_id") {
+		t.Error("group_id went missing from the create schema; only the owner should be dropped")
+	}
+	// And present where it belongs: the server fills the owner in, and then
+	// sends it, so a response validated against the entity schema has it.
+	if body := zodObject(t, src, "ContactSchema"); !strings.Contains(body, "user_id") {
+		t.Errorf("the entity schema has no user_id, so it rejects every response the API sends:\n\n%s", body)
 	}
 }
 

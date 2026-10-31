@@ -30,6 +30,11 @@ func TestSyncAndGenerateAgreeOnEveryFieldType(t *testing.T) {
 	if err := g.writeGoModel(names); err != nil {
 		t.Fatalf("writeGoModel: %v", err)
 	}
+	// The model first: the schema is written from it rather than from the
+	// definition, which is the order Generator.Run uses.
+	if err := g.writeGoModel(names); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeZodSchema(names); err != nil {
 		t.Fatalf("writeZodSchema: %v", err)
 	}

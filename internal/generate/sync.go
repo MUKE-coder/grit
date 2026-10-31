@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -166,6 +167,11 @@ type GoField struct {
 	Slug       string
 	Owner      bool
 	ServerSet  bool
+
+	// Omitempty is whether the json tag carries omitempty, which is the
+	// column saying the key may be absent rather than null. extractTag drops
+	// everything after the comma, so this is read separately.
+	Omitempty bool
 }
 
 // parseGoStructs parses all struct declarations from a Go file.
@@ -219,6 +225,7 @@ func parseGoStructs(filePath string) ([]GoStruct, error) {
 					tag = strings.Trim(tag, "`")
 
 					goField.JSONName = extractTag(tag, "json")
+					goField.Omitempty = jsonOmitempty(tag)
 					goField.GORMTag = extractTag(tag, "gorm")
 					goField.Format = extractTag(tag, "format")
 					goField.Enum = extractTag(tag, "enum")
@@ -268,6 +275,36 @@ func typeToString(expr ast.Expr) string {
 	}
 }
 
+// jsonOmitempty reports whether the json tag asks for the key to be left out
+// when the value is empty, which is the column saying the key may be absent
+// rather than null. extractTag cannot answer this: it drops everything after
+// the first comma, which is where the option lives.
+func jsonOmitempty(tag string) bool {
+	value := strings.Trim(extractRawTag(tag, "json"), " ")
+	parts := strings.Split(value, ",")
+	for _, part := range parts[1:] {
+		if strings.TrimSpace(part) == "omitempty" {
+			return true
+		}
+	}
+	return false
+}
+
+// extractRawTag is extractTag without the truncation at the first comma.
+func extractRawTag(tag, key string) string {
+	search := key + `:"`
+	idx := strings.Index(tag, search)
+	if idx == -1 {
+		return ""
+	}
+	rest := tag[idx+len(search):]
+	end := strings.Index(rest, `"`)
+	if end == -1 {
+		return ""
+	}
+	return rest[:end]
+}
+
 func extractTag(tag, key string) string {
 	search := key + `:"`
 	idx := strings.Index(tag, search)
@@ -287,14 +324,125 @@ func extractTag(tag, key string) string {
 	return value
 }
 
+// buildTSType writes a model's TypeScript interface.
+//
+// The same fix buildZodSchema had, for the same reason, a release later. That
+// one stopped deciding and handed the column to Field.ZodType(); this one went
+// on calling goTypeToTS, which knows the builtins and nothing else, so sync
+// wrote unknown where the generator had written Money and FileRef, string
+// where it had written a union of the enum's values, and unknown | null for
+// every association. Sync is the documented step after generating, so the
+// weaker file is the one a project kept.
+//
+// It is now the only writer of this file. `grit generate resource` reads the
+// model it has just written and calls this, rather than building an interface
+// from the definition. The definition knows the fields somebody asked for; the
+// model is what the API serialises, and those are not the same list. version,
+// archived_at and a --tree resource's path, depth, position and children are on
+// every model and were on no generated type, so a request returned six fields
+// the TypeScript said did not exist.
+
 func buildTSType(s GoStruct) string {
+	imports := map[string]string{}
 	var fields strings.Builder
+
 	for _, f := range s.Fields {
-		tsType := goTypeToTS(f.GoType)
-		fields.WriteString(fmt.Sprintf("  %s: %s;\n", f.JSONName, tsType))
+		if model := associationModel(f, s); model != "" {
+			// A self-reference needs no import: the interface is in this very
+			// file, and importing it is TS2440, which fails the whole
+			// workspace rather than one file.
+			if model != s.Name {
+				imports[model] = "./" + strings.ReplaceAll(toSnakeCase(model), "_", "-")
+			}
+			tsType := model
+			if strings.HasPrefix(f.GoType, "[]") {
+				tsType += "[]"
+			}
+			// Always optional: an association is in the response when the
+			// query preloaded it and absent when it did not.
+			fields.WriteString(fmt.Sprintf("  %s?: %s;\n", f.JSONName, tsType))
+			continue
+		}
+
+		tsType := tsTypeOf(f, s)
+		if strings.Contains(tsType, "FileRef") {
+			imports["FileRef"] = "../schemas/file-ref"
+		}
+		if strings.Contains(tsType, "Money") {
+			imports["Money"] = "./money"
+		}
+		// omitempty means the key is absent rather than null, which is a
+		// different thing to read in TypeScript.
+		optional := ""
+		if f.Omitempty {
+			optional = "?"
+		}
+		fields.WriteString(fmt.Sprintf("  %s%s: %s;\n", f.JSONName, optional, tsType))
 	}
 
-	return fmt.Sprintf("export interface %s {\n%s}\n", s.Name, fields.String())
+	head := ""
+	if len(imports) > 0 {
+		// A map, so a model named by both a belongs_to and a many_to_many is
+		// imported once. Written twice it was TS2300, duplicate identifier,
+		// and `grit generate resource Article author_id:belongs_to:Author
+		// tags:many_to_many:Author` produced a project that would not
+		// typecheck.
+		names := make([]string, 0, len(imports))
+		for name := range imports {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			head += fmt.Sprintf("import type { %s } from %q;\n", name, imports[name])
+		}
+		head += "\n"
+	}
+
+	return head + fmt.Sprintf("export interface %s {\n%s}\n", s.Name, fields.String())
+}
+
+// tsTypeOf is a column's TypeScript type, decided by the same reconstruction
+// the Zod schema uses: the field the column was generated from, rendered by
+// Field.TSType(). Falls back to the plain Go mapping for a column the model
+// says nothing useful about.
+func tsTypeOf(f GoField, s GoStruct) string {
+	field, ok := inferField(f, s.Fields)
+	if !ok {
+		return goTypeToTS(f.GoType)
+	}
+	tsType := field.TSType()
+	// The column decides whether it can be null, and a pointer is how it says
+	// so. Both directions, because Field.TSType() answers for the field type
+	// in general: a datetime is nullable as a resource field, declared
+	// *jsontime.DateTime, while the created_at every model carries is a plain
+	// time.Time that marshals to a string and never to null.
+	//
+	// Without the first half an optional foreign key read as string, and a
+	// tree's root row has no parent. Without the second, every model's
+	// created_at claimed it could be null.
+	pointer := strings.HasPrefix(f.GoType, "*")
+	switch {
+	case pointer && !strings.Contains(tsType, "null"):
+		tsType += " | null"
+	case !pointer && strings.HasSuffix(tsType, " | null"):
+		tsType = strings.TrimSuffix(tsType, " | null")
+	}
+	return tsType
+}
+
+// associationModel is the model a field holds a record or records of, or "" if
+// the field is a column rather than an association.
+func associationModel(f GoField, s GoStruct) string {
+	if !isAssociation(f, s.Fields) {
+		return ""
+	}
+	base := strings.TrimPrefix(strings.TrimPrefix(f.GoType, "[]"), "*")
+	// A tagged association can still name something that is not a model in
+	// this package, and a type we cannot import is worse than no property.
+	if base == "" || strings.Contains(base, ".") || base[0] < 'A' || base[0] > 'Z' {
+		return ""
+	}
+	return base
 }
 
 // buildZodSchema writes a model's create, update and entity schemas.

@@ -64,6 +64,11 @@ func TestServerSetFieldDoesNotLeaveADanglingRefinement(t *testing.T) {
 	}
 	g := newTestGenerator(root, "demo/apps/api", def)
 	names := BuildNames(def)
+	// The model first: the schema is written from it rather than from the
+	// definition, which is the order Generator.Run uses.
+	if err := g.writeGoModel(names); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeZodSchema(names); err != nil {
 		t.Fatal(err)
 	}
@@ -73,8 +78,15 @@ func TestServerSetFieldDoesNotLeaveADanglingRefinement(t *testing.T) {
 		t.Error("the schema reads v.status, which server_set removed: this does not " +
 			"compile, and it fails the build of every app importing @repo/shared")
 	}
-	if strings.Contains(schema, "status:") {
-		t.Error("a server_set field is in the create schema")
+	for _, name := range []string{"CreateDealSchema", "UpdateDealSchema"} {
+		if body := zodObject(t, schema, name); strings.Contains(body, "status:") {
+			t.Errorf("a server_set field is in %s:\n%s", name, body)
+		}
+	}
+	// The entity schema is the other half: the server sets status and then
+	// sends it, so a response has to validate.
+	if body := zodObject(t, schema, "DealSchema"); !strings.Contains(body, "status:") {
+		t.Errorf("the entity schema has no status, so it rejects every response:\n%s", body)
 	}
 	// The field it guards is still there, and still optional.
 	if !strings.Contains(schema, "lost_reason: z.string().optional()") {
@@ -99,6 +111,11 @@ func TestTheRefinementIsStillEmittedNormally(t *testing.T) {
 	}
 	g := newTestGenerator(root, "demo/apps/api", def)
 	names := BuildNames(def)
+	// The model first: the schema is written from it rather than from the
+	// definition, which is the order Generator.Run uses.
+	if err := g.writeGoModel(names); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeZodSchema(names); err != nil {
 		t.Fatal(err)
 	}

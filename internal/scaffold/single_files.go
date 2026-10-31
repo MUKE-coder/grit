@@ -100,9 +100,9 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 	shared := filepath.Join(webAppRoot(root, opts), "src", "shared")
 	files := map[string]string{
-		filepath.Join(shared, "schemas", "user.ts"):     sharedUserSchema(),
-		filepath.Join(shared, "schemas", "index.ts"):    sharedSchemasIndex(),
-		filepath.Join(shared, "schemas", "blog.ts"):     sharedBlogSchema(),
+		filepath.Join(shared, "schemas", "user.ts"):  sharedUserSchema(),
+		filepath.Join(shared, "schemas", "index.ts"): sharedSchemasIndex(),
+		// schemas/blog.ts comes from SharedModelTypes, ranged over below.
 		filepath.Join(shared, "schemas", "file-ref.ts"): sharedFileRefSchema(),
 		// money and errors are exported by the barrels above, and were not
 		// mirrored: a single project's schemas/index.ts re-exported ./money and
@@ -110,14 +110,14 @@ func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 		// there. Nothing failed because the SPA's own use of this package is
 		// type-only, which esbuild erases; the first value import from it, which
 		// the admin panel brings, could not resolve.
-		filepath.Join(shared, "schemas", "money.ts"):   sharedMoneySchema(),
-		filepath.Join(shared, "types", "money.ts"):     sharedMoneyTypes(),
-		filepath.Join(shared, "types", "errors.ts"):    sharedErrorsTS(),
-		filepath.Join(shared, "types", "user.ts"):      sharedUserTypes(),
-		filepath.Join(shared, "types", "api.ts"):       sharedAPITypes(),
-		filepath.Join(shared, "types", "index.ts"):     sharedTypesIndex(),
-		filepath.Join(shared, "types", "upload.ts"):    sharedUploadTypes(),
-		filepath.Join(shared, "types", "blog.ts"):      sharedBlogTypes(),
+		filepath.Join(shared, "schemas", "money.ts"): sharedMoneySchema(),
+		filepath.Join(shared, "types", "money.ts"):   sharedMoneyTypes(),
+		filepath.Join(shared, "types", "errors.ts"):  sharedErrorsTS(),
+		filepath.Join(shared, "types", "user.ts"):    sharedUserTypes(),
+		filepath.Join(shared, "types", "api.ts"):     sharedAPITypes(),
+		filepath.Join(shared, "types", "index.ts"):   sharedTypesIndex(),
+		// types/upload.ts and types/blog.ts come from SharedModelTypes, ranged
+		// over below.
 		filepath.Join(shared, "types", "file-ref.ts"):  sharedFileRefTypes(),
 		filepath.Join(shared, "brand.config.ts"):       sharedBrandConfig(opts),
 		filepath.Join(shared, "themes.ts"):             singleSharedThemes(opts),

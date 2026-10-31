@@ -35,27 +35,89 @@ type sharedModelType struct {
 	Source string
 	// Model is the Go model file it is generated from.
 	Model func() string
+	// Schema is packages/shared/schemas/<kebab>.ts, as grit sync writes it,
+	// for the models whose schema a new project ships. Empty for the rest:
+	// sync creates those files the first time it runs, so there is nothing
+	// for them to disagree with.
+	Schema string
 }
 
 // SharedModelTypes are the shared types a new project gets for the scaffold's
 // own models. Exported for internal/generate's test that they match sync.
 var SharedModelTypes = []sharedModelType{
+	// Sorted by Name, and it has to stay that way. sharedModelTypeExports
+	// writes these in list order into types/index.ts, and repairSharedTypes
+	// adds a missing one at the marker in sorted order: the two produce the
+	// same file only while the list is alphabetical. There is a test.
 	{Kebab: "api-key", Name: "APIKey", Model: apiAPIKeyModelGo, Source: `export interface APIKey {
   id: string;
   user_id: string;
   name: string;
   prefix: string;
   kind: string;
-  token: string;
+  token?: string;
   scopes: string[];
   endpoints: string[];
   origins: string[];
   rate_limit: number;
-  last_used_at: string | null;
-  expires_at: string | null;
-  revoked_at: string | null;
+  last_used_at?: string | null;
+  expires_at?: string | null;
+  revoked_at?: string | null;
   created_at: string;
 }
+`},
+	{Kebab: "blog", Name: "Blog", Model: blogModelGo, Source: `export interface Blog {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  image: string;
+  excerpt: string;
+  published: boolean;
+  published_at: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+`, Schema: `import { z } from "zod";
+
+export const BlogSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, "Required"),
+  slug: z.string().optional(),
+  content: z.string().optional(),
+  image: z.string().optional(),
+  excerpt: z.string().optional(),
+  published: z.boolean().optional(),
+  published_at: z.string().nullable().optional(),
+  version: z.number().int(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const CreateBlogSchema = z.object({
+  title: z.string().min(1, "Required"),
+  slug: z.string().optional(),
+  content: z.string().optional(),
+  image: z.string().optional(),
+  excerpt: z.string().optional(),
+  published: z.boolean().optional(),
+  published_at: z.string().nullable().optional(),
+});
+
+export const UpdateBlogSchema = z.object({
+  title: z.string().min(1, "Required").optional(),
+  slug: z.string().optional(),
+  content: z.string().optional(),
+  image: z.string().optional(),
+  excerpt: z.string().optional(),
+  published: z.boolean().optional(),
+  published_at: z.string().nullable().optional(),
+});
+
+export type Blog = z.infer<typeof BlogSchema>;
+export type CreateBlogInput = z.infer<typeof CreateBlogSchema>;
+export type UpdateBlogInput = z.infer<typeof UpdateBlogSchema>;
 `},
 	{Kebab: "form-share", Name: "FormShare", Model: formShareModelGo, Source: `export interface FormShare {
   id: string;
@@ -114,7 +176,7 @@ var SharedModelTypes = []sharedModelType{
   groups_claim: string;
   group_mappings: string;
   metadata_url: string;
-  metadata_xml: string;
+  metadata_xml?: string;
   email_attribute: string;
   first_name_attribute: string;
   last_name_attribute: string;
@@ -125,7 +187,10 @@ var SharedModelTypes = []sharedModelType{
   updated_at: string;
 }
 `},
-	{Kebab: "ticket", Name: "Ticket", Model: ticketModelGo, Source: `export interface Ticket {
+	{Kebab: "ticket", Name: "Ticket", Model: ticketModelGo, Source: `import type { TicketReply } from "./ticket-reply";
+import type { User } from "./user";
+
+export interface Ticket {
   id: string;
   user_id: string;
   subject: string;
@@ -138,12 +203,14 @@ var SharedModelTypes = []sharedModelType{
   closed_at: string | null;
   created_at: string;
   updated_at: string;
-  user: unknown | null;
-  assignee: unknown | null;
-  replies: unknown[];
+  user?: User;
+  assignee?: User;
+  replies?: TicketReply[];
 }
 `},
-	{Kebab: "ticket-reply", Name: "TicketReply", Model: ticketModelGo, Source: `export interface TicketReply {
+	{Kebab: "ticket-reply", Name: "TicketReply", Model: ticketModelGo, Source: `import type { User } from "./user";
+
+export interface TicketReply {
   id: string;
   ticket_id: string;
   user_id: string;
@@ -151,7 +218,23 @@ var SharedModelTypes = []sharedModelType{
   is_admin_reply: boolean;
   created_at: string;
   updated_at: string;
-  user: unknown | null;
+  user?: User;
+}
+`},
+	{Kebab: "upload", Name: "Upload", Model: apiUploadModelGo, Source: `export interface Upload {
+  id: string;
+  filename: string;
+  original_name: string;
+  mime_type: string;
+  size: number;
+  path: string;
+  url: string;
+  thumbnail_url: string;
+  user_id: string;
+  version: number;
+  claimed_at?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 `},
 }
@@ -170,6 +253,9 @@ func sharedModelTypeFiles(sharedRoot string) map[string]string {
 	files := map[string]string{}
 	for _, t := range SharedModelTypes {
 		files[filepath.Join(sharedRoot, "types", t.Kebab+".ts")] = t.Source
+		if t.Schema != "" {
+			files[filepath.Join(sharedRoot, "schemas", t.Kebab+".ts")] = t.Schema
+		}
 	}
 	return files
 }

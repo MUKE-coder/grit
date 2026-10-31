@@ -38,6 +38,10 @@ import (
 // which means the admin's drag handles have nothing to write to.
 func treeFields(names Names) string {
 	return fmt.Sprintf(`	// --- tree (grit --tree) ---------------------------------------------------
+	// server:"true" on path, depth and position: all three are the tree
+	// service's to write, and a create or update schema that asks for them
+	// asks a form for a materialised path before the row has an id. The tag is
+	// the one the slug and owner columns already use, read by inferField.
 	// Children is a convenience for one level. The whole tree comes from the
 	// service in a single query rather than a preload per level.
 	Children []%s `+"`"+`gorm:"foreignKey:%s" json:"children,omitempty"`+"`"+`
@@ -47,14 +51,14 @@ func treeFields(names Names) string {
 	// counts four per character, so an indexed varchar(1024) is 4096 bytes and
 	// AutoMigrate refuses the table outright. 700 holds about eighteen levels of
 	// uuid, which is deeper than a category or folder tree goes.
-	Path string `+"`"+`gorm:"size:700;index" json:"path"`+"`"+`
+	Path string `+"`"+`gorm:"size:700;index" json:"path" server:"true"`+"`"+`
 	// Depth is 0 for a root. Stored rather than counted from Path, because a
 	// move can keep it correct with one delta and counting separators in SQL is
 	// three expressions across three dialects.
-	Depth int `+"`"+`gorm:"index" json:"depth"`+"`"+`
+	Depth int `+"`"+`gorm:"index" json:"depth" server:"true"`+"`"+`
 	// Position orders siblings. Without it a tree renders in insertion order
 	// and the admin's drag handles have nowhere to write.
-	Position int `+"`"+`gorm:"index;default:0" json:"position"`+"`"+`
+	Position int `+"`"+`gorm:"index;default:0" json:"position" server:"true"`+"`"+`
 `, names.Pascal, treeParentFK(names))
 }
 

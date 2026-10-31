@@ -66,6 +66,11 @@ func TestGeneratedSchemaMakesAnOptionalRelationshipOptional(t *testing.T) {
 		Field{Name: "company", Type: "belongs_to", RelatedModel: "Company", Required: true})
 
 	g := newTestGenerator(root, module, def)
+	// The model first: the schema is written from it rather than from the
+	// definition, which is the order Generator.Run uses.
+	if err := g.writeGoModel(g.Names()); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeZodSchema(g.Names()); err != nil {
 		t.Fatal(err)
 	}
@@ -108,6 +113,11 @@ func TestConditionalRequiredBecomesARefinement(t *testing.T) {
 		})
 
 	g := newTestGenerator(root, module, def)
+	// The model first: the schema is written from it rather than from the
+	// definition, which is the order Generator.Run uses.
+	if err := g.writeGoModel(g.Names()); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeZodSchema(g.Names()); err != nil {
 		t.Fatal(err)
 	}

@@ -453,6 +453,11 @@ func TestWriteZodSchema(t *testing.T) {
 	g := newTestGenerator(root, "testapp/apps/api", def)
 	names := g.Names()
 
+	// The model first: the schema is written from it rather than from the
+	// definition, which is the order Generator.Run uses.
+	if err := g.writeGoModel(names); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeZodSchema(names); err != nil {
 		t.Fatalf("writeZodSchema: %v", err)
 	}
@@ -488,6 +493,12 @@ func TestWriteTSTypes(t *testing.T) {
 	g := newTestGenerator(root, "testapp/apps/api", def)
 	names := g.Names()
 
+	// The model first, because the interface is written from it rather than
+	// from the definition: the definition is the fields somebody asked for and
+	// the model is what the API sends.
+	if err := g.writeGoModel(names); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
 	if err := g.writeTSTypes(names); err != nil {
 		t.Fatalf("writeTSTypes: %v", err)
 	}
@@ -500,6 +511,9 @@ func TestWriteTSTypes(t *testing.T) {
 		"published: boolean",
 		"id: string",
 		"created_at: string",
+		// On the model and absent from the type before v3.460.0, while the
+		// admin's optimistic locking sends it on every update.
+		"version: number",
 	}
 	for _, want := range checks {
 		if !strings.Contains(got, want) {

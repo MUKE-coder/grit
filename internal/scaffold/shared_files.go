@@ -20,9 +20,11 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "types", "errors.ts"):    sharedErrorsTS(),
 		filepath.Join(sharedRoot, "types", "index.ts"):     sharedTypesIndex(),
 		filepath.Join(sharedRoot, "constants", "index.ts"): sharedConstants(),
-		filepath.Join(sharedRoot, "types", "upload.ts"):    sharedUploadTypes(),
-		filepath.Join(sharedRoot, "schemas", "blog.ts"):    sharedBlogSchema(),
-		filepath.Join(sharedRoot, "types", "blog.ts"):      sharedBlogTypes(),
+		// schemas/blog.ts comes from SharedModelTypes too: it was the last file
+		// grit sync rewrote in a project nobody had touched.
+		// types/upload.ts and types/blog.ts come from SharedModelTypes, which
+		// is merged in below and is the list the generate package checks
+		// against grit sync.
 
 		// v3.31.30: FileRef — canonical shape of a stored file. Used by
 		// resource schemas with :file: / :files: fields and by the
@@ -346,8 +348,6 @@ export {
   isRetryable,
 } from "./errors";
 
-export type { Upload } from "./upload";
-export type { Blog } from "./blog";
 export type { FileRef } from "./file-ref";
 export {
   type Money,
@@ -423,70 +423,6 @@ export const API_ROUTES = {
   HEALTH: "/api/health",
   // grit:api-routes
 } as const;
-`
-}
-
-func sharedUploadTypes() string {
-	return `export interface Upload {
-  id: string;
-  filename: string;
-  original_name: string;
-  mime_type: string;
-  size: number;
-  path: string;
-  url: string;
-  thumbnail_url?: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-}
-`
-}
-
-func sharedBlogSchema() string {
-	return `import { z } from "zod";
-
-export const BlogSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  slug: z.string(),
-  content: z.string(),
-  image: z.string().nullable(),
-  excerpt: z.string().nullable(),
-  published: z.boolean(),
-  published_at: z.string().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
-});
-
-export const CreateBlogSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  content: z.string().optional(),
-  image: z.string().optional(),
-  excerpt: z.string().optional(),
-  published: z.boolean().optional(),
-});
-
-export const UpdateBlogSchema = CreateBlogSchema.partial();
-
-export type CreateBlogInput = z.infer<typeof CreateBlogSchema>;
-export type UpdateBlogInput = z.infer<typeof UpdateBlogSchema>;
-`
-}
-
-func sharedBlogTypes() string {
-	return `export interface Blog {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  image: string | null;
-  excerpt: string | null;
-  published: boolean;
-  published_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
 `
 }
 

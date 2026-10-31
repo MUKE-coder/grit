@@ -788,117 +788,33 @@ func (g *Generator) buildHandlerSearchCols() string {
 	return strings.Join(cols, ", ")
 }
 
-// writeZodSchema creates the Zod schema file for the resource.
+// writeZodSchema writes the resource's Zod schemas, from the model.
+//
+// The same move as writeTSTypes, for the same reason. buildZodSchema already
+// decided nothing of its own: it reconstructs the field each column was
+// generated from and calls Field.ZodType(), the emitter this function used to
+// call directly. So the two agreed on every field and still produced different
+// files, because this one wrote only the create and update pair while sync
+// also writes the entity schema. grit sync is the step the generator prints as
+// the next thing to run, so it rewrote this file in every project, every time.
+//
+// What the entity schema is for: create and update describe what goes in, and
+// this describes what comes back, id and timestamps included, which is what
+// you validate a response against.
 func (g *Generator) writeZodSchema(names Names) error {
-	createFields := ""
-	updateFields := ""
-	var refinements []conditionalRequired
-	createKeys := map[string]bool{}
-	owner := g.Definition.OwnerField()
-
-	for _, f := range g.Definition.Fields {
-		// Slug fields are auto-generated — exclude from create/update schemas
-		if f.IsSlug() {
-			continue
-		}
-		// The owner of an --owned-by row is the signed-in user: the service
-		// stamps it on create and ignores whatever the body said. Required
-		// here, it asks a caller for a value that will be discarded, and a
-		// form built from this schema cannot be submitted without inventing
-		// one.
-		if owner != nil && f.Name == owner.Name {
-			continue
-		}
-		// And a column the server fills, for the same reason.
-		if f.ServerSet {
-			continue
-		}
-
-		// belongs_to: use FK column name (e.g., category_id)
-		if f.IsBelongsTo() {
-			// Zod schemas use snake_case to match the Go handlers' JSON tags.
-			// The Go API decodes with ShouldBindJSON using `json:"foo_id"` tags,
-			// so the Zod payload must send snake_case keys too.
-			fkName := f.FKColumnName()
-			zod := f.ZodType()
-			// A self-reference has to accept the empty string, because that is
-			// how "this is a root" is spelled. Without it the admin form refuses
-			// to save the first node: .uuid() rejects "" with "Invalid ID" on a
-			// field the person correctly left blank.
-			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
-				zod += `.or(z.literal(""))`
-			}
-			// An optional relationship is optional here too. The Go side and
-			// the admin form both knew; the schema still demanded a uuid, so
-			// a form built from it refused to save a deal with no contact
-			// (grit#102).
-			if g.relOptional(f) && !strings.Contains(zod, ".optional()") {
-				zod += ".nullable().optional()"
-			}
-			createKeys[fkName] = true
-			createFields += fmt.Sprintf("  %s: %s,\n", fkName, zod)
-			updateFields += fmt.Sprintf("  %s: %s,\n", fkName, strings.TrimSuffix(zod, ".optional()")+".optional()")
-			continue
-		}
-
-		// many_to_many: use <name>_ids (e.g., tag_ids)
-		if f.IsManyToMany() {
-			idsName := strings.TrimSuffix(toSnakeCase(f.Name), "s") + "_ids"
-			createKeys[idsName] = true
-			createFields += fmt.Sprintf("  %s: %s,\n", idsName, f.ZodType())
-			updateFields += fmt.Sprintf("  %s: %s,\n", idsName, f.ZodType())
-			continue
-		}
-
-		snakeName := toSnakeCase(f.Name)
-		zodType := f.ZodType()
-		// "Required while it is shown" is a predicate, not a flag. Marking it
-		// required in the object rejects every row the condition does not
-		// hold for: a lost_reason required when status is lost made every
-		// open deal invalid (grit#102). Optional here, enforced by the
-		// refinement below, which is the same rule the model's requiredif tag
-		// and the admin's requiredWhen already express.
-		if f.ShowWhen != nil && f.Required {
-			refinements = append(refinements, conditionalRequired{
-				Field: snakeName,
-				On:    toSnakeCase(f.ShowWhen.Field),
-				Value: f.ShowWhen.Value,
-			})
-			if !strings.Contains(zodType, ".optional()") {
-				zodType += ".optional()"
-			}
-		}
-		createKeys[snakeName] = true
-		createFields += fmt.Sprintf("  %s: %s,\n", snakeName, zodType)
-
-		// Update schema: make all fields optional
-		updateZod := OptionalForUpdate(f.ZodType())
-		updateFields += fmt.Sprintf("  %s: %s,\n", snakeName, updateZod)
+	modelPath := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
+	structs, err := parseGoStructs(modelPath)
+	if err != nil {
+		return fmt.Errorf("reading the model at %s: %w", modelPath, err)
 	}
-
-	// A refinement is the one validator that reads a sibling, so it can only
-	// be emitted for a field this schema has. See refinementsFor.
-	kept, dropped := refinementsFor(refinements, createKeys)
-	warnDroppedRefinements(names.Pascal, dropped)
-
-	importLines := zodSchemaImports(g.Definition.Fields)
-
-	content := fmt.Sprintf(`%s
-
-export const Create%sSchema = z.object({
-%s})%s;
-
-export const Update%sSchema = z.object({
-%s});
-
-export type Create%sInput = z.infer<typeof Create%sSchema>;
-export type Update%sInput = z.infer<typeof Update%sSchema>;
-`, importLines, names.Pascal, createFields, zodRefinements(kept),
-		names.Pascal, updateFields,
-		names.Pascal, names.Pascal, names.Pascal, names.Pascal)
-
-	path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
-	return writeFileWithDirs(path, content)
+	for _, s := range structs {
+		if s.Name != names.Pascal {
+			continue
+		}
+		path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
+		return writeFileWithDirs(path, buildZodSchema(s))
+	}
+	return fmt.Errorf("no %s struct in %s", names.Pascal, modelPath)
 }
 
 // zodSchemaImports is the import block a schema file needs for the shared
@@ -1026,88 +942,33 @@ func zodRefinements(rules []conditionalRequired) string {
 	return b.String()
 }
 
-// writeTSTypes creates the TypeScript type file for the resource.
+// writeTSTypes writes the resource's TypeScript interface, from the model.
+//
+// It used to build the interface from the definition, which is the list of
+// fields somebody asked for rather than the list the API serialises. Every
+// model also carries version and archived_at, and a --tree resource carries
+// path, depth, position and children, so six fields a response returns were
+// fields the TypeScript said did not exist.
+//
+// And one writer: grit sync rewrites this same file from the model, and is the
+// step the generator itself tells people to run. Two writers meant the second
+// one won, which is how Money became unknown and an enum's union became
+// string. buildTSType is now the only thing that writes it, and it reads what
+// the API will actually send.
 func (g *Generator) writeTSTypes(names Names) error {
-	// Collect relationship imports
-	imports := ""
-	fields := ""
-	needsFileRef, needsMoney := false, false
-	for _, f := range g.Definition.Fields {
-		if f.IsBelongsTo() {
-			relModel := f.RelatedModelName()
-			relKebab := strings.ReplaceAll(toSnakeCase(relModel), "_", "-")
-			baseName := strings.TrimSuffix(f.Name, "_id")
-			fkSnake := toSnakeCase(baseName) + "_id"
-
-			// A self-reference needs no import: the type is declared in this
-			// very file. Emitting one produced
-			//
-			//   import type { Category } from "./category";
-			//   export interface Category { ... }
-			//
-			// in category.ts, which is TS2440, "import declaration conflicts
-			// with local declaration", and it failed tsc for the whole
-			// workspace rather than only for that file.
-			selfRef := relModel == toPascalCase(g.Definition.Name)
-			if !selfRef {
-				imports += fmt.Sprintf("import type { %s } from \"./%s\";\n", relModel, relKebab)
-			}
-
-			// FK matches the referenced model's UUID string PK, and a
-			// self-referential one is nullable: a tree root has no parent, and
-			// the column holds NULL rather than an empty string.
-			if g.relOptional(f) {
-				fields += fmt.Sprintf("  %s: string | null;\n", fkSnake)
-			} else {
-				fields += fmt.Sprintf("  %s: string;\n", fkSnake)
-			}
-			fields += fmt.Sprintf("  %s?: %s;\n", toSnakeCase(baseName), relModel)
+	modelPath := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
+	structs, err := parseGoStructs(modelPath)
+	if err != nil {
+		return fmt.Errorf("reading the model at %s: %w", modelPath, err)
+	}
+	for _, s := range structs {
+		if s.Name != names.Pascal {
 			continue
 		}
-		if f.IsManyToMany() {
-			relModel := f.RelatedModelName()
-			relKebab := strings.ReplaceAll(toSnakeCase(relModel), "_", "-")
-			imports += fmt.Sprintf("import type { %s } from \"./%s\";\n", relModel, relKebab)
-			fields += fmt.Sprintf("  %s?: %s[];\n", toSnakeCase(f.Name), relModel)
-			continue
-		}
-		// v3.31.37: file/files fields reference the FileRef type from
-		// schemas/file-ref.ts. Without an explicit import the generated
-		// type fails tsc with "Cannot find name 'FileRef'", which
-		// downstream files (the React Query hook, admin resources)
-		// inherit when they import from this module.
-		if f.IsFileField() {
-			needsFileRef = true
-		}
-		// Same reason as FileRef above: the interface says Money, so the
-		// name has to come from somewhere.
-		if FieldType(f.Type) == FieldMoney {
-			needsMoney = true
-		}
-		tsName := toSnakeCase(f.Name)
-		tsType := f.TSType()
-		fields += fmt.Sprintf("  %s: %s;\n", tsName, tsType)
+		path := filepath.Join(g.SharedRoot(), "types", names.Kebab+".ts")
+		return writeFileWithDirs(path, buildTSType(s))
 	}
-	if needsFileRef {
-		imports += "import type { FileRef } from \"../schemas/file-ref\";\n"
-	}
-	if needsMoney {
-		imports += "import type { Money } from \"./money\";\n"
-	}
-
-	content := ""
-	if imports != "" {
-		content = imports + "\n"
-	}
-	content += fmt.Sprintf(`export interface %s {
-  id: string;
-%s  created_at: string;
-  updated_at: string;
-}
-`, names.Pascal, fields)
-
-	path := filepath.Join(g.SharedRoot(), "types", names.Kebab+".ts")
-	return writeFileWithDirs(path, content)
+	return fmt.Errorf("no %s struct in %s", names.Pascal, modelPath)
 }
 
 // writeReactQueryHooks creates React Query hooks for the resource.

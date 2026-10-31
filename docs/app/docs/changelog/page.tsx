@@ -59,6 +59,101 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.460.0 */}
+            <div className="mb-12" id="v3.460.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.460.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 31, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit sync undid what grit generate had just written</h3>
+                <p>
+                  Review 2.14. Two writers produced{' '}
+                  <code>packages/shared/types/&lt;model&gt;.ts</code>, and the
+                  second one to run won. <code>grit generate resource</code>{' '}
+                  prints &quot;run grit sync&quot; as a next step, so the second
+                  one was usually sync.
+                </p>
+                <p>
+                  What each got wrong was the opposite of the other, which is why
+                  neither looked broken on its own:
+                </p>
+                <CodeBlock language="diff" code={`  // generate wrote this        sync rewrote it as this
+- price: Money;                 + price: unknown;
+- cover: FileRef | null;        + cover: unknown | null;
+- status: "draft" | "live";     + status: string;
+- author?: Author;              + author: unknown | null;
+
+  // and sync knew six columns generate had never heard of
++ version: number;              // the admin sends it on every update
++ archived_at?: string | null;  // bulk archive reads it
++ path, depth, position,
++ children                      // on every --tree resource`} />
+                <p>
+                  The generator built the interface from the definition, which is
+                  the list of fields somebody asked for. The model is the list
+                  the API serialises, and those are not the same list: a request
+                  returned six fields the TypeScript said did not exist. Sync
+                  read the model, so it had all six, and mapped their Go types
+                  with a function that knows the builtins and nothing else.
+                </p>
+                <p>
+                  Neither is fixed by a second set of rules. There is one writer
+                  now. The generator reads the model it has just written and
+                  calls the same emitter sync calls, which reconstructs the field
+                  each column was generated from and asks it for its own type.
+                  That mechanism already existed: it is what fixed the Zod schemas
+                  in v3.421.0, and the TypeScript was left out of it.
+                </p>
+                <CodeBlock language="text" code={`$ grit generate resource Article title:string author_id:belongs_to:Author ...
+$ grit sync
+$ git diff --stat packages/shared
+(nothing)`} />
+
+                <h3>A resource with two relationships to one model would not compile</h3>
+                <p>
+                  Found by generating one, which no fixture had. A{' '}
+                  <code>belongs_to</code> and a <code>many_to_many</code> naming
+                  the same model each emitted the import, and two imports of one
+                  name is TS2300, which fails the type-check of the whole
+                  workspace rather than one file:
+                </p>
+                <CodeBlock language="text" code={`$ grit generate resource Article author_id:belongs_to:Author tags:many_to_many:Author
+$ npx tsc --noEmit
+packages/shared/types/article.ts(1,15): error TS2300: Duplicate identifier 'Author'.
+packages/shared/types/article.ts(2,15): error TS2300: Duplicate identifier 'Author'.`} />
+
+                <h3>A tree's create form asked for a materialised path</h3>
+                <p>
+                  <code>path</code>, <code>depth</code> and{' '}
+                  <code>position</code> are the tree service&apos;s to write, and
+                  sync put all three in <code>CreateNodeSchema</code>: a form
+                  built from it wanted a path before the row had an id. They
+                  carry <code>server:&quot;true&quot;</code> now, the tag a slug
+                  and an owner column already use, so the schema that describes
+                  what you may send leaves them out and the one that describes
+                  what comes back keeps them.
+                </p>
+
+                <h3>And one latent rule, now written down</h3>
+                <p>
+                  Adding two models to the list the scaffold ships shared types
+                  from broke a test three files away, with a diff of a whole
+                  index file and no hint of the cause. The template writes those
+                  export lines in list order; the repair that adds a missing one
+                  writes it in sorted order; the two produce the same file only
+                  while the list is alphabetical. It had been alphabetical by
+                  accident, every entry appended in a release whose model name
+                  happened to come next. There is a test for it now, and another
+                  that compares what the template writes against what the repair
+                  would write.
+                </p>
+              </div>
+            </div>
+
             {/* v3.459.0 */}
             <div className="mb-12" id="v3.459.0">
               <div className="flex items-center gap-3 mb-4">

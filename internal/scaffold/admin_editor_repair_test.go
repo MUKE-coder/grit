@@ -383,6 +383,18 @@ func TestAdminImportsSharedModelTypes(t *testing.T) {
 	}
 }
 
+// sharedModelTypeByKebab finds one entry of the list by its file name.
+func sharedModelTypeByKebab(t *testing.T, kebab string) sharedModelType {
+	t.Helper()
+	for _, typ := range SharedModelTypes {
+		if typ.Kebab == kebab {
+			return typ
+		}
+	}
+	t.Fatalf("no %s on SharedModelTypes", kebab)
+	return sharedModelType{}
+}
+
 func TestRepairSharedTypes(t *testing.T) {
 	root := t.TempDir()
 	shared := filepath.Join(root, "packages", "shared")
@@ -406,7 +418,9 @@ func TestRepairSharedTypes(t *testing.T) {
 	if got, _ := os.ReadFile(filepath.Join(shared, "types", "ticket.ts")); string(got) != synced {
 		t.Error("an existing shared type was overwritten")
 	}
-	if got, _ := os.ReadFile(filepath.Join(shared, "types", "api-key.ts")); string(got) != SharedModelTypes[0].Source {
+	// By name, not by position: the list gained entries at its head and an
+	// index is the kind of coupling that then points at a different file.
+	if got, _ := os.ReadFile(filepath.Join(shared, "types", "api-key.ts")); string(got) != sharedModelTypeByKebab(t, "api-key").Source {
 		t.Error("a missing shared type was not added")
 	}
 
