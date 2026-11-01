@@ -240,6 +240,10 @@ export interface TicketReply {
 }
 
 // sharedModelTypeExports is the lines types/index.ts exports them with.
+//
+// Every entry: this is the scaffold's template, and a new project has every
+// model. repairSharedTypes asks projectHasModel before adding one to an
+// existing index.
 func sharedModelTypeExports() string {
 	var b strings.Builder
 	for _, t := range SharedModelTypes {
@@ -248,16 +252,62 @@ func sharedModelTypeExports() string {
 	return b.String()
 }
 
-// sharedModelTypeFiles maps each shared type file under sharedRoot to its source.
-func sharedModelTypeFiles(sharedRoot string) map[string]string {
+// sharedModelTypeFiles maps each shared type file under sharedRoot to its
+// source, for the models the project still has.
+//
+// root, not just sharedRoot, because of the models question below. A caller
+// with no root passes "" and gets every entry, which is what the scaffold
+// wants: it is writing the models at the same time.
+func sharedModelTypeFiles(root, sharedRoot string) map[string]string {
 	files := map[string]string{}
 	for _, t := range SharedModelTypes {
+		if !projectHasModel(root, t.Kebab) {
+			continue
+		}
 		files[filepath.Join(sharedRoot, "types", t.Kebab+".ts")] = t.Source
 		if t.Schema != "" {
 			files[filepath.Join(sharedRoot, "schemas", t.Kebab+".ts")] = t.Schema
 		}
 	}
 	return files
+}
+
+// projectHasModel reports whether the project still has the Go model a shared
+// type describes (grit#172).
+//
+// The list exists so a new project ships the types before grit sync has run,
+// and repairSharedTypes creates any that are missing so an older project gets
+// them too. Neither reason applies to a model the project removed: a type for
+// a resource that is gone is a type nothing imports, and re-creating it undoes
+// `grit remove resource` by halves. v3.460.0 put blog and upload on the list
+// and the next upgrade started bringing the Blog's two shared files back.
+//
+// Answered from the model file rather than from a list of removed resources,
+// because the model is what the type is generated from: if it is not there,
+// grit sync would not write the type either.
+func projectHasModel(root, kebab string) bool {
+	if root == "" {
+		return true // the scaffold, writing the models in the same run
+	}
+	snake := strings.ReplaceAll(kebab, "-", "_")
+	sawModels := false
+	for _, dir := range []string{
+		filepath.Join(root, "apps", "api", "internal", "models"),
+		filepath.Join(root, "internal", "models"), // a single keeps Go at the root
+	} {
+		if !dirExists(dir) {
+			continue
+		}
+		sawModels = true
+		if fileExists(filepath.Join(dir, snake+".go")) {
+			return true
+		}
+	}
+	// No models directory anywhere means this is not a question we can answer:
+	// a frontend-only tree, or a test fixture holding packages/shared alone.
+	// "I cannot tell" has to mean yes, because the alternative is withholding
+	// a type from a project that does have the model and keeps it elsewhere.
+	return !sawModels
 }
 
 // sharedProfileSchemas is packages/shared/schemas/profile.ts: the profile
@@ -371,7 +421,7 @@ func exportsName(src, name string) bool {
 func repairSharedTypes(root string) error {
 	for _, shared := range sharedRoots(root) {
 		var created []string
-		files := sharedModelTypeFiles(shared)
+		files := sharedModelTypeFiles(root, shared)
 		files[filepath.Join(shared, "schemas", "profile.ts")] = sharedProfileSchemas()
 		paths := make([]string, 0, len(files))
 		for path := range files {
@@ -388,8 +438,14 @@ func repairSharedTypes(root string) error {
 			}
 		}
 
+		// An export for a model the project removed names a module that is not
+		// there, which is a type-check failure inside @repo/shared rather than
+		// a cosmetic one.
 		typeExports := map[string]string{}
 		for _, t := range SharedModelTypes {
+			if !projectHasModel(root, t.Kebab) {
+				continue
+			}
 			typeExports[t.Name] = fmt.Sprintf("export type { %s } from \"./%s\";\n", t.Name, t.Kebab)
 		}
 		exported, err := addExportsToIndex(filepath.Join(shared, "types", "index.ts"), "// grit:types", typeExports)

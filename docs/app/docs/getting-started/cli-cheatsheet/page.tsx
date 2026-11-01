@@ -299,6 +299,10 @@ export default function CLICheatsheetPage() {
                 </p>
                 <div className="space-y-3">
                   <TerminalCard
+                    cmd="grit setup myapp"
+                    desc="The guided installer: a starter, the services, and the follow-up steps"
+                  />
+                  <TerminalCard
                     cmd="grit new myapp"
                     desc="Create a full-stack project (API + web + admin + shared)"
                   />

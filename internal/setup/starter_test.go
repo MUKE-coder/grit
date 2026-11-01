@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 func TestCleanBlankMonorepoRemovesTanStackBlogRoutes(t *testing.T) {
@@ -214,121 +212,38 @@ const SYSTEM_ACTIONS = [
 	}
 }
 
-func TestCleanBlankStarterRefreshesManifest(t *testing.T) {
-	root := t.TempDir()
-	files := map[string]string{
-		"apps/web/lib/nav-menu.ts": `[
-  {
-    title: "Blog",
-    href: "/blog",
-  },
-  {
-    title: "About",
-    href: "/about",
-  },
-]
-`,
-		"apps/admin/app/(dashboard)/system/trash/page.tsx": `// blog_posts -> Blog posts
-export default function Trash() {
-  return null
-}
-`,
-		"apps/web/__tests__/navbar.test.tsx": `expect(screen.getByRole("link", { name: /blog/i })).toBeInTheDocument()
-`,
-	}
-	for rel, content := range files {
-		writeStarterFile(t, root, rel, content)
-	}
-	recordStarterFiles(t, root, files)
-
-	if err := cleanBlankStarter(root, "3.461.0", Options{
-		Architecture: "triple",
-		Frontend:     "next",
-	}); err != nil {
-		t.Fatalf("cleanBlankStarter: %v", err)
-	}
-
-	m, err := manifest.Load(root)
+// grit#173, and the reason this test exists at all.
+//
+// The starter cleanup edits files the scaffold owns, and the first version of
+// this code recorded those edits in the manifest so the files would keep
+// receiving framework fixes. That is what my review asked for and it was
+// wrong: refreshing the hash hands the file back to the template, the
+// template still contains the Blog, and the first `grit upgrade` put the Blog
+// links back into nav-menu.ts pointing at a route the starter had removed.
+//
+// So the cleanup leaves the manifest alone, and the files it touches read as
+// edited. The cost is that they stop receiving framework fixes; the
+// alternative was an upgrade that silently undoes the starter.
+//
+// This asserts the choice rather than trusting a comment, because the
+// mistake is an attractive one: refreshing looks obviously right until you
+// run the upgrade.
+func TestTheStarterCleanupLeavesTheManifestAlone(t *testing.T) {
+	source, err := os.ReadFile("starter.go")
 	if err != nil {
-		t.Fatalf("loading manifest: %v", err)
+		t.Fatal(err)
 	}
-	for rel := range files {
-		if got := m.StatusOf(root, rel); got != manifest.Unchanged {
-			t.Errorf("%s reads as %s after the cleanup, want unchanged", rel, got)
+	for _, call := range []string{"manifest.Refresh(", "manifest.Drop(", "manifest.DropTree("} {
+		for _, line := range strings.Split(string(source), "\n") {
+			trimmed := strings.TrimSpace(line)
+			if strings.HasPrefix(trimmed, "//") || !strings.Contains(line, call) {
+				continue
+			}
+			t.Errorf("starter.go calls %s\n  %s\n\n"+
+				"Refreshing an edited file hands it back to the template, which still has the "+
+				"Blog in it, so the next upgrade undoes the starter. Dropping a deleted file's "+
+				"entry does the same thing by making it untracked. See grit#173.", call, trimmed)
 		}
-	}
-}
-
-func TestCleanBlankStarterDropsRemovedFilesFromManifest(t *testing.T) {
-	root := t.TempDir()
-	files := map[string]string{
-		"apps/web/src/routes/_site/blog/index.tsx": "export const Route = {}\n",
-		"apps/web/src/routes/_site/blog/$slug.tsx": "export const Route = {}\n",
-		"apps/web/src/routes/_site/index.tsx": `<Link
-  to="/blog"
->
-  Read the Blog
-</Link>
-`,
-		"apps/web/src/lib/nav-menu.ts": `[
-  {
-    title: "Blog",
-    href: "/blog",
-  },
-]
-`,
-		"apps/web/src/admin-panel/pages/system-trash.tsx": `// blog_posts -> Blog posts
-export default function Trash() {
-  return null
-}
-`,
-	}
-	for rel, content := range files {
-		writeStarterFile(t, root, rel, content)
-	}
-	recordStarterFiles(t, root, files)
-
-	if err := cleanBlankStarter(root, "3.461.0", Options{
-		Architecture: "double",
-		Frontend:     "tanstack",
-	}); err != nil {
-		t.Fatalf("cleanBlankStarter: %v", err)
-	}
-
-	m, err := manifest.Load(root)
-	if err != nil {
-		t.Fatalf("loading manifest: %v", err)
-	}
-	for _, rel := range []string{
-		"apps/web/src/routes/_site/blog/index.tsx",
-		"apps/web/src/routes/_site/blog/$slug.tsx",
-	} {
-		if _, ok := m.Files[manifest.Key(rel)]; ok {
-			t.Errorf("%s still has a manifest entry after removal", rel)
-		}
-	}
-	for _, rel := range []string{
-		"apps/web/src/routes/_site/index.tsx",
-		"apps/web/src/lib/nav-menu.ts",
-		"apps/web/src/admin-panel/pages/system-trash.tsx",
-	} {
-		if got := m.StatusOf(root, rel); got != manifest.Unchanged {
-			t.Errorf("%s reads as %s after the cleanup, want unchanged", rel, got)
-		}
-	}
-}
-
-func recordStarterFiles(t *testing.T, root string, files map[string]string) {
-	t.Helper()
-	release, err := manifest.Start(root, "3.461.0", "scaffold")
-	if err != nil {
-		t.Fatalf("starting manifest: %v", err)
-	}
-	for rel, content := range files {
-		manifest.Note(filepath.Join(root, rel), content)
-	}
-	if err := release(); err != nil {
-		t.Fatalf("saving manifest: %v", err)
 	}
 }
 

@@ -123,7 +123,8 @@ func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 		filepath.Join(shared, "themes.ts"):             singleSharedThemes(opts),
 		filepath.Join(shared, "schemas", "profile.ts"): sharedProfileSchemas(),
 	}
-	for path, body := range sharedModelTypeFiles(shared) {
+	// "" for the root: see writeSharedFiles.
+	for path, body := range sharedModelTypeFiles("", shared) {
 		files[path] = body
 	}
 	for path, body := range sharedFieldFormatFiles(shared) {

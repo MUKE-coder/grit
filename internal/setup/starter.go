@@ -8,36 +8,23 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/MUKE-coder/grit/v3/internal/manifest"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
-// cleanBlankStarter runs the starter cleanup inside one manifest session.
+// The starter cleanup does NOT record its edits in the manifest, and that is
+// deliberate (grit#173).
 //
-// The cleanup edits files the scaffold owns. Without a session, the manifest
-// keeps the hash of the scaffold's version, and the first `grit upgrade` reads
-// every edited file as hand-edited and stops updating it. The session also
-// lets the helpers drop the files the cleanup deletes, so an upgrade does not
-// bring them back.
-func cleanBlankStarter(root, version string, opts Options) (err error) {
-	if version == "" {
-		version = scaffold.DefaultVersion
-	}
-	release, err := manifest.Start(root, version, "setup")
-	if err != nil {
-		return fmt.Errorf("starting the starter manifest session: %w", err)
-	}
-	defer func() {
-		if saveErr := release(); saveErr != nil && err == nil {
-			err = fmt.Errorf("saving the starter manifest: %w", saveErr)
-		}
-	}()
-
-	if opts.Architecture == string(scaffold.ArchSingle) {
-		return cleanBlankSingle(root, opts.Frontend)
-	}
-	return cleanBlankMonorepoLinks(root, opts.Frontend, opts.HasSeparateAdmin())
-}
+// It was tried the other way, on my review's advice, and the advice was wrong:
+// refreshing the hash of an edited file hands it back to the template, the
+// template still contains the Blog, and the first `grit upgrade` put the Blog
+// links back into nav-menu.ts pointing at a route this starter had removed.
+// The same goes for dropping a deleted file's entry: a recorded file that is
+// absent is how the upgrade guard knows the project removed a feature.
+//
+// The cost is that the handful of files the cleanup edits stop receiving
+// framework fixes, which is the lesser of the two. The real fix is for the
+// templates that mention a scaffolded demo resource to ask whether the project
+// still has it, and that is grit#173.
 
 // cleanBlankSingle finishes the blank starter on the single layouts.
 //
@@ -289,7 +276,6 @@ func removeFile(path string) error {
 		}
 		return fmt.Errorf("removing %s: %w", path, err)
 	}
-	manifest.Drop(path)
 	return nil
 }
 
@@ -315,7 +301,6 @@ func removeEmptyDir(path string) error {
 	}
 	// Files inside were dropped by removeFile. DropTree also clears entries an
 	// earlier remover left behind for the directory itself.
-	manifest.DropTree(path)
 	return nil
 }
 
@@ -349,7 +334,6 @@ func removeLinesContaining(path string, needles ...string) error {
 	if err := os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
-	manifest.Refresh(path)
 	return nil
 }
 
@@ -406,7 +390,6 @@ func removeBlogNavLinks(path string) error {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
-	manifest.Refresh(path)
 	return pruneUnusedLucideImports(path)
 }
 
@@ -454,7 +437,6 @@ func pruneUnusedLucideImports(path string) error {
 	if err := os.WriteFile(path, []byte(newContent), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
-	manifest.Refresh(path)
 	return nil
 }
 
@@ -486,6 +468,5 @@ func replaceInFile(path string, replacements ...string) error {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
-	manifest.Refresh(path)
 	return nil
 }

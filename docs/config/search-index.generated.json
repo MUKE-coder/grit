@@ -732,6 +732,12 @@
     "keywords": "setup first project tutorial begin hello new install run dev create grit minutes scaffold full stack app go api next js frontend admin panel docs getting started quick start"
   },
   {
+    "title": "grit setup",
+    "href": "/docs/getting-started/setup",
+    "section": "Getting Started",
+    "keywords": "guided installer choose starter architecture database redis storage mail providers then let setup install dependencies start local services migrate seed make first commit separate grit stays fast scriptable scaffold docs getting started"
+  },
+  {
     "title": "Troubleshooting",
     "href": "/docs/getting-started/troubleshooting",
     "section": "Getting Started",

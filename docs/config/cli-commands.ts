@@ -143,6 +143,7 @@ export const CLI_COMMANDS: CliCommand[] = [
     ],
     docs: [
       { label: 'Create a project', href: '/docs/getting-started/create-a-project' },
+      { label: 'grit setup', href: '/docs/getting-started/setup' },
       { label: 'Architecture modes', href: '/docs/concepts/architecture-modes' },
     ],
     keywords: ['init', 'create', 'scaffold', 'bootstrap', 'start a project'],

@@ -79,6 +79,7 @@ const navItems: NavItem[] = [
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
       { title: 'Create a project', href: '/docs/getting-started/create-a-project' },
+      { title: 'grit setup (installer)', href: '/docs/getting-started/setup' },
       { title: 'Coming from Laravel/Django/Next', href: '/docs/getting-started/coming-from' },
       { title: 'Using with an existing project', href: '/docs/getting-started/existing-projects' },
       { title: 'Performance & Benchmarks', href: '/docs/getting-started/performance' },

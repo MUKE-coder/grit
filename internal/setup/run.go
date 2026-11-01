@@ -78,7 +78,11 @@ func Run(ctx context.Context, opts Options) error {
 			// The single layouts put the panel and the public site in roots the
 			// removal does not know yet; a monorepo still leaves the navbar
 			// links behind. See starter.go.
-			if err := cleanBlankStarter(root, opts.Version, opts); err != nil {
+			if opts.Architecture == string(scaffold.ArchSingle) {
+				if err := cleanBlankSingle(root, opts.Frontend); err != nil {
+					return fmt.Errorf("finishing the blank starter: %w", err)
+				}
+			} else if err := cleanBlankMonorepoLinks(root, opts.Frontend, opts.HasSeparateAdmin()); err != nil {
 				return fmt.Errorf("finishing the blank starter: %w", err)
 			}
 			fmt.Println(ui.Step("Starter", "blank, Blog example removed"))

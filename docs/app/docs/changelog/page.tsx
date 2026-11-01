@@ -59,6 +59,166 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.462.0 */}
+            <div className="mb-12" id="v3.462.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.462.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit setup, the guided installer</h3>
+                <p>
+                  Contributed by{' '}
+                  <a
+                    href="https://github.com/daljo25"
+                    className="text-accent hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    daljo25
+                  </a>{' '}
+                  in{' '}
+                  <a
+                    href="https://github.com/MUKE-coder/grit/pull/170"
+                    className="text-accent hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    #170
+                  </a>
+                  , the second contribution from the same person this week.
+                </p>
+                <CodeBlock language="text" code={`$ grit setup myapp
+
+  the architecture, the frontend, a starter, a database,
+  Redis, storage, mail, the plugins that fit the shape
+
+  then: dependencies, local services, migrate, seed,
+  the first commit, and grit start if you want it`} />
+                <p>
+                  It is a separate command from <code>grit new</code> on
+                  purpose, and the reasoning in the PR is the part worth
+                  repeating: <code>grit new</code> is the fast, scriptable
+                  scaffold and its behaviour is frozen, so a build script that
+                  runs it keeps working. A wizard that could change that
+                  command&apos;s output would be a liability. Setup is the
+                  guided path, and it only creates new projects.
+                </p>
+                <p>
+                  A starter is the example content a project begins with, and
+                  there is no separate template repository:{' '}
+                  <code>blank</code> is the same scaffold with the built-in Blog
+                  removed, <code>blog</code> keeps it as{' '}
+                  <code>grit new</code> writes it. The hard part of that is the
+                  leftovers, and the PR found four kinds nobody had looked for:
+                  public TanStack routes importing a deleted hook, admin routes
+                  importing deleted pages, Expo Blog screens with their
+                  discover entries, and a desktop quick-access card pointing at
+                  a removed screen. All four have tests.
+                </p>
+                <p>
+                  Documented at{' '}
+                  <a href="/docs/getting-started/setup" className="text-accent hover:underline">
+                    /docs/getting-started/setup
+                  </a>
+                  . The <code>--yes</code> form takes every answer as a flag,
+                  for CI.
+                </p>
+
+                <h3>A review note I had to take back</h3>
+                <p>
+                  Reviewing that PR, I asked for the starter&apos;s cleanup to
+                  record its edits in the manifest. The cleanup edits files the
+                  scaffold owns, so without that the first{' '}
+                  <code>grit upgrade</code> read four of them as hand-edited and
+                  stopped maintaining them, the nav menu among them. That much
+                  was measured and true.
+                </p>
+                <p>
+                  The fix was wrong, and so was the same fix I wrote for{' '}
+                  <code>grit remove resource</code> alongside it. Refreshing an
+                  edited file&apos;s hash hands the file back to the template,
+                  and the template still contains the Blog:
+                </p>
+                <CodeBlock language="text" code={`$ grit setup blankapp --starter blank    # no Blog anywhere
+$ grit upgrade
+$ grep blog apps/web/lib/nav-menu.ts
+            title: "Blog",
+            href: "/blog",                   # a 404
+
+# and on the remover, worse:
+$ grit remove resource Blog --force
+$ grit upgrade && go build ./...
+internal/database/seed.go:21:12: undefined: SeedBlogs`} />
+                <p>
+                  The stale hash was not a bug. It is the only thing preserving
+                  a removal against a template that still knows about the
+                  resource. The same goes for the fourteen recorded-but-absent
+                  manifest entries I filed as{' '}
+                  <a
+                    href="https://github.com/MUKE-coder/grit/issues/171"
+                    className="text-accent hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    #171
+                  </a>
+                  : a recorded file that is absent is how the upgrade guard
+                  knows the project removed a feature. Dropping those entries
+                  made the Blog&apos;s public pages come back.
+                </p>
+                <p>
+                  Both halves are reverted, and both now carry a test that
+                  fails if somebody re-applies the idea, because it is an
+                  attractive one: refreshing looks obviously right until you run
+                  the upgrade. The real fix is for the templates that mention a
+                  demo resource to ask whether the project still has it, which
+                  is{' '}
+                  <a
+                    href="https://github.com/MUKE-coder/grit/issues/173"
+                    className="text-accent hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    #173
+                  </a>
+                  . Until then a blank project has a handful of files that stop
+                  receiving framework fixes, and the setup page says so.
+                </p>
+
+                <h3>An upgrade put back a resource you had removed</h3>
+                <p>
+                  <a
+                    href="https://github.com/MUKE-coder/grit/issues/172"
+                    className="text-accent hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    #172
+                  </a>
+                  , and mine from yesterday. v3.460.0 moved{' '}
+                  <code>blog</code> and <code>upload</code> onto the list of
+                  shared types a new project ships, so the comparator test would
+                  cover them. That list is also what the upgrade&apos;s repair
+                  walks, and the repair creates every entry that is missing. So
+                  a <code>blog.ts</code> absent because somebody removed the
+                  resource looked exactly like one absent because the project
+                  predates the list.
+                </p>
+                <p>
+                  The model is what tells those apart: if{' '}
+                  <code>internal/models/blog.go</code> is not there,{' '}
+                  <code>grit sync</code> would not write the type either. The
+                  repair asks now, and a tree with no models directory at all is
+                  read as a question that cannot be answered rather than as a
+                  removal, so a frontend-only checkout still gets its types.
+                </p>
+              </div>
+            </div>
+
             {/* v3.461.0 */}
             <div className="mb-12" id="v3.461.0">
               <div className="flex items-center gap-3 mb-4">

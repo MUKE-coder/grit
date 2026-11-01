@@ -39,6 +39,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Create your first Grit project in under 5 minutes. Scaffold a full-stack app with Go API, Next.js frontend, and admin panel.',
   },
+  '/docs/getting-started/setup': {
+    title: 'grit setup',
+    description:
+      'The guided installer. Choose a starter, an architecture, a database and the Redis, storage and mail providers, then let setup install dependencies, start local services, migrate, seed and make the first commit. Separate from grit new, which stays the fast scriptable scaffold.',
+  },
   '/docs/getting-started/create-a-project': {
     title: 'Create a project',
     description:

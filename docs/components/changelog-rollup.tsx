@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 75,
+    count: 76,
     entries: [
+      { version: "3.462.0", title: "grit setup, the guided installer" },
       { version: "3.461.0", title: "grit plugin new" },
       { version: "3.460.0", title: "grit sync undid what grit generate had just written" },
       { version: "3.459.0", title: "The admin panel loaded for people who were not signed in" },

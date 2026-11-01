@@ -44,7 +44,9 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "brand.config.ts"): sharedBrandConfig(opts),
 		filepath.Join(sharedRoot, "themes.ts"):       sharedThemes(),
 	}
-	for path, content := range sharedModelTypeFiles(sharedRoot) {
+	// "" for the root: the scaffold is writing the models in this same run,
+	// so asking whether they exist yet would skip every one of them.
+	for path, content := range sharedModelTypeFiles("", sharedRoot) {
 		files[path] = content
 	}
 	// The Zod schemas generated resources use for their formatted fields.
