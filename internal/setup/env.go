@@ -148,8 +148,14 @@ func PatchEnv(path string, updates map[string]string) error {
 	}
 
 	out := strings.Join(lines, "\n")
-	if err := os.WriteFile(path, []byte(out), 0o644); err != nil {
+	// The scaffold writes placeholders. Setup writes the credentials somebody
+	// just typed, so the file is private from here on. os.WriteFile keeps the
+	// mode of an existing file, which is why the Chmod is not optional.
+	if err := os.WriteFile(path, []byte(out), 0o600); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
+	}
+	if err := os.Chmod(path, 0o600); err != nil {
+		return fmt.Errorf("setting permissions on %s: %w", path, err)
 	}
 	return nil
 }

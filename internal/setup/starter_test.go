@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 func TestCleanBlankMonorepoRemovesTanStackBlogRoutes(t *testing.T) {
@@ -209,6 +211,124 @@ const SYSTEM_ACTIONS = [
 	}
 	if strings.Contains(quick, "Support/blogs") {
 		t.Error("the desktop comment still mentions the removed Blog")
+	}
+}
+
+func TestCleanBlankStarterRefreshesManifest(t *testing.T) {
+	root := t.TempDir()
+	files := map[string]string{
+		"apps/web/lib/nav-menu.ts": `[
+  {
+    title: "Blog",
+    href: "/blog",
+  },
+  {
+    title: "About",
+    href: "/about",
+  },
+]
+`,
+		"apps/admin/app/(dashboard)/system/trash/page.tsx": `// blog_posts -> Blog posts
+export default function Trash() {
+  return null
+}
+`,
+		"apps/web/__tests__/navbar.test.tsx": `expect(screen.getByRole("link", { name: /blog/i })).toBeInTheDocument()
+`,
+	}
+	for rel, content := range files {
+		writeStarterFile(t, root, rel, content)
+	}
+	recordStarterFiles(t, root, files)
+
+	if err := cleanBlankStarter(root, "3.461.0", Options{
+		Architecture: "triple",
+		Frontend:     "next",
+	}); err != nil {
+		t.Fatalf("cleanBlankStarter: %v", err)
+	}
+
+	m, err := manifest.Load(root)
+	if err != nil {
+		t.Fatalf("loading manifest: %v", err)
+	}
+	for rel := range files {
+		if got := m.StatusOf(root, rel); got != manifest.Unchanged {
+			t.Errorf("%s reads as %s after the cleanup, want unchanged", rel, got)
+		}
+	}
+}
+
+func TestCleanBlankStarterDropsRemovedFilesFromManifest(t *testing.T) {
+	root := t.TempDir()
+	files := map[string]string{
+		"apps/web/src/routes/_site/blog/index.tsx": "export const Route = {}\n",
+		"apps/web/src/routes/_site/blog/$slug.tsx": "export const Route = {}\n",
+		"apps/web/src/routes/_site/index.tsx": `<Link
+  to="/blog"
+>
+  Read the Blog
+</Link>
+`,
+		"apps/web/src/lib/nav-menu.ts": `[
+  {
+    title: "Blog",
+    href: "/blog",
+  },
+]
+`,
+		"apps/web/src/admin-panel/pages/system-trash.tsx": `// blog_posts -> Blog posts
+export default function Trash() {
+  return null
+}
+`,
+	}
+	for rel, content := range files {
+		writeStarterFile(t, root, rel, content)
+	}
+	recordStarterFiles(t, root, files)
+
+	if err := cleanBlankStarter(root, "3.461.0", Options{
+		Architecture: "double",
+		Frontend:     "tanstack",
+	}); err != nil {
+		t.Fatalf("cleanBlankStarter: %v", err)
+	}
+
+	m, err := manifest.Load(root)
+	if err != nil {
+		t.Fatalf("loading manifest: %v", err)
+	}
+	for _, rel := range []string{
+		"apps/web/src/routes/_site/blog/index.tsx",
+		"apps/web/src/routes/_site/blog/$slug.tsx",
+	} {
+		if _, ok := m.Files[manifest.Key(rel)]; ok {
+			t.Errorf("%s still has a manifest entry after removal", rel)
+		}
+	}
+	for _, rel := range []string{
+		"apps/web/src/routes/_site/index.tsx",
+		"apps/web/src/lib/nav-menu.ts",
+		"apps/web/src/admin-panel/pages/system-trash.tsx",
+	} {
+		if got := m.StatusOf(root, rel); got != manifest.Unchanged {
+			t.Errorf("%s reads as %s after the cleanup, want unchanged", rel, got)
+		}
+	}
+}
+
+func recordStarterFiles(t *testing.T, root string, files map[string]string) {
+	t.Helper()
+	release, err := manifest.Start(root, "3.461.0", "scaffold")
+	if err != nil {
+		t.Fatalf("starting manifest: %v", err)
+	}
+	for rel, content := range files {
+		manifest.Note(filepath.Join(root, rel), content)
+	}
+	if err := release(); err != nil {
+		t.Fatalf("saving manifest: %v", err)
 	}
 }
 

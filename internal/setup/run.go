@@ -78,11 +78,7 @@ func Run(ctx context.Context, opts Options) error {
 			// The single layouts put the panel and the public site in roots the
 			// removal does not know yet; a monorepo still leaves the navbar
 			// links behind. See starter.go.
-			if opts.Architecture == string(scaffold.ArchSingle) {
-				if err := cleanBlankSingle(root, opts.Frontend); err != nil {
-					return fmt.Errorf("finishing the blank starter: %w", err)
-				}
-			} else if err := cleanBlankMonorepoLinks(root, opts.Frontend, opts.HasSeparateAdmin()); err != nil {
+			if err := cleanBlankStarter(root, opts.Version, opts); err != nil {
 				return fmt.Errorf("finishing the blank starter: %w", err)
 			}
 			fmt.Println(ui.Step("Starter", "blank, Blog example removed"))
@@ -173,14 +169,19 @@ func Run(ctx context.Context, opts Options) error {
 			canStart = false
 			fmt.Println(ui.WarningLine("Frontend dependencies skipped", "run pnpm install before grit start"))
 		} else if err := InstallFrontendDeps(ctx, root, opts.Yes); err != nil {
+			// A flaky network here must not cost the migration, the seed or the
+			// first commit: none of them needs node. Report it, name the retry,
+			// and carry on with what still works.
+			canStart = false
+			needsPnpm = true
 			if errors.Is(err, ErrPnpmUnavailable) {
-				canStart = false
-				needsPnpm = true
 				fmt.Println(ui.WarningBlock("pnpm is not installed", err.Error(),
 					"Install pnpm, then run:",
 					"  cd "+displayPath(opts, root)+" && pnpm install"))
 			} else {
-				return fmt.Errorf("installing frontend dependencies: %w\n\nRetry with: cd %s && pnpm install", err, displayPath(opts, root))
+				fmt.Println(ui.WarningBlock("Frontend dependencies did not install", err.Error(),
+					"The project is complete. Retry with:",
+					"  cd "+displayPath(opts, root)+" && pnpm install"))
 			}
 		} else {
 			fmt.Println(ui.Step("Frontend dependencies", "installed"))

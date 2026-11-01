@@ -3,6 +3,7 @@ package setup
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -103,6 +104,26 @@ func TestEnvUpdatesClearsResendPlaceholderForLocalMail(t *testing.T) {
 	}
 	if updates["MAIL_FROM"] != "noreply@example.dev" {
 		t.Errorf("MAIL_FROM = %q", updates["MAIL_FROM"])
+	}
+}
+
+func TestPatchEnvMakesTheFilePrivate(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("unix permissions")
+	}
+	path := writeEnv(t, "MAIL_MAILER=log\n")
+	if err := os.Chmod(path, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := PatchEnv(path, map[string]string{"SMTP_PASSWORD": "secret"}); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Errorf(".env mode = %o, want 600", got)
 	}
 }
 

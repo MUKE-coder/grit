@@ -8,8 +8,36 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
+
+// cleanBlankStarter runs the starter cleanup inside one manifest session.
+//
+// The cleanup edits files the scaffold owns. Without a session, the manifest
+// keeps the hash of the scaffold's version, and the first `grit upgrade` reads
+// every edited file as hand-edited and stops updating it. The session also
+// lets the helpers drop the files the cleanup deletes, so an upgrade does not
+// bring them back.
+func cleanBlankStarter(root, version string, opts Options) (err error) {
+	if version == "" {
+		version = scaffold.DefaultVersion
+	}
+	release, err := manifest.Start(root, version, "setup")
+	if err != nil {
+		return fmt.Errorf("starting the starter manifest session: %w", err)
+	}
+	defer func() {
+		if saveErr := release(); saveErr != nil && err == nil {
+			err = fmt.Errorf("saving the starter manifest: %w", saveErr)
+		}
+	}()
+
+	if opts.Architecture == string(scaffold.ArchSingle) {
+		return cleanBlankSingle(root, opts.Frontend)
+	}
+	return cleanBlankMonorepoLinks(root, opts.Frontend, opts.HasSeparateAdmin())
+}
 
 // cleanBlankSingle finishes the blank starter on the single layouts.
 //
@@ -252,11 +280,16 @@ func cleanBlankMonorepoLinks(root, frontend string, separateAdmin bool) error {
 }
 
 // removeFile removes a path, treating "already gone" as success so the cleanup
-// stays idempotent.
+// stays idempotent. A successful removal also drops the manifest entry: the
+// next upgrade must not bring back a file this starter removed.
 func removeFile(path string) error {
-	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
 		return fmt.Errorf("removing %s: %w", path, err)
 	}
+	manifest.Drop(path)
 	return nil
 }
 
@@ -274,9 +307,15 @@ func removeEmptyDir(path string) error {
 	if len(entries) != 0 {
 		return nil
 	}
-	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
 		return fmt.Errorf("removing %s: %w", path, err)
 	}
+	// Files inside were dropped by removeFile. DropTree also clears entries an
+	// earlier remover left behind for the directory itself.
+	manifest.DropTree(path)
 	return nil
 }
 
@@ -310,6 +349,7 @@ func removeLinesContaining(path string, needles ...string) error {
 	if err := os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
+	manifest.Refresh(path)
 	return nil
 }
 
@@ -366,6 +406,7 @@ func removeBlogNavLinks(path string) error {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
+	manifest.Refresh(path)
 	return pruneUnusedLucideImports(path)
 }
 
@@ -413,6 +454,7 @@ func pruneUnusedLucideImports(path string) error {
 	if err := os.WriteFile(path, []byte(newContent), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
+	manifest.Refresh(path)
 	return nil
 }
 
@@ -444,5 +486,6 @@ func replaceInFile(path string, replacements ...string) error {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
+	manifest.Refresh(path)
 	return nil
 }
