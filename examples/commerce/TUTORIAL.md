@@ -3683,6 +3683,20 @@ export async function generateMetadata({
   };
 }
 
+// jsonLd serialises structured data for a <script> element.
+//
+// JSON.stringify alone is not safe here. It escapes what JSON needs and nothing
+// that HTML needs, so a product titled `</script><img onerror=...>` closes the
+// element and the rest is parsed as markup. The title comes from the database,
+// so this is stored XSS rather than a theoretical one.
+//
+// Escaping "<" rather than the literal "</script>" is deliberate: the variants
+// are many and the escape is one. \u003c is a valid JSON string escape, so
+// every consumer reads it back as "<".
+function jsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 export default async function ProductPage({
   params,
 }: {
@@ -3761,11 +3775,15 @@ export default async function ProductPage({
       )}
 
       {/* Structured data, so the product shows a price in search results.
-          Built from the same figures the page renders, not a second set. */}
+          Built from the same figures the page renders, not a second set.
+
+          Through jsonLd, never JSON.stringify directly: the values are a
+          product's title and description, and inside a <script> element those
+          are somebody else's HTML waiting to happen. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLd({
             "@context": "https://schema.org",
             "@type": "Product",
             name: product.title,

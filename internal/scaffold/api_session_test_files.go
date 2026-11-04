@@ -71,7 +71,12 @@ func TestRotateSessionSwapsTheToken(t *testing.T) {
 	assert.Equal(t, models.HashSessionToken("new-token"), stored.TokenHash)
 	assert.Equal(t, models.HashSessionToken("old-token"), stored.PrevTokenHash)
 
-	// The old token is now worthless.
+	// The old token is worthless once the grace window has passed. Inside it,
+	// presenting the old token is a race rather than a replay and is allowed
+	// on purpose: see TestTwoConcurrentRefreshesDoNotKillTheSession.
+	stale := time.Now().Add(-services.SessionRotationGrace - time.Minute)
+	require.NoError(t, db.Model(&stored).Update("rotated_at", &stale).Error)
+
 	_, err = services.RotateSession(db, sessionCtx("Chrome"), "old-token", "another-token")
 	assert.ErrorIs(t, err, services.ErrSessionInvalid)
 }
@@ -86,6 +91,12 @@ func TestRotateSessionReplayKillsTheSession(t *testing.T) {
 	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-1", "token-2")
 	require.NoError(t, err)
 
+	// Past the grace window, which is the replay rotation exists to catch: a
+	// token captured and used later. One used in the same second is a thief
+	// racing the victim, and no amount of rotation ever stopped that.
+	stale := time.Now().Add(-services.SessionRotationGrace - time.Minute)
+	require.NoError(t, db.Model(created).Update("rotated_at", &stale).Error)
+
 	// The attacker replays the token they captured before rotation.
 	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-1", "token-3")
 	assert.ErrorIs(t, err, services.ErrSessionInvalid)
@@ -98,6 +109,60 @@ func TestRotateSessionReplayKillsTheSession(t *testing.T) {
 	// re-authenticate than let a thief ride along unnoticed.
 	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-2", "token-4")
 	assert.ErrorIs(t, err, services.ErrSessionInvalid)
+}
+
+// Two tabs whose access tokens expire together both present the token they
+// hold, and the second one presents what rotation has already replaced. That
+// is not a replay, it is a race, and before the grace window it signed the
+// user out of every device (grit#153).
+func TestTwoConcurrentRefreshesDoNotKillTheSession(t *testing.T) {
+	db := newSessionDB(t)
+	created, err := services.CreateSession(db, sessionCtx("Chrome"), "user-1", "token-1")
+	require.NoError(t, err)
+
+	// The first tab refreshes.
+	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-1", "token-2")
+	require.NoError(t, err)
+
+	// The second tab's request was already in flight with the same token.
+	second, err := services.RotateSession(db, sessionCtx("Chrome"), "token-1", "token-3")
+	require.NoError(t, err, "a refresh racing another one must not be read as a replay")
+	require.Equal(t, created.ID, second.ID, "the race started a different session")
+
+	var stored models.Session
+	require.NoError(t, db.First(&stored, "id = ?", created.ID).Error)
+	assert.Nil(t, stored.RevokedAt, "the session was revoked by an honest collision")
+
+	// The token the second caller was handed is the live one.
+	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-3", "token-4")
+	assert.NoError(t, err)
+}
+
+// The window is anchored to the first rotation. Presenting the old token over
+// and over must not keep pushing the deadline out, or a captured token never
+// expires as long as it is used.
+func TestTheGraceWindowDoesNotSlide(t *testing.T) {
+	db := newSessionDB(t)
+	created, err := services.CreateSession(db, sessionCtx("Chrome"), "user-1", "token-1")
+	require.NoError(t, err)
+	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-1", "token-2")
+	require.NoError(t, err)
+
+	var afterFirst models.Session
+	require.NoError(t, db.First(&afterFirst, "id = ?", created.ID).Error)
+	require.NotNil(t, afterFirst.RotatedAt, "rotation did not record when it happened")
+
+	// A second use of the old token, inside the window.
+	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-1", "token-3")
+	require.NoError(t, err)
+
+	var afterSecond models.Session
+	require.NoError(t, db.First(&afterSecond, "id = ?", created.ID).Error)
+	require.NotNil(t, afterSecond.RotatedAt)
+	assert.True(t, afterSecond.RotatedAt.Equal(*afterFirst.RotatedAt),
+		"the grace window moved, so the old token outlives its deadline")
+	assert.Equal(t, afterFirst.PrevTokenHash, afterSecond.PrevTokenHash,
+		"the previous token changed, so the window now protects a different token")
 }
 
 func TestSessionIdleTimeout(t *testing.T) {

@@ -47,7 +47,15 @@ type Session struct {
 	// PrevTokenHash is the hash of the token this one replaced. If a client ever
 	// presents THAT token again, the token was captured and replayed after
 	// rotation — the session is killed rather than refreshed.
+	//
+	// Except inside the grace window below, which is what stops two tabs
+	// refreshing in the same second from killing each other (grit#153).
 	PrevTokenHash string ` + "`" + `gorm:"size:64;index" json:"-"` + "`" + `
+
+	// RotatedAt is when PrevTokenHash stopped being current. The grace window
+	// is measured from here and nowhere else, so presenting the old token
+	// again cannot slide the window forward.
+	RotatedAt *time.Time ` + "`" + `json:"-"` + "`" + `
 
 	UserAgent string ` + "`" + `gorm:"size:512" json:"user_agent"` + "`" + `
 	IP        string ` + "`" + `gorm:"size:64" json:"ip"` + "`" + `
@@ -110,6 +118,19 @@ import (
 var (
 	SessionIdleTimeout     = 7 * 24 * time.Hour
 	SessionAbsoluteTimeout = 30 * 24 * time.Hour
+
+	// SessionRotationGrace is how long the just-rotated token keeps working.
+	//
+	// It exists for the honest collision: two tabs whose access tokens expire
+	// together, or a retry of a request whose response was lost. Both present
+	// the token they hold, which rotation has already replaced, and without
+	// this the second one is read as a replay and the session dies.
+	//
+	// Ten seconds, because the real window is one request in flight. Long
+	// enough for a slow phone, short enough that a captured token is still
+	// caught: a thief who waits is caught, and a thief already racing the
+	// victim gets one refresh, which rotation alone never prevented either.
+	SessionRotationGrace = 10 * time.Second
 )
 
 // ErrSessionInvalid is returned when a refresh token has no live session:
@@ -168,11 +189,32 @@ func RotateSessionCtx(ctx context.Context, db *gorm.DB, meta RequestMeta, oldTok
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
-		// Not the current token. If it's the PREVIOUS one, this is a replay of a
-		// rotated token — treat it as compromise and kill the session.
+		// Not the current token. If it's the PREVIOUS one, this is either a
+		// replay of a captured token or an honest collision, and RotatedAt is
+		// what tells the two apart.
 		var replayed models.Session
 		if db.Where("prev_token_hash = ?", oldHash).First(&replayed).Error == nil {
 			now := time.Now()
+
+			// Inside the grace window: two refreshes raced, which is ordinary.
+			// Rotate as though the current token had been presented, and leave
+			// prev_token_hash and rotated_at where they are, so the window stays
+			// anchored to the first rotation and presenting the same old token
+			// repeatedly cannot keep it alive (grit#153).
+			if replayed.RotatedAt != nil &&
+				now.Sub(*replayed.RotatedAt) <= SessionRotationGrace &&
+				replayed.Active(now, SessionIdleTimeout) {
+				if err := db.Model(&replayed).Updates(map[string]interface{}{
+					"token_hash":   models.HashSessionToken(newToken),
+					"last_seen_at": now,
+					"ip":           meta.IP,
+					"user_agent":   truncateStr(meta.UserAgent, 512),
+				}).Error; err != nil {
+					return nil, err
+				}
+				return &replayed, nil
+			}
+
 			// A replay is the one time revocation must not quietly fail: the
 			// token was captured, and the session it belongs to stays live.
 			if err := db.Model(&replayed).Update("revoked_at", &now).Error; err != nil {
@@ -191,6 +233,8 @@ func RotateSessionCtx(ctx context.Context, db *gorm.DB, meta RequestMeta, oldTok
 	if err := db.Model(&s).Updates(map[string]interface{}{
 		"token_hash":      models.HashSessionToken(newToken),
 		"prev_token_hash": oldHash,
+		// The grace window is measured from here.
+		"rotated_at":      &now,
 		"last_seen_at":    now,
 		"ip":              meta.IP,
 		"user_agent":      truncateStr(meta.UserAgent, 512),

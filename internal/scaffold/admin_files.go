@@ -1473,13 +1473,19 @@ apiClient.interceptors.response.use(
       url.includes("/auth/me");
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      // Marked before either path replays it, not just before the refresh.
+      // A request that queues behind an in-flight refresh is replayed too, and
+      // without the mark a second 401 on that replay reads as a first attempt
+      // and starts the whole dance again: a refresh storm rather than one
+      // clean sign-out, which is what several tabs on a dead session produce.
+      originalRequest._retry = true;
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then(() => apiClient(originalRequest));
       }
 
-      originalRequest._retry = true;
       isRefreshing = true;
 
       try {

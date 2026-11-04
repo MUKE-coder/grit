@@ -59,6 +59,106 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.464.0 */}
+            <div className="mb-12" id="v3.464.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.464.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two tabs signed you out of every device</h3>
+                <p>
+                  grit#153. Refresh tokens rotate, and a second presentation of
+                  a rotated token is read as a captured token being replayed, so
+                  the session is killed. That is right for a thief. It is also
+                  what happens when two tabs&apos; access tokens expire in the
+                  same second, or a phone retries a request whose response never
+                  arrived: both present the token they hold, which by then is
+                  the previous one.
+                </p>
+                <p>
+                  There is a ten second grace now. Inside it, presenting the
+                  previous token rotates normally instead of revoking:
+                </p>
+                <CodeBlock language="go" code={`// Inside the grace window: two refreshes raced, which is ordinary.
+// Rotate as though the current token had been presented, and leave
+// prev_token_hash and rotated_at where they are, so the window stays
+// anchored to the first rotation and presenting the same old token
+// repeatedly cannot keep it alive.
+if replayed.RotatedAt != nil &&
+    now.Sub(*replayed.RotatedAt) <= SessionRotationGrace &&
+    replayed.Active(now, SessionIdleTimeout) {`} />
+                <p>
+                  Ten seconds because the real window is one request in flight:
+                  the refresh token is a cookie every tab shares, so the second
+                  tab holds the old one only until the first response lands. A
+                  thief who waits is still caught. A thief already racing the
+                  victim gets one refresh, which rotation alone never prevented
+                  either.
+                </p>
+                <p>
+                  What it does not do, since the issue asked for more: the two
+                  callers get different new tokens and the client keeps
+                  whichever it stores last. A browser resolves that by itself,
+                  sharing one cookie. A native client that processes both
+                  responses orphans one token, and the orphan&apos;s next
+                  refresh is refused rather than fatal: the session survives and
+                  the other devices keep working. Handing both callers the same
+                  pair would mean keeping the issued token retrievable for the
+                  window, which is a new secret at rest.
+                </p>
+                <p>
+                  Two of the existing tests asserted the old behaviour and now
+                  age the rotation past the window before asserting it, which is
+                  the case the protection is actually for. Three new tests cover
+                  the race, and one covers the window not sliding: presenting
+                  the old token repeatedly must not keep pushing its deadline
+                  out.
+                </p>
+
+                <h3>A refresh storm instead of one sign-out</h3>
+                <p>
+                  grit#147. The admin&apos;s 401 interceptor has two paths that
+                  replay a request and marked only one of them. A request that
+                  queued behind an in-flight refresh was replayed without{' '}
+                  <code>_retry</code>, so a second 401 on that replay read as a
+                  first attempt and started the refresh again.
+                </p>
+                <p>
+                  The desktop client already had it right, setting the flag
+                  before the branch, so the fix is the two agreeing rather than
+                  a rule invented for the occasion. There is now a test that
+                  reads both clients and fails if either marks after it
+                  branches.
+                </p>
+
+                <h3>Stored XSS in the commerce example</h3>
+                <p>
+                  grit#150. The product page wrote JSON-LD into a{' '}
+                  <code>&lt;script&gt;</code> element with{' '}
+                  <code>JSON.stringify</code>, which escapes what JSON needs and
+                  nothing HTML needs. A product titled{' '}
+                  <code>&lt;/script&gt;&lt;img onerror=...&gt;</code> closed the
+                  element and the rest was parsed as markup. The title comes
+                  from the database, so that is whoever can edit a product.
+                </p>
+                <CodeBlock language="ts" code={`function jsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}`} />
+                <p>
+                  Escaping <code>&lt;</code> rather than the literal{' '}
+                  <code>&lt;/script&gt;</code> is deliberate: the variants are
+                  many and the escape is one. <code>{'\\u003c'}</code> is a valid
+                  JSON string escape, so every consumer reads it back as{' '}
+                  <code>&lt;</code> and the structured data is unchanged.
+                  Verified against the payload, not by reading it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.463.0 */}
             <div className="mb-12" id="v3.463.0">
               <div className="flex items-center gap-3 mb-4">
