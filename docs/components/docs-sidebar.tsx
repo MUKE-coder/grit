@@ -735,6 +735,7 @@ export function MobileNav() {
               { label: 'Blog', href: '/blog' },
               { label: 'Pitch', href: '/pitch' },
               { label: 'Showcase', href: '/showcase' },
+              { label: 'Contributors', href: '/contributors' },
               { label: 'GritCMS', href: 'https://gritcms.com' },
               { label: 'Hire Us', href: '/hire' },
             ].map((item) => (

@@ -112,6 +112,7 @@ export function SiteHeader() {
                 { label: 'Blueprints', href: '/blueprints' },
                 { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
                 { label: 'Showcase', href: '/showcase' },
+                { label: 'Contributors', href: '/contributors' },
                 { label: 'Blog', href: '/blog' },
               ]
           ).map((item: { label: string; href: string; external?: boolean }) => {
@@ -136,7 +137,7 @@ export function SiteHeader() {
                 href={item.href}
                 {...(item.external ? { target: '_blank', rel: 'noreferrer' } : {})}
                 className={cn(
-                  'relative px-3 py-1.5 text-[14px] transition-colors',
+                  'relative whitespace-nowrap px-3 py-1.5 text-[14px] transition-colors',
                   active ? 'text-fg' : 'text-fg-muted hover:text-fg',
                 )}
               >

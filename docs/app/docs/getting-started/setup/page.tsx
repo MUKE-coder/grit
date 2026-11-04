@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Terminal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
@@ -36,11 +36,17 @@ function FlagTable({ rows }: { rows: [string, string][] }) {
 
 export default function SetupPage() {
   return (
-    <DocsShell
-      title="grit setup"
-      description="The guided installer: a starter, a shape, the services the project talks to, and the steps that make the result run."
-    >
+    <DocsShell>
       <div className="prose-grit max-w-none">
+        <div className="mb-3 flex items-center gap-2">
+          <Terminal className="h-5 w-5 text-accent" />
+          <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            Getting started
+          </span>
+        </div>
+
+        <h1 className="mb-4 font-display text-4xl font-bold tracking-tight">grit setup</h1>
+
         <p className="mb-10 text-lg leading-relaxed text-muted-foreground">
           <code>grit setup</code> creates a new project the way an installer does. It asks for a
           starter and for the services the project will use, then runs the steps that make the
