@@ -58,6 +58,31 @@ jobs:
           check-latest: true
           cache: true
 
+      # A fresh scaffold, compiled with its tests, on every push.
+      #
+      # The examples below are committed output: they carry the templates as
+      # they were when somebody generated them, so a template change that
+      # breaks only the generated _test.go files does not show up there. Nor
+      # does `go build`, which does not compile test files at all. The two
+      # together left `events.ByExternalID(ctx, provider, externalID)` in the
+      # webhook test for as long as it took the nightly canary to be read:
+      # five days, during which every scaffolded project shipped a services
+      # package that would not `go test`.
+      #
+      # go vet rather than go test: vet compiles the test files, which is the
+      # question, and takes seconds. The canary still runs the tests overnight.
+      - name: A fresh scaffold compiles, tests included
+        run: |
+          set -euo pipefail
+          go build -o /tmp/grit ./cmd/grit
+          rm -rf /tmp/fresh && mkdir -p /tmp/fresh
+          (cd /tmp/fresh && /tmp/grit new freshcheck --api > /tmp/fresh/scaffold.log 2>&1) || {
+            tail -40 /tmp/fresh/scaffold.log
+            exit 1
+          }
+          cd /tmp/fresh/freshcheck/apps/api
+          go vet ./...
+
       # examples/library is a real Grit application, generated and committed.
       #
       # The Live workflow proves that today's templates produce a working

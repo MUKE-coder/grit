@@ -59,6 +59,89 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.463.0 */}
+            <div className="mb-12" id="v3.463.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.463.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>go test did not compile in a new project</h3>
+                <p>
+                  <code>grit new</code>, then <code>go test ./...</code>, and
+                  the services package did not build:
+                </p>
+                <CodeBlock language="text" code={`internal/services/webhook_event_test.go:143:51:
+  not enough arguments in call to events.ByExternalID
+    have (context.Context, string, string)
+    want (context.Context, string, string, string)`} />
+                <p>
+                  <code>ByExternalID</code> gained a tenant parameter in the fix
+                  for grit#138, and it gained it for a good reason: without the
+                  tenant, a redelivery lookup can return another
+                  organization&apos;s row, and the caller then claims and re-runs
+                  somebody else&apos;s delivery. The handler was updated. The
+                  test that calls it was not.
+                </p>
+                <p>
+                  So every project scaffolded between that release and this one
+                  ships a services package whose tests do not build. The fix is
+                  one argument. What it cost to find is the interesting part.
+                </p>
+
+                <h3>Why nothing caught it</h3>
+                <p>
+                  Three checks had the chance and each missed it for a different
+                  reason:
+                </p>
+                <ul>
+                  <li>
+                    <strong>
+                      <code>go build ./...</code> does not compile test files.
+                    </strong>{' '}
+                    That is the check this project runs on a generated app
+                    before calling a release verified, and it is blind to
+                    anything that is wrong only in a <code>_test.go</code>.
+                  </li>
+                  <li>
+                    <strong>The checked-in examples are committed output.</strong>{' '}
+                    <code>examples/library</code> and <code>examples/saas</code>
+                    are vetted and tested on every push, and they carry the
+                    templates as they were when somebody generated them. Their
+                    service and their test agree with each other, at the old
+                    signature, so they pass.
+                  </li>
+                  <li>
+                    <strong>The nightly canary did catch it.</strong> It
+                    scaffolds fresh and runs the tests, and it had been red for
+                    five nights saying exactly this. Nobody read it.
+                  </li>
+                </ul>
+                <p>
+                  CI now scaffolds a project on every push and runs{' '}
+                  <code>go vet</code> over it, which compiles the test files and
+                  takes seconds. The canary keeps running the full suite
+                  overnight. A template change that breaks only the generated
+                  tests now fails the push that makes it.
+                </p>
+
+                <h3>And the assertion the fix deserved</h3>
+                <p>
+                  Nothing tested that <code>ByExternalID</code> scopes by tenant,
+                  which is the whole point of grit#138. The dedup tests prove two
+                  organizations may store the same reference, which is the
+                  database constraint rather than the lookup. Generated projects
+                  now carry{' '}
+                  <code>TestByExternalIDIsScopedToItsTenant</code>: two tenants,
+                  one provider, one external id, and each lookup has to return
+                  its own row.
+                </p>
+              </div>
+            </div>
+
             {/* v3.462.0 */}
             <div className="mb-12" id="v3.462.0">
               <div className="flex items-center gap-3 mb-4">

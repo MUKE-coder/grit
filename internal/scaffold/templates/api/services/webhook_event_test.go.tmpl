@@ -135,15 +135,53 @@ func TestRecordReplayReturnsTheStoredCount(t *testing.T) {
 
 // The row a redelivery collided with is found by provider and external id, and
 // one provider's id does not match another's.
+//
+// storedEvent leaves Tenant empty, which is what a provider with no tenant
+// segment stores, so the lookup passes "" for it.
 func TestByExternalIDIsScopedToItsProvider(t *testing.T) {
 	_, events := webhookEventDB(t)
 	ctx := context.Background()
 	storedEvent(t, events, "evt_shared", "processed", 0)
 
-	found, err := events.ByExternalID(ctx, "stripe", "evt_shared")
+	found, err := events.ByExternalID(ctx, "stripe", "", "evt_shared")
 	require.NoError(t, err)
 	assert.Equal(t, "processed", found.Status)
 
-	_, err = events.ByExternalID(ctx, "paystack", "evt_shared")
+	_, err = events.ByExternalID(ctx, "paystack", "", "evt_shared")
 	assert.Error(t, err, "another provider's event with the same id was returned")
+}
+
+// And by tenant, which is the half that matters most.
+//
+// Two organizations on the same provider can legitimately receive the same
+// external id: the unique index is (provider, tenant, external_id), so both
+// rows exist. A lookup that ignored the tenant would hand back whichever one
+// the database happened to return first, and the caller would then claim and
+// re-run another organization's delivery. See grit#138, which is why
+// ByExternalID takes a tenant at all.
+func TestByExternalIDIsScopedToItsTenant(t *testing.T) {
+	_, events := webhookEventDB(t)
+	ctx := context.Background()
+
+	for _, tenant := range []string{"org_a", "org_b"} {
+		ref := "evt_same"
+		require.NoError(t, events.Store(ctx, &models.WebhookEvent{
+			Provider:   "stripe",
+			Tenant:     tenant,
+			EventType:  "invoice.paid",
+			ExternalID: &ref,
+			Payload:    datatypes.JSON([]byte(`{}`)),
+			Status:     tenant,
+		}))
+	}
+
+	for _, tenant := range []string{"org_a", "org_b"} {
+		found, err := events.ByExternalID(ctx, "stripe", tenant, "evt_same")
+		require.NoError(t, err)
+		assert.Equal(t, tenant, found.Status,
+			"the lookup returned another organization's row")
+	}
+
+	_, err := events.ByExternalID(ctx, "stripe", "org_c", "evt_same")
+	assert.Error(t, err, "a tenant with no such event was given somebody else's")
 }
