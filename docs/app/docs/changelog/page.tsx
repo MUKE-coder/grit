@@ -59,6 +59,87 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.465.0 */}
+            <div className="mb-12" id="v3.465.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.465.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The upload control said &quot;button&quot;, five times</h3>
+                <p>
+                  grit#151. The review said <code>dropzone.tsx</code> has no
+                  keyboard handling of its own. Half of that was wrong, and the
+                  half that was right is worse than it sounds.
+                </p>
+                <p>
+                  It is operable. react-dropzone&apos;s{' '}
+                  <code>getRootProps</code> gives the drop zone its tabIndex and
+                  its Enter and Space, and every control is a real{' '}
+                  <code>&lt;button&gt;</code>, so Tab reaches it and Enter fires
+                  it. What it was not is legible: every one of those buttons is
+                  an icon and nothing else, so a screen reader announced
+                  &quot;button&quot;, once per file, with no way to tell which
+                  file each one removed.
+                </p>
+                <p>
+                  That is the same fault as the thirteen form fields this
+                  project shipped with a label attached to nothing. Fine with a
+                  mouse, unusable otherwise, and invisible in a demo because the
+                  person demonstrating it can see.
+                </p>
+                <CodeBlock language="tsx" code={`aria-label={\`Remove \${file.name}\`}
+aria-label={\`Move \${fileLabel} up, position \${index + 1} of \${total}\`}`} />
+                <p>
+                  Six controls, each naming its file, and the reorder buttons
+                  also saying where in the list they are, which is the other
+                  thing somebody who cannot see the list has no way to know. The
+                  move buttons had a <code>title</code>, which is a tooltip:
+                  announced inconsistently and not at all on a touch device.
+                </p>
+                <p>
+                  Two tests ship with it. One reads every{' '}
+                  <code>&lt;button&gt;</code> in the component and fails on any
+                  without an accessible name; the other checks the names say
+                  which file. The first version of that test reported six
+                  labelled buttons as unnamed, because it matched the tag with a
+                  regex ending at the first <code>&gt;</code> and these buttons
+                  carry <code>onClick=&#123;(e) =&gt; ...&#125;</code>, so it
+                  stopped reading three lines before the label. It steps over
+                  braces now.
+                </p>
+
+                <h3>A Google button that cannot work</h3>
+                <p>
+                  Found while closing grit#156, which claimed the OAuth and SSO
+                  callbacks put the refresh token in the redirect URL. They do
+                  not: both set HttpOnly cookies and redirect with no query
+                  parameters. That issue was filed from a stale note and is
+                  closed as wrong.
+                </p>
+                <p>
+                  What is real is next door. Every generated Expo app has a
+                  &quot;Continue with Google&quot; button that asks the API to
+                  send it back to <code>myapp://callback</code>, and the API
+                  ignores <code>redirect_uri</code> entirely. The in-app browser
+                  lands on a web page, the app never gets its tokens, and
+                  cookies are no use to a bearer client. It has never worked.
+                </p>
+                <p>
+                  Filed as grit#174 with the one-time code design written out,
+                  rather than fixed in a hurry, because the obvious fix is to
+                  put the tokens in the redirect and that is how a refresh token
+                  ends up in browser history. It also needs{' '}
+                  <code>redirect_uri</code> validated against an allowlist,
+                  since a callback that redirects to whatever the query string
+                  says is worse than the dead button it replaces.
+                </p>
+              </div>
+            </div>
+
             {/* v3.464.0 */}
             <div className="mb-12" id="v3.464.0">
               <div className="flex items-center gap-3 mb-4">

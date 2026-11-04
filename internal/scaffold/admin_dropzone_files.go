@@ -466,6 +466,7 @@ function CompactBody({ progress }: { progress: ProgressVariant }) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                aria-label={` + "`" + `Remove ${file.name}` + "`" + `}
                 className="ml-1 rounded p-0.5 text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
               >
                 <X className="h-3 w-3" />
@@ -509,6 +510,7 @@ function MinimalBody() {
               <button
                 type="button"
                 onClick={() => removeFile(i)}
+                aria-label={` + "`" + `Remove ${file.name}` + "`" + `}
                 className="rounded p-0.5 hover:text-danger transition-colors"
               >
                 <X className="h-3 w-3" />
@@ -543,6 +545,7 @@ function AvatarBody() {
           <button
             type="button"
             onClick={() => removeFile(0)}
+            aria-label={files[0] ? ` + "`" + `Remove ${files[0].name}` + "`" + ` : "Remove file"}
             className="absolute -top-1 -right-1 rounded-full bg-danger p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
           >
             <X className="h-3 w-3" />
@@ -758,6 +761,10 @@ interface FilePreviewProps {
 
 function FilePreview({ file, onRemove, index, total, reorderable, onMove }: FilePreviewProps) {
   const canReorder = reorderable && total > 1;
+  // What the buttons below call this file. A stored file may have no name on
+  // it, and "Remove" with no object is the thing being fixed, so there is a
+  // fallback rather than an empty label.
+  const fileLabel = file.name || ` + "`" + `file ${index + 1}` + "`" + `;
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-bg-secondary px-3 py-2.5">
       <PreviewThumb file={file} />
@@ -783,6 +790,11 @@ function FilePreview({ file, onRemove, index, total, reorderable, onMove }: File
             disabled={index === 0}
             onClick={(e) => { e.stopPropagation(); onMove(index, -1); }}
             className="rounded p-0.5 text-text-muted hover:text-foreground hover:bg-bg-hover transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+            // title is a tooltip, not an accessible name: it is announced
+            // inconsistently and not at all on a touch device. The label says
+            // which file moves, because "Move up" five times in a list of five
+            // tells somebody using a screen reader nothing.
+            aria-label={` + "`" + `Move ${fileLabel} up, position ${index + 1} of ${total}` + "`" + `}
             title="Move up"
           >
             <ChevronUp className="h-3.5 w-3.5" />
@@ -792,6 +804,7 @@ function FilePreview({ file, onRemove, index, total, reorderable, onMove }: File
             disabled={index === total - 1}
             onClick={(e) => { e.stopPropagation(); onMove(index, 1); }}
             className="rounded p-0.5 text-text-muted hover:text-foreground hover:bg-bg-hover transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+            aria-label={` + "`" + `Move ${fileLabel} down, position ${index + 1} of ${total}` + "`" + `}
             title="Move down"
           >
             <ChevronDown className="h-3.5 w-3.5" />
@@ -801,6 +814,7 @@ function FilePreview({ file, onRemove, index, total, reorderable, onMove }: File
       <button
         type="button"
         onClick={onRemove}
+        aria-label={` + "`" + `Remove ${fileLabel}` + "`" + `}
         className="rounded-lg p-1.5 text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
       >
         <X className="h-4 w-4" />
