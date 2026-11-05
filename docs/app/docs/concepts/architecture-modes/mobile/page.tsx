@@ -365,7 +365,7 @@ export async function clearTokens() {
                 machine&apos;s local IP address instead.
               </p>
 
-              <CodeBlock language="typescript" filename="apps/expo/lib/api-client.ts" code={`import Constants from 'expo-constants'
+              <CodeBlock language="typescript" filename="apps/expo/lib/api.ts" code={`import Constants from 'expo-constants'
 import { getAccessToken } from './secure-store'
 
 // In development, use your machine's local IP (not localhost)

@@ -54,6 +54,10 @@ GENERATED_DIRS = (
     'apps/api/internal/handlers/',
     'apps/api/internal/services/',
     'apps/api/internal/routes/',
+    # One policy file per resource, written by grit generate resource
+    # beside the model. A page naming policies/invoice.go is correct for
+    # the same reason models/invoice.go is.
+    'apps/api/internal/policies/',
     'apps/admin/resources/',
     'apps/admin/app/',
     'apps/web/app/',
@@ -91,6 +95,7 @@ EXPECTED_ABSENT = {
     'apps/api/internal/middleware/tenant.go': 'created by grit plugin add multitenant',
     'apps/admin/components/calendar.tsx': 'created by the example plugin on the authoring page',
     'apps/admin/messages/fr.json': 'created by grit add i18n',
+    'apps/expo/lib/push.ts': 'created by grit plugin add push',
 
     'apps/api/internal/middleware/rate_limit.go': 'the example middleware the reader writes on the middleware page',
     'apps/admin/lib/uploader.ts': 'written by the reader, over the @repo/upload package',
