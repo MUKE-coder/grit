@@ -74,6 +74,9 @@ var checks = []struct {
 	{"database-not-durable", checkDatabaseProvider},
 	{"tenant-sso-no-organization", checkTenantSSOProvisioning},
 	{"pii-column-not-encrypted", checkPII},
+	// A bool that can never be saved as false, which stores "unticked" as
+	// "ticked" with no error anywhere (grit#179).
+	{"bool-default-true", checkBoolDefaultTrue},
 	{"append-only-mutable-routes", checkAppendOnlyRoutes},
 	{"studio-unprotected", checkStudio},
 	{"default-credentials", checkCredentials},
@@ -125,6 +128,12 @@ type model struct {
 	OwnerColumn string // from GetOwnerID, empty when the resource is shared
 	TenantOwned bool
 	AppendOnly  bool
+	// Source is the struct's own lines, tags included.
+	//
+	// Fields loses the gorm tag, and some faults live only there: a bool with
+	// default:true can never be stored as false, and nothing in the parsed
+	// field list says so (grit#179).
+	Source string
 }
 
 func (m *model) encrypted() []string {
@@ -271,6 +280,7 @@ func parseModels(src string) []*model {
 			if strings.Contains(line, "tenant.Owned") {
 				m.TenantOwned = true
 			}
+			m.Source += line + "\n"
 			if f := fieldRe.FindStringSubmatch(line); f != nil {
 				col := field{Go: f[1], Type: f[2], JSON: f[3]}
 				m.Fields = append(m.Fields, col)

@@ -72,6 +72,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.478.0 */}
+            <div className="mb-12" id="v3.478.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.478.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A checkbox that saved the opposite of what you ticked</h3>
+                <p>
+                  From the field report in grit#179, and the worst kind of bug:
+                  it stores the wrong value and nothing errors anywhere.
+                </p>
+                <p>
+                  GORM leaves a zero value out of an <code>INSERT</code> when
+                  the column carries a default. So a{' '}
+                  <code>bool</code> tagged <code>default:true</code> cannot be
+                  saved as <code>false</code>: the field is omitted, the
+                  database fills in <code>true</code>, and GORM writes that back
+                  into the struct. The handler succeeds, the service succeeds,
+                  the database succeeds, and the row is ticked.
+                </p>
+                <p>
+                  The reporter hit it twice, once on marketing consent. The
+                  default was true, so somebody who declined was recorded as
+                  having agreed.
+                </p>
+                <p>
+                  This project had already found it twice in its own models, on{' '}
+                  <code>User.Active</code> and on the SSO flags, and both fixes
+                  were a corrected field and a comment explaining it. A product
+                  variant still shipped with the same pair, because a comment on
+                  one model does not reach another.
+                </p>
+                <p>
+                  So there is a sweep and a <code>grit doctor</code> check. The
+                  check is an <strong>error</strong> rather than a warning,
+                  which is unusual for a shape question: this one silently
+                  stores data nobody chose.
+                </p>
+                <p>
+                  <strong>The sweep found its own blind spot first.</strong> The
+                  first version scaffolded a project and walked{' '}
+                  <code>internal/models</code>, and it passed while the bug was
+                  still in the tree: a variant model is written by{' '}
+                  <code>grit generate resource --variants</code>, through a
+                  different package, so the one file the fault was actually in
+                  was the one the sweep could not see. It reads the template
+                  source now, 498 files across both packages, which covers every
+                  writer there is. Verified by putting the bug back: it names
+                  the file and the field.
+                </p>
+                <p>
+                  A <code>*bool</code> is deliberately not flagged.{' '}
+                  <code>nil</code> and <code>false</code> are different values
+                  to GORM, so a pointer has no zero-value problem, and it is one
+                  of the two fixes the check suggests.
+                </p>
+              </div>
+            </div>
+
             {/* v3.477.0 */}
             <div className="mb-12" id="v3.477.0">
               <div className="flex items-center gap-3 mb-4">

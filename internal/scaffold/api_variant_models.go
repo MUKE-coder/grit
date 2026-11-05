@@ -234,7 +234,13 @@ type ` + pascal + `Variant struct {
 	PriceOverride *float64 ` + "`" + `json:"price_override,omitempty"` + "`" + `
 
 	Stock  int  ` + "`" + `gorm:"default:0" json:"stock"` + "`" + `
-	Active bool ` + "`" + `gorm:"default:true" json:"active"` + "`" + `
+	// No gorm default on this bool, and the omission is the point. GORM omits a
+	// zero-valued field from an INSERT when the column carries a default, so
+	// default:true makes Active:false unstorable on create: the database fills
+	// in true and GORM writes it back into the struct, so saving "unticked"
+	// stores "ticked" with no error anywhere. The same fault was fixed on
+	// User.Active and on the SSO model; this one was missed (grit#179).
+	Active bool ` + "`" + `gorm:"" json:"active"` + "`" + `
 
 	Images files.FileRefs ` + "`" + `gorm:"serializer:json" json:"images,omitempty"` + "`" + `
 

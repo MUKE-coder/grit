@@ -23,6 +23,25 @@ Also worth knowing:
 ---
 
 
+## v3.478.0 - November 5, 2026
+
+### A checkbox that saved the opposite of what you ticked
+
+From the field report in grit#179, and the worst kind of bug: it stores the wrong value and nothing errors anywhere.
+
+GORM leaves a zero value out of an `INSERT` when the column carries a default. So a `bool` tagged `default:true` cannot be saved as `false`: the field is omitted, the database fills in `true`, and GORM writes that back into the struct. The handler succeeds, the service succeeds, the database succeeds, and the row is ticked.
+
+The reporter hit it twice, once on marketing consent. The default was true, so somebody who declined was recorded as having agreed.
+
+This project had already found it twice in its own models, on `User.Active` and on the SSO flags, and both fixes were a corrected field and a comment explaining it. A product variant still shipped with the same pair, because a comment on one model does not reach another.
+
+So there is a sweep and a `grit doctor` check. The check is an **error** rather than a warning, which is unusual for a shape question: this one silently stores data nobody chose.
+
+**The sweep found its own blind spot first.** The first version scaffolded a project and walked `internal/models`, and it passed while the bug was still in the tree: a variant model is written by `grit generate resource --variants`, through a different package, so the one file the fault was actually in was the one the sweep could not see. It reads the template source now, 498 files across both packages, which covers every writer there is. Verified by putting the bug back: it names the file and the field.
+
+A `*bool` is deliberately not flagged. `nil` and `false` are different values to GORM, so a pointer has no zero-value problem, and it is one of the two fixes the check suggests.
+
+
 ## v3.477.0 - November 5, 2026
 
 ### The toolchain grit doctor never looked at
