@@ -77,9 +77,11 @@ export const getPublishedBlog = cache(async (slug: string): Promise<Blog | null>
 
 // webLandingPage emits apps/web/app/(marketing)/page.tsx.
 //
-// The grit:home:blog-* markers are what grit remove resource Blog cuts out.
-func webLandingPage(opts Options) string {
-	return `import { ArrowRight, Database, LayoutDashboard, Zap } from "lucide-react";
+// The grit:home:blog-* markers are what grit remove resource Blog cuts out, and
+// what this writer cuts when the project has no Blog model. See blog_regions.go
+// for why that happens here rather than only there.
+func webLandingPage(opts Options, hasBlog bool) string {
+	src := `import { ArrowRight, Database, LayoutDashboard, Zap } from "lucide-react";
 import Link from "next/link";
 // grit:home:blog-import
 import { getPublishedBlogs } from "@/lib/blog-api";
@@ -257,6 +259,10 @@ export default async function HomePage() {
   );
 }
 `
+	if !hasBlog {
+		return withoutBlogOnTheLandingPage(src)
+	}
+	return src
 }
 
 // webBlogListPage emits apps/web/app/(marketing)/blog/page.tsx.

@@ -10,13 +10,27 @@ func writeMigrateSeedFiles(root string, opts Options) error {
 	apiRoot := opts.APIRoot(root)
 	module := opts.Module()
 
+	// Does this project still have the Blog example?
+	//
+	// seed.go calls SeedBlogs, and blogs_seeder.go defines it. Both were
+	// unconditional, so `grit remove resource Blog` had to edit seed.go, and an
+	// edited framework file never receives another framework fix. Recording the
+	// edit instead let the next upgrade rewrite seed.go from this template and
+	// break the build on `undefined: SeedBlogs` (grit#173).
+	//
+	// Through blogRemoved, which asks the model file and is gated on
+	// opts.Upgrading. The gate is the part worth keeping: on a NEW project the
+	// model has not been written when this map is built, so asking the
+	// filesystem directly answers "the blog is gone" for every project Grit
+	// creates, and no project would ever get one.
+	hasBlog := !blogRemoved(root, opts)
+
 	files := map[string]string{
 		filepath.Join(apiRoot, "cmd", "migrate", "main.go"):               apiMigrateMainGo(),
 		filepath.Join(apiRoot, "cmd", "seed", "main.go"):                  apiSeedMainGo(),
 		filepath.Join(apiRoot, "internal", "database", "seedbatch.go"):    apiSeedBatchGo(),
-		filepath.Join(apiRoot, "internal", "database", "seed.go"):         apiSeedGo(),
+		filepath.Join(apiRoot, "internal", "database", "seed.go"):         apiSeedGo(hasBlog),
 		filepath.Join(apiRoot, "internal", "database", "users_seeder.go"): apiUsersSeederGo(),
-		filepath.Join(apiRoot, "internal", "database", "blogs_seeder.go"): apiBlogsSeederGo(),
 		// The whole API key cluster, together.
 		//
 		// These five files reference each other's types and signatures, so
@@ -37,6 +51,13 @@ func writeMigrateSeedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "database", "api_keys_seeder.go"): apiAPIKeySeederGo(),
 		filepath.Join(apiRoot, "internal", "database", "seed_helpers.go"):    apiSeedHelpersGo(),
 		filepath.Join(apiRoot, "internal", "database", "migrate.go"):         apiMigrateGo(),
+	}
+
+	// The Blog's own seeder, only while the Blog is here. Writing it back into
+	// a project that removed the model is the same build break as the call in
+	// seed.go, from the other end: a seeder for a type that does not exist.
+	if hasBlog {
+		files[filepath.Join(apiRoot, "internal", "database", "blogs_seeder.go")] = apiBlogsSeederGo()
 	}
 
 	for path, content := range withoutRemoved(files, root, opts) {
@@ -727,7 +748,17 @@ func DropAll(db *gorm.DB) error {
 // own <resource>_seeder.go file (SeedUsers, SeedBlogs, …) so seeders are easy
 // to find and edit; `grit generate seeder <Resource>` adds more and registers
 // them at the grit:seeders marker.
-func apiSeedGo() string {
+func apiSeedGo(hasBlog bool) string {
+	blogs := `	if err := SeedBlogs(db); err != nil {
+		return fmt.Errorf("seeding blogs: %w", err)
+	}
+
+`
+	if !hasBlog {
+		// No Blog model, so no blogs_seeder.go, so calling SeedBlogs would not
+		// compile. See the note in writeMigrateSeedFiles.
+		blogs = ""
+	}
 	return `package database
 
 import (
@@ -748,11 +779,7 @@ func Seed(db *gorm.DB) error {
 		return fmt.Errorf("seeding api keys: %w", err)
 	}
 
-	if err := SeedBlogs(db); err != nil {
-		return fmt.Errorf("seeding blogs: %w", err)
-	}
-
-	// grit:seeders
+` + blogs + `	// grit:seeders
 
 	return nil
 }

@@ -23,6 +23,42 @@ Also worth knowing:
 ---
 
 
+## v3.468.0 - November 5, 2026
+
+### Removing the Blog cost you framework fixes to four files
+
+grit#173, and the last place where the framework asked you to choose between a clean project and a maintained one.
+
+Four framework-owned files hard-coded the built-in Blog example: the web navbar, the seeder, the landing page, and a doc comment on the trash screen. Removing the resource meant editing them, and `grit upgrade` leaves an edited file alone, so the removal survived and those four files never received another framework fix. The alternative, recording the edits, was tried and reverted in v3.462.0: the upgrade then rewrote them from templates that still contained the Blog, so the navbar links came back as 404s and `seed.go` stopped compiling on `undefined: SeedBlogs`.
+
+Both halves of that trade were wrong because the templates were wrong. They ask now:
+
+```go
+// internal/scaffold/web_files.go
+filepath.Join(webRoot, "lib", "nav-menu.ts"): webNavMenuConfig(opts, !blogRemoved(root, opts)),
+```
+
+Through `blogRemoved`, which already existed for the Blog's own files and carries the gate that matters: on a new project the model has not been written when these maps are built, so asking the filesystem directly answers "the blog is gone" for every project Grit creates, and no project would ever get one. I had written exactly that bug before finding the function.
+
+Then the file the removal leaves behind *is* the file the template produces, and the upgrade guard already adopts a file whose contents match what it would write. So the manifest becomes truthful again by itself, with no new repair step. What that turned on was a blank line: cutting a block with a blank line each side left two, the bytes differed from the template by that one line, and the file stayed held back. Cuts collapse the run now.
+
+The trash screen needed no condition at all. Its Blog reference was `/** blog_posts -> Blog posts. */`, an illustration of what a helper does, and naming a removable resource in an example cost that file every later framework fix. The example is `order_items`.
+
+One bug found while testing it, which the issue did not mention: `grit remove resource Blog` left five `/blog` links in the navbar. The nav menu belongs to the web app rather than to the resource, so the removal never knew about it, and only `grit setup --starter blank` cleaned up afterwards. A project where somebody ran the removal themselves kept four 404s in its navigation. The removal re-renders those files from the template now.
+
+### The generator's tests read the Go it writes
+
+grit#159. The templates are raw Go strings and the tests assert on them with around 1,600 `strings.Contains` calls. A `Contains` that passes says the substring is there. It says nothing about whether the file is valid Go, so a template emitting a syntax error passed every test and was found by CI compiling a scaffolded project, ten minutes later, with a failure pointing at a generated project rather than at the template.
+
+Two sweeps now parse what gets written: 30 files from the generator, and 231 from the scaffold across four architectures. Both print the offending line, numbered, rather than a column number.
+
+**Two resources, not one**, in the generator sweep, and that is the point of the second. Every test in that package generated a single resource, so a template declaring a package-level function without the resource name in it looked fine: the redeclaration only appears on the second resource. That shipped in v3.451.0 and nothing could see it.
+
+`codefmt.Go` made it quieter than it needed to be. It parses the source, so on a syntax error it already knows, and it returned the text unformatted and said nothing. That is right for a write, because a file on disk somebody can read beats a scaffolding failure with nothing written, and it is wrong for a test. There is a `GoChecked` that returns the error, and `Go` is now one line over it.
+
+Both sweeps were verified by breaking a template on purpose, because a sweep that finds nothing is indistinguishable from one that ran over nothing, and this project has shipped the second kind. They also fail if they read fewer files than expected, for the same reason.
+
+
 ## v3.467.0 - November 5, 2026
 
 ### grit own: whose file is this

@@ -275,7 +275,7 @@ func TestSinglePanelHasWhatItImports(t *testing.T) {
 // The link moved into lib/nav-menu.ts when the navbar became a mega menu, so
 // this asserts against the entries rather than the markup that renders them.
 func TestSingleNavbarLinksToThePanel(t *testing.T) {
-	entries := webNavMenuConfig(singleOptions())
+	entries := webNavMenuConfig(singleOptions(), true)
 	if !strings.Contains(entries, `"/admin/dashboard"`) {
 		t.Error("the SPA navbar has no link to the panel")
 	}

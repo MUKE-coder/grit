@@ -185,16 +185,38 @@ func setAppIncluded(root, key string, on bool) error {
 	return os.WriteFile(path, []byte(strings.Replace(src, from, want, 1)), 0o644)
 }
 
-// projectOptions describes the project as it stands, the way the upgrade reads
-// it: from grit.json and from what is on disk, not from flags nobody passed.
+// projectOptions describes the project as it stands: from grit.json and from
+// what is on disk, not from flags nobody passed.
+//
+// The one reader for this. Upgrade had its own copy of the same block, and the
+// two had drifted: this one probed for the Expo and desktop apps and forgot
+// Upgrading and LegacySingleFlat, and Upgrade's remembered those and did not
+// probe. Two reconstructions of one thing, each missing what the other had,
+// which is the shape of bug this project keeps paying for. Upgrade overrides
+// the project name and the version it is moving to; everything else is read
+// here, once.
+//
+// Every field has a bug behind it. Normalize defaults to triple, and upgrading
+// a double on that assumption wrote thirteen admin files into an apps/admin
+// that is not there. With no theme, every themed file came out atlas, which
+// repainted an emerald project blue on its next upgrade. A single from before
+// v3.380.0 keeps its Go at the root, and writing the new layout into it left
+// two halves of an API, neither of which compiled.
 func projectOptions(root string) Options {
 	opts := Options{
-		ProjectName:  filepath.Base(root),
+		ProjectName: filepath.Base(root),
+		// The project exists, so the writers can tell a resource it has
+		// removed from one it has not been given yet (grit#111). Without this,
+		// blogRemoved answers "the blog is here" for a project that deleted
+		// it, and the blog's files come back.
+		Upgrading:    true,
 		Style:        readProjectStyle(root),
 		Theme:        readProjectTheme(root),
 		Version:      DefaultVersion,
 		Frontend:     readProjectFrontend(root),
 		Architecture: detectArchitecture(root),
+		// Detected from the one file only the old single layout has there.
+		LegacySingleFlat: dirExists(filepath.Join(root, "internal", "routes")),
 	}
 	// Which apps the project has, probed from disk. The architecture carries
 	// web and admin; these two are the optional extras.

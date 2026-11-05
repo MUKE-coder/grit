@@ -74,15 +74,6 @@ func cleanBlankSingle(root, frontend string) error {
 		}
 	}
 
-	// A comment in the trash screen names the table the Blog used. It is not a
-	// compile error, but the blank starter should not mention a resource it
-	// removed.
-	if layout.trash != "" {
-		if err := removeLinesContaining(layout.trash, "blog_posts -> Blog posts"); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -241,18 +232,6 @@ func cleanBlankMonorepoLinks(root, frontend string, separateAdmin bool) error {
 
 	if err := removeBlogNavLinks(filepath.Join(srcRoot, "lib", "nav-menu.ts")); err != nil {
 		return err
-	}
-
-	// A triple keeps the panel in apps/admin; a double embeds it in the web
-	// app. Try every shape: the paths that do not exist are no-ops.
-	for _, path := range []string{
-		filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "trash", "page.tsx"),
-		filepath.Join(webRoot, "app", "admin", "(dashboard)", "system", "trash", "page.tsx"),
-		filepath.Join(srcRoot, "admin-panel", "pages", "system-trash.tsx"),
-	} {
-		if err := removeLinesContaining(path, "blog_posts -> Blog posts"); err != nil {
-			return err
-		}
 	}
 
 	// The scaffold's navbar test is a stub with a Blog link in it. It does not

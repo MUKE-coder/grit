@@ -560,6 +560,20 @@ func RemoveResource(name string) error {
 		}
 	}
 
+	// The Blog example is the one resource the framework's own templates
+	// mention, so removing it leaves five /blog links in a navbar the removal
+	// has never known about: nav-menu.ts belongs to the web app rather than to
+	// the resource. The templates omit their Blog parts once the model is gone,
+	// so this re-renders them rather than editing them, which is what keeps the
+	// files framework-owned (grit#173).
+	if names.Pascal == "Blog" {
+		if err := scaffold.RewriteWebFilesWithoutTheBlog(root); err != nil {
+			fmt.Printf("  ! the web navbar still links to the blog: %v\n", err)
+		} else {
+			fmt.Println("  ✓ Rewrote the web navbar and landing page without the blog")
+		}
+	}
+
 	// The resource took its route file with it, so the access table now
 	// names routes that no longer exist. A stale entry here is harmless to
 	// the build and wrong on the routes screen, which is exactly the kind of
@@ -1027,7 +1041,37 @@ func removeLineBlock(filePath, startPattern, endPattern string) error {
 		return fmt.Errorf("block starting with %q not found", startPattern)
 	}
 
+	// Cutting a block that had a blank line on each side leaves two blank lines
+	// where it was. Cosmetic in isolation, and not cosmetic at all for a
+	// framework-owned file: `grit upgrade` adopts a file whose contents already
+	// match what the template would write, and holds back one that differs, so
+	// a stray blank line is the difference between seed.go going back to
+	// receiving framework fixes and never receiving another one (grit#173).
+	result = collapseDoubleBlanks(result)
+
 	return os.WriteFile(filePath, []byte(strings.Join(result, "\n")), 0644)
+}
+
+// collapseDoubleBlanks reduces any run of two or more blank lines to one.
+//
+// Only safe because it runs on Go and TypeScript, where consecutive blank lines
+// carry no meaning. It would be wrong on Markdown inside a raw string, and
+// there is none in the files this is called on.
+func collapseDoubleBlanks(lines []string) []string {
+	out := make([]string, 0, len(lines))
+	blank := false
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			if blank {
+				continue
+			}
+			blank = true
+		} else {
+			blank = false
+		}
+		out = append(out, line)
+	}
+	return out
 }
 
 // removeSchemaExportBlock removes a multi-line export block for a given schema

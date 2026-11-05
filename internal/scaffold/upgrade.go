@@ -56,31 +56,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 	green := color.New(color.FgHiGreen)
 	cyan := color.New(color.FgHiCyan)
 
-	opts := Options{
-		ProjectName: projectName,
-		// An upgrade, so the writers can tell a resource this project has
-		// removed from one it has not been given yet (grit#111).
-		Upgrading: true,
-		Style:     readProjectStyle(root),
-		// The theme the project was scaffolded with. Upgrade wrote files that
-		// bake colour values in -- the mobile app's Tailwind config is one --
-		// and with no theme here they all came out atlas, which quietly
-		// repainted an emerald project blue on its next upgrade.
-		Theme:    readProjectTheme(root),
-		Version:  uOpts.Version,
-		Frontend: readProjectFrontend(root),
-		// Read from the project rather than assumed. Normalize defaults to triple,
-		// and upgrading a double with that assumption wrote thirteen admin files
-		// into an apps/admin this project does not have: files nothing compiles,
-		// plus a components.json for an application that is not there.
-		Architecture: detectArchitecture(root),
-		// Which single layout this is. A project scaffolded before v3.380.0 keeps
-		// its Go code at the root and its frontend in frontend/; writing the new
-		// layout into it would leave two halves of an API, neither of which
-		// compiles. Detected from the one file that only the old layout has there.
-		LegacySingleFlat: dirExists(filepath.Join(root, "internal", "routes")),
-	}
-	opts.Normalize()
+	opts := projectOptions(root)
+	opts.ProjectName = projectName
+	opts.Version = uOpts.Version
 
 	// Two pieces of machinery, both process-wide for the length of the
 	// upgrade. The guard decides what may be overwritten; the recorder notes

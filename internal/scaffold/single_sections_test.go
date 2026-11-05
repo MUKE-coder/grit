@@ -155,7 +155,7 @@ func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 	if !strings.Contains(navbar, "<MegaMenu />") {
 		t.Error("the auth-aware navbar lost the site's own links")
 	}
-	if !strings.Contains(webNavMenuConfig(singleOptions()), `href: "/blog"`) {
+	if !strings.Contains(webNavMenuConfig(singleOptions(), true), `href: "/blog"`) {
 		t.Error("the entries the navbar renders have no link to the blog")
 	}
 }

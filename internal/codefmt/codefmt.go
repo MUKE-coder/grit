@@ -24,11 +24,27 @@ import (
 // src unchanged preserves exactly the behaviour Grit had before formatting
 // existed, so a parse failure can never be a regression.
 func Go(src string) string {
+	out, _ := GoChecked(src)
+	return out
+}
+
+// GoChecked is Go, and says when src did not parse.
+//
+// Go discards that, which is right for a write: a file on disk that somebody
+// can read beats a scaffolding failure with nothing written. It is wrong for a
+// test. This function has already parsed the source and therefore already knows
+// it is broken, and throwing that away was why a template emitting invalid Go
+// was found by CI compiling a generated project ten minutes later, rather than
+// by the package's own tests in a second (grit#159).
+//
+// On failure the returned string is src, unchanged, so a caller that ignores
+// the error behaves exactly as Go does.
+func GoChecked(src string) (string, error) {
 	out, err := format.Source([]byte(src))
 	if err != nil {
-		return src
+		return src, err
 	}
-	return string(out)
+	return string(out), nil
 }
 
 // File formats src when path names a Go file and returns it untouched

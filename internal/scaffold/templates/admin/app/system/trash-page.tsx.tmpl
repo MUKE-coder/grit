@@ -251,7 +251,7 @@ function when(iso: string): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + ", " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-/** blog_posts -> Blog posts. */
+/** order_items -> Order items. */
 function humanise(table: string): string {
   const words = table.split("_").join(" ");
   return words.charAt(0).toUpperCase() + words.slice(1);

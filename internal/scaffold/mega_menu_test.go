@@ -37,7 +37,7 @@ func TestMegaMenuIsDeclaredOnceAndRenderedEverywhere(t *testing.T) {
 	}
 
 	// The entries are data, in one file.
-	cfg := webNavMenuConfig(triple)
+	cfg := webNavMenuConfig(triple, true)
 	for _, want := range []string{"export const navEntries", "MegaMenuColumn", "MegaMenuFeature", "lib/nav-menu.ts"} {
 		if !strings.Contains(cfg, want) {
 			t.Errorf("the nav config has no %s", want)
@@ -59,7 +59,7 @@ func TestMegaMenuIsDeclaredOnceAndRenderedEverywhere(t *testing.T) {
 		{ProjectName: "contacts", Architecture: ArchDouble, Frontend: FrontendNext},
 		{ProjectName: "contacts", Architecture: ArchSingle, Frontend: FrontendTanStack},
 	} {
-		got := webNavMenuConfig(inApp)
+		got := webNavMenuConfig(inApp, true)
 		if !strings.Contains(got, `const ADMIN_URL = "/admin/dashboard"`) {
 			t.Errorf("%s does not link the panel as a route of this app", inApp.Architecture)
 		}

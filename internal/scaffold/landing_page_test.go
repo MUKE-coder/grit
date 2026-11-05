@@ -17,7 +17,7 @@ func TestLandingPageIsAboutTheProject(t *testing.T) {
 		name string
 		src  string
 	}{
-		{"next", webLandingPage(Options{ProjectName: "contacts", Architecture: ArchTriple, Frontend: FrontendNext})},
+		{"next", webLandingPage(Options{ProjectName: "contacts", Architecture: ArchTriple, Frontend: FrontendNext}, true)},
 		{"tanstack", webTanStackIndexRoute(Options{ProjectName: "contacts", Architecture: ArchSingle, Frontend: FrontendTanStack})},
 	} {
 		if !strings.Contains(tc.src, "contacts") {
@@ -39,7 +39,7 @@ func TestLandingPageIsAboutTheProject(t *testing.T) {
 	}
 	// "Read the Blog" is a 404 once the Blog resource is removed, so it has to
 	// be inside markers that grit remove can cut.
-	next := webLandingPage(Options{ProjectName: "contacts", Architecture: ArchTriple, Frontend: FrontendNext})
+	next := webLandingPage(Options{ProjectName: "contacts", Architecture: ArchTriple, Frontend: FrontendNext}, true)
 	for _, marker := range []string{"{/* grit:home:blog-cta-start */}", "{/* grit:home:blog-cta-end */}"} {
 		if !strings.Contains(next, marker) {
 			t.Errorf("the home page's blog CTA is not wrapped in %s", marker)

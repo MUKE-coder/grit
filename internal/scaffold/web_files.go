@@ -47,7 +47,7 @@ func webFileMap(root string, opts Options) map[string]string {
 		filepath.Join(webRoot, "app", "layout.tsx"):  webRootLayout(opts),
 		// The public site. A route group, so the URLs are unchanged: / and /blog.
 		filepath.Join(webRoot, "app", "(marketing)", "layout.tsx"):    webMarketingLayout(),
-		filepath.Join(webRoot, "app", "(marketing)", "page.tsx"):      webLandingPage(opts),
+		filepath.Join(webRoot, "app", "(marketing)", "page.tsx"):      webLandingPage(opts, !blogRemoved(root, opts)),
 		filepath.Join(webRoot, "app", "error.tsx"):                    webErrorPage(),
 		filepath.Join(webRoot, "app", "not-found.tsx"):                webNotFoundPage(),
 		filepath.Join(webRoot, "components", "not-found-view.tsx"):    webNotFoundView(),
@@ -57,7 +57,7 @@ func webFileMap(root string, opts Options) map[string]string {
 		filepath.Join(webRoot, "components.json"):                     nextComponentsJSON(),
 		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
 		// The navbar's entries, and the menu that renders them.
-		filepath.Join(webRoot, "lib", "nav-menu.ts"):          webNavMenuConfig(opts),
+		filepath.Join(webRoot, "lib", "nav-menu.ts"):          webNavMenuConfig(opts, !blogRemoved(root, opts)),
 		filepath.Join(webRoot, "components", "mega-menu.tsx"): webMegaMenu(),
 		filepath.Join(webRoot, "components", "footer.tsx"):    webFooter(opts),
 		// v3.31.49 — DevLinks renders every URL the `grit new` welcome

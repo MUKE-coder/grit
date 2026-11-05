@@ -161,7 +161,7 @@ func singleFrontendOwnFiles(root string, opts Options) map[string]string {
 		filepath.Join(feRoot, "src", "components", "navbar.tsx"): singleViteNavbar(opts),
 		// The navbar's entries and the menu, the same two files the Next
 		// frontends get, put through the compat rewrite.
-		filepath.Join(feRoot, "src", "lib", "nav-menu.ts"):          nextToTanStack(webNavMenuConfig(opts)),
+		filepath.Join(feRoot, "src", "lib", "nav-menu.ts"):          nextToTanStack(webNavMenuConfig(opts, !blogRemoved(root, opts))),
 		filepath.Join(feRoot, "src", "components", "mega-menu.tsx"): nextToTanStack(webMegaMenu()),
 		// nextToTanStack rewrites next/link and friends to "@/lib/next-compat",
 		// so the shim has to be there. The admin panel has its own copy under

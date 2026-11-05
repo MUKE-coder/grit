@@ -22,7 +22,14 @@ import "fmt"
 // actually has.
 
 // webNavMenuConfig emits lib/nav-menu.ts: what is in the menus.
-func webNavMenuConfig(opts Options) string {
+//
+// hasBlog is whether the project still has the Blog example. Seven of the
+// hrefs here pointed at /blog unconditionally, two of them as entries about the
+// blog and five as placeholders, so a project without one had four 404s in its
+// navbar. The blank starter used to edit this file to fix that, and an edited
+// framework file never receives another framework fix, which for the most
+// frequently changed file in the web app is an expensive trade (grit#173).
+func webNavMenuConfig(opts Options, hasBlog bool) string {
 	// Where the panel is, resolved here rather than left as {{ADMIN_HREF}}:
 	// the Vite writers do not run the substitution the web writer does, so a
 	// single would have shipped the placeholder as a literal URL.
@@ -42,13 +49,43 @@ const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";`
 	if inApp {
 		external = "false"
 	}
+
+	// Where a placeholder link goes. /blog while there is a blog to go to, and
+	// otherwise the admin panel, which is the one page every fresh project has.
+	browse := `"/blog"`
+	browseExternal := ""
+	if !hasBlog {
+		browse = "ADMIN_URL"
+		browseExternal = "\n            external: " + external + ","
+	}
+
+	// The two entries that are about the blog rather than merely pointing at
+	// it. Dropped whole when there is no blog: a link saying "Posts, written
+	// and published from the admin panel" is not a link to relabel.
+	exploreBlog := `
+          {
+            title: "Blog",
+            description: "Posts, written and published from the admin panel.",
+            href: "/blog",
+            icon: Rss,
+          },`
+	learnBlog := `
+          {
+            title: "Blog",
+            description: "Everything published so far.",
+            href: "/blog",
+            icon: BookOpen,
+          },`
+	// Unused icons would fail the frontend lint, which is the kind of thing a
+	// generated project should never ship.
+	icons := "  BookOpen,\n  LayoutDashboard,\n  LifeBuoy,\n  Rss,\n  Shield,\n  Sparkles,"
+	if !hasBlog {
+		exploreBlog, learnBlog = "", ""
+		icons = "  LayoutDashboard,\n  LifeBuoy,\n  Shield,\n  Sparkles,"
+	}
+
 	return fmt.Sprintf(`import {
-  BookOpen,
-  LayoutDashboard,
-  LifeBuoy,
-  Rss,
-  Shield,
-  Sparkles,
+%s
   type LucideIcon,
 } from "lucide-react";
 
@@ -100,13 +137,7 @@ export const navEntries: NavEntry[] = [
     columns: [
       {
         heading: "Explore",
-        links: [
-          {
-            title: "Blog",
-            description: "Posts, written and published from the admin panel.",
-            href: "/blog",
-            icon: Rss,
-          },
+        links: [%s
           {
             title: "Admin panel",
             description: "Tables, forms and filters for every resource.",
@@ -129,7 +160,7 @@ export const navEntries: NavEntry[] = [
           {
             title: "Search",
             description: "Across every resource you generate.",
-            href: "/blog",
+            href: %s,%s
             icon: Sparkles,
           },
         ],
@@ -140,7 +171,7 @@ export const navEntries: NavEntry[] = [
       title: "Add your own pages",
       description:
         "This menu is lib/nav-menu.ts. Change the columns, the copy and this panel to say what %s does.",
-      href: "/blog",
+      href: %s,
     },
   },
   {
@@ -148,17 +179,11 @@ export const navEntries: NavEntry[] = [
     columns: [
       {
         heading: "Learn",
-        links: [
-          {
-            title: "Blog",
-            description: "Everything published so far.",
-            href: "/blog",
-            icon: BookOpen,
-          },
+        links: [%s
           {
             title: "Support",
             description: "Replace this with how people reach you.",
-            href: "/blog",
+            href: %s,%s
             icon: LifeBuoy,
           },
         ],
@@ -166,7 +191,10 @@ export const navEntries: NavEntry[] = [
     ],
   },
 ];
-`, opts.ProjectName, adminConst, external, external, opts.ProjectName)
+`, icons, opts.ProjectName, adminConst,
+		exploreBlog, external, external, browse, browseExternal,
+		opts.ProjectName, browse,
+		learnBlog, browse, browseExternal)
 }
 
 // webMegaMenu emits components/mega-menu.tsx: the desktop menu itself.
