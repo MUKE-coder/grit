@@ -95,8 +95,8 @@ func (s *UserService) EmailTakenByAnother(ctx context.Context, email, exceptID s
 	return taken > 0, nil
 }
 
-// Update writes updates to one account, and, when roleName is not empty, makes
-// the user_roles assignment match it.
+// Update writes updates to one account, and makes the user_roles assignment
+// match any role the write names.
 //
 // Both writes, or neither.
 //
@@ -107,7 +107,23 @@ func (s *UserService) EmailTakenByAnother(ctx context.Context, email, exceptID s
 // permissions of the new role while users.role still read as the old one, and
 // nothing anywhere said so. One transaction now, so a failure leaves the
 // account exactly as it was.
+//
+// A role in updates counts as naming one, and that is not belt and braces.
+// The signature takes the column write in `updates` and the assignment in
+// `roleName`, so a caller could set updates["role"] = "ADMIN" with roleName
+// empty and write a column that says ADMIN beside grants that say otherwise.
+// Nothing would have said so: the route guards would simply disagree with each
+// other from then on, depending on whether each one named a role or a
+// permission (grit#154). There is one input now, whichever way it is reached
+// for, and roleName wins when both are given because it is the explicit one.
 func (s *UserService) Update(ctx context.Context, user *models.User, updates map[string]interface{}, roleName string) error {
+	if roleName == "" {
+		if named, ok := updates["role"]; ok {
+			if asString, ok := named.(string); ok && asString != "" {
+				roleName = asString
+			}
+		}
+	}
 	if err := s.db(ctx).Transaction(func(tx *gorm.DB) error {
 		if roleName != "" {
 			if err := writeUserRoleAssignment(tx, user.ID, roleName); err != nil {

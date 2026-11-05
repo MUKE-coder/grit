@@ -278,6 +278,7 @@ func authzGrantsGo() string {
 import (
 	"errors"
 	"log"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -405,6 +406,51 @@ func GrantsForRole(db *gorm.DB, roleID string) ([]string, error) {
 	return grants, nil
 }
 
+// RoleNamesFor is which roles this user holds, by name.
+//
+// The role-name half of authorization used to read users.role straight off the
+// row while the permission half read the join table, so a user whose column and
+// whose assignments disagreed got different answers depending on how the route
+// was written: RequireRole("ADMIN") and RequireRole("perm:users.delete") are
+// not meant to be two opinions (grit#154).
+//
+// Exactly the precedence resolveGrants uses, and that is the point: the join
+// table, and the column only when there are no rows at all. A project upgrading
+// from role-string authorization has no rows yet, and its admins must not lose
+// access the moment permissions ship.
+//
+// Upper-cased because the role names the routes name are upper-case, and a
+// column holding "admin" should not fail a guard that says "ADMIN".
+func RoleNamesFor(db *gorm.DB, userID string) ([]string, error) {
+	var roles []models.Role
+	err := db.
+		Joins("JOIN user_roles ON user_roles.role_id = roles.id").
+		Where("user_roles.user_id = ?", userID).
+		Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(roles) > 0 {
+		names := make([]string, 0, len(roles))
+		for _, r := range roles {
+			names = append(names, strings.ToUpper(r.Name))
+		}
+		return names, nil
+	}
+
+	var user models.User
+	if err := db.Select("id", "role").Where("id = ?", userID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if user.Role == "" {
+		return nil, nil
+	}
+	return []string{strings.ToUpper(user.Role)}, nil
+}
+
 func resolveGrants(db *gorm.DB, userID string) ([]string, error) {
 	var roles []models.Role
 	err := db.
@@ -506,6 +552,121 @@ func newDB(t *testing.T) *gorm.DB {
 		t.Fatal(err)
 	}
 	return db
+}
+
+// A user's role had two stores, and the answer depended on who asked.
+//
+// users.role is a string column; user_roles is the join table behind the
+// grants. Grant resolution reads the join table and falls back to the column.
+// A route guarded by a ROLE NAME used to read the column outright, so where the
+// two disagreed, RequireRole("ADMIN") and RequireRole("perm:users.delete")
+// answered from different data (grit#154).
+//
+// RoleNamesFor is the one resolver both halves read now. These tests pin its
+// precedence, because that precedence IS the fix.
+func TestRoleNamesComeFromTheAssignmentsNotTheColumn(t *testing.T) {
+	db := newDB(t)
+
+	// The disagreement, written deliberately: the column says ADMIN, the
+	// assignment says USER. This is what a row touched outside the app looks
+	// like, or a project that had its column edited by hand.
+	user := models.User{Email: "someone@example.com", Role: "ADMIN", Active: true}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatal(err)
+	}
+	var userRole models.Role
+	if err := models.PlatformRoles(db).Where("name = ?", "USER").First(&userRole).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&models.UserRole{UserID: user.ID, RoleID: userRole.ID}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	names, err := authz.RoleNamesFor(db, user.ID)
+	if err != nil {
+		t.Fatalf("RoleNamesFor: %v", err)
+	}
+	if len(names) != 1 || names[0] != "USER" {
+		t.Errorf("RoleNamesFor = %v, want [USER]: the assignment is the store, and a "+
+			"stale users.role column must not hand somebody ADMIN", names)
+	}
+}
+
+// And the column is still the fallback, which is what keeps a project that
+// predates user_roles working. Removing that would lock every admin out on
+// the upgrade that shipped permissions.
+func TestTheColumnIsTheFallbackWhenThereAreNoAssignments(t *testing.T) {
+	db := newDB(t)
+
+	user := models.User{Email: "legacy@example.com", Role: "ADMIN", Active: true}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	names, err := authz.RoleNamesFor(db, user.ID)
+	if err != nil {
+		t.Fatalf("RoleNamesFor: %v", err)
+	}
+	if len(names) != 1 || names[0] != "ADMIN" {
+		t.Errorf("RoleNamesFor = %v, want [ADMIN] from the column: a project with no "+
+			"user_roles rows yet must keep working", names)
+	}
+
+	// Lower case in the column answers an upper-case guard. The routes name
+	// "ADMIN" and a column holding "admin" is the same role.
+	if err := db.Model(&user).Update("role", "admin").Error; err != nil {
+		t.Fatal(err)
+	}
+	names, err = authz.RoleNamesFor(db, user.ID)
+	if err != nil {
+		t.Fatalf("RoleNamesFor: %v", err)
+	}
+	if len(names) != 1 || names[0] != "ADMIN" {
+		t.Errorf("RoleNamesFor = %v, want [ADMIN]: a lower-case column should not fail "+
+			"a guard that names ADMIN", names)
+	}
+}
+
+// Both halves of the decision read one store, so they cannot disagree. This is
+// the property the whole change exists for, so it is asserted directly rather
+// than left to follow from the two above.
+func TestTheRoleNamesAndTheGrantsAgree(t *testing.T) {
+	db := newDB(t)
+
+	user := models.User{Email: "both@example.com", Role: "ADMIN", Active: true}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatal(err)
+	}
+	var editor models.Role
+	if err := models.PlatformRoles(db).Where("name = ?", "EDITOR").First(&editor).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&models.UserRole{UserID: user.ID, RoleID: editor.ID}).Error; err != nil {
+		t.Fatal(err)
+	}
+	authz.Invalidate()
+
+	names, err := authz.RoleNamesFor(db, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	grants, err := authz.GrantsFor(db, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The column says ADMIN. Neither half may believe it.
+	for _, name := range names {
+		if name == "ADMIN" {
+			t.Error("the role names say ADMIN while the assignment is EDITOR")
+		}
+	}
+	if authz.Granted(grants, "*") {
+		t.Error("the grants include the superuser wildcard while the assignment is EDITOR")
+	}
+	if len(names) == 0 {
+		t.Error("no role names at all, which would refuse every role-guarded route")
+	}
 }
 
 // A role's name is unique per OWNER, which is what lets two customers each

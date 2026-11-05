@@ -23,6 +23,42 @@ Also worth knowing:
 ---
 
 
+## v3.472.0 - November 5, 2026
+
+### A user's role had two stores, and the answer depended on who asked
+
+grit#154. `users.role` is a string column; `user_roles` is the join table behind the grants. Grant resolution reads the join table and falls back to the column. A route guarded by a *role name* read the column outright. So where the two disagree, `RequireRole("ADMIN")` and `RequireRole("perm:users.delete")` answered from different data, and which you got depended on how the route happened to be written.
+
+Fixed by resolution rather than by migration. `authz.RoleNamesFor` answers "which roles does this user hold" with exactly the precedence grant resolution uses, the middleware sets the role from it, and the column becomes an *input* to that answer instead of a second source of it. No data change, no upgrade decision about rows that disagree, and where the two agree nothing changes.
+
+```go
+// internal/authz/grants.go
+names, err := authz.RoleNamesFor(db, user.ID)   // the join table, then the column
+c.Set("user_role", names[0])
+c.Set("user_roles", names)
+```
+
+`RequireRole` checks every role the caller holds rather than one, because the join table is many to many and matching only the first would refuse somebody whose ADMIN is their second assignment: a new way to be wrong in exchange for fixing an old one.
+
+The writer had the matching trap. `UserService.Update` takes the column write in `updates` and the assignment in a separate `roleName`, so a caller could set `updates["role"] = "ADMIN"` with `roleName` empty and write a column saying ADMIN beside grants saying otherwise, silently. A role in `updates` now implies the assignment: one input, whichever way a caller reaches for it.
+
+Three tests ship into the project, and the first was checked by putting the old behaviour back, where it reported `RoleNamesFor = [ADMIN], want [USER]`.
+
+### On the default theme, a failed sign-in said nothing
+
+grit#149 asked for one `AuthShell` instead of nine, on the grounds that the same markup is copied per theme. Half of that was already done and the other half was not the problem.
+
+The eight shells are eight genuinely different layouts, keyed by `theme.authLayout`: centered, split-carousel, modal, boxed, banner, showcase, quote, split-static. Collapsing them is not a fix. And five of the eight were already built from one shared preamble plus a per-layout body, with a comment saying why: "Five copies of a token list is five chances for one theme to quietly stop publishing --auth-radius."
+
+Three predated that and were never moved. Which would be housekeeping, except that the shared preamble's `ErrorBanner` carries `role="alert"` and the three inline copies did not. So on **Atlas, the default theme**, a failed sign-in was not announced to a screen reader. Precisely the failure the issue predicted: the one that gets missed is whichever theme nobody is looking at.
+
+Atlas and Aurora are on the shared helper now. Pulse is not, and that is a decision with a test on it: it has its own cross-link copy ("New here?", "Create an account") and its own imports for the rotating hero, so moving it would either change its copy or complicate the helper for one caller. It gets `role="alert"` without the refactor.
+
+A test now reads all eight and fails on any that renders its error without the role. The login page was looked at in a browser afterwards rather than only type-checked, because the change moved a visual component.
+
+One thing found while measuring and not fixed here: the login form's email field has no `autoComplete`, while the password beside it says `current-password`, so a password manager cannot reliably save the pair. It is 29 sites, and which attribute each needs depends on the form, so it is grit#180 rather than a sweep. That count is also the measured version of grit#149's argument: a one-attribute fix to a sign-in form is a 29-file diff.
+
+
 ## v3.471.0 - November 5, 2026
 
 ### A freshly generated project had five critical advisories

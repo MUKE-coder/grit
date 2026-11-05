@@ -72,6 +72,119 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.472.0 */}
+            <div className="mb-12" id="v3.472.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.472.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A user&apos;s role had two stores, and the answer depended on who asked</h3>
+                <p>
+                  grit#154. <code>users.role</code> is a string column;{' '}
+                  <code>user_roles</code> is the join table behind the grants.
+                  Grant resolution reads the join table and falls back to the
+                  column. A route guarded by a <em>role name</em> read the
+                  column outright. So where the two disagree,{' '}
+                  <code>RequireRole(&quot;ADMIN&quot;)</code> and{' '}
+                  <code>RequireRole(&quot;perm:users.delete&quot;)</code>{' '}
+                  answered from different data, and which you got depended on
+                  how the route happened to be written.
+                </p>
+                <p>
+                  Fixed by resolution rather than by migration.{' '}
+                  <code>authz.RoleNamesFor</code> answers &quot;which roles does
+                  this user hold&quot; with exactly the precedence grant
+                  resolution uses, the middleware sets the role from it, and the
+                  column becomes an <em>input</em> to that answer instead of a
+                  second source of it. No data change, no upgrade decision about
+                  rows that disagree, and where the two agree nothing changes.
+                </p>
+                <CodeBlock language="go" code={`// internal/authz/grants.go
+names, err := authz.RoleNamesFor(db, user.ID)   // the join table, then the column
+c.Set("user_role", names[0])
+c.Set("user_roles", names)`} />
+                <p>
+                  <code>RequireRole</code> checks every role the caller holds
+                  rather than one, because the join table is many to many and
+                  matching only the first would refuse somebody whose ADMIN is
+                  their second assignment: a new way to be wrong in exchange for
+                  fixing an old one.
+                </p>
+                <p>
+                  The writer had the matching trap.{' '}
+                  <code>UserService.Update</code> takes the column write in{' '}
+                  <code>updates</code> and the assignment in a separate{' '}
+                  <code>roleName</code>, so a caller could set{' '}
+                  <code>updates[&quot;role&quot;] = &quot;ADMIN&quot;</code>{' '}
+                  with <code>roleName</code> empty and write a column saying
+                  ADMIN beside grants saying otherwise, silently. A role in{' '}
+                  <code>updates</code> now implies the assignment: one input,
+                  whichever way a caller reaches for it.
+                </p>
+                <p>
+                  Three tests ship into the project, and the first was checked
+                  by putting the old behaviour back, where it reported{' '}
+                  <code>RoleNamesFor = [ADMIN], want [USER]</code>.
+                </p>
+
+                <h3>On the default theme, a failed sign-in said nothing</h3>
+                <p>
+                  grit#149 asked for one <code>AuthShell</code> instead of nine,
+                  on the grounds that the same markup is copied per theme. Half
+                  of that was already done and the other half was not the
+                  problem.
+                </p>
+                <p>
+                  The eight shells are eight genuinely different layouts, keyed
+                  by <code>theme.authLayout</code>: centered, split-carousel,
+                  modal, boxed, banner, showcase, quote, split-static.
+                  Collapsing them is not a fix. And five of the eight were
+                  already built from one shared preamble plus a per-layout body,
+                  with a comment saying why: &quot;Five copies of a token list is
+                  five chances for one theme to quietly stop publishing
+                  --auth-radius.&quot;
+                </p>
+                <p>
+                  Three predated that and were never moved. Which would be
+                  housekeeping, except that the shared preamble&apos;s{' '}
+                  <code>ErrorBanner</code> carries <code>role=&quot;alert&quot;</code>{' '}
+                  and the three inline copies did not. So on <strong>Atlas, the
+                  default theme</strong>, a failed sign-in was not announced to a
+                  screen reader. Precisely the failure the issue predicted: the
+                  one that gets missed is whichever theme nobody is looking at.
+                </p>
+                <p>
+                  Atlas and Aurora are on the shared helper now. Pulse is not,
+                  and that is a decision with a test on it: it has its own
+                  cross-link copy (&quot;New here?&quot;, &quot;Create an
+                  account&quot;) and its own imports for the rotating hero, so
+                  moving it would either change its copy or complicate the helper
+                  for one caller. It gets <code>role=&quot;alert&quot;</code>{' '}
+                  without the refactor.
+                </p>
+                <p>
+                  A test now reads all eight and fails on any that renders its
+                  error without the role. The login page was looked at in a
+                  browser afterwards rather than only type-checked, because the
+                  change moved a visual component.
+                </p>
+                <p>
+                  One thing found while measuring and not fixed here: the login
+                  form&apos;s email field has no <code>autoComplete</code>, while
+                  the password beside it says <code>current-password</code>, so a
+                  password manager cannot reliably save the pair. It is 29 sites,
+                  and which attribute each needs depends on the form, so it is
+                  grit#180 rather than a sweep. That count is also the measured
+                  version of grit#149&apos;s argument: a one-attribute fix to a
+                  sign-in form is a 29-file diff.
+                </p>
+              </div>
+            </div>
+
             {/* v3.471.0 breaking */}
             <div className="mb-12" id="v3.471.0">
               <div className="flex items-center gap-3 mb-4">

@@ -2445,6 +2445,25 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 			c.Set("user_grants", grants)
 		}
 
+		// And the role NAMES, from the same store the grants came from.
+		//
+		// user_role was set from users.role above, which made it a second
+		// source of an authorization answer: grant resolution reads the
+		// user_roles join table and falls back to the column, while a route
+		// guarded by a role name read the column outright. Where the two
+		// disagree, RequireRole("ADMIN") and RequireRole("perm:users.delete")
+		// answered from different data, and which you got depended on how the
+		// route happened to be written (grit#154).
+		//
+		// The column is still the fallback inside RoleNamesFor, so a project
+		// that predates user_roles behaves exactly as before. What it is no
+		// longer is an independent answer. A failure leaves the value set from
+		// the column, which is the old behaviour and fails no more open.
+		if names, err := authz.RoleNamesFor(db, user.ID); err == nil && len(names) > 0 {
+			c.Set("user_role", names[0])
+			c.Set("user_roles", names)
+		}
+
 		c.Next()
 	}
 }
@@ -2515,6 +2534,25 @@ func Identify(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 			c.Set("user_grants", grants)
 		}
 
+		// And the role NAMES, from the same store the grants came from.
+		//
+		// user_role was set from users.role above, which made it a second
+		// source of an authorization answer: grant resolution reads the
+		// user_roles join table and falls back to the column, while a route
+		// guarded by a role name read the column outright. Where the two
+		// disagree, RequireRole("ADMIN") and RequireRole("perm:users.delete")
+		// answered from different data, and which you got depended on how the
+		// route happened to be written (grit#154).
+		//
+		// The column is still the fallback inside RoleNamesFor, so a project
+		// that predates user_roles behaves exactly as before. What it is no
+		// longer is an independent answer. A failure leaves the value set from
+		// the column, which is the old behaviour and fails no more open.
+		if names, err := authz.RoleNamesFor(db, user.ID); err == nil && len(names) > 0 {
+			c.Set("user_role", names[0])
+			c.Set("user_roles", names)
+		}
+
 		c.Next()
 	}
 }
@@ -2577,10 +2615,27 @@ func RequireRole(rolesOrPerms ...string) gin.HandlerFunc {
 			return
 		}
 
+		// Every role the caller holds, not just one. user_roles is many to
+		// many, so once role names are resolved from it rather than from the
+		// users.role column, a caller can hold several, and matching only the
+		// first would refuse somebody whose ADMIN is their second assignment:
+		// a new way to be wrong in exchange for fixing an old one (grit#154).
+		//
+		// user_role remains the first of them, so a handler reading it still
+		// gets a sensible single answer.
+		held := []string{role}
+		if all, ok := c.Get("user_roles"); ok {
+			if list, ok := all.([]string); ok && len(list) > 0 {
+				held = list
+			}
+		}
+
 		for _, r := range roles {
-			if role == r {
-				c.Next()
-				return
+			for _, have := range held {
+				if have == r {
+					c.Next()
+					return
+				}
 			}
 		}
 

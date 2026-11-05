@@ -210,38 +210,7 @@ export function SocialAuthDivider() {
 // panel hosts the form. Inter throughout. Inspired by the Acme / dashboard
 // reference (split-screen with dashboard preview on left).
 func adminAtlasAuthShell() string {
-	return `"use client";
-
-import Link from "next/link";
-import type { ReactNode } from "react";
-import type { ThemeTokens } from "@repo/shared/themes";
-import { brand } from "@repo/shared/brand";
-import { SocialAuthButtons, SocialAuthDivider } from "./SocialAuthButtons";
-import type { AuthMode } from "./AuthShell";
-
-interface Props {
-  theme: ThemeTokens;
-  mode: AuthMode;
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-  errorMessage?: string;
-  showSocial?: boolean;
-}
-
-const switchLinks: Record<AuthMode, { hint: string; href: string; label: string }> = {
-  "login":    { hint: "Don't have an account?", href: "/sign-up",         label: "Create one" },
-  "sign-up":  { hint: "Already have an account?", href: "/login",         label: "Sign in" },
-  "forgot":   { hint: "Remembered your password?", href: "/login",        label: "Back to sign in" },
-  "reset":    { hint: "Remembered your password?", href: "/login",        label: "Back to sign in" },
-};
-
-export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMessage, showSocial = true }: Props) {
-  const t = theme.colors;
-  const f = theme.fonts;
-  const sw = switchLinks[mode];
-
-  return (
+	body := `  return (
     <div
       className="flex min-h-screen"
       style={{
@@ -250,15 +219,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
         color: t.fg,
         // CSS variables consumed by SocialAuthButtons + form inputs so
         // the same component fits every theme without per-shell styling.
-        ["--auth-bg" as string]: t.bg,
-        ["--auth-fg" as string]: t.fg,
-        ["--auth-card" as string]: t.card,
-        ["--auth-border" as string]: t.border,
-        ["--auth-muted" as string]: t.muted,
-        ["--auth-primary" as string]: t.primary,
-        ["--auth-primary-fg" as string]: t.primaryFg,
-        ["--auth-accent" as string]: t.accent,
-        ["--auth-radius" as string]: theme.radius,
+` + authShellVars + `
       } as React.CSSProperties}
     >
       {/* Left hero panel */}
@@ -267,7 +228,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
         style={{ background: t.heroBg, color: t.heroFg }}
       >
         <div className="flex items-center gap-2 text-2xl font-bold">
-          <BrandMark color={t.primary} fg={t.primaryFg} />
+          <BrandMark color={t.primary} fg={t.primaryFg} size={32} />
           <span style={{ fontFamily: f.display }}>{brand.name}</span>
         </div>
 
@@ -293,7 +254,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
         <div className="w-full max-w-md space-y-8">
           {/* Brand for sub-lg breakpoints */}
           <div className="lg:hidden flex items-center justify-center gap-2 text-2xl font-bold" style={{ color: t.primary }}>
-            <BrandMark color={t.primary} fg={t.primaryFg} />
+            <BrandMark color={t.primary} fg={t.primaryFg} size={32} />
             <span style={{ fontFamily: f.display }}>{brand.name}</span>
           </div>
 
@@ -302,14 +263,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
             {subtitle && <p className="mt-2" style={{ color: t.muted }}>{subtitle}</p>}
           </div>
 
-          {errorMessage && (
-            <div
-              className="rounded-[var(--auth-radius)] border px-4 py-3 text-sm"
-              style={{ borderColor: "#fecaca", background: "#fef2f2", color: "#b91c1c" }}
-            >
-              {errorMessage}
-            </div>
-          )}
+          <ErrorBanner message={errorMessage} />
 
           {children}
 
@@ -331,62 +285,15 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
     </div>
   );
 }
-
-// The brand colour, not a wash of the hero's own background: six of the eight
-// themes have a light hero panel, and white on fifteen percent white is nothing
-// at all. The letter was invisible on every one of them.
-function BrandMark({ color, fg }: { color: string; fg: string }) {
-  if (brand.logo.image) {
-    return <img src={brand.logo.image} alt={brand.name} className="h-8 w-8" />;
-  }
-  return (
-    <span
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md font-bold"
-      style={{ background: color, color: fg }}
-    >
-      {brand.logo.text}
-    </span>
-  );
-}
 `
+	return authShell("AtlasAuthShell", body)
 }
 
 // adminAuroraAuthShell returns the Aurora centered layout — single card on
 // a pastel wallpaper, no hero panel. WorkOS / Clerk inspired. The "hero
 // background" token doubles as the page wallpaper here.
 func adminAuroraAuthShell() string {
-	return `"use client";
-
-import Link from "next/link";
-import type { ReactNode } from "react";
-import type { ThemeTokens } from "@repo/shared/themes";
-import { brand } from "@repo/shared/brand";
-import { SocialAuthButtons, SocialAuthDivider } from "./SocialAuthButtons";
-import type { AuthMode } from "./AuthShell";
-
-interface Props {
-  theme: ThemeTokens;
-  mode: AuthMode;
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-  errorMessage?: string;
-  showSocial?: boolean;
-}
-
-const switchLinks: Record<AuthMode, { hint: string; href: string; label: string }> = {
-  "login":    { hint: "Don't have an account?", href: "/sign-up", label: "Sign up" },
-  "sign-up":  { hint: "Already have an account?", href: "/login", label: "Log in" },
-  "forgot":   { hint: "Remembered your password?", href: "/login", label: "Back to login" },
-  "reset":    { hint: "Remembered your password?", href: "/login", label: "Back to login" },
-};
-
-export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorMessage, showSocial = true }: Props) {
-  const t = theme.colors;
-  const f = theme.fonts;
-  const sw = switchLinks[mode];
-
-  return (
+	body := `  return (
     <div
       className="flex min-h-screen items-center justify-center px-4 py-12"
       style={{
@@ -395,15 +302,7 @@ export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorM
         // gradient pulse so the card lifts off the background.
         background: ` + "`" + `radial-gradient(60% 60% at 30% 20%, ${t.accent}22, transparent 60%), radial-gradient(50% 50% at 80% 80%, ${t.primary}1a, transparent 60%), ${t.heroBg}` + "`" + `,
         color: t.fg,
-        ["--auth-bg" as string]: t.bg,
-        ["--auth-fg" as string]: t.fg,
-        ["--auth-card" as string]: t.card,
-        ["--auth-border" as string]: t.border,
-        ["--auth-muted" as string]: t.muted,
-        ["--auth-primary" as string]: t.primary,
-        ["--auth-primary-fg" as string]: t.primaryFg,
-        ["--auth-accent" as string]: t.accent,
-        ["--auth-radius" as string]: theme.radius,
+` + authShellVars + `
       } as React.CSSProperties}
     >
       <div
@@ -418,14 +317,7 @@ export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorM
           </div>
         </div>
 
-        {errorMessage && (
-          <div
-            className="rounded-[var(--auth-radius)] border px-4 py-3 text-sm"
-            style={{ borderColor: "#fecaca", background: "#fef2f2", color: "#b91c1c" }}
-          >
-            {errorMessage}
-          </div>
-        )}
+        <ErrorBanner message={errorMessage} />
 
         {children}
 
@@ -446,21 +338,8 @@ export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorM
     </div>
   );
 }
-
-function BrandMark({ color, fg }: { color: string; fg: string }) {
-  if (brand.logo.image) {
-    return <img src={brand.logo.image} alt={brand.name} className="h-10 w-10" />;
-  }
-  return (
-    <span
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl font-bold text-lg"
-      style={{ background: color, color: fg }}
-    >
-      {brand.logo.text}
-    </span>
-  );
-}
 `
+	return authShell("AuroraAuthShell", body)
 }
 
 // adminPulseAuthShell returns the Pulse split-carousel layout — auth form
@@ -532,6 +411,7 @@ export function PulseAuthShell({ theme, mode, title, subtitle, children, errorMe
 
           {errorMessage && (
             <div
+              role="alert"
               className="rounded-[var(--auth-radius)] border px-4 py-3 text-sm"
               style={{ borderColor: "#fecaca", background: "#fef2f2", color: "#b91c1c" }}
             >
