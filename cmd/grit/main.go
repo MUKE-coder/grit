@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.466.0"
+var version = "3.467.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -99,6 +99,7 @@ func rootCommand() *cobra.Command {
 	rootCmd.AddCommand(versionsCmd())
 	rootCmd.AddCommand(skillsCmd())
 	rootCmd.AddCommand(newDesktopCmd())
+	rootCmd.AddCommand(ownCmd())
 	rootCmd.AddCommand(initCmd())
 	rootCmd.AddCommand(generateCmd())
 	rootCmd.AddCommand(removeCmd())
@@ -2699,12 +2700,25 @@ func architectureLabel(opts scaffold.Options) string {
 	}
 }
 
+// newDesktopCmd is the same project as `grit new <name> --desktop`, by a second
+// name. A genuine double, and the only one the CLI review found: `update` and
+// `upgrade` replace different things, `version` and `versions` answer different
+// questions, and `--single` is documented shorthand.
+//
+// Deprecated rather than deleted. Somebody has this in a README or a Makefile,
+// and a command that stops existing is a worse answer than one that works and
+// says what to use instead. Cobra prints the message on every run and keeps the
+// command out of `--help`, which is the behaviour this wants: discoverable only
+// to somebody who already typed it (grit#157).
 func newDesktopCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "new-desktop <project-name>",
-		Short: "Create a new Wails desktop application",
-		Long:  "Scaffold a standalone desktop app with Go backend (Wails), React frontend, SQLite/PostgreSQL, and local auth.",
-		Args:  cobra.ExactArgs(1),
+		Short: "Create a new Wails desktop application (deprecated: use grit new --desktop)",
+		Long: "Scaffold a standalone desktop app with Go backend (Wails), React frontend, SQLite/PostgreSQL, and local auth.\n\n" +
+			"Deprecated. `grit new <name> --desktop` does the same thing and is the one\n" +
+			"documented way. This name still works and will be removed no sooner than\n" +
+			"v4.0.0; see the deprecation policy at https://gritframework.com/docs/versioning.",
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectName := args[0]
 
@@ -2728,6 +2742,11 @@ func newDesktopCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	// Printed to stderr by cobra on every run, so a script that pipes stdout
+	// still shows it to the person who runs the script.
+	cmd.Deprecated = "use `grit new <project-name> --desktop` instead. " +
+		"This name will be removed no sooner than v4.0.0."
 
 	return cmd
 }

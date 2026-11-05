@@ -771,6 +771,34 @@ export const CLI_COMMANDS: CliCommand[] = [
     keywords: ['skills', 'claude', 'ai', 'experts', 'agent', 'install'],
   },
   {
+    id: 'own',
+    name: 'grit own',
+    category: 'Meta',
+    summary: 'Whose file is this, and what will an upgrade do to it. Changes nothing.',
+    example: 'grit own apps/admin/components/tables/data-table.tsx',
+    output: [
+      '  apps/admin/components/tables/data-table.tsx',
+      '  framework-owned, and unchanged since Grit wrote it',
+      '    grit upgrade will replace it. Keep your changes somewhere it will not:',
+      '    a *.custom overlay where one exists, or a file of your own that imports this one.',
+    ],
+    purpose:
+      'Ownership is the idea the whole framework rests on and the thing people get wrong first. The answer was already exact, in the manifest Grit writes whenever it generates, and there was no way to ask it: you read the manifest by hand, ran an upgrade with --dry-run, or guessed from the directory. Guessing from the directory is how it goes wrong. This reads the same record grit upgrade consults and says one of four things, so “why did my edit survive” and “why did my edit vanish” have an answer you can get before rather than after.',
+    useCases: [
+      'Before editing a generated file, to find out whether the edit will be kept.',
+      'After an upgrade left a file alone, or replaced one, to find out why.',
+      'grit own --all, to see every file Grit has written grouped by what an upgrade will do.',
+    ],
+    notes: [
+      'Four answers: framework-owned and unchanged (an upgrade replaces it), framework-owned and edited (an upgrade leaves it alone and names it), yours (no record of Grit writing it), and deleted (an upgrade writes it back, unless its directory went with it).',
+      'A project with no manifest, which is anything generated before v3.147.0, is told so: there is no record of what Grit wrote, so an upgrade overwrites everything it knows how to write.',
+      'Files you wrote yourself are not in --all. The manifest records what Grit wrote, so anything absent from it is yours by definition; ask about one directly to have that said out loud.',
+      'The same answer grit_file_ownership gives an agent over MCP. A test drives this command and the upgrade guard over the same files and fails if they disagree.',
+    ],
+    files: [],
+    keywords: ['own', 'ownership', 'manifest', 'upgrade', 'overwrite', 'edited', 'pristine', 'framework-owned', 'yours', 'custom', 'overlay'],
+  },
+  {
     id: 'versions',
     name: 'grit versions',
     category: 'Meta',

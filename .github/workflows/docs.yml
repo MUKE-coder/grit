@@ -91,6 +91,12 @@ jobs:
         run: python3 scripts/check-lessons.py
         working-directory: docs
 
+      # CHANGELOG.md is generated from the changelog page. A release that adds
+      # an entry and forgets to regenerate leaves the repository copy a release
+      # behind, which is how a mirror becomes a second changelog.
+      - name: CHANGELOG.md matches the changelog page
+        run: python3 scripts/changelog-md.py --check
+
       # The capability matrix counts a feature as ready on first run while the
       # stability page may call it beta. Those were two files with two opinions
       # about the same subsystem; now the matrix points at the stability area by

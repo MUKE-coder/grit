@@ -59,6 +59,108 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.467.0 */}
+            <div className="mb-12" id="v3.467.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.467.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit own: whose file is this</h3>
+                <p>
+                  grit#161. Ownership is the idea the whole framework rests on and
+                  the thing people get wrong first, and the answer was already
+                  exact: the manifest records what Grit wrote, and{' '}
+                  <code>grit upgrade</code> reads it. There was no way to ask.
+                  You read the manifest by hand, ran an upgrade with{' '}
+                  <code>--dry-run</code>, or guessed from the directory, and
+                  guessing from the directory is how it goes wrong.
+                </p>
+                <CodeBlock terminal code={`$ grit own apps/admin/components/tables/data-table.tsx
+
+  apps/admin/components/tables/data-table.tsx
+  framework-owned, and unchanged since Grit wrote it
+    grit upgrade will replace it. Keep your changes somewhere it will not:
+    a *.custom overlay where one exists, or a file of your own that imports this one.`} />
+                <p>
+                  Four answers: framework-owned and unchanged, framework-owned and
+                  edited, yours, and deleted. The last one reads the directory, as
+                  the upgrade does: a file gone from a directory that is still
+                  there was deleted and comes back, while a directory gone with it
+                  is a feature the project does not have. A project with no
+                  manifest, which is anything from before v3.147.0, is told so
+                  rather than guessed at. <code>grit own --all</code> groups every
+                  file Grit has written by what an upgrade will do to it.
+                </p>
+                <p>
+                  The part that needed care is that this has to predict what the
+                  upgrade actually does, and the decision lives in the upgrade
+                  guard. Mirrored rather than shared, because the guard counts and
+                  records as it decides while this answers a question, and then one
+                  test drives both over the same five files and fails if they
+                  disagree. A test per side would pass while the pair was broken,
+                  which is the shape of bug this project keeps finding. Checked by
+                  breaking the mirror: it reported the disagreement by name.
+                </p>
+
+                <h3>The changelog is greppable from a checkout</h3>
+                <p>
+                  grit#167. The canonical changelog is a 37,000-line TSX page and{' '}
+                  <code>CHANGELOG.md</code> was a pointer to the website, so the
+                  history of this project could not be grepped from a checkout,
+                  diffed between two tags, or read offline.{' '}
+                  <code>CHANGELOG.md</code> is now 639 releases of prose, generated
+                  from the page.
+                </p>
+                <p>
+                  Generated, never maintained beside it. A hand-written mirror is
+                  two changelogs within a week and the second one is always the
+                  stale one, so the release regenerates it and CI fails if it is
+                  behind, naming the versions that differ.
+                </p>
+                <p>
+                  Two faults in the first version of the generator, both of them
+                  the quiet kind. Its regex for a code block stopped at the first
+                  escaped backtick, so a TSX snippet containing{' '}
+                  <code>&#123;`Remove $&#123;file.name&#125;`&#125;</code> was
+                  truncated mid-line. And one block on the page is written with a
+                  single-quoted <code>code=</code> rather than a template literal,
+                  so it was dropped entirely, and the only reason anybody noticed
+                  was counting the fences afterwards. The generator now counts
+                  every <code>CodeBlock</code> on the page against the number it
+                  understood, and fails on a form it does not recognise rather than
+                  letting the block vanish.
+                </p>
+
+                <h3>Two CLI tidies</h3>
+                <p>
+                  grit#157. <code>grit new-desktop</code> and{' '}
+                  <code>grit new --desktop</code> produce the same project, which
+                  is the only genuine double the CLI review found:{' '}
+                  <code>update</code> and <code>upgrade</code> replace different
+                  things, <code>version</code> and <code>versions</code> answer
+                  different questions. Deprecated rather than deleted, because
+                  somebody has it in a README: it is out of <code>--help</code>,
+                  still works, and says what to use instead.
+                </p>
+                <p>
+                  grit#160. <code>grit skills install</code> was hidden, and it
+                  installs an agent skill from a private repository into your
+                  agent&apos;s own configuration. The reasoning for hiding it was
+                  sound as far as it went, since a command most people cannot run
+                  is noise in the help output, and what it produced was worse: a
+                  command that writes to your agent config, from a source you
+                  cannot read, that you cannot find. It is visible now, its help
+                  says which of the three things called a Grit skill it installs,
+                  and it checks access to the pack before npx does, so the failure
+                  is a sentence naming the repository rather than an npm 404.
+                </p>
+              </div>
+            </div>
+
             {/* v3.466.0 */}
             <div className="mb-12" id="v3.466.0">
               <div className="flex items-center gap-3 mb-4">

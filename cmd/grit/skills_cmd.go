@@ -57,13 +57,33 @@ they work.
 
   grit skills install          the pack, at user level
   grit skills install --all    the pack and the five skills it works better with
-  grit skills status           what is installed`,
-		// Hidden: the expert pack lives in a private repository, so this
-		// command cannot work for most people who would find it in
-		// `grit --help`. It still runs for anybody with access, which is
-		// who it is for. The skill a scaffolded project gets is a
-		// different thing and is untouched: see internal/scaffold/skill_file.go.
-		Hidden: true,
+  grit skills status           what is installed
+
+WHERE THE FILES COME FROM
+
+The pack is ` + expertPack + `, a private repository, so this command needs
+access to it and says so before trying rather than failing with an npm error.
+It installs through "npx skills add", which writes into your agent's own
+configuration directory.
+
+Three different things get called a Grit skill, and they do different jobs:
+
+  this pack                     seventeen expert skills, private, installed here
+  skills/grit/SKILL.md          one general skill, public, in the Grit repository
+  .claude/skills/grit/SKILL.md  written into your project by "grit new", and
+                                tailored to the architecture you chose
+
+An agent skill tells an agent how to write code in your project, so it is worth
+knowing which one you are reading.`,
+		// Visible, although the pack is private and most people who find this
+		// in `grit --help` cannot install it.
+		//
+		// It was Hidden, on the reasoning that a command most people cannot run
+		// is noise in the help output. True as far as it goes, and it produced
+		// something worse: a command that writes into somebody's agent
+		// configuration, from a source they cannot read, that they cannot find.
+		// A clear refusal naming the repository is the better answer, because
+		// then the person who typed it knows what the answer is (grit#160).
 	}
 	cmd.AddCommand(skillsInstallCmd())
 	cmd.AddCommand(skillsStatusCmd())
@@ -81,6 +101,9 @@ func skillsInstallCmd() *cobra.Command {
 			cyan := color.New(color.FgHiCyan)
 
 			if err := requireNpx(); err != nil {
+				return err
+			}
+			if err := requirePackAccess(); err != nil {
 				return err
 			}
 
@@ -265,6 +288,38 @@ func npxName() string {
 		return "npx.cmd"
 	}
 	return "npx"
+}
+
+// requirePackAccess checks the expert pack is reachable before npx tries.
+//
+// The pack is a private repository. Without this, somebody without access got
+// whatever npm says about a 404, which reads as "the command is broken" rather
+// than "you cannot see this repository" (grit#160).
+//
+// Checked with `gh`, because that is what holds the credentials that would make
+// the install work. No `gh` means no check, not a refusal: an install that
+// would have succeeded must not be blocked by a missing tool, so this returns
+// nil and lets npx have its go.
+func requirePackAccess() error {
+	gh, err := exec.LookPath("gh")
+	if err != nil {
+		return nil
+	}
+	cmd := exec.Command(gh, "repo", "view", expertPack, "--json", "name")
+	cmd.Stdout, cmd.Stderr = nil, nil
+	if err := cmd.Run(); err == nil {
+		return nil
+	}
+	return fmt.Errorf("the expert pack is at %s, and this machine cannot read it\n\n"+
+		"It is a private repository. Either you have not been given access, or\n"+
+		"`gh` is signed in as somebody who has not:\n\n"+
+		"    gh auth status\n"+
+		"    gh repo view %s\n\n"+
+		"The public Grit skill, which is a smaller and different thing, is\n"+
+		"skills/grit/SKILL.md in the Grit repository and needs no access:\n\n"+
+		"    https://github.com/MUKE-coder/grit/blob/main/skills/grit/SKILL.md\n\n"+
+		"A project scaffolded by `grit new` already has its own tailored copy at\n"+
+		".claude/skills/grit/SKILL.md.", expertPack, expertPack)
 }
 
 // requireNpx fails with something actionable rather than "exec: not found".

@@ -110,3 +110,30 @@ func TestRequireNpxExplainsItself(t *testing.T) {
 		}
 	}
 }
+
+// grit#160: the command writes into the user's agent configuration, from a
+// private repository. Hidden made that unfindable, which is worse than noisy.
+func TestSkillsCommandIsFindableAndSaysWhereTheFilesComeFrom(t *testing.T) {
+	cmd := skillsCmd()
+
+	if cmd.Hidden {
+		t.Error("grit skills is Hidden again. A command that installs into somebody's " +
+			"agent configuration has to be in --help, even though the pack is private: " +
+			"a clear refusal naming the repository is a better answer than invisibility.")
+	}
+
+	// Three artefacts get called a Grit skill. The help has to tell them apart,
+	// because "there are two skill definitions, one of which cannot be read"
+	// was a fair reading of the old help and is what the issue said.
+	for _, want := range []string{
+		expertPack,
+		"private repository",
+		"skills/grit/SKILL.md",
+		".claude/skills/grit/SKILL.md",
+	} {
+		if !strings.Contains(cmd.Long, want) {
+			t.Errorf("grit skills --help does not mention %q, so a reader cannot tell "+
+				"which of the three Grit skills this installs", want)
+		}
+	}
+}
