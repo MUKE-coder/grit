@@ -2159,6 +2159,8 @@ func Models() []interface{} {
 		&TrustedDevice{},
 		&TOTPPendingToken{},
 		&MagicLinkToken{},
+		// A native client's one-time code, swapped for tokens over POST (grit#174).
+		&OAuthExchangeCode{},
 		&ActivityLog{},
 		&WebhookEvent{},
 		&FeatureFlag{},
@@ -8388,6 +8390,10 @@ func mountAuthRoutes(v1 *gin.RouterGroup, authHandler *handlers.AuthHandler, sso
 	{
 		oauth.GET("/:provider", authHandler.OAuthBegin)
 		oauth.GET("/:provider/callback", authHandler.OAuthCallback)
+		// Where a native client swaps its one-time code for tokens. Public by
+		// design, like every other step of a login: the code IS the
+		// credential, and it is single-use and lives for a minute (grit#174).
+		oauth.POST("/exchange", authHandler.OAuthExchange)
 	}
 
 	// Enterprise SSO (OIDC). Public by design — these ARE the login flow.

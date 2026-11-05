@@ -39,13 +39,14 @@ var reservedModels = map[string]string{
 	"RecoveryContactToken":   "authentication",
 
 	// Two-factor and SSO.
-	"TwoFactorConfig":  "two-factor auth",
-	"TOTPPendingToken": "two-factor auth",
-	"MagicLinkToken":   "signing in with an emailed link",
-	"TrustedDevice":    "two-factor auth",
-	"SSOConnection":    "SSO",
-	"SAMLKeypair":      "SSO",
-	"APIKey":           "API keys",
+	"TwoFactorConfig":   "two-factor auth",
+	"TOTPPendingToken":  "two-factor auth",
+	"MagicLinkToken":    "signing in with an emailed link",
+	"OAuthExchangeCode": "the one-time code a mobile app swaps for tokens",
+	"TrustedDevice":     "two-factor auth",
+	"SSOConnection":     "SSO",
+	"SAMLKeypair":       "SSO",
+	"APIKey":            "API keys",
 
 	// Built-in admin features.
 	"Ticket":           "the support desk",

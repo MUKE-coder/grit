@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 	"time"
 
@@ -28,9 +29,38 @@ func (h *AuthHandler) users() *services.UserService {
 	return &services.UserService{DB: h.DB}
 }
 
+// nativeRedirectKey is where the app's deep link is kept for the length of the
+// handshake. The provider sends the browser to OUR callback, so the only way
+// the callback knows a native client started this is to have been told.
+const nativeRedirectKey = "grit_native_redirect"
+
 // OAuthBegin redirects the user to the OAuth provider's consent screen.
+//
+// redirect_uri is for a native client: a mobile app that cannot use the
+// HttpOnly cookies the web callback sets. It is checked against an allowlist
+// here, at the start, because a callback that redirects wherever the query
+// string says is an open redirect, and one carrying a sign-in code is an
+// account takeover (grit#174).
+//
+// Refused rather than ignored. Ignoring it is what this used to do, and the
+// result was an app whose Google button opened a web page and never came back,
+// with nothing anywhere saying why.
 func (h *AuthHandler) OAuthBegin(c *gin.Context) {
 	provider := c.Param("provider")
+
+	if redirectURI := c.Query("redirect_uri"); redirectURI != "" {
+		if !services.NativeRedirectAllowed(redirectURI) {
+			log.Printf("oauth: refused redirect_uri %q, which is not in OAUTH_NATIVE_REDIRECTS", redirectURI)
+			respond.Fail(c, respond.CodeValidationError,
+				"That redirect_uri is not allowed. Add it to OAUTH_NATIVE_REDIRECTS.")
+			return
+		}
+		if err := gothic.StoreInSession(nativeRedirectKey, redirectURI, c.Request, c.Writer); err != nil {
+			log.Printf("oauth: storing the native redirect: %v", err)
+			respond.WriteError(c, err, "Could not start sign-in.")
+			return
+		}
+	}
 
 	// Gothic reads provider from query string, not URL params
 	q := c.Request.URL.Query()
@@ -38,6 +68,36 @@ func (h *AuthHandler) OAuthBegin(c *gin.Context) {
 	c.Request.URL.RawQuery = q.Encode()
 
 	gothic.BeginAuthHandler(c.Writer, c.Request)
+}
+
+// nativeRedirect is the deep link this handshake started from, or "" for an
+// ordinary browser sign-in.
+//
+// An error from the session is "no native client", not a failure: the common
+// case is a web login, where nothing was ever stored.
+func (h *AuthHandler) nativeRedirect(c *gin.Context) string {
+	uri, err := gothic.GetFromSession(nativeRedirectKey, c.Request)
+	if err != nil || uri == "" {
+		return ""
+	}
+	// Checked again on the way out. The value came back through a cookie, and
+	// a check at the start is not a check on what returns.
+	if !services.NativeRedirectAllowed(uri) {
+		log.Printf("oauth: the session's redirect_uri %q is no longer allowed", uri)
+		return ""
+	}
+	return uri
+}
+
+// failNative sends a native client back to its app with a message, because it
+// cannot read an HTML error page or follow a redirect to the web login.
+func (h *AuthHandler) failNative(c *gin.Context, redirectURI, message string) {
+	target, err := services.NativeRedirectWithError(redirectURI, message)
+	if err != nil {
+		respond.Fail(c, respond.CodeValidationError, message)
+		return
+	}
+	c.Redirect(http.StatusTemporaryRedirect, target)
 }
 
 // providerVerifiedTheEmail is whether the provider says it owns this address.
@@ -75,9 +135,15 @@ func providerVerifiedTheEmail(provider string, raw map[string]interface{}) bool 
 	return false
 }
 
-// OAuthCallback completes the OAuth flow, finds or creates the user, and redirects with JWT tokens.
+// OAuthCallback completes the OAuth flow, finds or creates the user, and
+// redirects: a browser with HttpOnly cookies set, a native client with a
+// one-time code it exchanges over POST.
 func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 	provider := c.Param("provider")
+
+	// Read before anything can fail, because every failure path below needs to
+	// know whether to redirect to the web login or back into the app.
+	nativeTo := h.nativeRedirect(c)
 
 	q := c.Request.URL.Query()
 	q.Set("provider", provider)
@@ -277,6 +343,34 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 	// listed and revocable exactly like a password login.
 	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
 		log.Printf("OAuth: failed to record session for %s: %v", user.ID, err)
+	}
+
+	// A native client gets a one-time code, not the tokens.
+	//
+	// Not the tokens, however convenient that would be: a URL lands in browser
+	// history, in the Referer of the next request, and in any proxy log on the
+	// way, and a refresh token in any of those is a standing key to the
+	// account. The code is single-use, lives for a minute, and is stored as a
+	// hash. See services.IssueOAuthCode.
+	//
+	// No cookies either. They would be set on the in-app browser's jar, which
+	// the app cannot read, so they would be a credential left behind in a
+	// browser the user is about to close.
+	if nativeTo != "" {
+		code, codeErr := services.IssueOAuthCode(c.Request.Context(), h.DB, user.ID, nativeTo, c.ClientIP())
+		if codeErr != nil {
+			log.Printf("oauth: issuing an exchange code for %s: %v", user.ID, codeErr)
+			h.failNative(c, nativeTo, "Could not finish signing in. Please try again.")
+			return
+		}
+		target, buildErr := services.NativeRedirectWithCode(nativeTo, code)
+		if buildErr != nil {
+			log.Printf("oauth: building the native redirect: %v", buildErr)
+			h.failNative(c, nativeTo, "Could not finish signing in. Please try again.")
+			return
+		}
+		c.Redirect(http.StatusTemporaryRedirect, target)
+		return
 	}
 
 	// Set HttpOnly auth cookies BEFORE redirecting so the browser stores

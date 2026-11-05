@@ -23,6 +23,44 @@ Also worth knowing:
 ---
 
 
+## v3.470.0 - November 5, 2026
+
+### The mobile app's Google button has never worked
+
+grit#174. Every generated Expo app shipped a "Continue with Google" button on its login screen that could not work, in three ways that compounded.
+
+It asked the API to send it back to `myapp://callback`, hard-coded. `app.json` registers the project name as the app's scheme, so the app was not listening on that URL at all. It then read `access_token` and `refresh_token` out of the query string, which is the thing nobody should build. And the API ignored `redirect_uri` entirely: the callback finished the handshake, set HttpOnly cookies and redirected to the web frontend, so the in-app browser landed on a web page, the app never got its tokens, and cookies are no use to a client that authenticates with a bearer token.
+
+A native client now gets a **one-time code**:
+
+```text
+GET  /api/auth/oauth/google?redirect_uri=myapp://callback
+          ... the provider handshake ...
+302  myapp://callback?code=<single-use, 60 seconds>
+
+POST /api/auth/oauth/exchange   { "code": "..." }
+200  { "data": { "user": {...}, "tokens": { access_token, refresh_token } } }
+```
+
+Not the tokens in the redirect, which is the fix that suggests itself. A URL lands in browser history, in the `Referer` of the next request and in any proxy log on the way, and a refresh token in any of those is a standing key to the account. The code is single-use, lives for sixty seconds, is stored only as a SHA-256, and is spent by a conditional update so two exchanges arriving together cannot both succeed. The app retries on a lost response, so that race is ordinary rather than hostile, and it has to resolve to one session rather than two.
+
+### redirect_uri is an allowlist, and it is checked first
+
+`OAUTH_NATIVE_REDIRECTS` lists the deep links the callback may send a code to. Anything else is refused.
+
+An allowlist rather than a pattern, because a callback that redirects wherever the query string says, carrying a sign-in code, is an account takeover: the attacker starts the flow with their own redirect, the victim signs in, and the code arrives at the attacker's app. Empty means no native sign-in, which is the right default for a project with no mobile app, and a generated project ships with its own Expo app's scheme in `.env.example` and nothing else.
+
+Checked at the *start* of the flow, and there is a test that fails if that order is ever reversed. Refusing after `gothic.BeginAuthHandler` has already redirected to the provider is not refusing: the response is gone. The test compares the two positions in the emitted handler and was verified by swapping them.
+
+The app builds its callback URL with `Linking.createURL("callback")` instead of a literal, so it cannot drift from the scheme `app.json` registers, and if the allowlist does not match the error names the URL it asked for rather than saying sign-in failed.
+
+Four tests ship into the project and five guard the templates, including one that fails if an access or refresh token ever appears in a redirect URL again. A model added to the scaffold also has to be reserved against `grit generate resource`, and the test that enforces that caught me forgetting.
+
+### A docs page describing behaviour that had been fixed
+
+Found next door. The OAuth page said the frontend callback page "extracts `access_token` and `refresh_token` from the URL". It does not, and should not: the callback sets HttpOnly cookies on its own response and redirects with no query parameters, which is the right behaviour and has been for a while. A security page describing the insecure thing it replaced is the worst way for documentation to be out of date.
+
+
 ## v3.469.0 - November 5, 2026
 
 ### grit upgrade --to: one release at a time

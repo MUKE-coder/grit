@@ -79,7 +79,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.469.0"
+const DefaultVersion = "3.470.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -549,6 +549,9 @@ func Run(opts Options) error {
 	if err := writeMagicLinkFiles(root, opts); err != nil {
 		return err
 	}
+	if err := writeOAuthNativeFiles(root, opts); err != nil {
+		return err
+	}
 	if err := writeAdminPasskeyFiles(root, opts); err != nil {
 		return err
 	}
@@ -865,6 +868,9 @@ func RunSingle(opts Options) error {
 		return err
 	}
 	if err := writeMagicLinkFiles(root, opts); err != nil {
+		return err
+	}
+	if err := writeOAuthNativeFiles(root, opts); err != nil {
 		return err
 	}
 	if err := writeAdminPasskeyFiles(root, opts); err != nil {

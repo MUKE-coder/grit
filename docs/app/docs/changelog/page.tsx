@@ -72,6 +72,112 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.470.0 */}
+            <div className="mb-12" id="v3.470.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.470.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The mobile app&apos;s Google button has never worked</h3>
+                <p>
+                  grit#174. Every generated Expo app shipped a &quot;Continue
+                  with Google&quot; button on its login screen that could not
+                  work, in three ways that compounded.
+                </p>
+                <p>
+                  It asked the API to send it back to{' '}
+                  <code>myapp://callback</code>, hard-coded.{' '}
+                  <code>app.json</code> registers the project name as the
+                  app&apos;s scheme, so the app was not listening on that URL at
+                  all. It then read <code>access_token</code> and{' '}
+                  <code>refresh_token</code> out of the query string, which is
+                  the thing nobody should build. And the API ignored{' '}
+                  <code>redirect_uri</code> entirely: the callback finished the
+                  handshake, set HttpOnly cookies and redirected to the web
+                  frontend, so the in-app browser landed on a web page, the app
+                  never got its tokens, and cookies are no use to a client that
+                  authenticates with a bearer token.
+                </p>
+                <p>
+                  A native client now gets a <strong>one-time code</strong>:
+                </p>
+                <CodeBlock language="text" code={`GET  /api/auth/oauth/google?redirect_uri=myapp://callback
+          ... the provider handshake ...
+302  myapp://callback?code=<single-use, 60 seconds>
+
+POST /api/auth/oauth/exchange   { "code": "..." }
+200  { "data": { "user": {...}, "tokens": { access_token, refresh_token } } }`} />
+                <p>
+                  Not the tokens in the redirect, which is the fix that suggests
+                  itself. A URL lands in browser history, in the{' '}
+                  <code>Referer</code> of the next request and in any proxy log
+                  on the way, and a refresh token in any of those is a standing
+                  key to the account. The code is single-use, lives for sixty
+                  seconds, is stored only as a SHA-256, and is spent by a
+                  conditional update so two exchanges arriving together cannot
+                  both succeed. The app retries on a lost response, so that race
+                  is ordinary rather than hostile, and it has to resolve to one
+                  session rather than two.
+                </p>
+
+                <h3>redirect_uri is an allowlist, and it is checked first</h3>
+                <p>
+                  <code>OAUTH_NATIVE_REDIRECTS</code> lists the deep links the
+                  callback may send a code to. Anything else is refused.
+                </p>
+                <p>
+                  An allowlist rather than a pattern, because a callback that
+                  redirects wherever the query string says, carrying a sign-in
+                  code, is an account takeover: the attacker starts the flow with
+                  their own redirect, the victim signs in, and the code arrives
+                  at the attacker&apos;s app. Empty means no native sign-in,
+                  which is the right default for a project with no mobile app,
+                  and a generated project ships with its own Expo app&apos;s
+                  scheme in <code>.env.example</code> and nothing else.
+                </p>
+                <p>
+                  Checked at the <em>start</em> of the flow, and there is a test
+                  that fails if that order is ever reversed. Refusing after{' '}
+                  <code>gothic.BeginAuthHandler</code> has already redirected to
+                  the provider is not refusing: the response is gone. The test
+                  compares the two positions in the emitted handler and was
+                  verified by swapping them.
+                </p>
+                <p>
+                  The app builds its callback URL with{' '}
+                  <code>Linking.createURL(&quot;callback&quot;)</code> instead of
+                  a literal, so it cannot drift from the scheme{' '}
+                  <code>app.json</code> registers, and if the allowlist does not
+                  match the error names the URL it asked for rather than saying
+                  sign-in failed.
+                </p>
+                <p>
+                  Four tests ship into the project and five guard the templates,
+                  including one that fails if an access or refresh token ever
+                  appears in a redirect URL again. A model added to the scaffold
+                  also has to be reserved against{' '}
+                  <code>grit generate resource</code>, and the test that enforces
+                  that caught me forgetting.
+                </p>
+
+                <h3>A docs page describing behaviour that had been fixed</h3>
+                <p>
+                  Found next door. The OAuth page said the frontend callback page
+                  &quot;extracts <code>access_token</code> and{' '}
+                  <code>refresh_token</code> from the URL&quot;. It does not, and
+                  should not: the callback sets HttpOnly cookies on its own
+                  response and redirects with no query parameters, which is the
+                  right behaviour and has been for a while. A security page
+                  describing the insecure thing it replaced is the worst way for
+                  documentation to be out of date.
+                </p>
+              </div>
+            </div>
+
             {/* v3.469.0 */}
             <div className="mb-12" id="v3.469.0">
               <div className="flex items-center gap-3 mb-4">

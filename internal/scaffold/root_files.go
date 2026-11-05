@@ -295,6 +295,22 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 OAUTH_FRONTEND_URL=http://localhost:3001
 
+# Deep links the OAuth callback may send a sign-in code to, comma separated.
+#
+# For the mobile app. A browser gets HttpOnly cookies and a redirect; a native
+# client cannot use those, so the callback redirects to the app with a one-time
+# code which the app swaps for tokens at POST /api/auth/oauth/exchange. The
+# code is single-use, lives for 60 seconds and is stored as a hash.
+#
+# An allowlist and not a pattern, deliberately. A callback that redirects
+# wherever redirect_uri says, carrying a sign-in code, is an account takeover:
+# the attacker starts the flow with their own redirect, the victim signs in, and
+# the code arrives at the attacker's app. Anything not listed here is refused.
+#
+# Empty means no native sign-in, which is the right default for a project with
+# no mobile app. The entry below is the scheme apps/expo/app.json registers.
+OAUTH_NATIVE_REDIRECTS=` + opts.ProjectName + `://callback
+
 # API keys are created from the admin at /system/api-keys — there is no env
 # var for them. A key is sent as "X-API-Key: grit_..." or
 # "Authorization: Bearer grit_...", and acts as the user who created it.

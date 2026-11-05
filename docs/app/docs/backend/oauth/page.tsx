@@ -71,7 +71,9 @@ export default function OAuthPage() {
 GET /api/auth/oauth/google/callback   → Google callback (handles redirect)
 
 GET /api/auth/oauth/github            → Start GitHub login
-GET /api/auth/oauth/github/callback   → GitHub callback (handles redirect)`} />
+GET /api/auth/oauth/github/callback   → GitHub callback (handles redirect)
+
+POST /api/auth/oauth/exchange         → Swap a native client'+chr(39)+'s one-time code for tokens`} />
 
               {/* ── Google Setup ─────────────────────────── */}
               <h2 id="google-setup">Step 1 &mdash; Google OAuth Setup</h2>
@@ -410,8 +412,11 @@ OAUTH_FRONTEND_URL=http://localhost:3001`} />
                 that handles the OAuth redirect. It:
               </p>
               <ol>
-                <li>Extracts <code>access_token</code> and <code>refresh_token</code> from the URL</li>
-                <li>Stores them in cookies via <code>js-cookie</code></li>
+                <li>
+                  Does <strong>not</strong> read tokens from the URL. The callback sets them as
+                  HttpOnly cookies on its 307 response and redirects with no query parameters,
+                  so the tokens never reach JavaScript, browser history or a proxy log
+                </li>
                 <li>Fetches <code>/api/auth/me</code> to get the user&apos;s role</li>
                 <li>Redirects to <code>/dashboard</code> (ADMIN/EDITOR) or <code>/profile</code> (USER)</li>
               </ol>
@@ -419,6 +424,64 @@ OAUTH_FRONTEND_URL=http://localhost:3001`} />
                 The social login buttons on the login and register pages are simple <code>&lt;a&gt;</code> tags
                 that navigate to the API OAuth endpoints. No JavaScript is needed &mdash; it&apos;s a full-page
                 redirect flow.
+              </p>
+
+              {/* ── Native ───────────────────────────────── */}
+              <h2 id="native">Signing in from the mobile app</h2>
+              <p>
+                A browser gets HttpOnly cookies. A mobile app cannot use those: it
+                authenticates with a bearer token, and the cookies would be set on an in-app
+                browser&apos;s jar that the app cannot read and the user is about to close.
+              </p>
+              <p>
+                So a native client gets a <strong>one-time code</strong> instead, and
+                exchanges it over POST:
+              </p>
+              <CodeBlock
+                language="text"
+                code={`GET  /api/auth/oauth/google?redirect_uri=myapp://callback
+          ... the provider handshake ...
+302  myapp://callback?code=<single-use, 60 seconds>
+
+POST /api/auth/oauth/exchange   { "code": "..." }
+200  { "data": { "user": {...}, "tokens": { access_token, refresh_token } } }`}
+              />
+              <p>
+                <strong>Not the tokens in the redirect</strong>, which is the fix that
+                suggests itself. A URL lands in browser history, in the{' '}
+                <code>Referer</code> of the next request, and in any proxy log on the way,
+                and a refresh token in any of those is a standing key to the account. The
+                code is single-use, lives for sixty seconds, is stored only as a SHA-256,
+                and is spent by a conditional update so two exchanges arriving together
+                cannot both succeed.
+              </p>
+
+              <h3 id="native-allowlist">redirect_uri is an allowlist</h3>
+              <p>
+                <code>OAUTH_NATIVE_REDIRECTS</code> is the list of deep links the callback
+                may send a code to, comma separated. Anything not on it is refused at the
+                start of the flow rather than at the end:
+              </p>
+              <CodeBlock
+                language="bash"
+                filename=".env"
+                code={`OAUTH_NATIVE_REDIRECTS=myapp://callback`}
+              />
+              <p>
+                An allowlist and not a pattern, deliberately. A callback that redirects
+                wherever <code>redirect_uri</code> says, carrying a sign-in code, is an
+                account takeover: the attacker starts the flow with their own redirect, the
+                victim signs in, and the code arrives at the attacker&apos;s app. Empty
+                means no native sign-in, which is the right default for a project with no
+                mobile app.
+              </p>
+              <p>
+                A generated project ships with its Expo app&apos;s own scheme already in{' '}
+                <code>.env.example</code>, and the app builds the callback URL with{' '}
+                <code>Linking.createURL(&quot;callback&quot;)</code> rather than hard-coding
+                it, so the two cannot drift apart. If they do, the error says so by name:
+                the app reports which URL it asked for and that it needs to be in{' '}
+                <code>OAUTH_NATIVE_REDIRECTS</code>.
               </p>
 
               {/* ── Production Checklist ──────────────────── */}
@@ -435,6 +498,7 @@ OAUTH_FRONTEND_URL=http://localhost:3001`} />
                   'Publish your Google OAuth consent screen (move from "Testing" to "Production")',
                   'Ensure your production domain uses HTTPS',
                   'Test both login and registration flows with each provider',
+                  'If you have a mobile app: set OAUTH_NATIVE_REDIRECTS to its production deep link, and nothing else',
                 ].map((item) => (
                   <div
                     key={item}

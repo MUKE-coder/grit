@@ -2558,6 +2558,9 @@ export const api = new ApiClient();
 func expoAuthProvider() string {
 	return `import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import * as WebBrowser from "expo-web-browser";
+// Linking.createURL builds the deep link for the scheme app.json registers,
+// so the callback URL cannot drift from the scheme the app actually listens on.
+import * as Linking from "expo-linking";
 import { api, API_URL } from "./api";
 
 interface User {
@@ -2670,27 +2673,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  // Sign in with Google.
+  //
+  // The browser comes back with a ONE-TIME CODE, not with tokens, and the code
+  // is exchanged over POST. Tokens in the callback URL would land in browser
+  // history, in the Referer of the next request and in any proxy log on the
+  // way, and a refresh token in any of those is a standing key to the account.
+  //
+  // The deep link has to be the scheme app.json registers, which is this
+  // project's name. It also has to be in OAUTH_NATIVE_REDIRECTS on the API, or
+  // the API refuses to start the flow and says so: an allowlist, because a
+  // callback that redirects wherever the query string says is an account
+  // takeover waiting to happen.
   const loginWithGoogle = useCallback(async () => {
-    const callbackUrl = "myapp://callback";
+    const callbackUrl = Linking.createURL("callback");
     const result = await WebBrowser.openAuthSessionAsync(
       ` + "`" + `${API_URL}/auth/oauth/google?redirect_uri=${encodeURIComponent(callbackUrl)}` + "`" + `,
       callbackUrl
     );
 
-    if (result.type === "success" && result.url) {
-      const url = new URL(result.url);
-      const accessToken = url.searchParams.get("access_token");
-      const refreshToken = url.searchParams.get("refresh_token");
-
-      if (accessToken && refreshToken) {
-        await api.setTokens(accessToken, refreshToken);
-        await loadUser();
-      } else {
-        throw new Error("OAuth callback missing tokens");
-      }
-    } else if (result.type === "cancel") {
+    if (result.type === "cancel" || result.type === "dismiss") {
       throw new Error("Login cancelled");
     }
+    if (result.type !== "success" || !result.url) {
+      throw new Error("Sign-in did not complete. Please try again.");
+    }
+
+    const url = new URL(result.url);
+
+    // The API sends an error back the same way, because this browser cannot
+    // show an HTML error page the app can read.
+    const failed = url.searchParams.get("error");
+    if (failed) {
+      throw new Error(failed);
+    }
+
+    const code = url.searchParams.get("code");
+    if (!code) {
+      throw new Error(
+        "Sign-in came back without a code. Check that " +
+          callbackUrl +
+          " is listed in OAUTH_NATIVE_REDIRECTS on the API."
+      );
+    }
+
+    const res = await api.post("/auth/oauth/exchange", { code });
+    await api.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
+    setUser(res.data.user);
   }, []);
 
   const register = useCallback(async (firstName: string, lastName: string, email: string, password: string) => {

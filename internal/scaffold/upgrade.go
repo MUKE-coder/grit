@@ -208,6 +208,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeMagicLinkFiles(root, opts); err != nil {
 			return fmt.Errorf("updating sign-in links: %w", err)
 		}
+		if err := writeOAuthNativeFiles(root, opts); err != nil {
+			return fmt.Errorf("updating the native OAuth exchange: %w", err)
+		}
 		if err := ensurePasskeyWiring(root, opts); err != nil {
 			return fmt.Errorf("wiring passkeys: %w", err)
 		}
