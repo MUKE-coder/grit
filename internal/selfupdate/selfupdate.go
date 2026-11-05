@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -117,39 +118,9 @@ func RunWith(current string, opts Options) error {
 	fmt.Printf("Updating grit  v%s → v%s\n", current, latest)
 	fmt.Printf("Platform:       %s/%s\n", runtime.GOOS, runtime.GOARCH)
 
-	a := pickAsset(rel.Assets)
-	if a == nil {
-		return fmt.Errorf(
-			"no release artifact found for %s/%s — open an issue at https://github.com/%s/issues",
-			runtime.GOOS, runtime.GOARCH, repoSlug,
-		)
-	}
-	fmt.Printf("Downloading:    %s (%s)\n", a.Name, humanSize(a.Size))
-
-	archive, err := download(a.DownloadURL)
-	if err != nil {
-		return fmt.Errorf("download artifact: %w", err)
-	}
-
-	// Before anything is written over the running binary.
-	fmt.Println("Verifying signature...")
-	sums, err := signedChecksums(rel)
+	bin, err := verifiedBinary(rel)
 	if err != nil {
 		return err
-	}
-	want, ok := sums[a.Name]
-	if !ok {
-		return fmt.Errorf("%s is not in the release's signed checksums, so there "+
-			"is nothing to check it against. Do not install it", a.Name)
-	}
-	if err := matchesChecksum(archive, want); err != nil {
-		return err
-	}
-	fmt.Printf("Verified:       %s, signed by the release workflow\n", a.Name)
-
-	bin, err := extractBinary(archive, a.Name)
-	if err != nil {
-		return fmt.Errorf("extract binary from archive: %w", err)
 	}
 
 	fmt.Println("Swapping binary...")
@@ -165,6 +136,101 @@ func RunWith(current string, opts Options) error {
 
 	fmt.Printf("\nUpdated to v%s.  Run `grit version` to verify.\n", latest)
 	return nil
+}
+
+// verifiedBinary downloads this release's artifact for this platform, checks it
+// against the release's signed checksums, and extracts the binary.
+//
+// Shared by the self-update and by FetchVersion, because the verification is
+// the part nobody should write twice: a second copy is a second chance to skip
+// the signature check and not notice.
+func verifiedBinary(rel *release) ([]byte, error) {
+	a := pickAsset(rel.Assets)
+	if a == nil {
+		return nil, fmt.Errorf(
+			"no release artifact found for %s/%s — open an issue at https://github.com/%s/issues",
+			runtime.GOOS, runtime.GOARCH, repoSlug,
+		)
+	}
+	fmt.Printf("Downloading:    %s (%s)\n", a.Name, humanSize(a.Size))
+
+	archive, err := download(a.DownloadURL)
+	if err != nil {
+		return nil, fmt.Errorf("download artifact: %w", err)
+	}
+
+	// Before anything is written anywhere.
+	fmt.Println("Verifying signature...")
+	sums, err := signedChecksums(rel)
+	if err != nil {
+		return nil, err
+	}
+	want, ok := sums[a.Name]
+	if !ok {
+		return nil, fmt.Errorf("%s is not in the release's signed checksums, so there "+
+			"is nothing to check it against. Do not install it", a.Name)
+	}
+	if err := matchesChecksum(archive, want); err != nil {
+		return nil, err
+	}
+	fmt.Printf("Verified:       %s, signed by the release workflow\n", a.Name)
+
+	bin, err := extractBinary(archive, a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("extract binary from archive: %w", err)
+	}
+	return bin, nil
+}
+
+// FetchVersion puts a released Grit binary on disk and returns its path,
+// leaving the running binary alone.
+//
+// For `grit upgrade --to <version>`. The upgrade applies the CLI's own
+// templates, because the templates are compiled into the binary, so applying a
+// different version's framework files means running that version's binary.
+// Replacing the installed one to do it would be the wrong trade: the point of
+// --to is to move a project without moving the machine (grit#158).
+//
+// Cached under dir by version, so stepping a project forward one release at a
+// time downloads each one once. The cached binary was checksum-verified against
+// the release's signed manifest when it was written; a cache hit is trusted on
+// that basis, which is the same basis as the binary on PATH.
+func FetchVersion(wantVersion, dir string) (string, error) {
+	want := "v" + strings.TrimPrefix(wantVersion, "v")
+
+	name := "grit"
+	if runtime.GOOS == "windows" {
+		name = "grit.exe"
+	}
+	cached := filepath.Join(dir, want, name)
+	if info, err := os.Stat(cached); err == nil && info.Size() > 0 {
+		return cached, nil
+	}
+
+	fmt.Printf("Looking for %s...\n", want)
+	rel, err := fetchTag(want)
+	if err != nil {
+		return "", fmt.Errorf("fetch release %s: %w", want, err)
+	}
+
+	bin, err := verifiedBinary(rel)
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(cached), 0o755); err != nil {
+		return "", fmt.Errorf("making the version cache: %w", err)
+	}
+	// Written to a temporary name and renamed, so an interrupted download
+	// cannot leave a half-written binary that the next run treats as cached.
+	tmp := cached + ".partial"
+	if err := os.WriteFile(tmp, bin, 0o755); err != nil {
+		return "", fmt.Errorf("writing %s: %w", tmp, err)
+	}
+	if err := os.Rename(tmp, cached); err != nil {
+		return "", fmt.Errorf("putting %s in place: %w", cached, err)
+	}
+	return cached, nil
 }
 
 func fetchLatest() (*release, error) { return fetchRelease(releaseAPI) }

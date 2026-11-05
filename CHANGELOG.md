@@ -23,6 +23,50 @@ Also worth knowing:
 ---
 
 
+## v3.469.0 - November 5, 2026
+
+### grit upgrade --to: one release at a time
+
+grit#158. `grit upgrade` had one speed. It applied the CLI's own templates, so pinning a project's framework version meant pinning the binary on every machine and in CI, and moving forward one step at a time was not possible. With several releases a week and six hundred tags since v3.0.0, "latest" is a long way from wherever an older project is.
+
+```bash
+$ grit upgrade --to 3.465.0 --dry-run
+
+  Upgrading project to Grit v3.465.0
+
+  This CLI is v3.468.0. Fetching v3.465.0 to do the upgrade.
+  The binary is verified against the release's signed checksums and
+  cached in C:\Users\you\.grit\versions. It is not installed on your PATH.
+
+Looking for v3.465.0...
+Downloading:    grit-windows-amd64.zip (9.2 MiB)
+Verifying signature...
+Verified:       grit-windows-amd64.zip, signed by the release workflow
+```
+
+It runs that release's own binary rather than trying to apply its templates from this one, because the templates *are* the binary: there is no archive of past templates to read, and pretending otherwise would mean applying this version's files under another version's name. The download is checked against the release's signed checksums, reusing the verification `grit update` already does rather than a second copy of it, cached under `~/.grit/versions`, and never put on your PATH. Every other flag passes through, so `--to 3.455.0 --dry-run` is a dry run of that version.
+
+That passthrough is the part with a test on it. A flag added to `grit upgrade` and forgotten in the passthrough is dropped in silence, and the failure mode is `--to 3.455.0 --dry-run` upgrading the project for real. So the test reads the command's own flag set rather than a list written beside it, and fails on a flag it has never heard of.
+
+### A deprecation policy, so something can be retired
+
+There was none, which meant nothing could be removed: v3.467.0 found a genuine duplicate command and the only options were leave it for ever, or break somebody's script with no notice. A stated window is what makes the third option exist.
+
+A deprecated command or flag keeps working for at least **90 days and 30 releases**, whichever is longer, and in practice until the next major. Both numbers, because this project ships several releases a week: thirty of them can pass in under a month, which is not notice. It is on [the versioning page](https://gritframework.com/docs/versioning#deprecation) with the three things it deliberately does not cover, generated code among them.
+
+### A breaking marker in the changelog
+
+The versioning page is honest that these numbers are not SemVer. They still look like SemVer to everybody who has not read that page, and with 641 unmarked entries the only way to find out whether a release changes behaviour was to read all of them.
+
+```tsx
+{/* v3.470.0 breaking */}
+```
+
+One word in the comment that already carries the version, so writing an entry and marking it are the same edit. A marker nobody has to remember separately is a marker that gets used. The weekly rollup carries it through as a badge.
+
+Nothing before this release is marked, and nothing will be marked retroactively. Guessing which of six hundred past releases were breaking would be inventing a record rather than reading one, so the rollup says that out loud instead.
+
+
 ## v3.468.0 - November 5, 2026
 
 ### Removing the Blog cost you framework fixes to four files

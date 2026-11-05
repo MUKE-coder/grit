@@ -32,8 +32,14 @@ CHANGELOG = os.path.join(HERE, 'docs', 'app', 'docs', 'changelog', 'page.tsx')
 COMPONENT = os.path.join(HERE, 'docs', 'components', 'changelog-rollup.tsx')
 
 # An entry is a version comment followed by the entry container.
+#
+# The comment may carry one word after the version: `{/* v3.470.0 breaking */}`
+# marks a release that changes behaviour in a way an existing project can feel.
+# One word in the comment, so writing the entry and marking it are the same
+# edit, and a marker nobody has to remember separately is a marker that gets
+# used (grit#158).
 HEADER = re.compile(
-    r'\{/\* v(?P<version>[0-9][0-9.]*) \*/\}\s*\n'
+    r'\{/\* v(?P<version>[0-9][0-9.]*)(?P<flags>[^*]*)\*/\}\s*\n'
     r'[ \t]*<div className="mb-12"(?P<attrs>[^>]*)>')
 
 DATE = re.compile(r'<span className="text-sm text-muted-foreground">([^<]+)</span>')
@@ -85,7 +91,8 @@ def read_entries(src):
             continue
         day, exact = parse_date(date_match.group(1)) if date_match else (None, False)
         entries.append({'version': version, 'date': day, 'exact': exact,
-                        'title': clean(title_match.group(1)), 'dated': date_match is not None})
+                        'title': clean(title_match.group(1)), 'dated': date_match is not None,
+                        'breaking': 'breaking' in (match.group('flags') or '')})
     return entries, broken, matches
 
 
@@ -156,8 +163,12 @@ def main():
         '//',
         '// The changelog is worth reading and hard to scan, which is what this is for:',
         '// the week, not the postmortem, with a link into each entry.',
+        '//',
+        '// breaking comes from a `breaking` word in the entry comment on the changelog',
+        '// page. Entries before v3.469.0 are unmarked: guessing which of six hundred',
+        '// past releases changed behaviour would be inventing a record, not reading one.',
         '',
-        'export type RollupEntry = { version: string; title: string }',
+        'export type RollupEntry = { version: string; title: string; breaking?: boolean }',
         'export type RollupWeek = { label: string; count: number; entries: RollupEntry[] }',
         '',
         'export const changelogRollup: RollupWeek[] = [',
@@ -168,9 +179,11 @@ def main():
         lines.append('    count: %d,' % len(group))
         lines.append('    entries: [')
         for entry in group:
-            lines.append('      { version: %s, title: %s },' % (
+            flag = ', breaking: true' if entry.get('breaking') else ''
+            lines.append('      { version: %s, title: %s%s },' % (
                 json.dumps(entry['version'], ensure_ascii=False),
-                json.dumps(entry['title'], ensure_ascii=False)))
+                json.dumps(entry['title'], ensure_ascii=False),
+                flag))
         lines.append('    ],')
         lines.append('  },')
     lines.append(']')
@@ -178,7 +191,8 @@ def main():
     open(COMPONENT, 'w', encoding='utf-8', newline='').write('\n'.join(lines))
 
     undated = sum(1 for e in entries if not e['dated'])
-    print('entries: %d' % len(entries))
+    breaking = sum(1 for e in entries if e.get('breaking'))
+    print('entries: %d (%d marked breaking)' % (len(entries), breaking))
     print('anchors added: %d (every entry now has one)' % added)
     print('buckets: %d' % len(ordered))
     for key, group in ordered[:6]:

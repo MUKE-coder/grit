@@ -47,6 +47,11 @@ export default function ChangelogPage() {
                           <a href={`#v${entry.version}`} className="text-accent/80 hover:text-accent font-mono text-xs mr-2">
                             v{entry.version}
                           </a>
+                          {entry.breaking && (
+                            <span className="mr-2 inline-flex items-center rounded border border-amber-500/25 bg-amber-500/10 px-1.5 py-px align-middle text-[10px] font-medium leading-none text-amber-400">
+                              breaking
+                            </span>
+                          )}
                           <span className="text-muted-foreground">{entry.title}</span>
                         </li>
                       ))}
@@ -55,8 +60,113 @@ export default function ChangelogPage() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground/70 mt-4">
-                Earlier weeks are in the entries below, newest first.
+                Earlier weeks are in the entries below, newest first. A{' '}
+                <span className="text-amber-400">breaking</span> badge means a release
+                changes behaviour an existing project can feel; see the{' '}
+                <a href="/docs/versioning#deprecation" className="text-accent hover:underline">
+                  deprecation policy
+                </a>
+                . Releases before v3.469.0 are unmarked, because guessing which of six
+                hundred past ones were breaking would be inventing a record rather than
+                reading one.
               </p>
+            </div>
+
+            {/* v3.469.0 */}
+            <div className="mb-12" id="v3.469.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.469.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit upgrade --to: one release at a time</h3>
+                <p>
+                  grit#158. <code>grit upgrade</code> had one speed. It applied
+                  the CLI&apos;s own templates, so pinning a project&apos;s
+                  framework version meant pinning the binary on every machine and
+                  in CI, and moving forward one step at a time was not possible.
+                  With several releases a week and six hundred tags since v3.0.0,
+                  &quot;latest&quot; is a long way from wherever an older project
+                  is.
+                </p>
+                <CodeBlock terminal code={`$ grit upgrade --to 3.465.0 --dry-run
+
+  Upgrading project to Grit v3.465.0
+
+  This CLI is v3.468.0. Fetching v3.465.0 to do the upgrade.
+  The binary is verified against the release's signed checksums and
+  cached in C:\\Users\\you\\.grit\\versions. It is not installed on your PATH.
+
+Looking for v3.465.0...
+Downloading:    grit-windows-amd64.zip (9.2 MiB)
+Verifying signature...
+Verified:       grit-windows-amd64.zip, signed by the release workflow`} />
+                <p>
+                  It runs that release&apos;s own binary rather than trying to
+                  apply its templates from this one, because the templates{' '}
+                  <em>are</em> the binary: there is no archive of past templates
+                  to read, and pretending otherwise would mean applying this
+                  version&apos;s files under another version&apos;s name. The
+                  download is checked against the release&apos;s signed
+                  checksums, reusing the verification{' '}
+                  <code>grit update</code> already does rather than a second copy
+                  of it, cached under <code>~/.grit/versions</code>, and never put
+                  on your PATH. Every other flag passes through, so{' '}
+                  <code>--to 3.455.0 --dry-run</code> is a dry run of that
+                  version.
+                </p>
+                <p>
+                  That passthrough is the part with a test on it. A flag added to{' '}
+                  <code>grit upgrade</code> and forgotten in the passthrough is
+                  dropped in silence, and the failure mode is{' '}
+                  <code>--to 3.455.0 --dry-run</code> upgrading the project for
+                  real. So the test reads the command&apos;s own flag set rather
+                  than a list written beside it, and fails on a flag it has never
+                  heard of.
+                </p>
+
+                <h3>A deprecation policy, so something can be retired</h3>
+                <p>
+                  There was none, which meant nothing could be removed: v3.467.0
+                  found a genuine duplicate command and the only options were
+                  leave it for ever, or break somebody&apos;s script with no
+                  notice. A stated window is what makes the third option exist.
+                </p>
+                <p>
+                  A deprecated command or flag keeps working for at least{' '}
+                  <strong>90 days and 30 releases</strong>, whichever is longer,
+                  and in practice until the next major. Both numbers, because this
+                  project ships several releases a week: thirty of them can pass
+                  in under a month, which is not notice. It is on{' '}
+                  <Link href="/docs/versioning#deprecation">the versioning page</Link>{' '}
+                  with the three things it deliberately does not cover, generated
+                  code among them.
+                </p>
+
+                <h3>A breaking marker in the changelog</h3>
+                <p>
+                  The versioning page is honest that these numbers are not SemVer.
+                  They still look like SemVer to everybody who has not read that
+                  page, and with 641 unmarked entries the only way to find out
+                  whether a release changes behaviour was to read all of them.
+                </p>
+                <CodeBlock language="tsx" code={`{/* v3.470.0 breaking */}`} />
+                <p>
+                  One word in the comment that already carries the version, so
+                  writing an entry and marking it are the same edit. A marker
+                  nobody has to remember separately is a marker that gets used.
+                  The weekly rollup carries it through as a badge.
+                </p>
+                <p>
+                  Nothing before this release is marked, and nothing will be
+                  marked retroactively. Guessing which of six hundred past
+                  releases were breaking would be inventing a record rather than
+                  reading one, so the rollup says that out loud instead.
+                </p>
+              </div>
             </div>
 
             {/* v3.468.0 */}

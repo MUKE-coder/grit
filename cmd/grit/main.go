@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.468.0"
+var version = "3.469.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1662,6 +1662,7 @@ func upgradeCmd() *cobra.Command {
 	var showDiff bool
 	var writePlan bool
 	var dryRun bool
+	var to string
 
 	cmd := &cobra.Command{
 		Use:   "upgrade",
@@ -1670,6 +1671,17 @@ func upgradeCmd() *cobra.Command {
 			"Files you have edited since Grit wrote them are left alone. Use --diff to see what the new version would change in them, --dry-run to look without upgrading at all, or --force to take it anyway.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
+
+			// A named version is applied by that version's own binary, since
+			// the templates are compiled in. Nothing below may run: the steps
+			// after scaffold.Upgrade are this CLI's repairs, and running them
+			// over a project another version has just written would mix the
+			// two (grit#158).
+			if to != "" && strings.TrimPrefix(to, "v") != version {
+				cHeading.Printf("\n  Upgrading project to Grit v%s\n\n", strings.TrimPrefix(to, "v"))
+				return upgradeToVersion(to, upgradePassthrough(force, showDiff, writePlan, dryRun))
+			}
+
 			cHeading.Printf("\n  Upgrading project to Grit v%s\n\n", version)
 
 			// Said before anything is written, not after. A person who
@@ -1768,6 +1780,7 @@ func upgradeCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite every file, including ones you have edited")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Say what the upgrade would change and change nothing: runs it on a copy and diffs the two")
+	cmd.Flags().StringVar(&to, "to", "", "Apply a named version's framework files instead of this CLI's (e.g. --to 3.455.0). Downloads that release, verifies its signed checksum, caches it in ~/.grit/versions and runs it. Your installed CLI is not changed")
 	cmd.Flags().BoolVar(&showDiff, "diff", false, "Upgrade, and show what it would have changed in the files it leaves alone. Use --dry-run to look without upgrading")
 	// Says "and upgrades" out loud. Every other tool with a --plan means a dry
 	// run, so this one reads as one, and somebody ran it on a project with no
@@ -2717,7 +2730,7 @@ func newDesktopCmd() *cobra.Command {
 		Long: "Scaffold a standalone desktop app with Go backend (Wails), React frontend, SQLite/PostgreSQL, and local auth.\n\n" +
 			"Deprecated. `grit new <name> --desktop` does the same thing and is the one\n" +
 			"documented way. This name still works and will be removed no sooner than\n" +
-			"v4.0.0; see the deprecation policy at https://gritframework.com/docs/versioning.",
+			"v4.0.0; the deprecation policy is at https://gritframework.com/docs/versioning#deprecation.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectName := args[0]

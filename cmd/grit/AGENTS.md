@@ -71,7 +71,17 @@ In order, every time:
 
 1. Bump the three version spots.
 2. Add the changelog entry in `docs/app/docs/changelog/page.tsx`.
+   If the release changes behaviour an existing project can feel, mark the
+   entry comment: `{/* v3.470.0 breaking */}`. One word, in the comment that
+   already carries the version, so marking it and writing it are the same edit.
+   The rollup carries it through as a badge and the versioning page's
+   deprecation policy says what the word means. Nothing before v3.469.0 is
+   marked, and nothing should be marked retroactively: guessing which of six
+   hundred past releases were breaking would be inventing a record.
 3. `python scripts/changelog-rollup.py`.
+   Then `python scripts/changelog-md.py`, which regenerates `CHANGELOG.md` from
+   the same page so the history is greppable from a checkout. The Docs workflow
+   runs it with `--check` and fails if it is behind.
 4. `python scripts/docs-index.py`, which rebuilds the documentation index the
    binary embeds for `grit docs` and `grit_search_docs`. It stamps the version
    it was built from, so skipping it ships the previous version's docs to

@@ -3,15 +3,20 @@
 //
 // The changelog is worth reading and hard to scan, which is what this is for:
 // the week, not the postmortem, with a link into each entry.
+//
+// breaking comes from a `breaking` word in the entry comment on the changelog
+// page. Entries before v3.469.0 are unmarked: guessing which of six hundred
+// past releases changed behaviour would be inventing a record, not reading one.
 
-export type RollupEntry = { version: string; title: string }
+export type RollupEntry = { version: string; title: string; breaking?: boolean }
 export type RollupWeek = { label: string; count: number; entries: RollupEntry[] }
 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 2 to 8, 2026",
-    count: 6,
+    count: 7,
     entries: [
+      { version: "3.469.0", title: "grit upgrade --to: one release at a time" },
       { version: "3.468.0", title: "Removing the Blog cost you framework fixes to four files" },
       { version: "3.467.0", title: "grit own: whose file is this" },
       { version: "3.466.0", title: "The matrix and the stability page disagreed about the same features" },

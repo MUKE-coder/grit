@@ -188,15 +188,94 @@ export default function VersioningPage() {
               — it is worth knowing that a real team is blocked on it.
             </p>
 
+            <h2 id="deprecation" className="text-2xl font-bold tracking-tight mb-4">
+              Deprecation policy
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Nothing in the CLI is removed without notice. A command or a flag that is
+              going away is <strong>deprecated first</strong>: it keeps working, it drops
+              out of <code>--help</code>, and running it prints what to use instead.
+            </p>
+            <div className="rounded-xl border border-border/60 bg-card/40 p-6 mb-6">
+              <p className="text-sm text-foreground font-medium mb-2">The window</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A deprecated command or flag keeps working for at least{' '}
+                <strong className="text-foreground">90 days and 30 releases</strong>,
+                whichever is longer, and in practice until the next major. Both numbers,
+                because this project ships several releases a week: thirty of them can pass
+                in under a month, which is not notice. Ninety days alone would be a long
+                time to hold something nobody uses.
+              </p>
+            </div>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              What that looks like. <code>grit new-desktop</code> does the same thing as{' '}
+              <code>grit new --desktop</code>, and was deprecated in v3.467.0:
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`$ grit new-desktop pos
+Command "new-desktop" is deprecated, use \`grit new <project-name> --desktop\`
+instead. This name will be removed no sooner than v4.0.0.`}
+            />
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              The message goes to stderr, so a script that pipes stdout still shows it to
+              whoever runs the script. Three things are <em>not</em> covered by this, and
+              it is worth saying which:
+            </p>
+            <ul className="space-y-2 mb-6 text-muted-foreground leading-relaxed">
+              <li className="flex gap-3">
+                <span className="text-accent mt-0.5">&bull;</span>
+                <span>
+                  <strong className="text-foreground">Generated code.</strong> It is yours,
+                  so nothing is deprecated: the generator can change what it writes next
+                  time without touching what it wrote last time. See above.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-accent mt-0.5">&bull;</span>
+                <span>
+                  <strong className="text-foreground">A security fix.</strong> If something
+                  has to go because leaving it is a risk, it goes, and the changelog says
+                  why rather than hiding it in a notice period.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-accent mt-0.5">&bull;</span>
+                <span>
+                  <strong className="text-foreground">Something nobody can be using.</strong>{' '}
+                  A flag that has never worked is not a flag anybody depends on. The
+                  changelog still says it went.
+                </span>
+              </li>
+            </ul>
+
             <h2 className="text-2xl font-bold tracking-tight mb-4">Upgrading the CLI</h2>
             <CodeBlock
               language="bash"
               code={`grit update          # latest release
+grit update --version 3.455.0   # a named release, not the latest
 grit version         # what you are on
 
 # Pin a version in CI so a release never changes your build under you:
 go install github.com/MUKE-coder/grit/v3/cmd/grit@v${GRIT_VERSION}`}
             />
+            <p className="text-muted-foreground leading-relaxed mb-4 mt-6">
+              And a project can be moved to a named version without moving the CLI on the
+              machine, which is how you step forward one release at a time rather than
+              jumping from wherever you are to the latest:
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`grit upgrade --to 3.455.0             # that version's framework files
+grit upgrade --to 3.455.0 --dry-run   # what it would change, changing nothing`}
+            />
+            <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+              The templates are compiled into the binary, so there is no archive of past
+              templates to read: <code>--to</code> downloads that release, verifies it
+              against the release&apos;s signed checksums, caches it under{' '}
+              <code>~/.grit/versions</code> and runs it. Your installed CLI is not touched,
+              and the download happens once per version.
+            </p>
 
             <div className="flex flex-wrap items-center gap-6 border-t border-border/40 pt-8 mt-12">
               <Link
