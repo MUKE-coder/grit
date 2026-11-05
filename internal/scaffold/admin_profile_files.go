@@ -84,8 +84,14 @@ export default function ProfilePage() {
     },
   });
 
-  // Professional info form
-  const professionalForm = useForm<ProfessionalInfoValues>({
+  // Professional info form.
+  //
+  // No explicit generic: the schema'+chr(39)+'s fields are .optional().default(""), so its
+  // INPUT type is string | undefined and its OUTPUT type is string, and
+  // @hookform/resolvers 5 distinguishes the two. useForm<ProfessionalInfoValues>
+  // asserts both are the output type and does not compile. Inferring from the
+  // resolver gets both right (grit#148).
+  const professionalForm = useForm({
     resolver: zodResolver(ProfessionalInfoSchema),
     defaultValues: {
       job_title: user?.job_title || "",

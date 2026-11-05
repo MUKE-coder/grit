@@ -35,6 +35,11 @@ import "fmt"
 // baseColor is slate, which only affects components the CLI generates from
 // scratch. Grit UI blocks carry their own palette, so it changes nothing for
 // them and stays a sensible default for a plain `shadcn add button`.
+//
+// tailwind.config is empty on purpose, and that is the shadcn CLI's own
+// convention for Tailwind v4: there is no config file, the theme lives in CSS.
+// It said "tailwind.config.ts", a file a generated project does not have, so
+// `shadcn add` was being pointed at something that is not there (grit#148).
 func shadcnComponentsJSON(cfg shadcnPaths) string {
 	return fmt.Sprintf(`{
   "$schema": "https://ui.shadcn.com/schema.json",
@@ -42,7 +47,7 @@ func shadcnComponentsJSON(cfg shadcnPaths) string {
   "rsc": %t,
   "tsx": true,
   "tailwind": {
-    "config": "tailwind.config.ts",
+    "config": "",
     "css": %q,
     "baseColor": "slate",
     "cssVariables": true,

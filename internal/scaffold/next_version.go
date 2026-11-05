@@ -34,4 +34,13 @@ package scaffold
 // To move it: change this, run the tier tutorials end to end, check the new
 // version is past the release-age cutoff, and ship it as its own release so a
 // project can date the change.
-const nextVersion = "16.3.8"
+// Moved 16.3.8 -> 16.4.3 on 2026-11-05, for two CRITICAL advisories:
+// unauthenticated remote code execution, both patched in 16.4.1
+// (GHSA, see pnpm audit on a generated project). The pin that protected
+// against a broken 16.4.0 was by then holding every project below a
+// security fix, which is the trade this comment anticipates above.
+//
+// 16.4.3 rather than the newest: 16.4.4 and 16.4.5 were two and three days
+// old, inside the release-age window this file already argues for, and
+// 16.4.3 is thirteen days old and carries the same fixes.
+const nextVersion = "16.4.3"

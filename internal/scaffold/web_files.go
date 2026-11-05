@@ -172,14 +172,12 @@ func webPackageJSON(opts Options) string {
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "dompurify": "^3.4.15",
     "lucide-react": "^0.468.0",
     "next": "`+nextVersion+`",
     "react": "`+reactVersionFor(opts)+`",
     "react-dom": "`+reactVersionFor(opts)+`",
-    "react-hook-form": "^7.49.0",
-    "@hookform/resolvers": "^3.3.0",
-    "js-cookie": "^3.0.5",
+    "react-hook-form": "^7.55.0",
+    "@hookform/resolvers": "^5.9.0",
     "tailwind-merge": "^2.2.0",
     "tw-animate-css": "^1.4.0"%s
   },
@@ -187,9 +185,8 @@ func webPackageJSON(opts Options) string {
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
-    "@vitejs/plugin-react": "^4.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
     "@types/node": "^20.0.0",
-    "@types/js-cookie": "^3.0.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@tailwindcss/postcss": "^4.1.13",
@@ -197,7 +194,7 @@ func webPackageJSON(opts Options) string {
     "postcss": "^8.4.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.3.0",
-    "vitest": "^2.0.0"
+    "vitest": "^4.1.12"
   }
 }
 `, opts.ProjectName, webAdminDependencies(opts))
@@ -223,7 +220,7 @@ func webAdminDependencies(opts Options) string {
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zod": "^3.22.0"`
+    "zod": "^3.25.0"`
 }
 
 // embeddedWebDependencyLines are webAdminDependencies as package.json lines, each

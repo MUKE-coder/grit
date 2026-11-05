@@ -224,6 +224,19 @@ func embeddedSingleAdminContent(path, content string) string {
 		}
 	}
 	content = strings.ReplaceAll(content, `href="/"`, `href="/admin"`)
+
+	// Vite has no process. It does not polyfill one and esbuild does not
+	// typecheck, so a process.env read reaches the browser as "process is not
+	// defined" rather than failing the build. Every NEXT_PUBLIC_ the panel
+	// reads needs its Vite name here, and TestSingleAdminContentIsRepointed is
+	// what catches a new one: it caught this very entry being added without it.
+	for from, to := range map[string]string{
+		"process.env.NEXT_PUBLIC_IP_HINT": "import.meta.env.VITE_IP_HINT",
+		"process.env.NODE_ENV":            "import.meta.env.MODE",
+	} {
+		content = strings.ReplaceAll(content, from, to)
+	}
+
 	return strings.ReplaceAll(content, "/admin/admin/", "/admin/")
 }
 
@@ -265,14 +278,23 @@ func ensureSPAAdminWiring(feRoot string, opts Options) ([]string, error) {
 	deps := [][2]string{
 		{"@base-ui/react", baseUIVersion},
 		{"libphonenumber-js", libphonenumberVersion},
-		{"@hookform/resolvers", "^3.3.0"},
+		{"@hookform/resolvers", "^5.9.0"},
 		{"@react-pdf/renderer", "^4.1.5"},
 		{"react-dropzone", "^14.2.0"},
-		{"react-hook-form", "^7.49.0"},
+		{"react-hook-form", "^7.55.0"},
 		{"recharts", "^2.12.0"},
 		{"sonner", "^1.3.0"},
 		{"tw-animate-css", "^1.4.0"},
-		{"xlsx", "^0.18.5"},
+		// The CDN tarball, not the registry. SheetJS stopped publishing to npm
+		// after 0.18.5, and that version carries two HIGH advisories: prototype
+		// pollution, fixed in 0.19.3, and a ReDoS, fixed in 0.20.2. So "move it
+		// to a registry version" means shipping both. The single architecture was
+		// on ^0.18.5 while every other shape used the tarball (grit#148).
+		//
+		// The price is the pnpm pin in infra_hygiene_repair.go: 10.34 and later
+		// refuse to install a tarball URL. That pin is the cost of not shipping
+		// two known vulnerabilities, which is the right way round.
+		{"xlsx", "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"},
 	}
 	for _, name := range tiptapPackages {
 		deps = append(deps, [2]string{name, tiptapVersion})

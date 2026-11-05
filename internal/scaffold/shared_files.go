@@ -80,7 +80,7 @@ func sharedPackageJSON(opts Options) string {
   },
   "dependencies": {
     "libphonenumber-js": "` + libphonenumberVersion + `",
-    "zod": "^3.22.0"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

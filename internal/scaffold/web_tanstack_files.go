@@ -80,7 +80,7 @@ func webTanStackPackageJSON(opts Options) string {
     "@repo/upload": "workspace:*"`+webAdminDependencies(opts)+viteHostDependencies(opts)+`
   },
   "devDependencies": {
-    "vitest": "^2.1.0",
+    "vitest": "^4.1.12",
     "jsdom": "^25.0.0",
     "@testing-library/react": "^16.1.0",
     "@testing-library/jest-dom": "^6.4.0",
@@ -96,8 +96,8 @@ func webTanStackPackageJSON(opts Options) string {
     "postcss": "^8.4.49",
     "tailwindcss": "^4.1.13",
     "typescript": "~5.7.0",
-    "vite": "^6.0.0",
-    "@vitejs/plugin-react": "^4.3.4"
+    "vite": "^6.4.4",
+    "@vitejs/plugin-react": "^5.2.0"
   }
 }`, opts.ProjectName)
 }
@@ -552,6 +552,6 @@ func viteHostDependencies(opts Options) string {
 		return ""
 	}
 	return `,
-    "@hookform/resolvers": "^3.3.0",
-    "react-hook-form": "^7.49.0"`
+    "@hookform/resolvers": "^5.9.0",
+    "react-hook-form": "^7.55.0"`
 }

@@ -23,6 +23,64 @@ Also worth knowing:
 ---
 
 
+## v3.471.0 - November 5, 2026
+
+### A freshly generated project had five critical advisories
+
+grit#148 was filed as dependency hygiene: stale floors, two unused packages, a `components.json` pointing at a file that does not exist. Running `pnpm audit` on a new project to check the work found something else.
+
+```bash
+19 vulnerabilities found
+Severity: 1 low | 10 moderate | 3 high | 5 critical
+
+critical  vitest    patched >=3.2.6    arbitrary file read via the UI server
+critical  tinypool  patched >=2.1.2    prototype pollution gadget to RCE
+critical  next      patched >=16.4.1   unauthenticated remote code execution
+high      zod       patched >=4.6.6    memory exhaustion on oversized input
+```
+
+**Next was pinned below its own security fix.** The pin exists for a good reason, written out at length in `next_version.go`: a project once installed a 16.4.0 published eighteen hours earlier whose layout-router threw on every page. Pinning made the version a decision. It also meant the decision had to be revisited, and two unauthenticated RCEs landed in 16.4.1 while the pin stayed at 16.3.8.
+
+It is 16.4.3 now, not the newest. 16.4.4 and 16.4.5 were three and two days old, inside the release-age window that file already argues for; 16.4.3 is thirteen days old and carries the same fixes.
+
+`vitest` was `^2.0.0`, resolving to 2.1.9, and the critical is fixed in 3.2.6. It is `^4.1.12`, which also takes `tinypool`, `vite` and `esbuild` past their advisories, since all three arrive through it. Nineteen down to one.
+
+### The issue's own advice would have shipped two more
+
+It said to move `xlsx` from a SheetJS CDN tarball to a registry version and unpin pnpm in the same change. The registry's newest `xlsx` is 0.18.5, which is where SheetJS stopped publishing to npm, and it carries two HIGH advisories: prototype pollution, fixed in 0.19.3, and a ReDoS, fixed in 0.20.2. Checked rather than assumed, with `npm audit` on a one-line package.json.
+
+So the tarball stays, and the pnpm pin stays with it, which is the right way round: a pinned toolchain is a smaller cost than two known vulnerabilities. What was actually wrong is that the **single architecture was on the registry version** while every other shape used the patched tarball. That is fixed, and the reasoning is now a comment beside it so the next person does not fix it back.
+
+### Floors, and what broke when they moved
+
+`@hookform/resolvers` went from `^3.3.0` to `^5.9.0` and `zod` to `^3.25.0`, which is what resolvers 5 needs. That broke one page, and it is worth saying how:
+
+```ts
+// ProfessionalInfoSchema's fields are .optional().default(""), so its
+// INPUT type is string | undefined and its OUTPUT type is string.
+// Resolvers 5 distinguishes the two; useForm<ProfessionalInfoValues>
+// asserts both are the output type and does not compile.
+const professionalForm = useForm({            // inference gets both right
+  resolver: zodResolver(ProfessionalInfoSchema),
+  defaultValues: { job_title: "", bio: "" },
+});
+```
+
+Two type errors, in one file, found by type-checking a real project rather than by reading. And the first fix went into the wrong file: there are two copies of that account page in the scaffold and only one of them is the one a project gets.
+
+`@vitejs/plugin-react` is the other story. `^6.2.0` looked right, passed the Next admin's tests, and broke the single architecture's build outright: plugin-react 6 peers on `vite ^8` and imports `vite/internal`, which Vite 6 does not export. The Next admin never noticed because Next does not use the Vite plugin to build, only to test, and vitest 4 brings its own Vite. It is `^5.2.0`, which supports Vite 4 through 7. Vite 8 is a separate decision for a release that is not about security.
+
+### Three smaller ones
+
+`js-cookie` and `@types/js-cookie` are gone from the web app: they are left over from the OAuth flow that read tokens out of a callback URL, and that flow does not exist any more. `dompurify` goes with them from the Next web app, after checking that the TanStack one genuinely uses it and that the Next blog page does not need it, because the API sanitises rich text on write and on read.
+
+`components.json` said `"config": "tailwind.config.ts"`, a file a generated project does not have under Tailwind v4, so `shadcn add` was pointed at nothing. It is empty now, which is the shadcn CLI's own convention for v4.
+
+And the admin's public-IP hint is opt-in behind `NEXT_PUBLIC_IP_HINT=1`. It fetched `api.ipify.org` on page load in development, to put a nicer value in a log line nobody had asked about. Correctly guarded to development and still not something a generated app should do unasked. Adding that read also broke the single architecture, where Vite has no `process`, and the test for that caught it in the same minute.
+
+The one left is `zod`: patched only in 4.6.6, and zod 4 is an API migration across every emitted schema rather than a floor. Filed as grit#175 rather than rushed into a release that is already this long.
+
+
 ## v3.470.0 - November 5, 2026
 
 ### The mobile app's Google button has never worked

@@ -72,6 +72,146 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.471.0 breaking */}
+            <div className="mb-12" id="v3.471.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.471.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A freshly generated project had five critical advisories</h3>
+                <p>
+                  grit#148 was filed as dependency hygiene: stale floors, two
+                  unused packages, a <code>components.json</code> pointing at a
+                  file that does not exist. Running{' '}
+                  <code>pnpm audit</code> on a new project to check the work
+                  found something else.
+                </p>
+                <CodeBlock terminal code={`19 vulnerabilities found
+Severity: 1 low | 10 moderate | 3 high | 5 critical
+
+critical  vitest    patched >=3.2.6    arbitrary file read via the UI server
+critical  tinypool  patched >=2.1.2    prototype pollution gadget to RCE
+critical  next      patched >=16.4.1   unauthenticated remote code execution
+high      zod       patched >=4.6.6    memory exhaustion on oversized input`} />
+                <p>
+                  <strong>Next was pinned below its own security fix.</strong>{' '}
+                  The pin exists for a good reason, written out at length in{' '}
+                  <code>next_version.go</code>: a project once installed a
+                  16.4.0 published eighteen hours earlier whose layout-router
+                  threw on every page. Pinning made the version a decision. It
+                  also meant the decision had to be revisited, and two
+                  unauthenticated RCEs landed in 16.4.1 while the pin stayed at
+                  16.3.8.
+                </p>
+                <p>
+                  It is 16.4.3 now, not the newest. 16.4.4 and 16.4.5 were three
+                  and two days old, inside the release-age window that file
+                  already argues for; 16.4.3 is thirteen days old and carries
+                  the same fixes.
+                </p>
+                <p>
+                  <code>vitest</code> was <code>^2.0.0</code>, resolving to
+                  2.1.9, and the critical is fixed in 3.2.6. It is{' '}
+                  <code>^4.1.12</code>, which also takes{' '}
+                  <code>tinypool</code>, <code>vite</code> and{' '}
+                  <code>esbuild</code> past their advisories, since all three
+                  arrive through it. Nineteen down to one.
+                </p>
+
+                <h3>The issue&apos;s own advice would have shipped two more</h3>
+                <p>
+                  It said to move <code>xlsx</code> from a SheetJS CDN tarball to
+                  a registry version and unpin pnpm in the same change. The
+                  registry&apos;s newest <code>xlsx</code> is 0.18.5, which is
+                  where SheetJS stopped publishing to npm, and it carries two
+                  HIGH advisories: prototype pollution, fixed in 0.19.3, and a
+                  ReDoS, fixed in 0.20.2. Checked rather than assumed, with{' '}
+                  <code>npm audit</code> on a one-line package.json.
+                </p>
+                <p>
+                  So the tarball stays, and the pnpm pin stays with it, which is
+                  the right way round: a pinned toolchain is a smaller cost than
+                  two known vulnerabilities. What was actually wrong is that the{' '}
+                  <strong>single architecture was on the registry version</strong>{' '}
+                  while every other shape used the patched tarball. That is
+                  fixed, and the reasoning is now a comment beside it so the next
+                  person does not fix it back.
+                </p>
+
+                <h3>Floors, and what broke when they moved</h3>
+                <p>
+                  <code>@hookform/resolvers</code> went from <code>^3.3.0</code>{' '}
+                  to <code>^5.9.0</code> and <code>zod</code> to{' '}
+                  <code>^3.25.0</code>, which is what resolvers 5 needs. That
+                  broke one page, and it is worth saying how:
+                </p>
+                <CodeBlock language="ts" code={`// ProfessionalInfoSchema's fields are .optional().default(""), so its
+// INPUT type is string | undefined and its OUTPUT type is string.
+// Resolvers 5 distinguishes the two; useForm<ProfessionalInfoValues>
+// asserts both are the output type and does not compile.
+const professionalForm = useForm({            // inference gets both right
+  resolver: zodResolver(ProfessionalInfoSchema),
+  defaultValues: { job_title: "", bio: "" },
+});`} />
+                <p>
+                  Two type errors, in one file, found by type-checking a real
+                  project rather than by reading. And the first fix went into the
+                  wrong file: there are two copies of that account page in the
+                  scaffold and only one of them is the one a project gets.
+                </p>
+                <p>
+                  <code>@vitejs/plugin-react</code> is the other story.{' '}
+                  <code>^6.2.0</code> looked right, passed the Next admin&apos;s
+                  tests, and broke the single architecture&apos;s build outright:
+                  plugin-react 6 peers on <code>vite ^8</code> and imports{' '}
+                  <code>vite/internal</code>, which Vite 6 does not export. The
+                  Next admin never noticed because Next does not use the Vite
+                  plugin to build, only to test, and vitest 4 brings its own
+                  Vite. It is <code>^5.2.0</code>, which supports Vite 4 through
+                  7. Vite 8 is a separate decision for a release that is not
+                  about security.
+                </p>
+
+                <h3>Three smaller ones</h3>
+                <p>
+                  <code>js-cookie</code> and <code>@types/js-cookie</code> are
+                  gone from the web app: they are left over from the OAuth flow
+                  that read tokens out of a callback URL, and that flow does not
+                  exist any more. <code>dompurify</code> goes with them from the
+                  Next web app, after checking that the TanStack one genuinely
+                  uses it and that the Next blog page does not need it, because
+                  the API sanitises rich text on write and on read.
+                </p>
+                <p>
+                  <code>components.json</code> said{' '}
+                  <code>&quot;config&quot;: &quot;tailwind.config.ts&quot;</code>,
+                  a file a generated project does not have under Tailwind v4, so{' '}
+                  <code>shadcn add</code> was pointed at nothing. It is empty
+                  now, which is the shadcn CLI&apos;s own convention for v4.
+                </p>
+                <p>
+                  And the admin&apos;s public-IP hint is opt-in behind{' '}
+                  <code>NEXT_PUBLIC_IP_HINT=1</code>. It fetched{' '}
+                  <code>api.ipify.org</code> on page load in development, to put
+                  a nicer value in a log line nobody had asked about. Correctly
+                  guarded to development and still not something a generated app
+                  should do unasked. Adding that read also broke the single
+                  architecture, where Vite has no <code>process</code>, and the
+                  test for that caught it in the same minute.
+                </p>
+                <p>
+                  The one left is <code>zod</code>: patched only in 4.6.6, and
+                  zod 4 is an API migration across every emitted schema rather
+                  than a floor. Filed as grit#175 rather than rushed into a
+                  release that is already this long.
+                </p>
+              </div>
+            </div>
+
             {/* v3.470.0 */}
             <div className="mb-12" id="v3.470.0">
               <div className="flex items-center gap-3 mb-4">

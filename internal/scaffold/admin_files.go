@@ -566,7 +566,7 @@ func adminPackageJSON(opts Options) string {
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "^3.3.0",
+`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "^5.9.0",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
@@ -576,14 +576,14 @@ func adminPackageJSON(opts Options) string {
     "react": "`+reactVersionFor(opts)+`",
     "react-dom": "`+reactVersionFor(opts)+`",
 `+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",
-    "react-hook-form": "^7.49.0",
+    "react-hook-form": "^7.55.0",
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.2.0",
     "tw-animate-css": "^1.4.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "@react-pdf/renderer": "^4.1.5",
-    "zod": "^3.22.0",
+    "zod": "^3.25.0",
     "@repo/shared": "workspace:*",
     "@repo/upload": "workspace:*"
   },
@@ -591,7 +591,7 @@ func adminPackageJSON(opts Options) string {
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
-    "@vitejs/plugin-react": "^4.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -600,7 +600,7 @@ func adminPackageJSON(opts Options) string {
     "postcss": "^8.4.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.3.0",
-    "vitest": "^2.0.0"
+    "vitest": "^4.1.12"
   }
 }
 `, opts.ProjectName)
@@ -1347,16 +1347,27 @@ export { API_URL, API_VERSION, apiUrl, versionedPath } from "@/lib/api-core";
 //     new grit_access via Set-Cookie. JS still never sees a token.
 export const apiClient = createApiClient();
 
-// v3.31.49 -- public-IP hint. When the operator runs the admin on
-// localhost (the default), the API sees the TCP peer as ::1 and
-// logs that in the activity feed. The browser fetches its public IP
-// once (cached in sessionStorage for the tab's lifetime) and
-// attaches it as X-Public-IP-Hint. The API uses it only when the
-// observed peer is loopback -- production traffic from real proxies
-// keeps using the trusted X-Forwarded-For path and never honours
-// this hint, so it can't be used to spoof audit records.
+// v3.31.49 -- public-IP hint, off unless you ask for it.
+//
+// When the operator runs the admin on localhost (the default), the API
+// sees the TCP peer as ::1 and logs that in the activity feed. With
+// NEXT_PUBLIC_IP_HINT=1 the browser fetches its public IP once (cached
+// in sessionStorage for the tab's lifetime) and attaches it as
+// X-Public-IP-Hint. The API uses it only when the observed peer is
+// loopback -- production traffic from real proxies keeps using the
+// trusted X-Forwarded-For path and never honours this hint, so it
+// cannot be used to spoof audit records.
+//
+// Opt-in since v3.471.0. It was on in development, which meant a
+// freshly scaffolded app made a request to a third party, api.ipify.org,
+// on page load, to put a nicer value in a log line nobody had asked
+// about. Correctly guarded to development and still not something a
+// generated project should do without being asked (grit#148).
+const IP_HINT_ENABLED = process.env.NEXT_PUBLIC_IP_HINT === "1";
+
 let publicIPCache: string | null = null;
 async function getPublicIPHint(): Promise<string | null> {
+  if (!IP_HINT_ENABLED) return null;
   if (publicIPCache) return publicIPCache;
   if (typeof window === "undefined") return null;
   const cached = window.sessionStorage.getItem("grit_public_ip");

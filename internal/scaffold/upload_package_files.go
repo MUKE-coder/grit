@@ -115,7 +115,7 @@ func uploadPackageJSON() string {
   },
   "devDependencies": {
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^4.1.12"
   }
 }
 `

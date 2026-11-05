@@ -54,12 +54,12 @@ func desktopPackageJSON(opts DesktopOptions) string {
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0",
-    "vite": "^6.0.0",
+    "vite": "^6.4.4",
     "@tanstack/router-plugin": "^1.95.0"
   }
 }

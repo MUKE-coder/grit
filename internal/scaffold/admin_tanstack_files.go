@@ -654,9 +654,9 @@ func adminTanStackPackageJSON(opts Options) string {
     "@tailwindcss/vite": "^4.1.13",
     "tw-animate-css": "^1.4.0",
     "typescript": "~5.7.0",
-    "vite": "^6.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "vitest": "^2.1.0",
+    "vite": "^6.4.4",
+    "@vitejs/plugin-react": "^5.2.0",
+    "vitest": "^4.1.12",
     "@testing-library/react": "^16.1.0"
   }
 }`, opts.ProjectName)
