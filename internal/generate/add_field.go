@@ -54,6 +54,27 @@ func AddField(resourceName, spec string) error {
 	if err != nil {
 		return fmt.Errorf("resource %q not found (generate it first): %w", resourceName, err)
 	}
+	// A field the model already has.
+	//
+	// Every injection below is idempotent only for a byte-identical line, so
+	// adding a field twice with any difference at all, a changed option list, a
+	// different type, appended a SECOND struct field of that name and left a
+	// project that does not compile: "State redeclared". The command said
+	// "Field added to Part." and exited 0.
+	//
+	// Found by writing the verified flow for the field-types page, which is the
+	// argument for those flows: the second invocation was a typo in the flow
+	// file, and the typo was the bug report.
+	//
+	// Refused rather than replaced. Replacing means deciding what to do with
+	// the data already in the column, and that is a migration, not a generator
+	// run.
+	if had := existingField(existing.Fields, f.Name); had != "" {
+		return fmt.Errorf("%s already has a field called %s. Change its type or its options "+
+			"in internal/models/%s.go and the schema, type and admin resource beside it, or "+
+			"remove the resource and generate it again",
+			names0(existing), had, strings.ToLower(toSnakeCase(resourceName)))
+	}
 	if err := ValidateConditions(append(append([]Field{}, existing.Fields...), f)); err != nil {
 		return err
 	}
@@ -440,4 +461,26 @@ func injectModelLine(filePath, pascal, code string) error {
 func hasMarker(path, marker string) bool {
 	data, err := os.ReadFile(path)
 	return err == nil && strings.Contains(string(data), marker)
+}
+
+// existingField returns the model's spelling of a field it already has, or "".
+//
+// Case-insensitive on the column name, because a field arrives as state, State
+// or STATE depending on how it was typed and the model has one of those.
+func existingField(fields []Field, name string) string {
+	want := strings.ToLower(toSnakeCase(name))
+	for _, f := range fields {
+		if strings.ToLower(toSnakeCase(f.Name)) == want {
+			return f.Name
+		}
+	}
+	return ""
+}
+
+// names0 is the resource's display name for a message.
+func names0(def *ResourceDefinition) string {
+	if def == nil {
+		return "the resource"
+	}
+	return BuildNames(def).Pascal
 }

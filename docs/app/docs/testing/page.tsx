@@ -483,9 +483,55 @@ grit migrate down --yes\`}
               <p>
                 The <code>Docs</code> workflow scaffolds a project per flow, migrates it, and runs
                 that flow&apos;s blocks in page order against a real Postgres, failing on the
-                first non-zero exit. Three flows are covered today: the rollback walkthrough
-                above, <code>grit doctor</code> reporting nothing on a correct project, and a
-                generated resource compiling and vetting clean.
+                first non-zero exit.
+              </p>
+              <p>
+                <strong className="text-foreground">A flow can also be a file.</strong>{' '}
+                That matters more than it sounds. Executed coverage sat at four
+                blocks while the docs grew to 193 pages, and that was not a
+                discipline problem: adding a marked block means editing a React
+                component, finding the right place in the JSX, and getting a
+                template literal inside it right. The two numbers were the
+                finding.
+              </p>
+              <CodeBlock
+                language="markdown"
+                filename="docs/content/verified/remove-resource.md"
+                code={`---
+page: /docs/cli
+title: grit remove resource undoes every injection
+---
+
+Why this flow exists, for whoever reads the file next.
+
+\`\`\`bash
+grit generate resource Widget --fields "name:string,price:money"
+grit migrate
+cd apps/api && go build ./... && go vet ./... && cd ..
+
+grit remove resource Widget --force
+cd apps/api && go build ./... && go vet ./...
+\`\`\``}
+              />
+              <p>
+                Ten lines, and the runner does not care which source a flow came
+                from. The <code>page:</code> is the page the flow is evidence
+                about, and{' '}
+                <code>go run ./tools/docsamples -check</code> fails if that page
+                has moved: a flow pointing somewhere that no longer exists still
+                runs, still passes, and has stopped being evidence about
+                anything a reader can find.
+              </p>
+              <p>
+                Eight flows are covered today. From the pages: the migration
+                rollback walkthrough, the SQL migration cycle,{' '}
+                <code>grit doctor</code> reporting nothing on a correct project,
+                and a generated resource compiling and vetting clean. From files:{' '}
+                <code>grit remove resource</code> reversing every injection, a
+                generated seeder being registered rather than merely written,{' '}
+                <code>grit generate field</code> reaching the whitelist as well
+                as the model, and <code>grit backup --output</code> writing an
+                archive with no storage credentials.
               </p>
               <p>
                 Most blocks are not marked, and the reason is worth stating: they start a server,

@@ -158,6 +158,12 @@ jobs:
       - name: List the flows the docs claim
         run: go run ./tools/docsamples -list
 
+      # A declared flow names the page it checks. A pointer at a page that has
+      # moved still runs and still passes, and has stopped being evidence about
+      # anything a reader can find (grit#168).
+      - name: Check every flow names a page that exists
+        run: go run ./tools/docsamples -check
+
       - name: Run them
         run: |
           mkdir -p /tmp/docsflows

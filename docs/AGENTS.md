@@ -77,3 +77,28 @@ Then:
    94 of 224 pages, and what finally surfaced it was somebody reporting that the
    search was buggy.
 6. Search your diff for an em dash before you commit.
+
+## Making a page's commands run in CI
+
+A page that tells somebody to run a sequence of commands can have that sequence
+executed against a real scaffolded project on a real Postgres. Declare it as a
+file:
+
+```
+docs/content/verified/<flow-id>.md
+```
+
+Frontmatter with `page:` and `title:`, prose saying what the flow proves, and
+one or more ```bash blocks. `docs/content/verified/_README.md` has the format
+and the rules. Then:
+
+```bash
+go run ./tools/docsamples -list     # what is declared
+go run ./tools/docsamples -check    # every page: still exists
+tests/docs/run-flows.sh <flow-id>   # run one, needs a Postgres
+```
+
+**Prefer a file to a `verify=` block in a page.** Both work and the runner does
+not care, but coverage sat at four blocks for as long as the only way was to
+edit a React component. If the page you are documenting makes a command claim
+you can check, the file costs ten lines.

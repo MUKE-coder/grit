@@ -23,6 +23,58 @@ Also worth knowing:
 ---
 
 
+## v3.482.0 - November 5, 2026
+
+### A verified flow is a file now, and it found two bugs on the first day
+
+From grit#168. Four executed blocks, 193 doc pages. The two numbers were the finding, and they are not a discipline problem: adding a `verify=` block means editing a React component, finding the right place in the JSX, and getting a template literal inside it right.
+
+So a flow can also be ten lines in `docs/content/verified/`:
+
+`docs/content/verified/remove-resource.md`
+
+```markdown
+---
+page: /docs/cli
+title: grit remove resource undoes every injection
+---
+
+Why this flow exists, for whoever reads the file next.
+
+```bash
+grit generate resource Widget --fields "name:string,price:money"
+grit migrate
+(cd apps/api && go build ./... && go vet ./...)
+
+grit remove resource Widget --force
+(cd apps/api && go build ./... && go vet ./...)
+```
+```
+
+The runner does not care which source a flow came from, so `tests/docs/run-flows.sh` is unchanged. The `page:` is what the flow is evidence about, and `go run ./tools/docsamples -check` fails if that page has moved: a flow pointing somewhere that no longer exists still runs, still passes, and has stopped being evidence about anything a reader can find. CI runs that check.
+
+Four flows to eight. The new ones: `grit remove resource` reversing every injection, a generated seeder being registered rather than merely written, `grit generate field` reaching the column whitelist as well as the model, and `grit backup --output` writing an archive with no storage credentials, checked for the CSV, the `dump.sql` and the manifest the page says are in it.
+
+#### Not MDX, and why
+
+The issue asked for MDX with a `verify:` key in frontmatter. The 289 existing pages are TSX built from a dozen components, two separate search indexers parse `page.tsx`, and so do three check scripts. Migrating them is a project, and migrating none of them means new pages keep being TSX because that is what every page beside them looks like, so the coverage would not actually grow. A flow file grows it today and takes nothing away from doing the migration later: this reader does not care what the page is written in.
+
+#### Two bugs, found by writing the flows
+
+** `grit generate field` on a field that already exists left a project that does not compile. ** Every injection is idempotent for a byte-identical line, so a second add with any difference at all appended a second struct field:
+
+```text
+internal/models/part.go:16:2: State redeclared
+	internal/models/part.go:15:2: other declaration of State
+```
+
+The command said &ldquo;Field added to Part.&rdquo; and exited 0. It is refused now, and refused rather than replaced: changing a column's type or its options is a migration, not a generator run. The second invocation was a typo in a flow file, and the typo was the bug report.
+
+** The documented select spec breaks when you paste it into a shell. ** `status:select:draft=Draft|sent=Sent|paid=Paid`, as `grit generate field --help` printed it, is a pipe. The shell cuts it at the first `|`, `grit` accepts a one-option select, and nothing anywhere says so. The examples are quoted now and the help says why.
+
+That second one is the better story, because the flow *passed* with the bare spec: it was asserting a one-option select while claiming to assert three. A flow that passes having asserted less than it says is worse than no flow, because it is counted. Both traps, the pipe and a `cd` without a subshell, are written down in `docs/content/verified/_README.md` for whoever writes the ninth flow.
+
+
 ## v3.481.0 - November 5, 2026
 
 ### Tests for the paths the bugs were in

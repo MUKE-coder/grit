@@ -72,6 +72,127 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.482.0 */}
+            <div className="mb-12" id="v3.482.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.482.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A verified flow is a file now, and it found two bugs on the first day</h3>
+                <p>
+                  From grit#168. Four executed blocks, 193 doc pages. The two
+                  numbers were the finding, and they are not a discipline
+                  problem: adding a <code>verify=</code> block means editing a
+                  React component, finding the right place in the JSX, and
+                  getting a template literal inside it right.
+                </p>
+                <p>
+                  So a flow can also be ten lines in{' '}
+                  <code>docs/content/verified/</code>:
+                </p>
+                <CodeBlock
+                  language="markdown"
+                  filename="docs/content/verified/remove-resource.md"
+                  code={`---
+page: /docs/cli
+title: grit remove resource undoes every injection
+---
+
+Why this flow exists, for whoever reads the file next.
+
+\`\`\`bash
+grit generate resource Widget --fields "name:string,price:money"
+grit migrate
+(cd apps/api && go build ./... && go vet ./...)
+
+grit remove resource Widget --force
+(cd apps/api && go build ./... && go vet ./...)
+\`\`\``}
+                />
+                <p>
+                  The runner does not care which source a flow came from, so{' '}
+                  <code>tests/docs/run-flows.sh</code> is unchanged. The{' '}
+                  <code>page:</code> is what the flow is evidence about, and{' '}
+                  <code>go run ./tools/docsamples -check</code> fails if that
+                  page has moved: a flow pointing somewhere that no longer
+                  exists still runs, still passes, and has stopped being
+                  evidence about anything a reader can find. CI runs that check.
+                </p>
+                <p>
+                  Four flows to eight. The new ones:{' '}
+                  <code>grit remove resource</code> reversing every injection,
+                  a generated seeder being registered rather than merely
+                  written, <code>grit generate field</code> reaching the column
+                  whitelist as well as the model, and{' '}
+                  <code>grit backup --output</code> writing an archive with no
+                  storage credentials, checked for the CSV, the{' '}
+                  <code>dump.sql</code> and the manifest the page says are in
+                  it.
+                </p>
+                <h4>Not MDX, and why</h4>
+                <p>
+                  The issue asked for MDX with a <code>verify:</code> key in
+                  frontmatter. The 289 existing pages are TSX built from a dozen
+                  components, two separate search indexers parse{' '}
+                  <code>page.tsx</code>, and so do three check scripts.
+                  Migrating them is a project, and migrating none of them means
+                  new pages keep being TSX because that is what every page
+                  beside them looks like, so the coverage would not actually
+                  grow. A flow file grows it today and takes nothing away from
+                  doing the migration later: this reader does not care what the
+                  page is written in.
+                </p>
+                <h4>Two bugs, found by writing the flows</h4>
+                <p>
+                  <strong>
+                    <code>grit generate field</code> on a field that already
+                    exists left a project that does not compile.
+                  </strong>{' '}
+                  Every injection is idempotent for a byte-identical line, so a
+                  second add with any difference at all appended a second struct
+                  field:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`internal/models/part.go:16:2: State redeclared
+	internal/models/part.go:15:2: other declaration of State`}
+                />
+                <p>
+                  The command said &ldquo;Field added to Part.&rdquo; and exited
+                  0. It is refused now, and refused rather than replaced:
+                  changing a column&apos;s type or its options is a migration,
+                  not a generator run. The second invocation was a typo in a
+                  flow file, and the typo was the bug report.
+                </p>
+                <p>
+                  <strong>
+                    The documented select spec breaks when you paste it into a
+                    shell.
+                  </strong>{' '}
+                  <code>status:select:draft=Draft|sent=Sent|paid=Paid</code>, as{' '}
+                  <code>grit generate field --help</code> printed it, is a pipe.
+                  The shell cuts it at the first <code>|</code>,{' '}
+                  <code>grit</code> accepts a one-option select, and nothing
+                  anywhere says so. The examples are quoted now and the help
+                  says why.
+                </p>
+                <p>
+                  That second one is the better story, because the flow{' '}
+                  <em>passed</em> with the bare spec: it was asserting a
+                  one-option select while claiming to assert three. A flow that
+                  passes having asserted less than it says is worse than no
+                  flow, because it is counted. Both traps, the pipe and a{' '}
+                  <code>cd</code> without a subshell, are written down in{' '}
+                  <code>docs/content/verified/_README.md</code> for whoever
+                  writes the ninth flow.
+                </p>
+              </div>
+            </div>
+
             {/* v3.481.0 */}
             <div className="mb-12" id="v3.481.0">
               <div className="flex items-center gap-3 mb-4">

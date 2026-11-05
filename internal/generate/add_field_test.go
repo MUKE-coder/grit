@@ -74,3 +74,42 @@ func TestAddFieldSupportedSet(t *testing.T) {
 		}
 	}
 }
+
+// A field the model already has is refused, by whatever spelling.
+//
+// Every injection in AddField is idempotent for a byte-identical line, so a
+// second add with any difference at all, a changed option list or a different
+// type, appended a SECOND struct field of that name:
+//
+//	internal/models/part.go:16:2: State redeclared
+//
+// The command said "Field added to Part." and exited 0. Found by writing the
+// verified flow for the field-types page, where the second invocation was a
+// typo (grit#168).
+//
+// A unit test on existingField rather than on AddField: AddField needs a whole
+// generated project around it, and the decision is this function.
+func TestExistingFieldRecognisesWhatTheModelHas(t *testing.T) {
+	fields := []Field{
+		{Name: "name", Type: "string"},
+		{Name: "State", Type: "select"},
+		{Name: "unit_price", Type: "money"},
+	}
+	for _, want := range []struct{ asked, found string }{
+		// The same column, by every spelling it arrives in.
+		{"state", "State"},
+		{"State", "State"},
+		{"STATE", "State"},
+		{"unit_price", "unit_price"},
+		{"UnitPrice", "unit_price"},
+		{"name", "name"},
+		// And a field it genuinely does not have.
+		{"colour", ""},
+		{"states", ""},
+		{"price", ""},
+	} {
+		if got := existingField(fields, want.asked); got != want.found {
+			t.Errorf("existingField(%q) = %q, want %q", want.asked, got, want.found)
+		}
+	}
+}

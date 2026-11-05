@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.481.0"
+var version = "3.482.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -679,10 +679,18 @@ written.
 Supports scalar, select, and toggle types. For relationship, file, slug, or
 array fields, regenerate the resource instead.
 
+A spec with a | in it must be quoted, or the shell reads it as a pipe and the
+field arrives with one option and no error. The readable form avoids the
+question: status:select[draft, sent, paid].
+
 Examples:
-  grit g field Invoice status:select:draft=Draft|sent=Sent|paid=Paid
+  grit g field Invoice "status:select:draft=Draft|sent=Sent|paid=Paid"
+  grit g field Invoice "status:select[draft, sent, paid]"
   grit g field Invoice notes:text
-  grit g field Invoice paid:toggle`,
+  grit g field Invoice paid:toggle
+
+A field the resource already has is refused: changing a column's type or its
+options is a migration, not a generator run.`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
