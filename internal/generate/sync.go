@@ -556,15 +556,22 @@ func buildZodSchema(s GoStruct) string {
 		case isAssociation(f, s.Fields):
 			zodType = "z.unknown().optional()"
 		case isAutoField(f.JSONName):
-			// id, the timestamps and the version, from their Go types alone.
-			// These are the framework's columns and the API always sends
-			// them: inferring a resource field from one would make id
-			// optional and created_at nullable, which is a response this API
-			// does not produce.
+			// id, the timestamps, archived_at and the version, from their Go
+			// types alone. These are the framework's columns and the API
+			// always sends them: inferring a resource field from one would
+			// make id optional and created_at nullable, which is a response
+			// this API does not produce.
+			//
+			// Their PRESENCE still follows the same rule as everything else,
+			// though. archived_at is a *time.Time with omitempty, so the
+			// interface says `archived_at?: string | null` and this said
+			// `z.string().nullable()`, required. One of the two columns the
+			// row type and the row schema disagreed about (grit#145).
+			zodType = responseZod(zodType, f, s)
 		default:
 			if field, zod, ok := syncZod(f, s); ok {
 				shaped = append(shaped, field)
-				zodType = zod
+				zodType = responseZod(zod, f, s)
 			}
 		}
 		entityFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, zodType))
@@ -612,6 +619,40 @@ export type Update%sInput = z.infer<typeof Update%sSchema>;
 //
 // One function because the rule was written out at three call sites, and three
 // copies of a rule is three chances for it to stop being the same rule.
+// responseZod turns a create-shaped validator into a response-shaped one.
+//
+// The entity schema describes what the API SENDS, and it was being built from
+// the create shape, which carries .optional() for anything a create form may
+// leave out. A create-time rule applied to a response: it made
+// z.infer<typeof ProductSchema> disagree with the Product interface next door
+// about whether `price` can be undefined, and both are exported as Product, so
+// which answer you got depended on which module you imported (grit#145).
+//
+// One rule, buildTSType's, because the interface is the thing this has to
+// agree with:
+//
+//   - optional ONLY when the JSON tag says omitempty, which is what makes a
+//     key absent rather than null,
+//   - nullable when the Go field is a pointer, which is what makes it null.
+//
+// The runtime checks are left alone. z.string().min(1) infers string exactly
+// as z.string() does, so keeping them changes what a response is validated
+// against and not what the type says.
+func responseZod(zod string, f GoField, s GoStruct) string {
+	// Whatever the create shape decided about presence is not this schema's
+	// business, so it is removed before the response rules are applied.
+	zod = strings.ReplaceAll(zod, ".optional()", "")
+
+	ts := tsTypeOf(f, s)
+	if strings.Contains(ts, "| null") && !strings.Contains(zod, ".nullable()") {
+		zod += ".nullable()"
+	}
+	if f.Omitempty {
+		zod += ".optional()"
+	}
+	return zod
+}
+
 func OptionalForUpdate(zod string) string {
 	if strings.Contains(zod, ".optional()") {
 		return zod

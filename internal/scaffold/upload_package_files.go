@@ -67,8 +67,24 @@ func writeUploadPackageFiles(root string, opts Options) error {
 	// workspace name.
 	readmeBody := strings.ReplaceAll(string(readme), "@gritframework/upload", "@repo/upload")
 
+	// And say, at the top, which thing this is. There are two: this vendored
+	// source, consumed through workspace:* with no build step, and the
+	// published @gritframework/upload, which is a tsup build. Same code,
+	// different names, different shapes, and from a checkout there was no way
+	// to tell which one a project runs or which release wrote it (grit#152).
+	version := opts.Version
+	if version == "" {
+		version = DefaultVersion
+	}
+	readmeBody = "<!-- Written by Grit v" + version + ". Do not edit: `grit upgrade` replaces it. -->\n" +
+		"> **This is the vendored source**, resolved from `packages/upload` through\n" +
+		"> `workspace:*`. It is not the published `@gritframework/upload`, which is a\n" +
+		"> built package of the same code under a different name. `package.json` carries\n" +
+		"> the Grit version that wrote this copy, which is the version to quote in a bug\n" +
+		"> report about an upload.\n\n" + readmeBody
+
 	files := map[string]string{
-		filepath.Join(pkgRoot, "package.json"):  uploadPackageJSON(),
+		filepath.Join(pkgRoot, "package.json"):  uploadPackageJSON(opts.Version),
 		filepath.Join(pkgRoot, "tsconfig.json"): uploadTSConfig(),
 		filepath.Join(pkgRoot, "README.md"):     readmeBody,
 	}
@@ -86,10 +102,25 @@ func writeUploadPackageFiles(root string, opts Options) error {
 // is consumed straight from source through workspace:*, so there is no build
 // step, no dist, and no version to keep in step with a registry. The published
 // one lives in packages/upload and carries the tsup build and the real name.
-func uploadPackageJSON() string {
+//
+// It carries the GRIT version that wrote it, though, which it did not before.
+//
+// This is the vendored source, not the published @gritframework/upload: two
+// different things with two different names, which is why there is no tarball
+// to compare it against. What there was no way to do was say WHICH vendored
+// copy a project is running. It read "0.0.0", so a bug report about an upload
+// named no release, and uploads are the feature with the most moving parts:
+// presign, direct to S3, the multipart fallback, client-side WebP (grit#152).
+//
+// Stamped rather than maintained by hand, so it cannot drift from the release
+// that produced it.
+func uploadPackageJSON(gritVersion string) string {
+	if gritVersion == "" {
+		gritVersion = DefaultVersion
+	}
 	return `{
   "name": "@repo/upload",
-  "version": "0.0.0",
+  "version": "` + gritVersion + `",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

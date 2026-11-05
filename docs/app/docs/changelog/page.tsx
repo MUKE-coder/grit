@@ -72,6 +72,97 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.474.0 */}
+            <div className="mb-12" id="v3.474.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.474.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two Product types, and they disagreed</h3>
+                <p>
+                  grit#145 filed this as duplication: the row&apos;s shape is
+                  declared in <code>types/product.ts</code> and again in{' '}
+                  <code>schemas/product.ts</code>. It is worse than duplication.
+                  They disagreed:
+                </p>
+                <CodeBlock language="ts" code={`// packages/shared/types/product.ts
+price: number;
+archived_at?: string | null;
+
+// packages/shared/schemas/product.ts, via z.infer<typeof ProductSchema>
+price?: number | undefined;
+archived_at: string | null;`} />
+                <p>
+                  Both export <code>Product</code>. So a file importing it from{' '}
+                  <code>@repo/shared/types</code> and a file importing it from{' '}
+                  <code>@repo/shared/schemas</code> got different answers about
+                  whether <code>price</code> can be undefined, and neither file
+                  errored, because each is internally consistent. There is no
+                  symptom until somebody relies on the difference.
+                </p>
+                <p>
+                  They disagreed because each derived presence by its own rule.{' '}
+                  <code>buildTSType</code> uses one fact, the json tag&apos;s{' '}
+                  <code>omitempty</code>, with nullability from the Go pointer.
+                  The entity schema reused the <strong>create</strong> shape,
+                  which carries <code>.optional()</code> for anything a create
+                  form may leave out: a create-time rule applied to a response.
+                </p>
+                <p>
+                  One rule now, and the runtime checks are untouched, because{' '}
+                  <code>z.string().min(1)</code> infers <code>string</code>{' '}
+                  exactly as <code>z.string()</code> does. What changed is only
+                  what the type says.
+                </p>
+                <p>
+                  <strong>The test reads both.</strong> A test for either one
+                  alone passes while the pair is broken, which is how this
+                  survived. It builds the interface and the schema from one Go
+                  model and compares the presence of every field; put the old
+                  behaviour back and it names three of them.
+                </p>
+                <p>
+                  I also tried the thing that would have been better: a
+                  type-level assertion emitted into the generated file, so{' '}
+                  <code>tsc</code> proves the two agree in the project itself.
+                  It works, and it does not ship: the assertion imports the
+                  sibling schema module, and only one of the nine framework
+                  models the scaffold writes types for has one. It would have
+                  broken eight projects to guard one file. The round-trip test
+                  caught that before it left the machine.
+                </p>
+
+                <h3>Which upload package is this project running?</h3>
+                <p>
+                  grit#152, with its premise corrected. There are two, and they
+                  do not share a name: <code>packages/upload</code> in a
+                  generated project is the vendored <em>source</em>, resolved
+                  through <code>workspace:*</code> with no build step, while{' '}
+                  <code>@gritframework/upload</code> on npm is a tsup build of
+                  the same code. So the issue&apos;s suggested test, that the
+                  vendored tree equals the published tarball, is comparing two
+                  different shapes.
+                </p>
+                <p>
+                  What was real is the question behind it. The vendored copy
+                  said <code>&quot;version&quot;: &quot;0.0.0&quot;</code>, so a
+                  bug report about an upload named no release. Uploads are the
+                  feature with the most moving parts, presign, direct to S3, the
+                  multipart fallback, client-side WebP, which makes it the one
+                  where knowing the version matters most.
+                </p>
+                <p>
+                  It carries the Grit version that wrote it now, stamped rather
+                  than maintained by hand, and its README opens by saying which
+                  of the two it is.
+                </p>
+              </div>
+            </div>
+
             {/* v3.473.0 */}
             <div className="mb-12" id="v3.473.0">
               <div className="flex items-center gap-3 mb-4">

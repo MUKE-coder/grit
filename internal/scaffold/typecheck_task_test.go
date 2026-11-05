@@ -69,7 +69,7 @@ func TestEveryAppDeclaresTheTypeCheckTask(t *testing.T) {
 		"apps/admin (tanstack)":        adminTanStackPackageJSON(Options{ProjectName: "app", Frontend: FrontendTanStack}),
 		"apps/desktop/frontend":        desktopClientPackageJSON(opts),
 		"apps/expo/package.json":       expoPackageJSON(opts),
-		"packages/upload/package.json": uploadPackageJSON(),
+		"packages/upload/package.json": uploadPackageJSON(DefaultVersion),
 	}
 
 	for name, body := range apps {
@@ -94,7 +94,7 @@ func TestNoAppUsesTheUnhyphenatedSpelling(t *testing.T) {
 		"apps/admin (tanstack)":        adminTanStackPackageJSON(viteOpts),
 		"apps/desktop/frontend":        desktopClientPackageJSON(opts),
 		"apps/expo/package.json":       expoPackageJSON(opts),
-		"packages/upload/package.json": uploadPackageJSON(),
+		"packages/upload/package.json": uploadPackageJSON(DefaultVersion),
 		"turbo.json":                   turboJSON(),
 		"package.json":                 rootPackageJSON(opts),
 	} {

@@ -23,6 +23,41 @@ Also worth knowing:
 ---
 
 
+## v3.474.0 - November 5, 2026
+
+### Two Product types, and they disagreed
+
+grit#145 filed this as duplication: the row's shape is declared in `types/product.ts` and again in `schemas/product.ts`. It is worse than duplication. They disagreed:
+
+```ts
+// packages/shared/types/product.ts
+price: number;
+archived_at?: string | null;
+
+// packages/shared/schemas/product.ts, via z.infer<typeof ProductSchema>
+price?: number | undefined;
+archived_at: string | null;
+```
+
+Both export `Product`. So a file importing it from `@repo/shared/types` and a file importing it from `@repo/shared/schemas` got different answers about whether `price` can be undefined, and neither file errored, because each is internally consistent. There is no symptom until somebody relies on the difference.
+
+They disagreed because each derived presence by its own rule. `buildTSType` uses one fact, the json tag's `omitempty`, with nullability from the Go pointer. The entity schema reused the **create** shape, which carries `.optional()` for anything a create form may leave out: a create-time rule applied to a response.
+
+One rule now, and the runtime checks are untouched, because `z.string().min(1)` infers `string` exactly as `z.string()` does. What changed is only what the type says.
+
+**The test reads both.** A test for either one alone passes while the pair is broken, which is how this survived. It builds the interface and the schema from one Go model and compares the presence of every field; put the old behaviour back and it names three of them.
+
+I also tried the thing that would have been better: a type-level assertion emitted into the generated file, so `tsc` proves the two agree in the project itself. It works, and it does not ship: the assertion imports the sibling schema module, and only one of the nine framework models the scaffold writes types for has one. It would have broken eight projects to guard one file. The round-trip test caught that before it left the machine.
+
+### Which upload package is this project running?
+
+grit#152, with its premise corrected. There are two, and they do not share a name: `packages/upload` in a generated project is the vendored *source*, resolved through `workspace:*` with no build step, while `@gritframework/upload` on npm is a tsup build of the same code. So the issue's suggested test, that the vendored tree equals the published tarball, is comparing two different shapes.
+
+What was real is the question behind it. The vendored copy said `"version": "0.0.0"`, so a bug report about an upload named no release. Uploads are the feature with the most moving parts, presign, direct to S3, the multipart fallback, client-side WebP, which makes it the one where knowing the version matters most.
+
+It carries the Grit version that wrote it now, stamped rather than maintained by hand, and its README opens by saying which of the two it is.
+
+
 ## v3.473.0 - November 5, 2026
 
 ### Ninety-two lines of React Query per resource, with untyped inputs
