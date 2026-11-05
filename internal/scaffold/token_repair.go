@@ -198,13 +198,18 @@ func repairImpersonateSessionSource(src string) (string, []string, []string) {
 var authServiceLiteralRe = regexp.MustCompile(`(?s)(authService := &services\.AuthService\{[^}]*RefreshExpiry:\s*cfg\.JWTRefreshExpiry,[ \t]*\n)([ \t]*)\}\n`)
 
 func repairAuthServiceWiringSource(src string) (string, []string, []string) {
-	if !strings.Contains(src, "authService := &services.AuthService{") || strings.Contains(src, "services.RefreshCookiePath") {
+	// The gate is the name, not the form. v3.479.0 moved the path onto the
+	// service, so a project written after it has RefreshCookiePath inside the
+	// literal and no services.RefreshCookiePath line anywhere; gating on the
+	// assignment would make this repair run on a project that is already right,
+	// fail to match its regex and warn about wiring that is correct.
+	if !strings.Contains(src, "authService := &services.AuthService{") || strings.Contains(src, "RefreshCookiePath") {
 		return src, nil, nil
 	}
 	out := authServiceLiteralRe.ReplaceAllString(src,
-		"${1}\t\tDB: db,\n${2}}\n\tservices.RefreshCookiePath = \"/api/\" + APIVersion + \"/auth\"\n")
+		"${1}\t\tDB: db,\n\t\tRefreshCookiePath: \"/api/\" + APIVersion + \"/auth\",\n${2}}\n")
 	if out == src {
-		return src, nil, []string{"builds the AuthService differently: give it DB: db and set services.RefreshCookiePath, or sessions are not checked and the refresh cookie misses its routes"}
+		return src, nil, []string{"builds the AuthService differently: give it DB: db and RefreshCookiePath: \"/api/\" + APIVersion + \"/auth\", or sessions are not checked and the refresh cookie misses its routes"}
 	}
 	return out, []string{"access tokens are checked against their session, and the refresh cookie reaches the auth routes"}, nil
 }

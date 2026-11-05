@@ -27,13 +27,19 @@ import (
 	"sync/atomic"
 )
 
-// AllowedOrigins lists the browser origins that may open a socket with the
-// grit_access cookie. routes.Setup points it at the list CORS uses, so an origin
-// added in the admin reaches both. While it is nil, only a page served from the
-// API's own host qualifies.
+// AllowedOrigins is the process-wide origin list, kept for code written before
+// the handler carried its own. handlers.RealtimeHandler.AllowedOrigins is the
+// one routes.Setup fills in, and it wins; this is the fallback when a handler
+// was built without one. While both are nil, only a page served from the API's
+// own host qualifies.
+//
+// Prefer the field. Two API instances in one process cannot share this
+// variable: whichever called Setup last owns it, and the first instance then
+// enforces the second's origins.
 var AllowedOrigins func() []string
 
-// CheckOrigin reports whether a WebSocket handshake may go ahead.
+// OriginAllowed reports whether a WebSocket handshake may go ahead, against the
+// origin list it is given.
 //
 // A browser sends the grit_access cookie with a handshake whichever page starts
 // it, and the same-origin policy does not cover WebSockets. Accepting every
@@ -46,7 +52,12 @@ var AllowedOrigins func() []string
 // and Connect never falls back to the cookie when one is sent. Native clients
 // send no Origin at all, and the desktop webview sends its own scheme with a
 // token, so both connect as before.
-func CheckOrigin(r *http.Request) bool {
+//
+// The list arrives as an argument rather than being read from a package
+// variable so that the rule has no process-wide state: two instances in one
+// process each enforce their own, and a test can pass a list without disturbing
+// the test beside it.
+func OriginAllowed(r *http.Request, allowed func() []string) bool {
 	origin := r.Header.Get("Origin")
 	if origin == "" || r.URL.Query().Get("token") != "" || r.Header.Get("Authorization") != "" {
 		return true
@@ -54,17 +65,70 @@ func CheckOrigin(r *http.Request) bool {
 	if u, err := url.Parse(origin); err == nil && u.Host != "" && strings.EqualFold(u.Host, r.Host) {
 		return true
 	}
-	if AllowedOrigins == nil {
+	if allowed == nil {
 		return false
 	}
-	for _, allowed := range AllowedOrigins() {
+	for _, listed := range allowed() {
 		// A wildcard in CORS_ORIGINS is not a reason to hand the cookie to every
 		// site. The origin has to be named.
-		if allowed != "*" && strings.EqualFold(strings.TrimRight(allowed, "/"), origin) {
+		if listed != "*" && strings.EqualFold(strings.TrimRight(listed, "/"), origin) {
 			return true
 		}
 	}
 	return false
+}
+
+// CheckOrigin is OriginAllowed against the package-level AllowedOrigins.
+//
+// Kept because a project may call it directly. New code should go through a
+// hub, which holds its own list.
+func CheckOrigin(r *http.Request) bool {
+	return OriginAllowed(r, AllowedOrigins)
+}
+
+// hubOrigins holds one origin list per hub.
+//
+// A registry rather than a field on Hub because of which files move together.
+// handlers/realtime_sse.go is framework code and is rewritten on every upgrade;
+// handlers/realtime.go and internal/realtime/hub.go are yours, and an upgrade
+// holds back a file you have edited. A rewritten file that reaches for a field
+// or a method declared in a held-back one does not compile, which is what
+// happens to anything declared outside this file. Everything the origin check
+// needs is in guard.go, and guard.go arrives whole.
+var hubOrigins sync.Map // *Hub -> func() []string
+
+// SetAllowedOrigins records the browser origins that may open a connection to
+// this hub with the grit_access cookie. routes.Setup points it at the list CORS
+// uses, so an origin added in the admin reaches both. A nil list removes the
+// registration.
+//
+// Per hub rather than per process: two API instances in one process each
+// enforce their own origins, where one package-level list meant the instance
+// that started second decided for both. A test can set one without putting a
+// global back for the test beside it.
+func (h *Hub) SetAllowedOrigins(allowed func() []string) {
+	if h == nil {
+		return
+	}
+	if allowed == nil {
+		hubOrigins.Delete(h)
+		return
+	}
+	hubOrigins.Store(h, allowed)
+}
+
+// CheckOrigin reports whether a connection to this hub may go ahead, against
+// the origins registered for it. With none, it falls back to the package-level
+// AllowedOrigins, which is where a project written before v3.479.0 set them.
+func (h *Hub) CheckOrigin(r *http.Request) bool {
+	if h != nil {
+		if registered, ok := hubOrigins.Load(h); ok {
+			if allowed, _ := registered.(func() []string); allowed != nil {
+				return OriginAllowed(r, allowed)
+			}
+		}
+	}
+	return OriginAllowed(r, AllowedOrigins)
 }
 
 // ErrTooManyConnections is what Admit returns when a connection cap is reached.
@@ -218,6 +282,34 @@ func TestCheckOriginAcceptsATokenClient(t *testing.T) {
 	}
 }
 
+// Two lists at once, in parallel, which is the whole point of the list being an
+// argument: before OriginAllowed existed these two tests had to run one after
+// the other, each restoring a package variable the other also wrote.
+func TestOriginAllowedHoldsTwoListsAtOnce(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name    string
+		allowed []string
+		origin  string
+		want    bool
+	}{
+		{"instance A allows its own admin", []string{"http://localhost:3001"}, "http://localhost:3001", true},
+		{"instance A refuses instance B's admin", []string{"http://localhost:3001"}, "http://localhost:4001", false},
+		{"instance B allows its own admin", []string{"http://localhost:4001"}, "http://localhost:4001", true},
+		{"instance B refuses instance A's admin", []string{"http://localhost:4001"}, "http://localhost:3001", false},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			r := httptest.NewRequest("GET", "http://api.example.com/api/ws", nil)
+			r.Header.Set("Origin", tc.origin)
+			if got := OriginAllowed(r, func() []string { return tc.allowed }); got != tc.want {
+				t.Fatalf("OriginAllowed(%s) = %v, want %v", tc.origin, got, tc.want)
+			}
+		})
+	}
+}
+
 func testClient(userID string) *Client {
 	return &Client{UserID: userID, Send: make(chan []byte, 1)}
 }
@@ -264,6 +356,14 @@ func apiRealtimeHandlerTestGo() string { return tmpl("api/handlers/realtime_test
 const realtimeHandlerImportOld = "\t\"net/http\"\n\t\"time\"\n"
 const realtimeHandlerImportNew = "\t\"net/http\"\n\t\"strings\"\n\t\"time\"\n"
 
+// The upgrader stops being a package variable: it is built per handler and
+// bound to the hub, so its origin backstop reads the same origins Connect
+// checked. Nothing replaces it, so this hunk deletes the declaration and the
+// blank line after it by ending on the line that follows them. An empty
+// replacement would have done the same, but the test that reverses these hunks
+// to rebuild the old file needs each new text to appear exactly once.
+const realtimeHandlerDocLine = "// RealtimeHandler upgrades an HTTP request to a WebSocket and registers\n"
+
 const realtimeUpgraderOld = `// upgrader allows any origin — desktop clients use Wails (file://) and
 // the API is mounted behind CORS that already restricts origins for
 // regular HTTP traffic.
@@ -272,17 +372,43 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
-`
 
-const realtimeUpgraderNew = `// upgrader checks the origin again, as a backstop for any other caller of
-// Upgrade. Connect has already refused a cross-origin cookie handshake with a
-// 403 by the time it gets here. See realtime.CheckOrigin.
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     realtime.CheckOrigin,
+` + realtimeHandlerDocLine
+
+const realtimeUpgraderNew = realtimeHandlerDocLine
+
+// The handler gains an upgrader of its own. One hunk with the constructor,
+// because the field is useless without the binding.
+const realtimeHandlerStructOld = `type RealtimeHandler struct {
+	Hub  *realtime.Hub
+	Auth *services.AuthService
 }
 `
+
+const realtimeHandlerStructNew = `type RealtimeHandler struct {
+	Hub  *realtime.Hub
+	Auth *services.AuthService
+	// upgrader checks the origin again, as a backstop for any other caller of
+	// Upgrade. Connect has already refused a cross-origin cookie handshake with
+	// a 403 by the time it gets here. Built per handler in NewRealtimeHandler
+	// and bound to the hub, so the backstop reads the same origins Connect did:
+	// a package-level upgrader had no way to reach the hub and checked whichever
+	// instance in this process registered its origins last.
+	upgrader websocket.Upgrader
+}
+`
+
+const realtimeHandlerCtorOld = "\treturn &RealtimeHandler{Hub: hub, Auth: auth}\n"
+
+const realtimeHandlerCtorNew = `	return &RealtimeHandler{Hub: hub, Auth: auth, upgrader: websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     hub.CheckOrigin,
+	}}
+`
+
+const realtimeUpgradeCallOld = "\tconn, err := upgrader.Upgrade(c.Writer, c.Request, nil)\n"
+const realtimeUpgradeCallNew = "\tconn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)\n"
 
 const realtimeTokenOld = `	tokenStr := c.Query("token")
 	if tokenStr == "" {
@@ -299,7 +425,7 @@ const realtimeTokenNew = `	tokenStr := c.Query("token")
 		} else if cookie, err := c.Cookie("grit_access"); err == nil {
 			// The cookie is the one credential a page on another site can make
 			// the browser send, so it counts only from an allowed origin.
-			if !realtime.CheckOrigin(c.Request) {
+			if !h.Hub.CheckOrigin(c.Request) {
 				log.Printf("[ws] refused a cookie handshake from origin %q", c.GetHeader("Origin"))
 				c.JSON(http.StatusForbidden, gin.H{
 					"error": gin.H{"code": "FORBIDDEN", "message": "this origin may not open the realtime socket with a cookie"},
@@ -361,8 +487,9 @@ const routesRealtimeHandlerOld = "\trealtimeHandler := handlers.NewRealtimeHandl
 
 const routesRealtimeHandlerNew = routesRealtimeHandlerOld + `	// A browser handshake authenticates with the grit_access cookie, which a
 	// page on any site can make the browser send, so it is accepted only from
-	// the origins CORS allows.
-	realtime.AllowedOrigins = corsOrigins
+	// the origins CORS allows. Registered against this hub rather than for the
+	// process, so a second instance here enforces its own origins.
+	realtimeHub.SetAllowedOrigins(corsOrigins)
 `
 
 const routesRealtimeRouteOld = `	// WebSocket: realtime hub. Auth via ?token=<jwt> on the handshake

@@ -170,6 +170,12 @@ useLiveResource('invoices', ['invoices'])`}
                     cap is closed with code 1013. With <code>MODULE_REALTIME=false</code> the
                     Redis backplane is not started and <code>/api/ws</code> answers 404.
                   </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+                    The list belongs to the hub, not to the process:{' '}
+                    <code>routes.Setup</code> calls{' '}
+                    <code>hub.SetAllowedOrigins(corsOrigins)</code>. If you embed two
+                    API instances in one program, each enforces its own origins.
+                  </p>
                 </div>
 
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mt-4">

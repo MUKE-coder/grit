@@ -23,6 +23,41 @@ Also worth knowing:
 ---
 
 
+## v3.479.0 - November 5, 2026
+
+### Three globals that two instances could not share
+
+From grit#155. The generated API is explicit about its dependencies: `routes.Services` is where they go in, and nothing core is reached for through a package variable. Three pieces of configuration were the exceptions that made that a claim with a footnote.
+
+They were fine for one server in one process, which is every project. They stopped being fine for two. Whichever instance called `Setup` last owned all three, so the first one wrote its refresh cookie at the second's path, closed the second's WebSockets when a session was revoked, and checked handshake origins against the second's CORS list. Two tests that wanted different values had the same problem and had to run one after the other, each putting back a variable the other also wrote.
+
+Each one now belongs to the thing that uses it. `RefreshCookiePath` is a field on the `AuthService`. The revocation hook is registered against a database handle with `services.OnSessionsRevokedFor(db, hook)`, because the handle is the only thing the revoke functions are given. The realtime origin list is registered against a hub with `hub.SetAllowedOrigins`. Every package variable survives as the fallback, so a project that sets one keeps working and gets no repair it did not ask for.
+
+There is also a `services.Sessions` value, which is the revoke functions with their database handle and their hook named, for code that wants neither the registration nor the variable.
+
+#### Where the field lives decides which files have to agree
+
+The origin list started out on the handler, which is the obvious place for it and was wrong. `handlers/realtime_sse.go` is framework code and is rewritten on every upgrade; `handlers/realtime.go` is yours, and an upgrade holds back a file you have edited. Both check the origin. So upgrading a project still on the older shape delivered a new SSE handler calling a method the held-back handler did not declare, and ended on
+
+```text
+internal/handlers/realtime_sse.go:72:10: h.checkOrigin undefined
+```
+
+The upgrade's own `go build` check caught it, which is what that check is for. The list moved to the hub, whose declaration and whose registry are both in `internal/realtime/guard.go`, so the rewritten file reaches it through a pointer it already holds. And `guard.go` joined the framework-owned set that travels with the SSE handler: it had been written at scaffold time only, which is the second half of why the build broke.
+
+#### A generated resource whose tests would not build
+
+Found while running the test suite of the project used to check the upgrade, which is not where it was being looked for.
+
+```text
+internal/services/product.go:201:24: non-constant format string in call to respond.Rule
+```
+
+`go test` runs a subset of vet, and `printf` is in it as an error rather than a warning. The generator wrapped one message in a `fmt.Sprintf` before handing it to `respond.Rule`, which has always taken a format and its arguments, so the Sprintf was doing nothing except making `go test ./internal/services/` refuse to build the package. The package itself compiled, which is why it lasted: `go build ./...` does not run vet, and the generator's own tests parse the emitted Go rather than vetting it.
+
+Every resource generated before this release has that line, so there is a repair as well as a fix, and a sweep over all 593 template files for the next printf-like helper to acquire a caller.
+
+
 ## v3.478.0 - November 5, 2026
 
 ### A checkbox that saved the opposite of what you ticked

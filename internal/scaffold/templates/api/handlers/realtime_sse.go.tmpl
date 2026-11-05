@@ -69,7 +69,7 @@ func (h *RealtimeHandler) Events(c *gin.Context) {
 		if bearer := c.GetHeader("Authorization"); bearer != "" {
 			tokenStr = strings.TrimPrefix(bearer, "Bearer ")
 		} else if cookie, err := c.Cookie("grit_access"); err == nil {
-			if !realtime.CheckOrigin(c.Request) {
+			if !h.Hub.CheckOrigin(c.Request) {
 				log.Printf("[sse] refused a cookie stream from origin %q", c.GetHeader("Origin"))
 				c.JSON(http.StatusForbidden, gin.H{
 					"error": gin.H{"code": "FORBIDDEN", "message": "this origin may not open the realtime stream with a cookie"},

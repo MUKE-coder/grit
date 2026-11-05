@@ -20,8 +20,8 @@ func TestRealtimeSocketChecksOriginAndCapsConnections(t *testing.T) {
 		t.Error("the upgrader still accepts every origin")
 	}
 	for _, want := range []string{
-		"CheckOrigin:     realtime.CheckOrigin",
-		"if !realtime.CheckOrigin(c.Request) {",
+		"CheckOrigin:     hub.CheckOrigin",
+		"if !h.Hub.CheckOrigin(c.Request) {",
 		"h.Hub.Admit(client)",
 		"websocket.CloseTryAgainLater",
 	} {
@@ -36,7 +36,7 @@ func TestRealtimeSocketChecksOriginAndCapsConnections(t *testing.T) {
 		"func (h *Hub) Admit(c *Client) error",
 		`"REALTIME_MAX_CONNECTIONS_PER_USER", 10`,
 		`"REALTIME_MAX_CONNECTIONS", 10000`,
-		`allowed != "*"`,
+		`listed != "*"`,
 	} {
 		if !strings.Contains(guard, want) {
 			t.Errorf("realtime/guard.go is missing %q", want)
@@ -48,7 +48,7 @@ func TestRealtimeSocketChecksOriginAndCapsConnections(t *testing.T) {
 	routes := read("internal", "routes", "routes.go")
 	for _, want := range []string{
 		"r.Use(middleware.CORSDynamic(corsOrigins))",
-		"realtime.AllowedOrigins = corsOrigins",
+		"realtimeHub.SetAllowedOrigins(corsOrigins)",
 		"if cfg.Modules.Realtime {\n\t\trealtimeOptions = append(realtimeOptions, realtime.WithRedis(cfg.RedisURL, \"\"))",
 		"if cfg.Modules.Realtime {\n\t\tr.GET(\"/api/ws\", realtimeHandler.Connect)",
 	} {
@@ -78,20 +78,6 @@ func oldRealtimeFile(t *testing.T, template string, hunks [][2]string) string {
 		old = strings.Replace(old, h[1], h[0], 1)
 	}
 	return old
-}
-
-var realtimeHandlerHunks = [][2]string{
-	{realtimeHandlerImportOld, realtimeHandlerImportNew},
-	{realtimeUpgraderOld, realtimeUpgraderNew},
-	{realtimeTokenOld, realtimeTokenNew},
-	{realtimeRegisterOld, realtimeRegisterNew},
-}
-
-var realtimeRoutesHunks = [][2]string{
-	{routesCORSOld, routesCORSNew},
-	{routesRealtimeHubOld, routesRealtimeHubNew},
-	{routesRealtimeHandlerOld, routesRealtimeHandlerNew},
-	{routesRealtimeRouteOld, routesRealtimeRouteNew},
 }
 
 func TestRealtimeRepairsProduceTheTemplate(t *testing.T) {

@@ -223,7 +223,7 @@ func TestRealtimeTokenErrorIsNotEchoed(t *testing.T) {
 	if strings.Contains(fresh, `"message": err.Error()`) || !strings.Contains(fresh, realtimeInvalidTokenNew) {
 		t.Fatal("the realtime handler still sends err.Error() with INVALID_TOKEN")
 	}
-	if !strings.Contains(fresh, "realtime.CheckOrigin(c.Request)") {
+	if !strings.Contains(fresh, "h.Hub.CheckOrigin(c.Request)") {
 		t.Error("the realtime handler no longer checks the origin of a cookie handshake")
 	}
 	respondImport := "\t\"" + disclosureModule + "/internal/respond\"\n"

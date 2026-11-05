@@ -134,6 +134,17 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// through. Framework-owned so an upgrade delivers it.
 		filepath.Join(apiRoot, "internal", "handlers", "realtime_sse.go"): apiRealtimeSSEGo(),
 
+		// The realtime origin rule and connection caps, which realtime_sse.go
+		// above calls into. One set with it: the SSE handler is rewritten on
+		// every upgrade, so a guard.go left at the version the project was
+		// scaffolded with is a file that does not compile. It was written at
+		// scaffold time only until v3.479.0, and moving the origin list onto the
+		// hub is what found that: the new SSE handler called a method the old
+		// guard.go did not have, and `grit upgrade` ended on
+		// "h.Hub.CheckOrigin undefined".
+		filepath.Join(apiRoot, "internal", "realtime", "guard.go"):      apiRealtimeGuardGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "guard_test.go"): apiRealtimeGuardTestGo(),
+
 		filepath.Join(apiRoot, "internal", "authz", "gate.go"):      apiGateGo(),
 		filepath.Join(apiRoot, "internal", "authz", "gate_test.go"): apiGateTestGo(),
 

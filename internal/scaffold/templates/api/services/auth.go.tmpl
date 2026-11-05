@@ -32,6 +32,44 @@ type AuthService struct {
 	// DB is where sessions live. When it is set, an access token is refused as
 	// soon as its session is revoked, rather than when the token expires.
 	DB *gorm.DB
+
+	// RefreshCookiePath scopes the refresh cookie to the auth routes. routes.Setup
+	// builds it from APIVersion.
+	//
+	// A field rather than only the package variable, so two API instances in one
+	// process can mount their auth routes at different versions, and a test can
+	// set it without restoring it for the test beside it. Empty falls back to
+	// the package-level RefreshCookiePath.
+	RefreshCookiePath string
+
+	// OnSessionsRevoked runs after this service revokes a user's sessions, with
+	// that user's id. routes.Setup registers the realtime hub's DisconnectUser
+	// against the database handle instead; this field is for code holding an
+	// AuthService and nothing else. Nil falls back to what is registered for
+	// DB, then to the package-level OnSessionsRevoked.
+	OnSessionsRevoked func(userID string)
+}
+
+// sessions is this service's view of the session store: its own database handle
+// and its own revocation hook.
+func (s *AuthService) sessions() Sessions {
+	return Sessions{DB: s.DB, OnRevoked: s.OnSessionsRevoked}
+}
+
+// RevokeSession, RevokeAllSessions and RevokeSessionByToken are the session
+// package functions bound to this service, so a caller that holds an
+// AuthService does not have to pass a database handle and does not share the
+// process-wide revocation hook.
+func (s *AuthService) RevokeSession(userID, sessionID string) error {
+	return s.sessions().Revoke(userID, sessionID)
+}
+
+func (s *AuthService) RevokeAllSessions(userID, exceptToken string) error {
+	return s.sessions().RevokeAll(userID, exceptToken)
+}
+
+func (s *AuthService) RevokeSessionByToken(refreshToken string) error {
+	return s.sessions().RevokeByToken(refreshToken)
 }
 
 // TokenPair holds access and refresh tokens.
@@ -315,11 +353,23 @@ func (s *AuthService) generateToken(userID, email, role, tokenType, sessionID st
 }
 
 // RefreshCookiePath scopes the refresh cookie to the auth routes, so it is not
-// sent on every request. routes.Setup builds it from APIVersion. It has to match
-// where refresh and logout are mounted: written as /api/auth while they lived
-// under /api/v1/auth, the browser never sent it to either, so refreshing from a
-// cookie always failed and logout never revoked the session.
+// sent on every request. It has to match where refresh and logout are mounted:
+// written as /api/auth while they lived under /api/v1/auth, the browser never
+// sent it to either, so refreshing from a cookie always failed and logout never
+// revoked the session.
+//
+// This is the fallback. AuthService.RefreshCookiePath is what routes.Setup
+// fills in and it wins; this variable is what a service built without one uses,
+// which is how a project written before v3.479.0 worked.
 var RefreshCookiePath = "/api/v1/auth"
+
+// refreshCookiePath is where this service writes the refresh cookie.
+func (s *AuthService) refreshCookiePath() string {
+	if s.RefreshCookiePath != "" {
+		return s.RefreshCookiePath
+	}
+	return RefreshCookiePath
+}
 
 // legacyRefreshCookiePath is where projects before v3.244.0 set the cookie.
 const legacyRefreshCookiePath = "/api/auth"
@@ -342,7 +392,7 @@ func (s *AuthService) SetAuthCookies(c *gin.Context, pair *TokenPair) {
 
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("grit_access", pair.AccessToken, accessSeconds, "/", "", secure, true)
-	c.SetCookie("grit_refresh", pair.RefreshToken, refreshSeconds, RefreshCookiePath, "", secure, true)
+	c.SetCookie("grit_refresh", pair.RefreshToken, refreshSeconds, s.refreshCookiePath(), "", secure, true)
 	// grit_signed_in carries no secret. It lives as long as the session so the
 	// web app's middleware can tell a signed-in browser from a stranger on the
 	// same host: grit_access expires with its token and grit_refresh is scoped
@@ -360,7 +410,7 @@ func (s *AuthService) ClearAuthCookies(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("grit_access", "", -1, "/", "", secure, true)
 	c.SetCookie("grit_signed_in", "", -1, "/", "", secure, true)
-	c.SetCookie("grit_refresh", "", -1, RefreshCookiePath, "", secure, true)
+	c.SetCookie("grit_refresh", "", -1, s.refreshCookiePath(), "", secure, true)
 	c.SetCookie("grit_refresh", "", -1, legacyRefreshCookiePath, "", secure, true)
 }
 

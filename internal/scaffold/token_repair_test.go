@@ -67,7 +67,12 @@ func TestRepairAuthServiceWiring(t *testing.T) {
 	if len(warn) > 0 {
 		t.Fatalf("warnings: %v", warn)
 	}
-	assertRepaired(t, "routes.go", out, fixed, "DB: db,", `services.RefreshCookiePath = "/api/" + APIVersion + "/auth"`)
+	assertRepaired(t, "routes.go", out, fixed, "DB: db,", `RefreshCookiePath: "/api/" + APIVersion + "/auth",`)
+	// Run twice. The repaired file must read as done, or every later upgrade
+	// warns about an AuthService it has already fixed.
+	if again, _, warn := repairAuthServiceWiringSource(out); again != out || len(warn) > 0 {
+		t.Errorf("the repair is not idempotent: changed=%v warnings=%v", again != out, warn)
+	}
 }
 
 // A fresh project needs none of it.

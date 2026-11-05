@@ -53,8 +53,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                    apiRealtimeHubGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "backplane.go"):              apiRealtimeBackplaneGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "backplane_test.go"):         apiRealtimeBackplaneTestGo(),
-		filepath.Join(apiRoot, "internal", "realtime", "guard.go"):                  apiRealtimeGuardGo(),
-		filepath.Join(apiRoot, "internal", "realtime", "guard_test.go"):             apiRealtimeGuardTestGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "channels.go"):               apiRealtimeChannelsGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "channels_test.go"):          apiRealtimeChannelsTestGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "presence.go"):               apiRealtimePresenceGo(),
@@ -8519,10 +8517,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Sessions are checked on every access token, so logging out, signing out
 		// everywhere and changing a password take effect at once.
 		DB: db,
+		// The refresh cookie is scoped to the auth routes, wherever the version
+		// puts them. On the service rather than on the package, so two API
+		// instances in one process can mount at different versions.
+		RefreshCookiePath: "/api/" + APIVersion + "/auth",
 	}
-	// The refresh cookie is scoped to the auth routes, wherever the version puts
-	// them.
-	services.RefreshCookiePath = "/api/" + APIVersion + "/auth"
 
 	// Handlers
 	authHandler := &handlers.AuthHandler{
@@ -8576,7 +8575,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// replica B and nothing anywhere reports it.
 ` + routesRealtimeHubNew + `	// Revoking a session has to close that user's live sockets too. Without
 	// this, "sign out of all devices" leaves every open WebSocket streaming.
-	services.OnSessionsRevoked = realtimeHub.DisconnectUser
+	//
+	// Registered against this database handle rather than for the process, so a
+	// second API instance here closes its own sockets instead of the first
+	// instance's.
+	services.OnSessionsRevokedFor(db, realtimeHub.DisconnectUser)
 
 	// The domain event bus. Created before any handler so an emit during
 	// startup has somewhere to go, and wired to the audit log, realtime and

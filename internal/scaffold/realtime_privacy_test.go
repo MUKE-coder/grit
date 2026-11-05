@@ -103,8 +103,12 @@ func TestRevokingSessionsClosesWebSockets(t *testing.T) {
 
 	sess := read("internal", "services", "session.go")
 	for _, want := range []string{
+		// The hook, the per-handle registry it is normally reached through, and
+		// the process-wide fallback behind both.
+		"func OnSessionsRevokedFor(db *gorm.DB, hook func(userID string))",
+		"var sessionHooks sync.Map",
 		"var OnSessionsRevoked func(userID string)",
-		"sessionsRevoked(userID)",
+		"s.revoked(userID)",
 	} {
 		if !strings.Contains(sess, want) {
 			t.Errorf("session service is missing %q, so revocation cannot notify "+
@@ -112,13 +116,13 @@ func TestRevokingSessionsClosesWebSockets(t *testing.T) {
 		}
 	}
 	// Both revocation paths, not just the bulk one.
-	if n := strings.Count(sess, "sessionsRevoked(userID)"); n < 2 {
-		t.Errorf("sessionsRevoked is called %d time(s); both RevokeSession and "+
-			"RevokeAllUserSessions need it", n)
+	if n := strings.Count(sess, "s.revoked(userID)"); n < 2 {
+		t.Errorf("the hook is called %d time(s); both Revoke and RevokeAll "+
+			"need it", n)
 	}
 
 	routes := read("internal", "routes", "routes.go")
-	if !strings.Contains(routes, "services.OnSessionsRevoked = realtimeHub.DisconnectUser") {
+	if !strings.Contains(routes, "services.OnSessionsRevokedFor(db, realtimeHub.DisconnectUser)") {
 		t.Error("routes.Setup never wires the revocation hook to the hub, so the " +
 			"hook exists but nothing calls into it")
 	}

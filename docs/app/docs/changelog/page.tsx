@@ -72,6 +72,110 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.479.0 */}
+            <div className="mb-12" id="v3.479.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.479.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Three globals that two instances could not share</h3>
+                <p>
+                  From grit#155. The generated API is explicit about its
+                  dependencies: <code>routes.Services</code> is where they go in,
+                  and nothing core is reached for through a package variable.
+                  Three pieces of configuration were the exceptions that made
+                  that a claim with a footnote.
+                </p>
+                <p>
+                  They were fine for one server in one process, which is every
+                  project. They stopped being fine for two. Whichever instance
+                  called <code>Setup</code> last owned all three, so the first
+                  one wrote its refresh cookie at the second&apos;s path, closed
+                  the second&apos;s WebSockets when a session was revoked, and
+                  checked handshake origins against the second&apos;s CORS list.
+                  Two tests that wanted different values had the same problem
+                  and had to run one after the other, each putting back a
+                  variable the other also wrote.
+                </p>
+                <p>
+                  Each one now belongs to the thing that uses it.{' '}
+                  <code>RefreshCookiePath</code> is a field on the{' '}
+                  <code>AuthService</code>. The revocation hook is registered
+                  against a database handle with{' '}
+                  <code>services.OnSessionsRevokedFor(db, hook)</code>, because
+                  the handle is the only thing the revoke functions are given.
+                  The realtime origin list is registered against a hub with{' '}
+                  <code>hub.SetAllowedOrigins</code>. Every package variable
+                  survives as the fallback, so a project that sets one keeps
+                  working and gets no repair it did not ask for.
+                </p>
+                <p>
+                  There is also a <code>services.Sessions</code> value, which is
+                  the revoke functions with their database handle and their hook
+                  named, for code that wants neither the registration nor the
+                  variable.
+                </p>
+                <h4>Where the field lives decides which files have to agree</h4>
+                <p>
+                  The origin list started out on the handler, which is the
+                  obvious place for it and was wrong.{' '}
+                  <code>handlers/realtime_sse.go</code> is framework code and is
+                  rewritten on every upgrade;{' '}
+                  <code>handlers/realtime.go</code> is yours, and an upgrade
+                  holds back a file you have edited. Both check the origin. So
+                  upgrading a project still on the older shape delivered a new
+                  SSE handler calling a method the held-back handler did not
+                  declare, and ended on
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`internal/handlers/realtime_sse.go:72:10: h.checkOrigin undefined`}
+                />
+                <p>
+                  The upgrade&apos;s own <code>go build</code> check caught it,
+                  which is what that check is for. The list moved to the hub,
+                  whose declaration and whose registry are both in{' '}
+                  <code>internal/realtime/guard.go</code>, so the rewritten file
+                  reaches it through a pointer it already holds. And{' '}
+                  <code>guard.go</code> joined the framework-owned set that
+                  travels with the SSE handler: it had been written at scaffold
+                  time only, which is the second half of why the build broke.
+                </p>
+                <h4>A generated resource whose tests would not build</h4>
+                <p>
+                  Found while running the test suite of the project used to check
+                  the upgrade, which is not where it was being looked for.
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`internal/services/product.go:201:24: non-constant format string in call to respond.Rule`}
+                />
+                <p>
+                  <code>go test</code> runs a subset of vet, and{' '}
+                  <code>printf</code> is in it as an error rather than a warning.
+                  The generator wrapped one message in a{' '}
+                  <code>fmt.Sprintf</code> before handing it to{' '}
+                  <code>respond.Rule</code>, which has always taken a format and
+                  its arguments, so the Sprintf was doing nothing except making{' '}
+                  <code>go test ./internal/services/</code> refuse to build the
+                  package. The package itself compiled, which is why it lasted:{' '}
+                  <code>go build ./...</code> does not run vet, and the
+                  generator&apos;s own tests parse the emitted Go rather than
+                  vetting it.
+                </p>
+                <p>
+                  Every resource generated before this release has that line, so
+                  there is a repair as well as a fix, and a sweep over all 593
+                  template files for the next printf-like helper to acquire a
+                  caller.
+                </p>
+              </div>
+            </div>
+
             {/* v3.478.0 */}
             <div className="mb-12" id="v3.478.0">
               <div className="flex items-center gap-3 mb-4">

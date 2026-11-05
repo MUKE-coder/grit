@@ -144,7 +144,7 @@ func (s *%sService) checked(current *models.%s, updates map[string]interface{}) 
 	if err := json.Unmarshal(raw, &patched); err != nil {
 		var typeErr *json.UnmarshalTypeError
 		if errors.As(err, &typeErr) && typeErr.Field != "" {
-			return respond.Rule(fmt.Sprintf("%%s must be %%s", typeErr.Field, s.readableType(typeErr.Type.String())))
+			return respond.Rule("%%s must be %%s", typeErr.Field, s.readableType(typeErr.Type.String()))
 		}
 		return respond.Rule("one of the fields is the wrong type")
 	}
@@ -405,6 +405,27 @@ func RepairServiceChecks() error {
 	return repairGeneratedServiceChecks(root, opts)
 }
 
+// The pre-formatted message that made a generated service's tests fail to
+// build. Everything a resource generated before v3.479.0 still has.
+//
+// vet's printf check reads the Sprintf's result as a non-constant format
+// string, and `go test` runs that check as an error, so
+// `go test ./internal/services/` refused to build the package while the
+// package itself compiled. respond.Rule has always taken a format and its
+// arguments; the Sprintf was never doing anything.
+const (
+	printfRuleOld = `respond.Rule(fmt.Sprintf("%s must be %s", typeErr.Field, s.readableType(typeErr.Type.String())))`
+	printfRuleNew = `respond.Rule("%s must be %s", typeErr.Field, s.readableType(typeErr.Type.String()))`
+)
+
+// repairServicePrintfRule unwraps that Sprintf.
+func repairServicePrintfRule(src string) (string, bool) {
+	if !strings.Contains(src, printfRuleOld) {
+		return src, false
+	}
+	return strings.ReplaceAll(src, printfRuleOld, printfRuleNew), true
+}
+
 // repairGeneratedServiceChecks applies the write checks to every generated
 // service under root.
 func repairGeneratedServiceChecks(root string, opts Options) error {
@@ -431,10 +452,18 @@ func repairGeneratedServiceChecks(root string, opts Options) error {
 		}
 		if err := repairSourceFile(root, m, path, func(src string) (string, []string, []string) {
 			out, changed := RepairGeneratedServiceChecks(src, module)
-			if !changed {
+			var fixed []string
+			if changed {
+				fixed = append(fixed, "a patch or a bulk action is checked against the model's own rules and the row policy, instead of writing whatever the whitelist let through")
+			}
+			if unwrapped, ok := repairServicePrintfRule(out); ok {
+				out = unwrapped
+				fixed = append(fixed, "go test builds this package again: the message for a wrong field type is no longer pre-formatted, which vet refuses as a non-constant format string")
+			}
+			if len(fixed) == 0 {
 				return src, nil, nil
 			}
-			return out, []string{"a patch or a bulk action is checked against the model's own rules and the row policy, instead of writing whatever the whitelist let through"}, nil
+			return out, fixed, nil
 		}); err != nil {
 			return err
 		}

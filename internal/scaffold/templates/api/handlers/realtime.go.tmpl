@@ -22,15 +22,6 @@ const (
 	wsMaxMessageSize = 2048 // subscribe messages, and client events with a payload of up to realtime.MaxClientEventBytes
 )
 
-// upgrader checks the origin again, as a backstop for any other caller of
-// Upgrade. Connect has already refused a cross-origin cookie handshake with a
-// 403 by the time it gets here. See realtime.CheckOrigin.
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     realtime.CheckOrigin,
-}
-
 // RealtimeHandler upgrades an HTTP request to a WebSocket and registers
 // it with the hub. Authentication uses a query-string JWT (?token=...)
 // because browsers can't set custom Authorization headers on WebSocket
@@ -38,11 +29,26 @@ var upgrader = websocket.Upgrader{
 type RealtimeHandler struct {
 	Hub  *realtime.Hub
 	Auth *services.AuthService
+	// upgrader checks the origin again, as a backstop for any other caller of
+	// Upgrade. Connect has already refused a cross-origin cookie handshake with
+	// a 403 by the time it gets here. Built per handler in NewRealtimeHandler
+	// and bound to the hub, so the backstop reads the same origins Connect did:
+	// a package-level upgrader had no way to reach the hub and checked whichever
+	// instance in this process registered its origins last.
+	upgrader websocket.Upgrader
 }
 
-// NewRealtimeHandler wires the handler to the global Hub and AuthService.
+// NewRealtimeHandler wires the handler to a Hub and an AuthService.
+//
+// Call hub.SetAllowedOrigins before mounting /api/ws, or a browser handshake
+// from your admin panel is refused: with no origins registered, only a page
+// served from the API's own host may use the cookie.
 func NewRealtimeHandler(hub *realtime.Hub, auth *services.AuthService) *RealtimeHandler {
-	return &RealtimeHandler{Hub: hub, Auth: auth}
+	return &RealtimeHandler{Hub: hub, Auth: auth, upgrader: websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     hub.CheckOrigin,
+	}}
 }
 
 // Connect upgrades the request to a WebSocket connection.
@@ -61,7 +67,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 		} else if cookie, err := c.Cookie("grit_access"); err == nil {
 			// The cookie is the one credential a page on another site can make
 			// the browser send, so it counts only from an allowed origin.
-			if !realtime.CheckOrigin(c.Request) {
+			if !h.Hub.CheckOrigin(c.Request) {
 				log.Printf("[ws] refused a cookie handshake from origin %q", c.GetHeader("Origin"))
 				c.JSON(http.StatusForbidden, gin.H{
 					"error": gin.H{"code": "FORBIDDEN", "message": "this origin may not open the realtime socket with a cookie"},
@@ -86,7 +92,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 		return
 	}
 
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("[ws] upgrade error: %v", err)
 		return

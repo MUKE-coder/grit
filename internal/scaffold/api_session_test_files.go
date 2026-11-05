@@ -11,6 +11,7 @@ func apiSessionTestGo() string {
 	return `package services_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -191,6 +192,79 @@ func TestSessionAbsoluteTimeout(t *testing.T) {
 
 	_, err = services.RotateSession(db, sessionCtx("Chrome"), "token-1", "token-2")
 	assert.ErrorIs(t, err, services.ErrSessionInvalid, "an expired session must not refresh regardless of activity")
+}
+
+// Two instances in one process keep their own revocation hook.
+//
+// The hook closes the user's live WebSockets, and the hub it has to reach
+// belongs to one instance. While there was a single package-level hook, the
+// instance that started second owned it: signing out everywhere on the first
+// instance closed the second instance's sockets and left the first instance's
+// open, and nothing anywhere reported it. The hook is registered against the
+// database handle now, which is the one thing the revoke functions are given.
+// The refresh cookie goes where this service says, not where the package
+// variable says.
+//
+// Asserted against a path the fallback could not have produced, because the
+// fallback's value and what routes.Setup computes are the same string for a v1
+// API: a test that only checked the path would pass with the field ignored.
+func TestRefreshCookieTakesItsPathFromTheService(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest("POST", "/api/v2/auth/login", nil)
+
+	auth := &services.AuthService{
+		AccessExpiry:      time.Minute,
+		RefreshExpiry:     time.Hour,
+		RefreshCookiePath: "/api/v2/auth",
+	}
+	auth.SetAuthCookies(c, &services.TokenPair{AccessToken: "access", RefreshToken: "refresh"})
+
+	var written *http.Cookie
+	for _, cookie := range rec.Result().Cookies() {
+		// SetAuthCookies also expires a cookie at the pre-v3.244.0 path, which
+		// is the same name with an empty value.
+		if cookie.Name == "grit_refresh" && cookie.Value != "" {
+			written = cookie
+		}
+	}
+	require.NotNil(t, written, "no grit_refresh cookie was written")
+	assert.Equal(t, "/api/v2/auth", written.Path)
+	assert.NotEqual(t, services.RefreshCookiePath, written.Path,
+		"the package variable decided the path, so the field is not being read")
+}
+
+func TestRevocationHookBelongsToItsDatabaseHandle(t *testing.T) {
+	first, second := newSessionDB(t), newSessionDB(t)
+
+	var firstSaw, secondSaw []string
+	services.OnSessionsRevokedFor(first, func(userID string) { firstSaw = append(firstSaw, userID) })
+	services.OnSessionsRevokedFor(second, func(userID string) { secondSaw = append(secondSaw, userID) })
+	t.Cleanup(func() {
+		services.OnSessionsRevokedFor(first, nil)
+		services.OnSessionsRevokedFor(second, nil)
+	})
+
+	_, err := services.CreateSession(first, sessionCtx("Chrome"), "user-1", "token-1")
+	require.NoError(t, err)
+	require.NoError(t, services.RevokeAllUserSessions(first, "user-1", ""))
+
+	assert.Equal(t, []string{"user-1"}, firstSaw)
+	assert.Empty(t, secondSaw, "the other instance's hook ran for a revocation on this one")
+}
+
+// A Sessions value takes its hook directly, for code that holds neither a
+// registration nor the package variable.
+func TestSessionsCarriesItsOwnHook(t *testing.T) {
+	db := newSessionDB(t)
+	mine, err := services.CreateSession(db, sessionCtx("Chrome"), "user-1", "token-1")
+	require.NoError(t, err)
+
+	var called []string
+	store := services.Sessions{DB: db, OnRevoked: func(userID string) { called = append(called, userID) }}
+	require.NoError(t, store.Revoke("user-1", mine.ID))
+	assert.Equal(t, []string{"user-1"}, called)
 }
 
 func TestRevokeSessionIsScopedToItsOwner(t *testing.T) {

@@ -1332,7 +1332,7 @@ func (s *{{Pascal}}Service) checked(current *models.{{Pascal}}, updates map[stri
 	if err := json.Unmarshal(raw, &patched); err != nil {
 		var typeErr *json.UnmarshalTypeError
 		if errors.As(err, &typeErr) && typeErr.Field != "" {
-			return respond.Rule(fmt.Sprintf("%s must be %s", typeErr.Field, s.readableType(typeErr.Type.String())))
+			return respond.Rule("%s must be %s", typeErr.Field, s.readableType(typeErr.Type.String()))
 		}
 		return respond.Rule("one of the fields is the wrong type")
 	}

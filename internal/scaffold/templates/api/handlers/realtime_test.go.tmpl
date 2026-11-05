@@ -23,12 +23,13 @@ func realtimeServer(t *testing.T) (string, string) {
 	pair, err := auth.GenerateTokenPair("user-1", "user@example.com", "USER")
 	require.NoError(t, err)
 
-	previous := realtime.AllowedOrigins
-	realtime.AllowedOrigins = func() []string { return []string{"http://localhost:3001"} }
-	t.Cleanup(func() { realtime.AllowedOrigins = previous })
+	hub := realtime.NewHub()
+	// This hub's own origin list rather than the package variable, so this test
+	// does not have to put a global back for the test beside it.
+	hub.SetAllowedOrigins(func() []string { return []string{"http://localhost:3001"} })
 
 	r := gin.New()
-	r.GET("/api/ws", NewRealtimeHandler(realtime.NewHub(), auth).Connect)
+	r.GET("/api/ws", NewRealtimeHandler(hub, auth).Connect)
 	srv := httptest.NewServer(r)
 	t.Cleanup(srv.Close)
 	return "ws" + strings.TrimPrefix(srv.URL, "http") + "/api/ws", pair.AccessToken

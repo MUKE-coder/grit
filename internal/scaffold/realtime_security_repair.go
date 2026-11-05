@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -39,6 +40,9 @@ func repairRealtimeSecurity(root string, opts Options) error {
 		return err
 	}
 	module := opts.Module()
+	// First delivery only. Refreshing these two is writeFrameworkOwnedFiles's
+	// job, because handlers/realtime_sse.go calls into guard.go and travels in
+	// that set: a guard.go left behind is a project that does not compile.
 	for _, f := range []struct{ path, content string }{
 		{filepath.Join(realtimeDir, "guard.go"), apiRealtimeGuardGo()},
 		{filepath.Join(realtimeDir, "guard_test.go"), apiRealtimeGuardTestGo()},
@@ -69,7 +73,8 @@ func repairRealtimeSecurity(root string, opts Options) error {
 			return err
 		}
 	}
-	if !fileContains(routes, "realtime.AllowedOrigins = ") {
+	routesSrc, err := os.ReadFile(routes)
+	if err != nil || !realtimeOriginsWired(string(routesSrc)) {
 		return nil
 	}
 	if err := repairSourceFile(root, m, handler, repairRealtimeHandlerSource); err != nil {
@@ -94,6 +99,18 @@ func shownPath(root, path string) string {
 	return path
 }
 
+// realtimeOriginsWired reports whether routes.go already hands the realtime
+// socket its origin list, in either of the two shapes it has had: the package
+// variable up to v3.478.0, and the registration against the hub after it.
+//
+// A project on the older shape is left on it. Its handler reads the package
+// variable, so rewriting only routes.go would leave the socket with no origins
+// at all and refuse the project's own admin panel.
+func realtimeOriginsWired(src string) bool {
+	return strings.Contains(src, "realtime.AllowedOrigins = ") ||
+		strings.Contains(src, "SetAllowedOrigins(corsOrigins)")
+}
+
 // repairRealtimeRoutesSource hands the handler the CORS origins and gates the
 // hub's backplane and /api/ws on MODULE_REALTIME. modules says whether the
 // project's config has the flag at all.
@@ -104,13 +121,13 @@ func repairRealtimeRoutesSource(src string, modules bool) (string, []string, []s
 	out := src
 	var fixed, warnings []string
 
-	if !strings.Contains(out, "realtime.AllowedOrigins = ") {
+	if !realtimeOriginsWired(out) {
 		if strings.Count(out, routesCORSOld) == 1 && strings.Count(out, routesRealtimeHandlerOld) == 1 {
 			out = strings.Replace(out, routesCORSOld, routesCORSNew, 1)
 			out = strings.Replace(out, routesRealtimeHandlerOld, routesRealtimeHandlerNew, 1)
 			fixed = append(fixed, "the WebSocket takes a cookie handshake only from the origins CORS allows")
 		} else {
-			warnings = append(warnings, "does not build CORS or the realtime handler the way Grit wrote it: set realtime.AllowedOrigins to your CORS origin list after NewRealtimeHandler and run grit upgrade again, or the socket keeps accepting a cookie handshake from any origin")
+			warnings = append(warnings, "does not build CORS or the realtime handler the way Grit wrote it: call realtimeHub.SetAllowedOrigins with your CORS origin list and run grit upgrade again, or the socket keeps accepting a cookie handshake from any origin")
 		}
 	}
 
@@ -128,16 +145,50 @@ func repairRealtimeRoutesSource(src string, modules bool) (string, []string, []s
 
 // repairRealtimeHandlerSource checks the Origin before accepting the cookie and
 // registers through the capped Admit. All or nothing: the pieces share imports.
+//
+// The gate is the call, in either of the two shapes it has. A handler repaired
+// before v3.479.0 calls realtime.CheckOrigin and one written after it calls
+// h.Hub.CheckOrigin; both mean "the Origin is already checked here", and gating
+// on the older name alone would make this repair run again on a project that
+// has the newer shape, fail its first hunk count and warn about a handler that
+// is correct. A v1 handler is left as it is: it enforces the right origins, it
+// just reads them from a package variable.
+// realtimeHandlerHunks is every edit this repair makes to handlers/realtime.go,
+// old text to new.
+//
+// Declared here rather than inside the function because the test reverses it to
+// build the file Grit wrote before the fix, and then checks that repairing that
+// file reproduces the template byte for byte. Two lists would each pass their
+// own test while disagreeing with each other, which is how a hunk added to the
+// repair and not to the test went unnoticed until an upgrade warned about a
+// handler it had itself just written.
+var realtimeHandlerHunks = [][2]string{
+	{realtimeHandlerImportOld, realtimeHandlerImportNew},
+	{realtimeUpgraderOld, realtimeUpgraderNew},
+	{realtimeHandlerStructOld, realtimeHandlerStructNew},
+	{realtimeHandlerCtorOld, realtimeHandlerCtorNew},
+	{realtimeUpgradeCallOld, realtimeUpgradeCallNew},
+	{realtimeTokenOld, realtimeTokenNew},
+	{realtimeRegisterOld, realtimeRegisterNew},
+}
+
+// realtimeRoutesHunks is the same for routes.go. The route and hub edits are
+// applied conditionally, so this is the list in its complete form.
+var realtimeRoutesHunks = [][2]string{
+	{routesCORSOld, routesCORSNew},
+	{routesRealtimeHubOld, routesRealtimeHubNew},
+	{routesRealtimeHandlerOld, routesRealtimeHandlerNew},
+	{routesRealtimeRouteOld, routesRealtimeRouteNew},
+}
+
 func repairRealtimeHandlerSource(src string) (string, []string, []string) {
-	if !strings.Contains(src, "RealtimeHandler") || strings.Contains(src, "realtime.CheckOrigin") {
+	// Either shape of the check reads as "already repaired".
+	checked := strings.Contains(src, "realtime.CheckOrigin(c.Request)") ||
+		strings.Contains(src, "h.Hub.CheckOrigin(c.Request)")
+	if !strings.Contains(src, "RealtimeHandler") || checked {
 		return src, nil, nil
 	}
-	hunks := [][2]string{
-		{realtimeHandlerImportOld, realtimeHandlerImportNew},
-		{realtimeUpgraderOld, realtimeUpgraderNew},
-		{realtimeTokenOld, realtimeTokenNew},
-		{realtimeRegisterOld, realtimeRegisterNew},
-	}
+	hunks := realtimeHandlerHunks
 	for _, h := range hunks {
 		if strings.Count(src, h[0]) != 1 {
 			return src, nil, []string{"is not the handler Grit wrote: check the Origin with realtime.CheckOrigin before accepting the grit_access cookie, and register with h.Hub.Admit, or any site can open a socket as the signed-in user"}
