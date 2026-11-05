@@ -77,6 +77,10 @@ var checks = []struct {
 	// A bool that can never be saved as false, which stores "unticked" as
 	// "ticked" with no error anywhere (grit#179).
 	{"bool-default-true", checkBoolDefaultTrue},
+	// A checked-in SQL pair that cannot be loaded, or cannot be rolled back.
+	// Both are readable from the files, so they are found before a deploy
+	// rather than after AutoMigrate has already run (grit#162).
+	{"sql-migration-unpaired", checkSQLMigrations},
 	{"append-only-mutable-routes", checkAppendOnlyRoutes},
 	{"studio-unprotected", checkStudio},
 	{"default-credentials", checkCredentials},

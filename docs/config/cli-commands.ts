@@ -402,6 +402,36 @@ export const CLI_COMMANDS: CliCommand[] = [
     keywords: ['invoice number', 'counter', 'auto number', 'reference'],
   },
   {
+    id: 'generate-migration',
+    name: 'grit generate migration',
+    category: 'Generate',
+    summary: 'A versioned SQL pair, for what AutoMigrate cannot do.',
+    example: 'grit generate migration rename_company_to_organisation',
+    output: [
+      '  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.up.sql',
+      '  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.down.sql',
+      '',
+      '  grit migrate runs AutoMigrate, then the pending pairs in order.',
+    ],
+    purpose:
+      'AutoMigrate is additive: it adds tables, columns, indexes and constraints and takes nothing away, which is what makes a computed rollback possible. It does not rename a column, change a type, backfill data, drop anything, or add an index to a table too large to lock. Those go in a pair: a file that does it and a file that undoes it.',
+    useCases: [
+      'Renaming a column or a table, and moving the data with it.',
+      'A backfill, or splitting one column into two.',
+      'CREATE INDEX CONCURRENTLY on a large busy table, where a plain CREATE INDEX is an outage.',
+    ],
+    files: [
+      { path: 'apps/api/migrations/<version>_<name>.up.sql', status: 'created', note: 'the change' },
+      { path: 'apps/api/migrations/<version>_<name>.down.sql', status: 'created', note: 'its reverse' },
+    ],
+    notes: [
+      '--index orders:customer_id writes the index build and its drop, with CREATE INDEX CONCURRENTLY and the -- grit:no-transaction marker on Postgres. Without that marker Postgres answers SQLSTATE 25001 when you run it.',
+      'Never edit a pair that has already run: the database has the old version and the file has the new one. grit migrate compares a checksum and says so. Write a new pair.',
+      'grit migrate down undoes an AutoMigrate run; grit migrate down --sql undoes a pair. Two histories, because they are two mechanisms.',
+    ],
+    keywords: ['sql migration', 'rename column', 'backfill', 'concurrently', 'index', 'down migration', 'golang-migrate', 'goose'],
+  },
+  {
     id: 'generate-perf',
     name: 'grit generate perf',
     category: 'Generate',

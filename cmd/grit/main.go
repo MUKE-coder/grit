@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.479.0"
+var version = "3.480.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -443,6 +443,59 @@ func generateCmd() *cobra.Command {
 	cmd.AddCommand(generateJobCmd())
 	cmd.AddCommand(generateMailCmd())
 	cmd.AddCommand(generateWorkflowCmd())
+	cmd.AddCommand(generateMigrationCmd())
+
+	return cmd
+}
+
+func generateMigrationCmd() *cobra.Command {
+	var index string
+	var unique bool
+	var indexName string
+
+	cmd := &cobra.Command{
+		Use:     "migration <name>",
+		Aliases: []string{"migrations"},
+		Short:   "Generate a versioned SQL pair, for what AutoMigrate cannot do",
+		Long: `Generate an up/down SQL pair in apps/api/migrations/.
+
+Grit migrates with GORM AutoMigrate, which is additive: it adds tables,
+columns, indexes and constraints and takes nothing away. That is the right
+default, and it means the history can compute a rollback instead of asking you
+to write one.
+
+It does not rename a column, change a type, backfill data, drop anything, or
+add an index to a table too large to lock. Those go here, in a file that does
+it and a file that undoes it. "grit migrate" runs AutoMigrate first and then
+every pending pair, in version order.
+
+The index case is the one that bites in production. A plain CREATE INDEX takes
+a write lock, so adding one to a large busy table is an outage rather than a
+migration. --index writes CONCURRENTLY and the -- grit:no-transaction marker
+Postgres requires with it, which is the detail that is easy to get wrong by
+hand.
+
+Examples:
+  grit generate migration rename_company_to_organisation
+  grit generate migration backfill_order_totals
+  grit generate migration add_order_customer_index --index orders:customer_id
+  grit generate migration one_active_email --index users:email,active --unique`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			printLogo()
+			return generate.GenerateMigration(generate.MigrationOptions{
+				Name:      args[0],
+				Index:     index,
+				Unique:    unique,
+				IndexName: indexName,
+			})
+		},
+	}
+
+	cmd.Flags().StringVar(&index, "index", "", "Pre-fill both files with an index build and its drop: table:column or table:col_a,col_b")
+	cmd.Flags().BoolVar(&unique, "unique", false, "With --index: make it a unique index")
+	cmd.Flags().StringVar(&indexName, "index-name", "", "With --index: override the derived idx_<table>_<columns>")
 
 	return cmd
 }
@@ -1312,6 +1365,11 @@ func migrateDownCmd() *cobra.Command {
 	var steps int
 	var dryRun bool
 	var yes bool
+	// Two histories, because there are two mechanisms. An AutoMigrate run's
+	// reverse is computed from what it changed; a SQL pair's reverse is the
+	// file beside it. One command undoing "the last thing" would have to
+	// interleave them, and the order it picked would be a guess.
+	var sqlOnly bool
 
 	cmd := &cobra.Command{
 		Use:   "down",
@@ -1327,9 +1385,17 @@ func migrateDownCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			printLogo()
-			cHeading.Println("\n  Rolling back the last migration...")
+			if sqlOnly {
+				cHeading.Println("\n  Rolling back the last SQL migration...")
+			} else {
+				cHeading.Println("\n  Rolling back the last migration...")
+			}
 
-			goArgs := []string{"run", "cmd/migrate/main.go", "--down", "--steps", strconv.Itoa(steps)}
+			flag := "--down"
+			if sqlOnly {
+				flag = "--sql-down"
+			}
+			goArgs := []string{"run", "cmd/migrate/main.go", flag, "--steps", strconv.Itoa(steps)}
 			if dryRun {
 				goArgs = append(goArgs, "--dry-run")
 			}
@@ -1343,6 +1409,7 @@ func migrateDownCmd() *cobra.Command {
 	cmd.Flags().IntVar(&steps, "steps", 1, "How many runs to undo, newest first")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print the statements and change nothing")
 	cmd.Flags().BoolVar(&yes, "yes", false, "Do not ask before dropping (for scripts and CI)")
+	cmd.Flags().BoolVar(&sqlOnly, "sql", false, "Undo checked-in SQL migrations from apps/api/migrations instead of an AutoMigrate run")
 
 	return cmd
 }

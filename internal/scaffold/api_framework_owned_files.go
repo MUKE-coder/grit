@@ -184,6 +184,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "migrate", "history.go"):      apiMigrateHistoryGo(),
 		filepath.Join(apiRoot, "internal", "migrate", "history_test.go"): apiMigrateHistoryTestGo(),
 
+		// Checked-in SQL pairs, for the five changes AutoMigrate cannot make
+		// (grit#162). One set with cmd/migrate, which imports the embedded
+		// directory: deliver the runner without the package and the tool does
+		// not compile.
+		filepath.Join(apiRoot, "internal", "migrate", "sql.go"):      apiMigrateSQLGo(),
+		filepath.Join(apiRoot, "internal", "migrate", "sql_test.go"): apiMigrateSQLTestGo(),
+		filepath.Join(apiRoot, "migrations", "migrations.go"):        apiMigrationsPackageGo(),
+		filepath.Join(apiRoot, "migrations", "README.md"):            apiMigrationsReadme(),
+
 		// The actor on the context, which generated services scope owned rows
 		// by. A new file beside authz.go, so a project whose authz.go was
 		// edited still gets it.

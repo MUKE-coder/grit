@@ -775,6 +775,82 @@ export default function CLICheatsheetPage() {
               </div>
 
               {/* -------------------------------------------------------- */}
+              {/*  grit generate migration                                 */}
+              {/* -------------------------------------------------------- */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                  grit generate migration
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-1">
+                  <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5 mr-2">
+                    alias: grit g migration
+                  </span>
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-3">
+                  A versioned up/down SQL pair in{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    apps/api/migrations/
+                  </code>
+                  , for the five things{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    AutoMigrate
+                  </code>{" "}
+                  cannot do: rename, change a type, backfill, drop, or index a
+                  table too large to lock.{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    grit migrate
+                  </code>{" "}
+                  runs AutoMigrate first, then the pending pairs in order.
+                </p>
+                <div className="space-y-3">
+                  <TerminalCard
+                    cmd="grit generate migration rename_company_to_organisation"
+                    desc="An empty pair to write the SQL into"
+                  />
+                  <TerminalCard
+                    cmd="grit g migration add_order_customer_index --index orders:customer_id"
+                    desc="CREATE INDEX CONCURRENTLY, with the marker Postgres needs"
+                  />
+                  <TerminalCard
+                    cmd="grit g migration one_live_email --index users:email,active --unique"
+                    desc="A unique index over two columns"
+                  />
+                  <TerminalCard
+                    cmd="grit migrate down --sql"
+                    desc="Run the down half of the most recent pair"
+                  />
+                </div>
+                <div className="mt-6 rounded-lg border border-border/30 bg-card/30 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-border/30 bg-accent/20">
+                    <span className="text-xs font-mono font-medium text-foreground/70">
+                      FLAGS
+                    </span>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody className="text-muted-foreground">
+                      {[
+                        { flag: "--index", type: "string", desc: "Pre-fill both files with an index build and its drop: table:column or table:col_a,col_b" },
+                        { flag: "--unique", type: "bool", desc: "With --index: make it a unique index" },
+                        { flag: "--index-name", type: "string", desc: "With --index: override the derived idx_<table>_<columns>" },
+                      ].map((f) => (
+                        <tr key={f.flag} className="border-b border-border/15 last:border-0">
+                          <td className="px-4 py-2 font-mono text-xs text-accent/70 w-28">
+                            {f.flag}
+                          </td>
+                          <td className="px-4 py-2 font-mono text-xs text-muted-foreground/50 w-16">
+                            {f.type}
+                          </td>
+                          <td className="px-4 py-2 text-muted-foreground/70 text-sm">
+                            {f.desc}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* -------------------------------------------------------- */}
               {/*  grit generate sequence                                  */}
               {/* -------------------------------------------------------- */}
               <div className="mb-12">

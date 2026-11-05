@@ -58,6 +58,10 @@ GENERATED_DIRS = (
     # beside the model. A page naming policies/invoice.go is correct for
     # the same reason models/invoice.go is.
     'apps/api/internal/policies/',
+    # SQL migrations, written by grit generate migration. The directory is in
+    # every project; the pairs in it are not, and their names carry the
+    # timestamp of the moment somebody ran the command.
+    'apps/api/migrations/2',
     'apps/admin/resources/',
     'apps/admin/app/',
     'apps/web/app/',

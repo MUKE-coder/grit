@@ -62,15 +62,109 @@ export default function MigrationsPage() {
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   For most applications that is the right trade, and it is why
                   the deploy can run migrations without anybody watching. When
-                  you need one of the five, write the SQL and run it
-                  deliberately, or put{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">golang-migrate</code> or{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">goose</code>{' '}
-                  alongside GORM for the changes that need ordering and a down
-                  step. In development,{' '}
+                  you need one of the five, write a SQL pair:{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate migration</code>,
+                  below. In development,{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit migrate --fresh</code>{' '}
                   drops everything and starts again, which is the fastest way
                   through a type change on a database you do not mind losing.
+                </p>
+              </div>
+
+              {/* SQL migrations */}
+              <div className="mb-12">
+                <h2 id="sql-migrations" className="text-2xl font-semibold tracking-tight mb-4">
+                  SQL migrations, for the five
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A versioned up/down pair in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/api/migrations/</code>.{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit migrate</code>{' '}
+                  runs <code>AutoMigrate</code> first, then every pending pair in
+                  version order, and records each one.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit generate migration rename_company_to_organisation
+  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.up.sql
+  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.down.sql
+
+grit migrate                  # AutoMigrate, then the pending pairs
+grit migrate status           # which pairs have run
+grit migrate down --sql       # undo the most recent pair`}
+                />
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  The index case is the one that bites in production, so{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--index</code>{' '}
+                  writes it for you, correctly for your database.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit generate migration add_order_customer_index --index orders:customer_id`}
+                />
+                <CodeBlock
+                  language="sql"
+                  code={`-- grit:no-transaction
+--
+-- CONCURRENTLY takes no write lock, so the table stays readable AND writable
+-- while the index builds. That is the whole point: a plain CREATE INDEX on a
+-- large busy table is an outage.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_customer_id ON orders (customer_id);`}
+                />
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  The marker on the first line is the part worth knowing.{' '}
+                  A file&apos;s statements run in one transaction unless it opens
+                  with <code>-- grit:no-transaction</code>, and Postgres refuses{' '}
+                  <code>CREATE INDEX CONCURRENTLY</code> inside a transaction
+                  block. Without the marker you get{' '}
+                  <code>SQLSTATE 25001</code> at the moment you run the
+                  migration rather than the moment you write it, which is the
+                  mistake this flag exists to stop you making. MySQL and SQLite
+                  have no <code>CONCURRENTLY</code>, so there the generator
+                  writes a plain <code>CREATE INDEX</code> and says what lock it
+                  takes.
+                </p>
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mb-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-amber-400">Never edit a pair that has run.</strong>{' '}
+                    The database has the old version and the file has the new
+                    one, and nothing can reconcile them.{' '}
+                    <code>grit migrate</code> compares a checksum and says so
+                    when it happens. Write a new pair instead.
+                  </p>
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <strong className="text-foreground">Two histories, on purpose.</strong>{' '}
+                  <code>grit migrate down</code> undoes an{' '}
+                  <code>AutoMigrate</code> run, whose reverse is computed from
+                  what it changed. <code>grit migrate down --sql</code> runs the
+                  down half of a pair, which you wrote. One command undoing
+                  &ldquo;the last thing&rdquo; would have to interleave them,
+                  and the order it picked would be a guess.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The whole cycle, against a real Postgres. This block is one of
+                  the few the build runs rather than only reads, so the
+                  concurrent index above is a claim CI checks on every change to
+                  these docs.
+                </p>
+                <CodeBlock
+                  terminal
+                  verify="sql-migration"
+                  code={`grit generate migration add_user_email_index --index users:email
+grit migrate                     # AutoMigrate, then the pending pair
+grit migrate status              # the pair, now applied
+grit migrate down --sql --yes    # the index goes; the schema stays`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  The files are compiled into the binary with{' '}
+                  <code>go:embed</code>, because the migrate tool runs in three
+                  places with three working directories:{' '}
+                  <code>grit migrate</code> runs it from{' '}
+                  <code>apps/api</code>, the production compose file runs{' '}
+                  <code>./migrate</code> in a container, and you may run the
+                  built binary from anywhere. A relative path that works in one
+                  of those is a migration silently skipped in another.
                 </p>
               </div>
 

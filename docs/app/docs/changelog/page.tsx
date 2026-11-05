@@ -72,6 +72,137 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.480.0 */}
+            <div className="mb-12" id="v3.480.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.480.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit generate migration</h3>
+                <p>
+                  From grit#162. v3.458.0 documented the five things{' '}
+                  <code>AutoMigrate</code> does not do, which was the honest
+                  half. This is the other half.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit generate migration rename_company_to_organisation
+  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.up.sql
+  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.down.sql
+
+grit migrate                  # AutoMigrate, then the pending pairs in order
+grit migrate status           # which pairs have run
+grit migrate down --sql       # undo the most recent pair`}
+                />
+                <p>
+                  <code>AutoMigrate</code> stays the default and stays first.
+                  It is additive, which is why the history can compute a
+                  rollback instead of asking you to write one, and why a deploy
+                  can migrate with nobody watching. It does not rename a
+                  column, change a type, backfill data, drop anything, or add
+                  an index to a table too large to lock. Until now a project
+                  that needed one of those left the framework&apos;s
+                  conventions for golang-migrate or goose.
+                </p>
+                <h4>The index case is the one that bites</h4>
+                <p>
+                  A plain <code>CREATE INDEX</code> takes a write lock, so
+                  adding one to a large busy table is an outage rather than a
+                  migration. <code>--index</code> writes it correctly for your
+                  database:
+                </p>
+                <CodeBlock
+                  language="sql"
+                  code={`-- grit:no-transaction
+--
+-- CONCURRENTLY takes no write lock, so the table stays readable AND writable
+-- while the index builds.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_customer_id ON orders (customer_id);`}
+                />
+                <p>
+                  The marker on the first line is most of the value. A
+                  file&apos;s statements run in one transaction unless it opens
+                  with it, and Postgres refuses{' '}
+                  <code>CREATE INDEX CONCURRENTLY</code> inside a transaction
+                  block. Without it you get <code>SQLSTATE 25001</code> when
+                  you run the migration rather than when you write it, which is
+                  the mistake people make writing this by hand. Verified both
+                  ways against a real Postgres: with the marker the index
+                  builds, and taking the marker out produces exactly that
+                  error. MySQL and SQLite have no{' '}
+                  <code>CONCURRENTLY</code>, so there it writes a plain{' '}
+                  <code>CREATE INDEX</code> and says what lock that takes.
+                </p>
+                <h4>Three details that each cost a bug</h4>
+                <p>
+                  <strong>Statements are split before they run.</strong> pgx
+                  refuses more than one command per <code>Exec</code> and the
+                  MySQL driver wants <code>multiStatements</code> on the DSN, so
+                  a file has to be split. Splitting on every semicolon turns one
+                  PL/pgSQL function into three syntax errors, and a function or
+                  a trigger is exactly what a migration file gets reached for.
+                  The splitter knows about quoted strings, quoted identifiers,
+                  dollar-quoted bodies and comments, and there is a test per
+                  case.
+                </p>
+                <p>
+                  <strong>The history is keyed by the whole name, not the
+                  timestamp.</strong> Two migrations generated in the same
+                  second share a version. Found by generating two in one
+                  command: the second ran and then could not record itself,
+                  &ldquo;UNIQUE constraint failed&rdquo;. The generator takes
+                  the next free second as well, so file names stay distinct, but
+                  a key that cannot collide is the half that holds when two
+                  people generate on two branches.
+                </p>
+                <p>
+                  <strong>The SQL is compiled into the binary.</strong>{' '}
+                  <code>go:embed</code>, because the migrate tool runs in three
+                  places with three working directories: <code>grit migrate</code>{' '}
+                  runs it from <code>apps/api</code>, the production compose
+                  file runs <code>./migrate</code> in a container where only the
+                  binary was copied, and a person may run the built binary from
+                  anywhere. A relative path that works in one of those is a
+                  migration silently skipped in another. The embed pattern is{' '}
+                  <code>*</code> rather than <code>*.sql</code>, because a
+                  pattern that matches nothing is a build error and a project
+                  with no migrations yet has no <code>.sql</code> files at all.
+                </p>
+                <p>
+                  Editing a pair that has already run is caught by a checksum
+                  and reported, because the database has the old version and the
+                  file has the new one and nothing reconciles them. An existing
+                  project gets all of it from <code>grit upgrade</code>, and the
+                  whole cycle is a block on the migrations page that CI runs
+                  against a real Postgres rather than only reads.
+                </p>
+                <h4>Two things grit doctor could not tell you</h4>
+                <p>
+                  <code>grit doctor</code> gained a 26th check, because both
+                  ways a pair goes wrong are readable from the files: a half
+                  pair, which stops <code>grit migrate</code> loading the
+                  directory at all, and an up file that changes the schema whose
+                  down file is empty, which rolls back silently. The runner
+                  refuses a half pair too, but it refuses it on a deploy, after
+                  AutoMigrate has already run.
+                </p>
+                <p>
+                  And the page that lists the checks said there were seventeen
+                  while the binary ran twenty-five. Twelve were undocumented,
+                  two of them added the week before. All twenty-six are on the
+                  page now, and a test reads both the registry and the page, in
+                  both directions: a check missing from the page fails, and so
+                  does a name on the page the binary no longer runs. A test on
+                  either side alone could not see it, which is why it drifted
+                  for months.
+                </p>
+              </div>
+            </div>
+
             {/* v3.479.0 */}
             <div className="mb-12" id="v3.479.0">
               <div className="flex items-center gap-3 mb-4">

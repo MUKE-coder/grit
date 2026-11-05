@@ -98,13 +98,15 @@ import (
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sync"
+	"{{MODULE}}/migrations"
 )
 
 func main() {
 	fresh := flag.Bool("fresh", false, "Drop all tables before migrating")
 	status := flag.Bool("status", false, "Show what each recorded run changed")
 	down := flag.Bool("down", false, "Undo what the most recent run added")
-	steps := flag.Int("steps", 1, "How many runs --down undoes")
+	sqlDown := flag.Bool("sql-down", false, "Run the down half of the most recent checked-in SQL migrations")
+	steps := flag.Int("steps", 1, "How many runs --down or --sql-down undoes")
 	dryRun := flag.Bool("dry-run", false, "With --down, print the statements and change nothing")
 	yes := flag.Bool("yes", false, "With --down, do not ask before dropping")
 	gritVersion := flag.String("grit-version", "", "Recorded against the run")
@@ -127,15 +129,28 @@ func main() {
 	if err := migrate.EnsureHistory(db); err != nil {
 		log.Fatalf("%v", err)
 	}
+	// The checked-in pairs are recorded separately, because they are a
+	// different mechanism: see internal/migrate/sql.go.
+	if err := migrate.EnsureSQLHistory(db); err != nil {
+		log.Fatalf("%v", err)
+	}
 
 	switch {
 	case *status:
 		if err := showStatus(db); err != nil {
 			log.Fatalf("%v", err)
 		}
+		if err := showSQLStatus(db); err != nil {
+			log.Fatalf("%v", err)
+		}
 		return
 	case *down:
 		if err := rollback(db, *steps, *dryRun, *yes); err != nil {
+			log.Fatalf("%v", err)
+		}
+		return
+	case *sqlDown:
+		if err := rollbackSQL(db, *steps, *dryRun, *yes); err != nil {
 			log.Fatalf("%v", err)
 		}
 		return
@@ -190,6 +205,14 @@ func main() {
 	}
 
 	changes := migrate.Diff(before, after)
+
+	// The checked-in pairs, after AutoMigrate and before either exit below.
+	// They run even when AutoMigrate found nothing to do, which is the common
+	// case for a pair that only renames or backfills.
+	if err := applySQL(db); err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	if len(changes) == 0 {
 		fmt.Println("Migrations completed successfully. The schema was already up to date.")
 		os.Exit(0)
@@ -214,6 +237,140 @@ func main() {
 		fmt.Println("\nUndo it with: grit migrate down")
 	}
 	os.Exit(0)
+}
+
+// applySQL runs the pending checked-in pairs, in version order.
+func applySQL(db *gorm.DB) error {
+	all, err := migrate.LoadSQLMigrations(migrations.FS)
+	if err != nil {
+		return err
+	}
+	if len(all) == 0 {
+		return nil
+	}
+
+	// An applied migration whose file has since been edited is a database and a
+	// file that disagree. Reported rather than fatal: the fix is a new pair, and
+	// refusing to migrate would block writing one.
+	if changed, err := migrate.ChangedSQL(db, all); err == nil && len(changed) > 0 {
+		for _, id := range changed {
+			fmt.Printf("WARNING: migrations/%s has been edited since it ran. The database has the old version and this file has the new one. Write a new migration instead.\n", id)
+		}
+	}
+
+	pending, err := migrate.PendingSQL(db, all)
+	if err != nil {
+		return err
+	}
+	if len(pending) == 0 {
+		return nil
+	}
+	fmt.Printf("Applying %d SQL migration(s)...\n", len(pending))
+	applied, err := migrate.ApplySQL(db, all)
+	for _, id := range applied {
+		fmt.Println("  + " + id)
+	}
+	return err
+}
+
+// showSQLStatus lists the checked-in pairs and whether each one has run.
+func showSQLStatus(db *gorm.DB) error {
+	all, err := migrate.LoadSQLMigrations(migrations.FS)
+	if err != nil {
+		return err
+	}
+	if len(all) == 0 {
+		return nil
+	}
+	applied, err := migrate.AppliedSQL(db)
+	if err != nil {
+		return err
+	}
+	when := map[string]string{}
+	sums := map[string]string{}
+	for _, row := range applied {
+		when[row.ID] = row.AppliedAt.Format("2006-01-02 15:04")
+		sums[row.ID] = row.Checksum
+	}
+
+	fmt.Println("\nSQL migrations (migrations/):")
+	for _, m := range all {
+		state := "pending"
+		if at, ok := when[m.ID()]; ok {
+			state = "applied " + at
+			if sums[m.ID()] != m.Checksum {
+				state += ", EDITED SINCE"
+			}
+		}
+		fmt.Printf("  %s  [%s]\n", m.ID(), state)
+	}
+	return nil
+}
+
+// rollbackSQL runs the down half of the most recent pairs.
+//
+// It prints the statements first and asks, for the same reason the computed
+// rollback does: a down file can drop a column, and nothing brings the data
+// back.
+func rollbackSQL(db *gorm.DB, steps int, dryRun, yes bool) error {
+	if steps < 1 {
+		steps = 1
+	}
+	all, err := migrate.LoadSQLMigrations(migrations.FS)
+	if err != nil {
+		return err
+	}
+	applied, err := migrate.AppliedSQL(db)
+	if err != nil {
+		return err
+	}
+	if len(applied) == 0 {
+		fmt.Println("No SQL migrations have been applied.")
+		return nil
+	}
+	byID := map[string]migrate.SQLMigration{}
+	for _, m := range all {
+		byID[m.ID()] = m
+	}
+
+	var plan []migrate.SQLMigration
+	for i := len(applied) - 1; i >= 0 && len(plan) < steps; i-- {
+		m, ok := byID[applied[i].ID]
+		if !ok {
+			return fmt.Errorf("%s was applied but its files are not in this build, so there is nothing to run; check out the commit that added it and try again", applied[i].ID)
+		}
+		plan = append(plan, m)
+	}
+
+	fmt.Printf("This will run %d down migration(s), newest first:\n\n", len(plan))
+	for _, m := range plan {
+		fmt.Println("  migrations/" + m.ID() + ".down.sql")
+		for _, statement := range migrate.SplitSQL(m.Down) {
+			fmt.Println("      " + statement + ";")
+		}
+	}
+	if dryRun {
+		fmt.Println("\n--dry-run: nothing was run.")
+		return nil
+	}
+	if !yes {
+		fmt.Print("\nA down migration can drop data, and nothing brings it back. Type yes to continue: ")
+		answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		if strings.TrimSpace(strings.ToLower(answer)) != "yes" {
+			fmt.Println("Nothing was run.")
+			return nil
+		}
+	}
+
+	undone, err := migrate.RollbackSQL(db, all, steps)
+	for _, id := range undone {
+		fmt.Println("  - " + id)
+	}
+	if err != nil {
+		return err
+	}
+	fmt.Printf("\nRolled back %d SQL migration(s).\n", len(undone))
+	return nil
 }
 
 // showStatus prints the recorded runs, newest first, with what each one added.

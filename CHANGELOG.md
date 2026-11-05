@@ -23,6 +23,55 @@ Also worth knowing:
 ---
 
 
+## v3.480.0 - November 5, 2026
+
+### grit generate migration
+
+From grit#162. v3.458.0 documented the five things `AutoMigrate` does not do, which was the honest half. This is the other half.
+
+```bash
+grit generate migration rename_company_to_organisation
+  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.up.sql
+  ✓ apps/api/migrations/20261105120000_rename_company_to_organisation.down.sql
+
+grit migrate                  # AutoMigrate, then the pending pairs in order
+grit migrate status           # which pairs have run
+grit migrate down --sql       # undo the most recent pair
+```
+
+`AutoMigrate` stays the default and stays first. It is additive, which is why the history can compute a rollback instead of asking you to write one, and why a deploy can migrate with nobody watching. It does not rename a column, change a type, backfill data, drop anything, or add an index to a table too large to lock. Until now a project that needed one of those left the framework's conventions for golang-migrate or goose.
+
+#### The index case is the one that bites
+
+A plain `CREATE INDEX` takes a write lock, so adding one to a large busy table is an outage rather than a migration. `--index` writes it correctly for your database:
+
+```sql
+-- grit:no-transaction
+--
+-- CONCURRENTLY takes no write lock, so the table stays readable AND writable
+-- while the index builds.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_customer_id ON orders (customer_id);
+```
+
+The marker on the first line is most of the value. A file's statements run in one transaction unless it opens with it, and Postgres refuses `CREATE INDEX CONCURRENTLY` inside a transaction block. Without it you get `SQLSTATE 25001` when you run the migration rather than when you write it, which is the mistake people make writing this by hand. Verified both ways against a real Postgres: with the marker the index builds, and taking the marker out produces exactly that error. MySQL and SQLite have no `CONCURRENTLY`, so there it writes a plain `CREATE INDEX` and says what lock that takes.
+
+#### Three details that each cost a bug
+
+**Statements are split before they run.** pgx refuses more than one command per `Exec` and the MySQL driver wants `multiStatements` on the DSN, so a file has to be split. Splitting on every semicolon turns one PL/pgSQL function into three syntax errors, and a function or a trigger is exactly what a migration file gets reached for. The splitter knows about quoted strings, quoted identifiers, dollar-quoted bodies and comments, and there is a test per case.
+
+**The history is keyed by the whole name, not the timestamp.** Two migrations generated in the same second share a version. Found by generating two in one command: the second ran and then could not record itself, &ldquo;UNIQUE constraint failed&rdquo;. The generator takes the next free second as well, so file names stay distinct, but a key that cannot collide is the half that holds when two people generate on two branches.
+
+**The SQL is compiled into the binary.** `go:embed`, because the migrate tool runs in three places with three working directories: `grit migrate` runs it from `apps/api`, the production compose file runs `./migrate` in a container where only the binary was copied, and a person may run the built binary from anywhere. A relative path that works in one of those is a migration silently skipped in another. The embed pattern is `*` rather than `*.sql`, because a pattern that matches nothing is a build error and a project with no migrations yet has no `.sql` files at all.
+
+Editing a pair that has already run is caught by a checksum and reported, because the database has the old version and the file has the new one and nothing reconciles them. An existing project gets all of it from `grit upgrade`, and the whole cycle is a block on the migrations page that CI runs against a real Postgres rather than only reads.
+
+#### Two things grit doctor could not tell you
+
+`grit doctor` gained a 26th check, because both ways a pair goes wrong are readable from the files: a half pair, which stops `grit migrate` loading the directory at all, and an up file that changes the schema whose down file is empty, which rolls back silently. The runner refuses a half pair too, but it refuses it on a deploy, after AutoMigrate has already run.
+
+And the page that lists the checks said there were seventeen while the binary ran twenty-five. Twelve were undocumented, two of them added the week before. All twenty-six are on the page now, and a test reads both the registry and the page, in both directions: a check missing from the page fails, and so does a name on the page the binary no longer runs. A test on either side alone could not see it, which is why it drifted for months.
+
+
 ## v3.479.0 - November 5, 2026
 
 ### Three globals that two instances could not share

@@ -78,6 +78,66 @@ const checks: { name: string; level: string; what: string }[] = [
     level: 'warning',
     what: 'A --public allowlist publishes a column the generator holds back: a cost, a margin, a stock count, an internal note.',
   },
+  {
+    name: 'bool-default-true',
+    level: 'error',
+    what: 'A bool column with a database default of true, which can never be saved as false: GORM leaves a zero value out of the INSERT, the database fills in true, and the row is stored ticked with no error anywhere.',
+  },
+  {
+    name: 'sql-migration-unpaired',
+    level: 'error / warning',
+    what: 'A checked-in SQL migration with only one half, which stops grit migrate loading the directory at all. A warning when the up file changes the schema and the down file is empty, because that rolls back silently.',
+  },
+  {
+    name: 'tenant-middleware-missing',
+    level: 'error',
+    what: 'A route group does not resolve the active organization, or resolves it after the permission gate, so a role held in one organization applies in another.',
+  },
+  {
+    name: 'tenant-sso-no-organization',
+    level: 'warning',
+    what: 'A user provisioned by SSO or a social login joins no organization, so every tenant-owned list is empty for them.',
+  },
+  {
+    name: 'database-not-durable',
+    level: 'error',
+    what: 'DB_PROVIDER is memory or sqlite while APP_ENV is production: a database that does not survive a restart, or one file on one machine that no second replica can read.',
+  },
+  {
+    name: 'connection-pool-too-large',
+    level: 'warning',
+    what: 'DB_MAX_OPEN_CONNS times APP_INSTANCES is more than the database will give out, so a rolling deploy exhausts the connections rather than the replicas sharing them. Silent when a pooler is configured.',
+  },
+  {
+    name: 'go-toolchain-vulnerable',
+    level: 'warning',
+    what: 'The Go on your PATH is older than the oldest patch of its minor without known standard-library vulnerabilities. The deployed image pins a safe Go, so this is about local test runs, grit start and desktop builds.',
+  },
+  {
+    name: 'access-table-stale',
+    level: 'warning',
+    what: 'internal/access no longer matches the route files, so the routes screen and a Scout scan describe routes that have moved. grit routes --write brings it back.',
+  },
+  {
+    name: 'pnpm-node-linker-missing',
+    level: 'error',
+    what: 'pnpm-workspace.yaml does not set nodeLinker, and pnpm 10 ignores .npmrc when a workspace file exists. Next then cannot resolve @swc/helpers and every page throws.',
+  },
+  {
+    name: 'app-url-port-mismatch',
+    level: 'warning',
+    what: 'APP_URL has no port while APP_PORT is not 80 or 443, so every link the API builds (a reset link, an upload URL) points at a port nothing listens on.',
+  },
+  {
+    name: 'api-address-mismatch',
+    level: 'warning',
+    what: 'A frontend\u2019s API_URL points at a port the API does not listen on, which reads as a frontend that cannot reach its backend for no apparent reason.',
+  },
+  {
+    name: 'next-not-pinned',
+    level: 'warning',
+    what: 'Next is a range rather than an exact version, so an install can adopt a release published hours ago. One such release threw on every page.',
+  },
 ]
 
 export default function DoctorPage() {
@@ -104,7 +164,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  17 checks over 0 resource(s)
+  26 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -123,7 +183,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  17 checks over 10 resource(s)
+  26 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment

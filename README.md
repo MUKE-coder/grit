@@ -364,6 +364,8 @@ grit generate resource <Name> --fields "..."   # also: grit g
 grit generate resource <Name> --seed --faker --count 500
 grit generate field <Resource> <name:type>     # one column, in place
 grit generate seeder <Resource>
+grit generate migration <name>                 # a SQL pair for what AutoMigrate cannot do
+grit generate migration <name> --index t:col   # CREATE INDEX CONCURRENTLY, done right
 grit generate form <Resource>                  # multi-step form
 grit generate table <Resource>
 grit remove resource <Name>                    # reverses every injection
@@ -381,6 +383,7 @@ grit doctor                            # audit for silent security mistakes
 # Database
 grit migrate                           # run migrations
 grit migrate --fresh | status | down
+grit migrate down --sql                # undo the most recent SQL migration
 grit seed
 grit backup | grit restore
 
