@@ -23,6 +23,47 @@ Also worth knowing:
 ---
 
 
+## v3.481.0 - November 5, 2026
+
+### Tests for the paths the bugs were in
+
+From grit#163. The argument in that issue is the one worth repeating: four findings of an external review were in code with no test, and the review found them by reading. The next reader will not necessarily do that.
+
+The uncovered paths were not the uninteresting ones. `Refresh`, rotation replay, `Logout` in either of its two shapes, the Auth middleware and the CSRF middleware's actual decision all had nothing on them. Per project, in the templates:
+
+```text
+internal/handlers      62 tests in 14 files  ->  71 in 15
+internal/middleware    22 tests in  6 files  ->  29 in  7
+apps/admin             62 tests in  9 files  ->  76 in 13
+```
+
+#### What each new file is for
+
+** `handlers/auth_session_test.go` ** is Refresh and Logout. The rotation is checked by asserting the new refresh token is not the old one, because a refresh that returns the same token is not a rotation and replay detection then has nothing to detect. Replay and a raced retry are separate tests, because they are the same input seconds apart: inside `services.SessionRotationGrace` a repeated token is an ordinary retry and must not sign anybody out, and outside it the session dies. The obvious strictness, any reuse is a replay, looks correct and signs people out at random.
+
+Logout is tested twice, once with the cookie a browser sends and once with a bearer token and no cookie. The second is the one that shipped broken until v3.450.0: there was nothing to name the session by, nothing else was tried, and the response said &ldquo;Logged out successfully&rdquo; while the session stayed usable for hours. Putting that bug back makes the test say exactly that.
+
+** `middleware/auth_test.go` ** is the function every protected route runs first, which had no test. Both credentials accepted, and six things refused, including a refresh token where an access token belongs: a refresh token lives for days, so accepting one there would make every protected route reachable for days with a credential meant only for `/auth/refresh`.
+
+**The CSRF middleware's nine decisions.** The two tests it had checked the cookie's attributes, which is how the token is delivered, and nothing checked what the guard lets through. A CSRF guard that accepts everything looks exactly like one that works. All four rules are now asserted in both directions, including the two that are holes if they go the wrong way: a bearer request with a stray access cookie has to pass, and logout with a cookie and no token has to not.
+
+#### The frontend half, and a decision
+
+grit#163 asked for the resource list page and its forms to be tested per resource, and flagged that as needing a decision, since test code in the templates ships to everybody. The decision: the claims are made once, against the components every resource page is built from, not once per resource.
+
+A per-resource copy tests the same `DataTable` twenty times in a twenty-resource project, grows with the project, and breaks the moment somebody customises the page it was generated for, which is when they delete it, and the harness with it. So: `data-table.test.tsx` (rows, both empty states, sorting only on sortable columns, selection by id, rows staying put during a refetch), `table-pagination.test.tsx` (the row range a person reads, the clamped last page, the ends, and rendering nothing at all with no rows), and `form-schema.test.tsx` (the form refuses what the Zod schema refuses, on create and on edit).
+
+`proxy.test.ts` runs the admin's edge gate rather than reading it. Both ways that file can be wrong are silent: a gate that lets everything through is a panel anybody can open, and a gate that redirects the login page is a redirect loop, which in a browser reads as the app being broken rather than as this file being wrong.
+
+#### Two things found while writing them
+
+**None of the frontend tests ever reached an existing project.** `writeFrontendTestFiles` ran at scaffold time only, so every Vitest and Playwright file added to the framework since the beginning went to new projects and nobody else, eleven of them, including every test that covers the admin's own forms. It is in the admin's upgrade writers now, beside the dashboard widgets that had the same problem.
+
+** The third frontend claim could not be tested, because it is not true. ** &ldquo;The edit form sends the version it loaded&rdquo;: the API implements optimistic concurrency on every generated resource, down to answering 409 with the current version, and no generated client sends the header. One mention of `If-Match` exists in a scaffolded project, in the error catalogue, describing a status nothing can produce. That is a missing feature rather than a missing test, so it is grit#182 rather than a test that would have failed for the wrong reason.
+
+Every test here was checked by putting the bug back: the bearer logout, the form resolver and the edge gate each fail their own test, with the message that names what went wrong.
+
+
 ## v3.480.0 - November 5, 2026
 
 ### grit generate migration

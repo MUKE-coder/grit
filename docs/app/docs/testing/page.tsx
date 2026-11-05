@@ -397,6 +397,55 @@ curl -I http://localhost:8080/api/health | grep -iE 'x-frame|x-content|content-s
                 <li><strong>Remediation tracking</strong> — every finding flows from discovery → ticket (severity + owner + SLA) → fix → re-test. That documented loop is what SOC 2 / ISO 27001 auditors ask to see.</li>
               </ul>
 
+              <h2 id="what-ships" className="mt-10">What ships in your project</h2>
+              <p>
+                A scaffolded project arrives with a populated suite, not just the
+                harness. Go tests run with <code>go test ./...</code> from{' '}
+                <code>apps/api</code>; the frontend suites with{' '}
+                <code>pnpm test</code> in each app.
+              </p>
+              <div className="rounded-lg border border-border/40 bg-surface-2/40 p-4 my-4">
+                <p className="text-sm text-muted-foreground leading-relaxed mb-2">
+                  <strong className="text-foreground">The auth and session paths</strong>{' '}
+                  are covered deliberately rather than incidentally, because
+                  four findings of an external review were in code with no test
+                  on it:
+                </p>
+                <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-1">
+                  <li><code>handlers/auth_test.go</code>: register, login, forgot-password, verification</li>
+                  <li><code>handlers/auth_session_test.go</code>: Refresh and its rotation, a replayed token, a raced retry inside the grace window, Logout with a cookie and with a bearer token</li>
+                  <li><code>middleware/auth_test.go</code>: both credentials accepted, and six things refused, including a refresh token where an access token belongs</li>
+                  <li><code>middleware/csrf_test.go</code>: the cookie&apos;s attributes, and the guard&apos;s nine decisions in both directions</li>
+                  <li><code>services/session_test.go</code>: the state machine: rotation, both timeouts, owner scoping, the per-handle revocation hook</li>
+                  <li><code>handlers/realtime_test.go</code>: the socket handshake over a real listener, including a cross-origin cookie refusal</li>
+                </ul>
+              </div>
+              <p>
+                In the admin panel, the claims are made against the components
+                every resource page is built from rather than once per resource:{' '}
+                <code>data-table.test.tsx</code>,{' '}
+                <code>table-pagination.test.tsx</code>,{' '}
+                <code>form-schema.test.tsx</code> (the form refuses what the
+                resource&apos;s Zod schema refuses),{' '}
+                <code>field-inputs.test.tsx</code>,{' '}
+                <code>conditional-fields.test.tsx</code> and{' '}
+                <code>proxy.test.ts</code>, which runs the edge gate rather than
+                reading it. A per-resource copy would test the same component
+                once per resource, grow with the project, and break the moment
+                you customise the page it was generated for.
+              </p>
+              <p>
+                Each generated resource adds four handler tests of its own:
+                anonymous refused, a signed-in user without the permission
+                refused, an admin sees what was created, an unknown id is a 404.
+              </p>
+              <p>
+                Every one of these travels with <code>grit upgrade</code>, which
+                was not true of the frontend suites until v3.481.0: they were
+                written at scaffold time only, so a test added to the framework
+                reached new projects and nobody else.
+              </p>
+
               <h2 id="docs-checks">The docs are tested too</h2>
               <p>
                 &quot;The docs said to do X and X did not work&quot; is the most repeated root

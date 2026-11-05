@@ -527,6 +527,17 @@ var adminExtraWriters = []func(root string, opts Options) error{
 		}
 		return nil
 	},
+	// The Vitest and Playwright files. Written at scaffold time only until
+	// v3.481.0, so a test added to the framework reached new projects and
+	// nobody else: eleven of them, including every one that covers the admin's
+	// own forms. Manifest-guarded like everything else here, so a project that
+	// has edited one keeps its version (grit#163).
+	func(root string, opts Options) error {
+		if err := writeFrontendTestFiles(root, opts); err != nil {
+			return fmt.Errorf("writing frontend test files: %w", err)
+		}
+		return nil
+	},
 }
 
 // writeAdminExtras writes the pieces that are generated per-resource or in

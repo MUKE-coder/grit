@@ -145,6 +145,14 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "realtime", "guard.go"):      apiRealtimeGuardGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "guard_test.go"): apiRealtimeGuardTestGo(),
 
+		// Refresh, rotation replay, the grace window and Logout in both its
+		// shapes. Framework-owned and in this set rather than written once at
+		// scaffold time, because every one of these paths has had a bug fixed
+		// in it since and an existing project is where those bugs live
+		// (grit#163).
+		filepath.Join(apiRoot, "internal", "handlers", "auth_session_test.go"): apiAuthSessionTestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "auth_test.go"):       apiAuthMiddlewareTestGo(),
+
 		filepath.Join(apiRoot, "internal", "authz", "gate.go"):      apiGateGo(),
 		filepath.Join(apiRoot, "internal", "authz", "gate_test.go"): apiGateTestGo(),
 

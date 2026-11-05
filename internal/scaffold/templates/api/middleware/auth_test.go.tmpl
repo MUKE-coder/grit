@@ -1,0 +1,234 @@
+package middleware
+
+// The Auth middleware's accept and reject paths.
+//
+// grit#163. This is the function every protected route in the project runs
+// first, and it had no test. An external review of v3.448.0 found bugs by
+// reading code in exactly this position: a revoked session that still passed,
+// an access token accepted where a refresh token was meant.
+//
+// What each case here is actually asserting is "a request that should not reach
+// the handler does not". A middleware that fails open is indistinguishable from
+// one that works, right up until somebody looks.
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/services"
+)
+
+// authTestDB is an in-memory database with what the middleware reads.
+//
+// One connection only: every connection to ":memory:" gets its own empty
+// database, so a second one opened by the pool finds no user and the middleware
+// answers 401 for a reason that has nothing to do with the test.
+func authTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxOpenConns(1)
+	require.NoError(t, db.AutoMigrate(&models.User{}, &models.Session{}))
+	return db
+}
+
+func authTestService(db *gorm.DB) *services.AuthService {
+	return &services.AuthService{
+		Secret:        "test-secret-key-for-testing-only",
+		AccessExpiry:  15 * time.Minute,
+		RefreshExpiry: 7 * 24 * time.Hour,
+		DB:            db,
+	}
+}
+
+// authTestUser inserts a user and returns it with a live session's tokens.
+func authTestUser(t *testing.T, db *gorm.DB, auth *services.AuthService, role string, active bool) (models.User, *services.TokenPair) {
+	t.Helper()
+	user := models.User{
+		FirstName: "Ada", LastName: "Byron",
+		Email: "ada@example.com", Password: "not-a-real-hash",
+		Role: role, Active: active,
+	}
+	require.NoError(t, db.Create(&user).Error)
+
+	pair, err := auth.GenerateTokenPair(user.ID, user.Email, user.Role)
+	require.NoError(t, err)
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/auth/login", nil)
+	_, err = services.CreateSession(db, c, user.ID, pair.RefreshToken)
+	require.NoError(t, err)
+	return user, pair
+}
+
+// authTestRouter mounts one protected route that reports what the middleware
+// put on the context.
+func authTestRouter(db *gorm.DB, auth *services.AuthService) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.GET("/protected", Auth(db, auth), func(c *gin.Context) {
+		id, _ := c.Get("user_id")
+		c.JSON(http.StatusOK, gin.H{"user_id": id})
+	})
+	return r
+}
+
+func authTestCall(r *gin.Engine, apply func(*http.Request)) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+	if apply != nil {
+		apply(req)
+	}
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
+}
+
+func TestAuthMiddlewareAcceptsBothCredentials(t *testing.T) {
+	db := authTestDB(t)
+	auth := authTestService(db)
+	user, pair := authTestUser(t, db, auth, "USER", true)
+	r := authTestRouter(db, auth)
+
+	for name, apply := range map[string]func(*http.Request){
+		"a bearer token, as a native client sends it": func(req *http.Request) {
+			req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+		},
+		"the grit_access cookie, as a browser sends it": func(req *http.Request) {
+			req.AddCookie(&http.Cookie{Name: "grit_access", Value: pair.AccessToken})
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := authTestCall(r, apply)
+			require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+			assert.Contains(t, w.Body.String(), user.ID,
+				"the handler ran but the caller's id was not on the context")
+		})
+	}
+}
+
+func TestAuthMiddlewareRefusesWhatItShould(t *testing.T) {
+	db := authTestDB(t)
+	auth := authTestService(db)
+	_, pair := authTestUser(t, db, auth, "USER", true)
+	r := authTestRouter(db, auth)
+
+	for name, tc := range map[string]struct {
+		apply func(*http.Request)
+		why   string
+	}{
+		"no credential at all": {
+			apply: nil,
+			why:   "an anonymous request reached a protected handler",
+		},
+		"a header that is not Bearer": {
+			apply: func(req *http.Request) { req.Header.Set("Authorization", "Token "+pair.AccessToken) },
+			why:   "an Authorization scheme the project does not use was accepted",
+		},
+		"a bearer header with no token": {
+			apply: func(req *http.Request) { req.Header.Set("Authorization", "Bearer") },
+			why:   "a malformed Authorization header was accepted",
+		},
+		"a token this server did not sign": {
+			apply: func(req *http.Request) { req.Header.Set("Authorization", "Bearer not-a-jwt") },
+			why:   "an unsigned string was accepted as a token",
+		},
+		// The two token types are not interchangeable. A refresh token lives
+		// for days; accepting one here would make every protected route
+		// reachable for days with a credential meant only for /auth/refresh.
+		"a refresh token where an access token belongs": {
+			apply: func(req *http.Request) { req.Header.Set("Authorization", "Bearer "+pair.RefreshToken) },
+			why:   "a refresh token authenticated an ordinary request",
+		},
+		"an empty cookie": {
+			apply: func(req *http.Request) { req.AddCookie(&http.Cookie{Name: "grit_access", Value: ""}) },
+			why:   "an empty cookie was treated as a credential",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := authTestCall(r, tc.apply)
+			assert.Equal(t, http.StatusUnauthorized, w.Code, tc.why+": "+w.Body.String())
+		})
+	}
+}
+
+// An expired access token is refused, which is the whole reason the access
+// token is short-lived.
+func TestAuthMiddlewareRefusesAnExpiredToken(t *testing.T) {
+	db := authTestDB(t)
+	auth := authTestService(db)
+	auth.AccessExpiry = -time.Minute
+	_, pair := authTestUser(t, db, auth, "USER", true)
+
+	w := authTestCall(authTestRouter(db, auth), func(req *http.Request) {
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	})
+	assert.Equal(t, http.StatusUnauthorized, w.Code, "an expired access token was accepted")
+}
+
+// A deactivated account cannot use a token issued before it was deactivated.
+func TestAuthMiddlewareRefusesADisabledAccount(t *testing.T) {
+	db := authTestDB(t)
+	auth := authTestService(db)
+	user, pair := authTestUser(t, db, auth, "USER", true)
+	require.NoError(t, db.Model(&models.User{}).Where("id = ?", user.ID).Update("active", false).Error)
+
+	w := authTestCall(authTestRouter(db, auth), func(req *http.Request) {
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	})
+	assert.NotEqual(t, http.StatusOK, w.Code, "a disabled account's token still worked")
+}
+
+// A token for a user who has been deleted.
+func TestAuthMiddlewareRefusesADeletedAccount(t *testing.T) {
+	db := authTestDB(t)
+	auth := authTestService(db)
+	user, pair := authTestUser(t, db, auth, "USER", true)
+	require.NoError(t, db.Unscoped().Delete(&models.User{}, "id = ?", user.ID).Error)
+
+	w := authTestCall(authTestRouter(db, auth), func(req *http.Request) {
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	})
+	assert.Equal(t, http.StatusUnauthorized, w.Code, "a deleted user's token still worked")
+}
+
+// RequireRole, which is what stands between a signed-in user and an admin
+// screen.
+func TestRequireRoleGuardsByRole(t *testing.T) {
+	db := authTestDB(t)
+	auth := authTestService(db)
+	_, pair := authTestUser(t, db, auth, "USER", true)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.GET("/admin", Auth(db, auth), RequireRole("ADMIN"), func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	r.GET("/mine", Auth(db, auth), RequireRole("USER"), func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	call := func(path string) int {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w.Code
+	}
+
+	assert.Equal(t, http.StatusOK, call("/mine"), "a USER was refused their own role's route")
+	assert.Equal(t, http.StatusForbidden, call("/admin"), "a USER reached an ADMIN route")
+}

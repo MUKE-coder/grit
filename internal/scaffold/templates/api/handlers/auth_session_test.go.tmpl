@@ -1,0 +1,307 @@
+package handlers
+
+// Refresh and Logout, which is where revocation actually bites.
+//
+// grit#163. auth_test.go covers register, login, forgot-password and
+// verification. Refresh, rotation replay and Logout had no test at all, and an
+// external review of v3.448.0 found bugs in each of them by reading the code:
+// a bearer client's logout revoked nothing and said it had worked, and two
+// logins in the same second produced identical refresh tokens. Both were
+// reachable by a test nobody had written.
+//
+// These go through the HTTP layer rather than calling the service, because the
+// interesting parts are the handler's choices: which credential it reads, what
+// it does when rotation refuses, and which cookies come back.
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/services"
+)
+
+// newSessionRouter mounts the three routes these tests use. Logout sits behind
+// a stand-in for the auth middleware, because the real one needs the whole
+// chain and Logout only reads what it puts on the context.
+func newSessionRouter(h *AuthHandler, actor *models.User, sessionID string) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.POST("/api/auth/refresh", h.Refresh)
+	r.POST("/api/auth/logout", func(c *gin.Context) {
+		if actor != nil {
+			c.Set("user", *actor)
+			c.Set("user_id", actor.ID)
+			if sessionID != "" {
+				c.Set("session_id", sessionID)
+			}
+		}
+		h.Logout(c)
+	})
+	return r
+}
+
+// signedInUser registers a user and returns it with a live session's tokens.
+func signedInUser(t *testing.T, db *gorm.DB, auth *services.AuthService) (models.User, *services.TokenPair, *models.Session) {
+	t.Helper()
+	user := models.User{FirstName: "Ada", LastName: "Byron", Email: "ada@example.com", Password: "not-a-real-hash", Role: "USER", Active: true}
+	require.NoError(t, db.Create(&user).Error)
+
+	pair, err := auth.GenerateTokenPair(user.ID, user.Email, user.Role)
+	require.NoError(t, err)
+	session, err := services.CreateSession(db, sessionCtx("Chrome"), user.ID, pair.RefreshToken)
+	require.NoError(t, err)
+	return user, pair, session
+}
+
+// sessionCtx is the request a session is created from, so the row carries a
+// user agent and an IP the way it would in production.
+func sessionCtx(userAgent string) *gin.Context {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", nil)
+	req.Header.Set("User-Agent", userAgent)
+	c.Request = req
+	return c
+}
+
+// refresh posts to /api/auth/refresh with the token in the cookie a browser
+// would send it in.
+func refresh(t *testing.T, r *gin.Engine, refreshToken string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/refresh", strings.NewReader("{}"))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "grit_refresh", Value: refreshToken})
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
+}
+
+// cookieFrom reads one Set-Cookie value off a response.
+func cookieFrom(w *httptest.ResponseRecorder, name string) *http.Cookie {
+	for _, c := range w.Result().Cookies() {
+		if c.Name == name {
+			return c
+		}
+	}
+	return nil
+}
+
+func TestAuthHandler_Refresh_RotatesTheToken(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	user, pair, session := signedInUser(t, db, auth)
+
+	w := refresh(t, newSessionRouter(h, &user, session.ID), pair.RefreshToken)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	// A new refresh cookie, and not the one that came in: a refresh that
+	// returns the same token is not a rotation, and replay detection has
+	// nothing to detect.
+	written := cookieFrom(w, "grit_refresh")
+	require.NotNil(t, written, "no grit_refresh cookie came back")
+	assert.NotEqual(t, pair.RefreshToken, written.Value, "the refresh token was not rotated")
+	assert.NotEmpty(t, cookieFrom(w, "grit_access"), "no new access cookie")
+
+	// The row now holds the new token's hash, so the old one is dead.
+	var stored models.Session
+	require.NoError(t, db.First(&stored, "id = ?", session.ID).Error)
+	assert.Equal(t, models.HashSessionToken(written.Value), stored.TokenHash)
+}
+
+// Two refreshes racing, inside the grace window.
+//
+// A client that fires two refreshes at once, or retries one whose response it
+// never saw, presents the same token twice within seconds. That is ordinary and
+// must not kill the session: services.SessionRotationGrace is what tells it
+// apart from a replay. Without this test the obvious strictness (any reuse is a
+// replay) looks correct and signs people out at random.
+func TestAuthHandler_Refresh_ToleratesARacedRetry(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	user, pair, session := signedInUser(t, db, auth)
+	r := newSessionRouter(h, &user, session.ID)
+
+	require.Equal(t, http.StatusOK, refresh(t, r, pair.RefreshToken).Code)
+
+	// The same token again, immediately.
+	w := refresh(t, r, pair.RefreshToken)
+	assert.Equal(t, http.StatusOK, w.Code, "a retry inside the grace window signed the user out")
+
+	live, err := services.ListUserSessions(db, user.ID)
+	require.NoError(t, err)
+	assert.Len(t, live, 1, "the raced retry revoked the session")
+}
+
+// Replay: the old token after the grace window has passed.
+//
+// This is the attack the rotation exists to catch. Somebody holding a stolen
+// refresh token uses it after the real client has already rotated, and the
+// session has to die rather than hand out a fresh pair.
+func TestAuthHandler_Refresh_RefusesAReplayedToken(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	user, pair, session := signedInUser(t, db, auth)
+	r := newSessionRouter(h, &user, session.ID)
+
+	require.Equal(t, http.StatusOK, refresh(t, r, pair.RefreshToken).Code)
+
+	// Age the rotation past the grace window, which is what makes the reuse a
+	// replay rather than a retry. Done to the row rather than by sleeping,
+	// because a test that sleeps for the grace window is a test nobody runs.
+	rotated := time.Now().Add(-services.SessionRotationGrace - time.Second)
+	require.NoError(t, db.Model(&models.Session{}).Where("id = ?", session.ID).
+		Update("rotated_at", &rotated).Error)
+
+	// The same token again.
+	w := refresh(t, r, pair.RefreshToken)
+	assert.NotEqual(t, http.StatusOK, w.Code, "a replayed refresh token was accepted")
+	assert.Contains(t, w.Body.String(), "sign in again")
+
+	// And the session is gone, not merely this request refused: the token is
+	// known to be in two hands now.
+	live, err := services.ListUserSessions(db, user.ID)
+	require.NoError(t, err)
+	assert.Empty(t, live, "the replayed session is still live")
+
+	// The cookies are cleared, so the browser holding the stale token stops
+	// sending it.
+	cleared := cookieFrom(w, "grit_refresh")
+	require.NotNil(t, cleared)
+	assert.Empty(t, cleared.Value)
+}
+
+func TestAuthHandler_Refresh_RefusesAnUnknownToken(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	r := newSessionRouter(h, nil, "")
+
+	for name, token := range map[string]string{
+		"not a token":                 "not-a-jwt",
+		"an access token, not refresh": mustAccessToken(t, auth),
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := refresh(t, r, token)
+			assert.Equal(t, http.StatusUnauthorized, w.Code, w.Body.String())
+		})
+	}
+}
+
+// A refresh token signed for a user who no longer exists.
+func TestAuthHandler_Refresh_RefusesADeletedAccount(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	user, pair, session := signedInUser(t, db, auth)
+	require.NoError(t, db.Unscoped().Delete(&models.User{}, "id = ?", user.ID).Error)
+
+	w := refresh(t, newSessionRouter(h, nil, session.ID), pair.RefreshToken)
+	assert.Equal(t, http.StatusUnauthorized, w.Code, w.Body.String())
+}
+
+// A deactivated account cannot refresh its way back in.
+func TestAuthHandler_Refresh_RefusesADisabledAccount(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	user, pair, session := signedInUser(t, db, auth)
+	require.NoError(t, db.Model(&models.User{}).Where("id = ?", user.ID).Update("active", false).Error)
+
+	w := refresh(t, newSessionRouter(h, &user, session.ID), pair.RefreshToken)
+	assert.NotEqual(t, http.StatusOK, w.Code, "a disabled account refreshed its tokens")
+}
+
+// Logout with the cookie a browser sends.
+func TestAuthHandler_Logout_RevokesTheCookieSession(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	user, pair, session := signedInUser(t, db, auth)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+	req.AddCookie(&http.Cookie{Name: "grit_refresh", Value: pair.RefreshToken})
+	w := httptest.NewRecorder()
+	newSessionRouter(h, &user, session.ID).ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	live, err := services.ListUserSessions(db, user.ID)
+	require.NoError(t, err)
+	assert.Empty(t, live, "logout left the session live, so its refresh token still works")
+
+	cleared := cookieFrom(w, "grit_access")
+	require.NotNil(t, cleared)
+	assert.Empty(t, cleared.Value, "the access cookie was not cleared")
+}
+
+// Logout from a client that holds a bearer token and has no cookie.
+//
+// This is the one that shipped broken until v3.450.0: there was no cookie to
+// name the session by, nothing else was tried, and the response still said
+// "Logged out successfully" while the session stayed usable for hours.
+func TestAuthHandler_Logout_RevokesABearerSession(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	user, _, session := signedInUser(t, db, auth)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+	req.Header.Set("Authorization", "Bearer irrelevant-here")
+	w := httptest.NewRecorder()
+	newSessionRouter(h, &user, session.ID).ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	live, err := services.ListUserSessions(db, user.ID)
+	require.NoError(t, err)
+	assert.Empty(t, live, "a bearer client's logout revoked nothing and said it had worked")
+}
+
+// One user cannot log another one out by naming their session.
+func TestAuthHandler_Logout_CannotRevokeSomebodyElsesSession(t *testing.T) {
+	cfg := testCfg()
+	db := newTestDB(t)
+	auth := newTestAuthSvc(cfg, db)
+	h := &AuthHandler{DB: db, AuthService: auth, Config: cfg}
+	victim, _, victimSession := signedInUser(t, db, auth)
+
+	attacker := models.User{FirstName: "Eve", LastName: "Smith", Email: "eve@example.com", Password: "x", Role: "USER", Active: true}
+	require.NoError(t, db.Create(&attacker).Error)
+
+	// The attacker's own request, carrying the victim's session id.
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+	w := httptest.NewRecorder()
+	newSessionRouter(h, &attacker, victimSession.ID).ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+
+	live, err := services.ListUserSessions(db, victim.ID)
+	require.NoError(t, err)
+	assert.Len(t, live, 1, "another user's session id revoked their session")
+}
+
+// mustAccessToken is an access token, used where a refresh token is expected.
+// The two are different token types and the validator has to say so.
+func mustAccessToken(t *testing.T, auth *services.AuthService) string {
+	t.Helper()
+	pair, err := auth.GenerateTokenPair("user-x", "x@example.com", "USER")
+	require.NoError(t, err)
+	return pair.AccessToken
+}

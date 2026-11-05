@@ -34,6 +34,12 @@ func writeFrontendTestFiles(root string, opts Options) error {
 		// and the Vite admin's vitest config points "@" at the app root, not
 		// src/. The Next.js admin runs it.
 		if opts.Frontend != FrontendTanStack {
+			// proxy.ts is the Next admin's edge gate. The Vite admin has no
+			// equivalent: its routes are guarded in the router.
+			files[filepath.Join(adminRoot, "__tests__", "proxy.test.ts")] = adminProxyTest()
+			files[filepath.Join(adminRoot, "__tests__", "data-table.test.tsx")] = adminDataTableTest()
+			files[filepath.Join(adminRoot, "__tests__", "table-pagination.test.tsx")] = adminTablePaginationTest()
+			files[filepath.Join(adminRoot, "__tests__", "form-schema.test.tsx")] = adminFormSchemaTest()
 			files[filepath.Join(adminRoot, "__tests__", "dropzone.test.tsx")] = adminDropzoneTest()
 			files[filepath.Join(adminRoot, "__tests__", "field-inputs.test.tsx")] = adminFieldInputsTest()
 			files[filepath.Join(adminRoot, "__tests__", "conditional-fields.test.tsx")] = adminConditionalFieldsTest()
@@ -576,6 +582,339 @@ describe("the checklist", () => {
     expect(
       screen.getByText(/Nothing from your name or email/).textContent,
     ).toContain(": not met yet");
+  });
+});
+`
+}
+
+// adminProxyTest is __tests__/proxy.test.ts: the edge gate, run rather than
+// read.
+//
+// grit#163. PUBLIC_PATHS and the session cookie names each had a test that
+// compared them against something, and nothing called proxy() itself. The two
+// ways this file can be wrong are both silent: a gate that lets everything
+// through is a panel anybody can open, and a gate that redirects the login page
+// is a panel nobody can open. The second one is a redirect loop, which in a
+// browser reads as the app being broken rather than as this file being wrong.
+func adminProxyTest() string {
+	return `import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
+
+import { proxy } from "@/proxy";
+import { ADMIN_SESSION_COOKIE, API_SIGNED_IN_COOKIE } from "@/lib/admin-session";
+
+// request builds what Next hands the gate: a URL, and whichever cookies the
+// browser would be carrying.
+function request(pathname: string, cookies: string[] = []): NextRequest {
+  const req = new NextRequest(new URL("http://localhost:3001" + pathname));
+  for (const name of cookies) req.cookies.set(name, "1");
+  return req;
+}
+
+// redirectTo is the Location a response sends the browser to, or null when it
+// is letting the request through.
+function redirectTo(response: Response): string | null {
+  if (response.status < 300 || response.status >= 400) return null;
+  const location = response.headers.get("location");
+  return location ? new URL(location).pathname : null;
+}
+
+describe("the admin edge gate", () => {
+  it("sends a signed-out visitor to the login page", () => {
+    expect(redirectTo(proxy(request("/users")))).toBe("/login");
+    expect(redirectTo(proxy(request("/")))).toBe("/login");
+    expect(redirectTo(proxy(request("/settings/general")))).toBe("/login");
+  });
+
+  it("lets the pages a signed-out visitor needs through", () => {
+    // A gate that redirects these is a redirect loop, and a loop reads as a
+    // broken app rather than as a wrong list.
+    for (const path of [
+      "/login",
+      "/sign-up",
+      "/forgot-password",
+      "/reset-password",
+      "/verify-email",
+      "/magic-link",
+      "/callback",
+    ]) {
+      expect(redirectTo(proxy(request(path))), path).toBeNull();
+    }
+  });
+
+  it("lets a sub-path of a public page through", () => {
+    // /reset-password/<token> is one page with a segment, and matching the
+    // exact path only would have redirected every reset link ever sent.
+    expect(redirectTo(proxy(request("/reset-password/abc123")))).toBeNull();
+  });
+
+  it("lets a browser with either session marker through", () => {
+    for (const cookie of [ADMIN_SESSION_COOKIE, API_SIGNED_IN_COOKIE]) {
+      expect(redirectTo(proxy(request("/users", [cookie]))), cookie).toBeNull();
+    }
+  });
+
+  it("drops the query string on the way to login", () => {
+    // Whatever was on the URL belongs to the page the visitor could not open,
+    // and carrying it onto /login puts it in their history and their logs.
+    const response = proxy(request("/users?token=secret&page=2"));
+    expect(response.headers.get("location")).toBe("http://localhost:3001/login");
+  });
+});
+`
+}
+
+// adminDataTableTest is __tests__/data-table.test.tsx.
+//
+// grit#163 asks for "the resource list page renders rows and paginates", per
+// resource. This makes the claim once, against the component every resource
+// list is made of, for the reason given in the issue reply: a per-resource copy
+// tests the same component twenty times, grows with the project, and breaks the
+// moment somebody customises the page it was generated for, which is when they
+// delete it.
+func adminDataTableTest() string {
+	return `import { describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+
+import { DataTable } from "@/components/tables/data-table";
+
+type Row = { id: string; name: string; email: string };
+
+const rows: Row[] = [
+  { id: "1", name: "Ada Byron", email: "ada@example.com" },
+  { id: "2", name: "Alan Turing", email: "alan@example.com" },
+];
+
+const columns = [
+  { key: "name", label: "Name", sortable: true },
+  { key: "email", label: "Email" },
+];
+
+describe("the resource list table", () => {
+  it("renders a row per record, with its cells", () => {
+    render(<DataTable columns={columns} data={rows} />);
+    expect(screen.getByText("Ada Byron")).toBeInTheDocument();
+    expect(screen.getByText("alan@example.com")).toBeInTheDocument();
+    // Two data rows, plus the header row.
+    expect(screen.getAllByRole("row")).toHaveLength(3);
+  });
+
+  it("says so when there is nothing, and says something different when a filter is on", () => {
+    // The two empty states are not interchangeable: advice about clearing
+    // filters is noise to somebody who has not set one, and "create your
+    // first" is wrong when there are rows behind a filter.
+    const { unmount } = render(<DataTable columns={columns} data={[]} />);
+    const empty = document.body.textContent ?? "";
+    unmount();
+
+    render(<DataTable columns={columns} data={[]} isFiltered />);
+    expect(document.body.textContent).not.toBe(empty);
+  });
+
+  it("asks to sort by the column that was clicked", () => {
+    const onSort = vi.fn();
+    render(<DataTable columns={columns} data={rows} onSort={onSort} />);
+
+    fireEvent.click(screen.getByText("Name"));
+    expect(onSort).toHaveBeenCalledWith("name");
+
+    // A column that is not sortable must not ask: the API would sort by a
+    // field it does not accept.
+    onSort.mockClear();
+    fireEvent.click(screen.getByText("Email"));
+    expect(onSort).not.toHaveBeenCalled();
+  });
+
+  it("reports a selection by id", () => {
+    const onSelectRows = vi.fn();
+    render(
+      <DataTable columns={columns} data={rows} selectedRows={[]} onSelectRows={onSelectRows} />
+    );
+    const boxes = screen.getAllByRole("checkbox");
+    // The first is the header's select-all.
+    fireEvent.click(boxes[boxes.length - 1]);
+    expect(onSelectRows).toHaveBeenCalledWith(["2"]);
+  });
+
+  it("keeps the rows on screen while refetching", () => {
+    // isFetching with rows is a background refresh. Blanking the table there
+    // makes every filter change flash, which reads as the app losing the data.
+    render(<DataTable columns={columns} data={rows} isFetching />);
+    expect(screen.getByText("Ada Byron")).toBeInTheDocument();
+  });
+});
+`
+}
+
+// adminTablePaginationTest is __tests__/table-pagination.test.tsx.
+func adminTablePaginationTest() string {
+	return `import { describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+
+import { TablePagination } from "@/components/tables/table-pagination";
+
+function setup(page: number, total = 95, pageSize = 10) {
+  const onPageChange = vi.fn();
+  const onPageSizeChange = vi.fn();
+  render(
+    <TablePagination
+      page={page}
+      pageSize={pageSize}
+      total={total}
+      totalPages={Math.ceil(total / pageSize)}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+    />
+  );
+  return { onPageChange, onPageSizeChange };
+}
+
+describe("list pagination", () => {
+  it("says which rows are on screen", () => {
+    setup(3);
+    // 1-indexed and inclusive, which is what a person reads. An off-by-one
+    // here is the kind of thing nobody reports and everybody notices.
+    expect(screen.getByText(/21.*30.*95/)).toBeInTheDocument();
+  });
+
+  it("clamps the last page to the real count", () => {
+    setup(10);
+    expect(screen.getByText(/91.*95.*95/)).toBeInTheDocument();
+  });
+
+  it("moves a page at a time and to the ends", () => {
+    const { onPageChange } = setup(5);
+    fireEvent.click(screen.getByText("Next"));
+    expect(onPageChange).toHaveBeenLastCalledWith(6);
+    fireEvent.click(screen.getByText("Prev"));
+    expect(onPageChange).toHaveBeenLastCalledWith(4);
+    fireEvent.click(screen.getByText("First"));
+    expect(onPageChange).toHaveBeenLastCalledWith(1);
+  });
+
+  it("cannot go back from the first page or on from the last", () => {
+    const { onPageChange } = setup(1);
+    fireEvent.click(screen.getByText("Prev"));
+    expect(onPageChange).not.toHaveBeenCalled();
+  });
+
+  it("changes the page size", () => {
+    const { onPageSizeChange } = setup(1);
+    fireEvent.change(screen.getByLabelText("Rows per page"), { target: { value: "50" } });
+    expect(onPageSizeChange).toHaveBeenCalledWith(50);
+  });
+
+  it("renders nothing at all when there are no rows", () => {
+    // The table shows its own empty state. A pagination bar reading
+    // "Showing 1-0 of 0" underneath it is noise.
+    const { container } = render(
+      <TablePagination
+        page={1}
+        pageSize={10}
+        total={0}
+        totalPages={0}
+        onPageChange={vi.fn()}
+        onPageSizeChange={vi.fn()}
+      />
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+`
+}
+
+// adminFormSchemaTest is __tests__/form-schema.test.tsx.
+//
+// grit#163 asks that "the create form rejects what the schema rejects". The
+// claim is about the FormBuilder's resolver, which v3.475.0 added and nothing
+// tested: a generated form carries the same Zod schema the API validates the
+// request against, so the two cannot disagree.
+//
+// Worth a test of its own because the failure is invisible from the outside. A
+// resolver that is wired wrong, or wired to nothing, gives a form that submits
+// whatever is typed and an API that answers 422. The form looks like it works.
+func adminFormSchemaTest() string {
+	return `import { describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { z } from "zod";
+
+import { FormBuilder } from "@/components/forms/form-builder";
+
+// The shape a generated resource's create form has: the schema the API uses,
+// and the fields the admin draws.
+const schema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  email: z.string().email("That is not an email address"),
+});
+
+const form = {
+  schema,
+  fields: [
+    { key: "name", label: "Name", type: "text" as const },
+    { key: "email", label: "Email", type: "text" as const },
+  ],
+};
+
+function setup(defaults: Record<string, unknown> = {}) {
+  const onSubmit = vi.fn();
+  render(
+    <FormBuilder
+      form={form}
+      defaultValues={defaults}
+      onSubmit={onSubmit}
+      onCancel={vi.fn()}
+      submitLabel="Save"
+    />
+  );
+  return { onSubmit };
+}
+
+function type(label: string, value: string) {
+  fireEvent.change(screen.getByLabelText(label, { exact: false }), { target: { value } });
+}
+
+describe("a generated form and the schema the API uses", () => {
+  it("refuses to submit what the schema refuses", async () => {
+    const { onSubmit } = setup();
+    type("Name", "ab");
+    type("Email", "not-an-email");
+    fireEvent.click(screen.getByText("Save"));
+
+    // Both messages come from the schema, not from the field definitions:
+    // neither field has a rule of its own here.
+    await waitFor(() => {
+      expect(screen.getByText("Name must be at least 3 characters")).toBeInTheDocument();
+    });
+    expect(screen.getByText("That is not an email address")).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("submits what the schema accepts", async () => {
+    const { onSubmit } = setup();
+    type("Name", "Ada Byron");
+    type("Email", "ada@example.com");
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      name: "Ada Byron",
+      email: "ada@example.com",
+    });
+  });
+
+  it("holds an edit form to the same schema", async () => {
+    // An update form is the same builder with values in it, and this is where
+    // a resolver wired only on the create path would show up.
+    const { onSubmit } = setup({ name: "Ada Byron", email: "ada@example.com" });
+    type("Email", "broken");
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() => {
+      expect(screen.getByText("That is not an email address")).toBeInTheDocument();
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
 `
