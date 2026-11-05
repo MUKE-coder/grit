@@ -975,6 +975,70 @@ func (g *Generator) writeTSTypes(names Names) error {
 // v3.31.21: pick the right api-client path per app — apps/admin has
 // lib/api-client.ts; apps/web has lib/api.ts that re-exports apiClient.
 func (g *Generator) writeReactQueryHooks(names Names, app string) error {
+	// The admin keeps its own hand-rolled shape: its hooks are wired to the
+	// resource registry, the optimistic-update conventions and the toast
+	// surface, none of which the web app has.
+	if app != "web" {
+		return g.writeLegacyReactQueryHooks(names, app)
+	}
+
+	// Three lines over the generic in apps/web/hooks/use-resource.ts, rather
+	// than ninety-two lines of React Query with the names changed (grit#146).
+	//
+	// The inputs are the generated ones. They are built from the Go model by
+	// the same run that writes this file, so a field renamed in Go becomes a
+	// type error here instead of a 422 at runtime, which is what
+	// Record<string, unknown> bought instead.
+	//
+	// The exported names are exactly what they were. Somebody's pages import
+	// useProducts and useCreateProduct, and renaming them to useList and
+	// useCreate would be a breaking change in exchange for a tidier shape.
+	content := fmt.Sprintf(`import type { %s } from "@repo/shared/types";
+import type { Create%sInput, Update%sInput } from "@repo/shared/schemas";
+import { resourceHooks } from "./use-resource";
+
+// React Query hooks for %s.
+//
+// The bodies live in ./use-resource.ts, so a fix to the hook shape, a new
+// query parameter or a change to how the cache is invalidated reaches every
+// resource in this project at once. Edit this file to change what THIS
+// resource does; edit use-resource.ts to change what they all do.
+const %s = resourceHooks<%s, Create%sInput, Update%sInput>(
+  "%s",
+  "/api/%s",
+);
+
+export const use%s = %s.useList;
+export const useGet%s = %s.useOne;
+export const useCreate%s = %s.useCreate;
+export const useUpdate%s = %s.useUpdate;
+export const useDelete%s = %s.useRemove;
+
+/** The cache keys, for an invalidation this file does not already do. */
+export const %sKeys = %s.keys;
+`,
+		names.Pascal,
+		names.Pascal, names.Pascal,
+		names.Plural,
+		names.Plural, names.Pascal, names.Pascal, names.Pascal,
+		names.Plural,
+		names.Plural,
+		names.PluralPascal, names.Plural,
+		names.Pascal, names.Plural,
+		names.Pascal, names.Plural,
+		names.Pascal, names.Plural,
+		names.Pascal, names.Plural,
+		names.Camel, names.Plural,
+	)
+
+	dir := filepath.Join(g.Root, "apps", app, "hooks")
+	path := filepath.Join(dir, "use-"+names.PluralKebab+".ts")
+	return writeFileWithDirs(path, content)
+}
+
+// writeLegacyReactQueryHooks is the hand-rolled shape, kept for any app
+// that is not the web one.
+func (g *Generator) writeLegacyReactQueryHooks(names Names, app string) error {
 	apiImport := `import { apiClient } from "@/lib/api-client";`
 	if app == "web" {
 		apiImport = `import { apiClient } from "@/lib/api";`

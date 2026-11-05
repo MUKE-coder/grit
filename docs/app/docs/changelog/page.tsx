@@ -72,6 +72,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.473.0 */}
+            <div className="mb-12" id="v3.473.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.473.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Ninety-two lines of React Query per resource, with untyped inputs</h3>
+                <p>
+                  grit#146. <code>grit generate resource</code> wrote{' '}
+                  <code>apps/web/hooks/use-&lt;x&gt;.ts</code> as ninety-two
+                  lines of React Query, the same file with the names changed,
+                  and typed every mutation input{' '}
+                  <code>Record&lt;string, unknown&gt;</code> although{' '}
+                  <code>CreateProductInput</code> was being generated two
+                  directories away in <code>packages/shared</code> by the same
+                  run.
+                </p>
+                <p>It is twenty-three lines now, and the inputs are the real ones:</p>
+                <CodeBlock language="ts" filename="apps/web/hooks/use-products.ts" code={`import type { Product } from "@repo/shared/types";
+import type { CreateProductInput, UpdateProductInput } from "@repo/shared/schemas";
+import { resourceHooks } from "./use-resource";
+
+const products = resourceHooks<Product, CreateProductInput, UpdateProductInput>(
+  "products",
+  "/api/products",
+);
+
+export const useProducts = products.useList;
+export const useCreateProduct = products.useCreate;`} />
+                <p>
+                  Which buys the thing the issue asked for. The compiler now
+                  answers a question it could not before:
+                </p>
+                <CodeBlock terminal code={`error TS2353: Object literal may only specify known properties, and
+'title' does not exist in type '{ name: string; price?: number; active?: boolean }'`} />
+                <p>
+                  <strong>The exported names are unchanged.</strong> The issue
+                  sketches <code>useList</code> and <code>useCreate</code>{' '}
+                  destructured at the call site, and{' '}
+                  <code>useProducts</code> and <code>useCreateProduct</code> are
+                  what somebody&apos;s pages already import, so renaming them
+                  would be a breaking change in exchange for a tidier shape.
+                  They are three-line aliases over the generic.
+                </p>
+                <p>
+                  The generic also fixes something the old copy got wrong every
+                  time: an update invalidated the list and not the row, so a
+                  detail page kept showing what was there before the edit it had
+                  just made. And a filter whose value is <code>undefined</code>{' '}
+                  is now &quot;not filtering&quot; rather than{' '}
+                  <code>?status=undefined</code>, which is what{' '}
+                  <code>String(value)</code> would have sent.
+                </p>
+                <p>
+                  Not shared with the admin&apos;s, which the issue suggests and
+                  which I looked at.{' '}
+                  <code>apps/admin/hooks/use-resource.ts</code> is 429 lines and
+                  is wired to the admin&apos;s own api client, its resource
+                  registry, its optimistic-update conventions and its toast
+                  surface. Moving it to <code>packages/shared</code> would mean a
+                  package importing from both apps, or a third set of conventions
+                  neither uses. Two small generics that each know their own app
+                  is the cheaper truth.
+                </p>
+              </div>
+            </div>
+
             {/* v3.472.0 */}
             <div className="mb-12" id="v3.472.0">
               <div className="flex items-center gap-3 mb-4">

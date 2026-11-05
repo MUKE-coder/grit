@@ -23,6 +23,44 @@ Also worth knowing:
 ---
 
 
+## v3.473.0 - November 5, 2026
+
+### Ninety-two lines of React Query per resource, with untyped inputs
+
+grit#146. `grit generate resource` wrote `apps/web/hooks/use-<x>.ts` as ninety-two lines of React Query, the same file with the names changed, and typed every mutation input `Record<string, unknown>` although `CreateProductInput` was being generated two directories away in `packages/shared` by the same run.
+
+It is twenty-three lines now, and the inputs are the real ones:
+
+`apps/web/hooks/use-products.ts`
+
+```ts
+import type { Product } from "@repo/shared/types";
+import type { CreateProductInput, UpdateProductInput } from "@repo/shared/schemas";
+import { resourceHooks } from "./use-resource";
+
+const products = resourceHooks<Product, CreateProductInput, UpdateProductInput>(
+  "products",
+  "/api/products",
+);
+
+export const useProducts = products.useList;
+export const useCreateProduct = products.useCreate;
+```
+
+Which buys the thing the issue asked for. The compiler now answers a question it could not before:
+
+```bash
+error TS2353: Object literal may only specify known properties, and
+'title' does not exist in type '{ name: string; price?: number; active?: boolean }'
+```
+
+**The exported names are unchanged.** The issue sketches `useList` and `useCreate` destructured at the call site, and `useProducts` and `useCreateProduct` are what somebody's pages already import, so renaming them would be a breaking change in exchange for a tidier shape. They are three-line aliases over the generic.
+
+The generic also fixes something the old copy got wrong every time: an update invalidated the list and not the row, so a detail page kept showing what was there before the edit it had just made. And a filter whose value is `undefined` is now "not filtering" rather than `?status=undefined`, which is what `String(value)` would have sent.
+
+Not shared with the admin's, which the issue suggests and which I looked at. `apps/admin/hooks/use-resource.ts` is 429 lines and is wired to the admin's own api client, its resource registry, its optimistic-update conventions and its toast surface. Moving it to `packages/shared` would mean a package importing from both apps, or a third set of conventions neither uses. Two small generics that each know their own app is the cheaper truth.
+
+
 ## v3.472.0 - November 5, 2026
 
 ### A user's role had two stores, and the answer depended on who asked

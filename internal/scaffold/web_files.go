@@ -71,6 +71,11 @@ func webFileMap(root string, opts Options) map[string]string {
 		filepath.Join(webRoot, "lib", "api-core.ts"):                     apiCoreTS(opts),
 		filepath.Join(webRoot, "lib", "active-org.ts"):                   activeOrgTS(),
 		filepath.Join(webRoot, "lib", "api.ts"):                          webAPIClient(),
+		// The generic every generated resource hook is three lines over.
+		// grit#146: the generator used to write ninety-two lines per resource,
+		// with Record<string, unknown> inputs, while the typed ones were being
+		// generated two directories away in packages/shared.
+		filepath.Join(webRoot, "hooks", "use-resource.ts"):               webResourceHooks(),
 		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                  webUseBlogsHook(),
 		filepath.Join(webRoot, "app", "(marketing)", "blog", "page.tsx"): webBlogListPage(opts),
 		filepath.Join(webRoot, "lib", "blog-api.ts"):                     webBlogAPILib(),
