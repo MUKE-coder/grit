@@ -23,6 +23,32 @@ Also worth knowing:
 ---
 
 
+## v3.475.0 - November 5, 2026
+
+### "The API validates against the same Zod schema as the form"
+
+grit#145, the half left after v3.474.0. That sentence is in the README, and it was true for the pages somebody writes by hand and not for the resources Grit generates: `form-builder.tsx` applied its own `required` plus format checks, and the schema next door was used by nothing.
+
+`apps/admin/resources/products/products.ts`
+
+```ts
+import { CreateProductSchema } from "@repo/shared/schemas";
+
+  form: {
+    schema: CreateProductSchema,
+    fields: [ ... ],
+  },
+```
+
+**Opt-in, by a field on the form definition.** The issue flags this as the half that changes behaviour for every existing project's forms, and it does not have to: a form with no schema keeps the field rules alone, and `grit upgrade` does not rewrite a resource definition, so an existing resource is untouched until somebody adds the line. Newly generated ones get it.
+
+**ANDed with the field rules, not instead of them.** Those know a rating's max and whether a conditional field is even visible; the schema knows a refinement that reads a sibling field. That asymmetry is the issue's own point, and replacing either with the other loses rules.
+
+**Not the stepped form**, and that is a decision with a test on it. A stepped form on edit PATCHes one step's fields at a time, and validating that payload against the whole create schema would fail on every field in another step. `FormStepper` keeps the field rules, which are the ones that can answer per step.
+
+Through `@hookform/resolvers/standard-schema` rather than the zod resolver, so a resource definition does not take a dependency on zod to name its own schema. One wrinkle worth recording: casting the schema instead of the resolver made `useForm` infer the form values as `unknown`, and every field read in the component stopped compiling.
+
+
 ## v3.474.0 - November 5, 2026
 
 ### Two Product types, and they disagreed

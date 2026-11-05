@@ -72,6 +72,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.475.0 */}
+            <div className="mb-12" id="v3.475.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.475.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>&quot;The API validates against the same Zod schema as the form&quot;</h3>
+                <p>
+                  grit#145, the half left after v3.474.0. That sentence is in
+                  the README, and it was true for the pages somebody writes by
+                  hand and not for the resources Grit generates:{' '}
+                  <code>form-builder.tsx</code> applied its own{' '}
+                  <code>required</code> plus format checks, and the schema next
+                  door was used by nothing.
+                </p>
+                <CodeBlock language="ts" filename="apps/admin/resources/products/products.ts" code={`import { CreateProductSchema } from "@repo/shared/schemas";
+
+  form: {
+    schema: CreateProductSchema,
+    fields: [ ... ],
+  },`} />
+                <p>
+                  <strong>Opt-in, by a field on the form definition.</strong>{' '}
+                  The issue flags this as the half that changes behaviour for
+                  every existing project&apos;s forms, and it does not have to:
+                  a form with no schema keeps the field rules alone, and{' '}
+                  <code>grit upgrade</code> does not rewrite a resource
+                  definition, so an existing resource is untouched until
+                  somebody adds the line. Newly generated ones get it.
+                </p>
+                <p>
+                  <strong>ANDed with the field rules, not instead of them.</strong>{' '}
+                  Those know a rating&apos;s max and whether a conditional field
+                  is even visible; the schema knows a refinement that reads a
+                  sibling field. That asymmetry is the issue&apos;s own point,
+                  and replacing either with the other loses rules.
+                </p>
+                <p>
+                  <strong>Not the stepped form</strong>, and that is a decision
+                  with a test on it. A stepped form on edit PATCHes one
+                  step&apos;s fields at a time, and validating that payload
+                  against the whole create schema would fail on every field in
+                  another step. <code>FormStepper</code> keeps the field rules,
+                  which are the ones that can answer per step.
+                </p>
+                <p>
+                  Through <code>@hookform/resolvers/standard-schema</code>{' '}
+                  rather than the zod resolver, so a resource definition does
+                  not take a dependency on zod to name its own schema. One
+                  wrinkle worth recording: casting the schema instead of the
+                  resolver made <code>useForm</code> infer the form values as{' '}
+                  <code>unknown</code>, and every field read in the component
+                  stopped compiling.
+                </p>
+              </div>
+            </div>
+
             {/* v3.474.0 */}
             <div className="mb-12" id="v3.474.0">
               <div className="flex items-center gap-3 mb-4">

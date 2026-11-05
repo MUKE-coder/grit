@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 2 to 8, 2026",
-    count: 12,
+    count: 13,
     entries: [
+      { version: "3.475.0", title: "\"The API validates against the same Zod schema as the form\"" },
       { version: "3.474.0", title: "Two Product types, and they disagreed" },
       { version: "3.473.0", title: "Ninety-two lines of React Query per resource, with untyped inputs" },
       { version: "3.472.0", title: "A user’s role had two stores, and the answer depended on who asked" },

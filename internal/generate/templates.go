@@ -1515,6 +1515,7 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	statsBlock, insightsBlock := g.insightsBlocks()
 
 	content := fmt.Sprintf(`import { defineResource } from "@/lib/resource";%s
+import { Create%sSchema } from "@repo/shared/schemas";
 import custom from "./%s.custom";
 
 export const %sResource = defineResource({
@@ -1538,6 +1539,17 @@ export const %sResource = defineResource({
     bulkActions: ["edit", "archive", "restore", "export", "delete"],
   },
   form: {
+    // The same schema the API validates the request against, so the form and
+    // the server agree about what is required rather than agreeing by
+    // coincidence because one generator wrote both sets of rules (grit#145).
+    //
+    // It is ANDed with the per-field rules below, not instead of them: those
+    // know a rating's max and whether a conditional field is even visible,
+    // and this knows a refinement that reads a sibling field.
+    //
+    // Remove it and the form falls back to the field rules alone, which is
+    // what every form did before v3.475.0.
+    schema: Create%sSchema,
     fields: [
       // grit:fields:auto-start%s
       // grit:fields:auto-end
@@ -1557,6 +1569,7 @@ export const %sResource = defineResource({
 }, custom);
 `,
 		stackedCellImport,
+		names.Pascal, // the Create<X>Schema the form validates against
 		names.PluralKebab,
 		names.Camel,
 		names.Pascal,
@@ -1569,6 +1582,7 @@ export const %sResource = defineResource({
 		strings.Join(splitPascal(names.Pascal), " "), strings.Join(splitPascal(names.PluralPascal), " "),
 		columns,
 		filters,
+		names.Pascal, // form.schema: Create<X>Schema
 		formFields,
 		names.PluralPascal,
 		names.Plural,

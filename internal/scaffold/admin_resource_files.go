@@ -439,6 +439,25 @@ export interface GroupDefinition {
 
 export interface FormDefinition {
   fields: FieldDefinition[];
+  /**
+   * The Zod schema this form validates against, on top of the per-field rules.
+   *
+   * Optional, and a form without one behaves exactly as it did before this
+   * existed. With one, the form is held to the same schema the API validates
+   * the request against, which is what makes "the API validates against the
+   * same Zod schema as the form" true for a generated resource and not only
+   * for a hand-written page (grit#145).
+   *
+   * ANDed with the field rules, not instead of them. The field rules know
+   * things the schema cannot, a rating's max or whether a conditional field is
+   * even visible, and the schema knows things the field rules cannot, such as
+   * a refinement that reads a sibling field. Replacing either with the other
+   * loses rules.
+   *
+   * Typed as a standard-schema validator rather than importing zod here, so
+   * the admin's resource definitions do not take a dependency on it.
+   */
+  schema?: { "~standard": unknown };
   layout?: "single" | "two-column";
   steps?: StepDefinition[];
   groups?: GroupDefinition[];

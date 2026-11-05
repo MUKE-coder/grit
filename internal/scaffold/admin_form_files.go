@@ -9,7 +9,8 @@ func adminFormBuilder() string {
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useT } from "@/lib/i18n";
-import { useForm, Controller, useWatch, type FieldErrors } from "react-hook-form";
+import { useForm, Controller, useWatch, type FieldErrors, type Resolver } from "react-hook-form";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useUnsavedGuard, UnsavedBadge } from "@/components/forms/unsaved-guard";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
 import { displayFormat, displayValue, isDisplayOnly, isRequired, isVisible, writableValues } from "@/lib/form-values";
@@ -101,8 +102,23 @@ export function FormBuilder({
     handleSubmit,
     getValues,
     formState: { errors, isDirty },
-  } = useForm({
+  } = useForm<Record<string, unknown>>({
     defaultValues: buildDefaults(formDef.fields, defaultValues),
+    // The resource's own schema, when it has one. A form without one keeps
+    // the per-field rules alone, which is what every form did before this
+    // and what a hand-written form still does (grit#145).
+    //
+    // The per-field rules below are not replaced: react-hook-form runs the
+    // resolver AND the Controller rules, so a rating's max and a conditional
+    // field's visibility still apply, and a refinement reading a sibling
+    // field now applies too.
+    // Cast at the resolver rather than at the schema. A form definition is
+    // runtime data, so its values are Record<string, unknown> here whatever
+    // the schema says; casting the SCHEMA instead made useForm infer the
+    // values as unknown and every field read stopped compiling.
+    resolver: formDef.schema
+      ? (standardSchemaResolver(formDef.schema as never) as Resolver<Record<string, unknown>>)
+      : undefined,
   });
 
   // Not while it is being submitted: the save is a navigation of its own on a
