@@ -75,7 +75,11 @@ func TestProductionAPIUsesPgbouncer(t *testing.T) {
 			t.Errorf("%s: a fresh production compose needs no repair: %v", arch, changes)
 		}
 
-		old := strings.Replace(fresh, composeAPICommentNew, composeAPICommentOld, 1)
+		// Without the migrate service first: it shares these constants with the
+		// api and sits above it, so a Replace of one hits the migrate service
+		// and leaves the api alone (grit#177).
+		old := withoutMigrateService(fresh)
+		old = strings.Replace(old, composeAPICommentNew, composeAPICommentOld, 1)
 		old = strings.Replace(old, composeAPIPostgresNew, composeAPIPostgresOld, 1)
 		old = strings.Replace(old, composeAPIDependsNew, composeAPIDependsOld, 1)
 		old = strings.Replace(old, pgbouncerUseNew, pgbouncerUseOld, 1)
@@ -84,8 +88,16 @@ func TestProductionAPIUsesPgbouncer(t *testing.T) {
 			t.Errorf("%s: pgbouncer does not listen on 6432, where its health check looks", arch)
 		}
 		out, changes, warnings := repairComposePgbouncerSource(old)
-		if out != fresh || len(warnings) != 0 || len(changes) != 2 {
-			t.Errorf("%s: repairing the previous compose file did not give the fresh one (changes %v, warnings %v)", arch, changes, warnings)
+		if len(warnings) != 0 || len(changes) != 2 {
+			t.Errorf("%s: repairing the previous compose file warned or changed the wrong "+
+				"number of things (changes %v, warnings %v)", arch, changes, warnings)
+		}
+		out, _, migrateWarnings := repairComposeMigrateSource(out)
+		if len(migrateWarnings) != 0 {
+			t.Errorf("%s: adding the migrate service warned: %v", arch, migrateWarnings)
+		}
+		if out != fresh {
+			t.Errorf("%s: repairing the previous compose file did not give the fresh one", arch)
 		}
 	}
 }

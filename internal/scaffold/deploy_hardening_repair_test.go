@@ -52,15 +52,49 @@ func TestProductionComposeHardening(t *testing.T) {
 		t.Errorf("a fresh production compose needs no repair: %v", changes)
 	}
 
-	old := strings.Replace(fresh, composeDBProvider, composeDBProviderAnchor, 1)
+	// As a project that predates the migrate service has it.
+	old := withoutMigrateService(fresh)
+	old = strings.Replace(old, composeDBProvider, composeDBProviderAnchor, 1)
 	old = strings.Replace(old, composeRedisURLNew, composeRedisURLOld, 1)
 	old = strings.Replace(old, composeRedisAuth, "", 1)
 	old = strings.ReplaceAll(old, pgbouncerImageNew, pgbouncerImageOld)
 	old = strings.ReplaceAll(old, minioImageNew, minioImageOldHub)
+
+	// Both repairs, in the order the upgrade runs them.
 	out, changes, warnings := repairComposeHardeningSource(old)
-	if len(warnings) != 0 || out != fresh {
-		t.Errorf("repairing the previous compose file did not give the fresh one (changes %v, warnings %v)", changes, warnings)
+	if len(warnings) != 0 {
+		t.Fatalf("hardening the previous compose file warned: %v", warnings)
 	}
+	out, migrateChanges, migrateWarnings := repairComposeMigrateSource(out)
+	if len(migrateWarnings) != 0 {
+		t.Fatalf("adding the migrate service warned: %v", migrateWarnings)
+	}
+	if len(migrateChanges) != 1 {
+		t.Errorf("the migrate service was not added to a file without one: %v", migrateChanges)
+	}
+	if out != fresh {
+		t.Errorf("repairing the previous compose file did not give the fresh one (changes %v)", changes)
+	}
+}
+
+// withoutMigrateService is the production compose file as it was before the
+// migrate service existed, which is what a project upgrading from an older
+// Grit actually has (grit#177).
+//
+// Stripped rather than edited, because the service shares its environment and
+// depends_on constants with the api: a Replace of one of those hits the
+// migrate service first, and produces a file no project has ever had.
+func withoutMigrateService(src string) string {
+	start := strings.Index(src, composeMigrateService)
+	if start < 0 {
+		return src
+	}
+	end := strings.Index(src[start:], "\n  api:\n")
+	if end < 0 {
+		return src
+	}
+	out := src[:start] + src[start+end+1:]
+	return strings.Replace(out, composeMigrateDependency, "", 1)
 }
 
 func TestProductionRefusesSQLite(t *testing.T) {

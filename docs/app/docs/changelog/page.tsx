@@ -72,6 +72,113 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.476.0 */}
+            <div className="mb-12" id="v3.476.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.476.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A first production deploy could not work</h3>
+                <p>
+                  Three faults, all reported from a real deployment, all
+                  reproduced here before anything was changed. Two of them stop
+                  a triple project deploying at all.
+                </p>
+
+                <h4>The web and admin images did not build</h4>
+                <p>
+                  grit#177. Both Dockerfiles copied{' '}
+                  <code>packages/shared/node_modules</code>, and pnpm never
+                  creates it: the workspace sets{' '}
+                  <code>nodeLinker: hoisted</code>, so a package with no
+                  binaries of its own gets no <code>node_modules</code>{' '}
+                  directory, and <code>COPY --from</code> has no &quot;if it
+                  exists&quot;.
+                </p>
+                <CodeBlock terminal code={`ERROR: failed to solve: failed to compute cache key:
+  "/app/packages/shared/node_modules": not found`} />
+                <p>
+                  The line is gone. Hoisting puts everything in the root{' '}
+                  <code>node_modules</code>, which the line above it already
+                  copies. Both images build now, checked with a real{' '}
+                  <code>docker build</code> rather than by reading.
+                </p>
+
+                <h4>On Postgres, the API started with no tables</h4>
+                <p>
+                  <code>cmd/server</code> migrates only when{' '}
+                  <code>DB_PROVIDER=memory</code>, where the schema cannot
+                  outlive the process. The API image carried only the server
+                  binary, and the production compose file had no migrate step.
+                  So a first deploy came up, answered &quot;relation does not
+                  exist&quot; to every request, and had nothing in the image to
+                  run by hand.
+                </p>
+                <p>
+                  The migrate binary is in the image, and a one-shot{' '}
+                  <code>migrate</code> service runs before the API:
+                </p>
+                <CodeBlock language="yaml" code={`  api:
+    depends_on:
+      migrate:
+        condition: service_completed_successfully`} />
+                <p>
+                  <code>service_completed_successfully</code>, not{' '}
+                  <code>service_healthy</code>: this container exits, and
+                  waiting for it to become healthy would wait for ever. A failed
+                  migration therefore stops the API from starting, which is the
+                  behaviour you want. The alternative, a{' '}
+                  <code>MIGRATE_ON_BOOT</code> flag, is worse exactly when it
+                  matters: two replicas starting together would both migrate.
+                </p>
+                <p>
+                  Proved by deploying it: Postgres with no relations, then{' '}
+                  <code>docker compose up migrate</code>, then 44 tables, then
+                  the API serving{' '}
+                  <code>&#123;&quot;data&quot;:[],&quot;meta&quot;:&#123;...&#125;&#125;</code>{' '}
+                  instead of an error. The migration also refused twice on the
+                  way, once for placeholder secrets and once for the
+                  placeholder encryption key, which is the production safety
+                  check doing its job.
+                </p>
+
+                <h4>Every write answered 403 on a sibling subdomain</h4>
+                <p>
+                  grit#176. The CSRF cookie was set with an empty{' '}
+                  <code>Domain</code>, which makes it host-only. The
+                  double-submit pattern needs the <em>frontend&apos;s</em>{' '}
+                  JavaScript to read <code>grit_csrf</code> and echo it in a
+                  header, and a frontend on <code>app.example.com</code> cannot
+                  read a cookie the API set on <code>api.example.com</code>. So
+                  every cookie-authenticated write answered 403, in the exact
+                  layout the deploy guide describes.
+                </p>
+                <CodeBlock language="bash" filename=".env" code={`CSRF_COOKIE_DOMAIN=.example.com`} />
+                <p>
+                  Unset means host-only, which is what local development needs:
+                  both sides are on localhost, where a <code>Domain</code>{' '}
+                  attribute is a cookie the browser will not set. Two tests ship
+                  into the project and drive the middleware over HTTP, reading
+                  the <code>Set-Cookie</code> header, because this is a header
+                  question rather than a source question.
+                </p>
+                <p>
+                  One thing the repair work turned up about itself. The migrate
+                  service shares its environment and <code>depends_on</code>{' '}
+                  with the API and sits above it, so the two compose tests that
+                  build a &quot;previous&quot; file by replacing the first
+                  occurrence of a constant were suddenly editing the migrate
+                  service and leaving the API alone: constructing a file no
+                  project has ever had. They strip the service first now and run
+                  both repairs in the order the upgrade runs them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.475.0 */}
             <div className="mb-12" id="v3.475.0">
               <div className="flex items-center gap-3 mb-4">

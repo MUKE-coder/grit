@@ -241,6 +241,15 @@ func repairDeployHardening(root string, opts Options) error {
 			}
 		}
 	}
+
+	// The migrate service, for a project whose production compose file predates
+	// it. Only the production file: the development one runs `+"`grit migrate`"+`
+	// from the terminal, where the person can read what it did (grit#177).
+	if path := filepath.Join(root, "docker-compose.prod.yml"); fileExists(path) {
+		if err := repairTextFile(root, m, path, repairComposeMigrateSource); err != nil {
+			return err
+		}
+	}
 	if prod := filepath.Join(root, "docker-compose.prod.yml"); fileContains(prod, "REDIS_PASSWORD") && !fileContains(filepath.Join(root, ".env"), "REDIS_PASSWORD=") {
 		fmt.Println("  ⚠ docker-compose.prod.yml now gives Redis a password. Add one to .env before the next production deploy:\n" +
 			"      REDIS_PASSWORD=<the output of: openssl rand -hex 24>")

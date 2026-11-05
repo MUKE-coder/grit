@@ -295,6 +295,23 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 OAUTH_FRONTEND_URL=http://localhost:3001
 
+# The Domain the CSRF cookie is set with. Unset means host-only, which is right
+# here: the API and the frontend are both on localhost.
+#
+# Set it when they are on sibling subdomains, which is the layout the deploy
+# guide describes:
+#
+#   API at api.example.com, app at app.example.com  ->  .example.com
+#
+# The double-submit pattern needs the FRONTEND's JavaScript to read grit_csrf
+# and echo it in X-CSRF-Token. Host-only, it cannot read a cookie the API set
+# on its own hostname, and every cookie-authenticated write answers 403 with
+# nothing saying why.
+#
+# Only as broad as it needs to be: any subdomain of what you put here can read
+# the token.
+CSRF_COOKIE_DOMAIN=
+
 # Deep links the OAuth callback may send a sign-in code to, comma separated.
 #
 # For the mobile app. A browser gets HttpOnly cookies and a redirect; a native

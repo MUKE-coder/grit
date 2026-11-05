@@ -43,6 +43,7 @@ func writeSecurityFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "authz", "grants_test.go"):       authzGrantsTestGo(),
 		filepath.Join(apiRoot, "internal", "config", "modules_test.go"):     configModulesTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "csrf.go"):         csrfMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "csrf_test.go"):    csrfMiddlewareTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "security_log.go"): securityLogGo(),
 	}
 
@@ -523,6 +524,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -547,6 +549,8 @@ func CSRF() gin.HandlerFunc {
 		cookieName = "grit_csrf"
 		headerName = "X-CSRF-Token"
 	)
+	// Same reasoning as AutoCSRF: see csrfCookieDomain.
+	cookieDomain := csrfCookieDomain()
 	return func(c *gin.Context) {
 		method := strings.ToUpper(c.Request.Method)
 		if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
@@ -555,7 +559,7 @@ func CSRF() gin.HandlerFunc {
 				token, gerr := newCSRFToken()
 				if gerr == nil {
 					c.SetSameSite(http.SameSiteStrictMode)
-					c.SetCookie(cookieName, token, 86400, "/", "", requestIsHTTPS(c), false)
+					c.SetCookie(cookieName, token, 86400, "/", cookieDomain, requestIsHTTPS(c), false)
 				}
 			}
 			c.Next()
@@ -629,12 +633,36 @@ func isSAMLACSPath(path string) bool {
 }
 
 ` + csrfAuthRouteFunc + `
+// csrfCookieDomain is the Domain attribute the CSRF cookie is set with.
+//
+// Empty by default, which makes the cookie host-only: it belongs to the API's
+// own hostname and nothing else. That is right in development, where the API
+// and the frontend are both on localhost, and wrong for the deployment the
+// deploy guide describes, where the API is on api.example.com and the app on
+// app.example.com.
+//
+// The double-submit pattern needs the FRONTEND's JavaScript to read this
+// cookie and echo it in X-CSRF-Token. A host-only cookie cannot be read from a
+// sibling subdomain, so every cookie-authenticated write answered 403 and
+// nothing said why (grit#176).
+//
+// Set CSRF_COOKIE_DOMAIN=.example.com to share it across subdomains. A leading
+// dot is the conventional spelling and browsers accept it either way.
+//
+// Read once, at wiring time: this is configuration, not a per-request
+// decision, and a cookie domain that changed between requests would be a
+// stranger bug than the one it fixes.
+func csrfCookieDomain() string {
+	return strings.TrimSpace(os.Getenv("CSRF_COOKIE_DOMAIN"))
+}
+
 func AutoCSRF() gin.HandlerFunc {
 	const (
 		csrfCookie   = "grit_csrf"
 		csrfHeader   = "X-CSRF-Token"
 		accessCookie = "grit_access"
 	)
+	cookieDomain := csrfCookieDomain()
 	// Routes that bootstrap the session (login etc.) can't have a CSRF
 	// cookie yet — exempt them so users can sign in on the first try.
 	` + csrfBootstrapMap + `
@@ -650,7 +678,7 @@ func AutoCSRF() gin.HandlerFunc {
 				token, gerr := newCSRFToken()
 				if gerr == nil {
 					c.SetSameSite(http.SameSiteLaxMode)
-					c.SetCookie(csrfCookie, token, 86400, "/", "", requestIsHTTPS(c), false)
+					c.SetCookie(csrfCookie, token, 86400, "/", cookieDomain, requestIsHTTPS(c), false)
 				}
 			}
 			c.Next()
@@ -779,6 +807,72 @@ func LogSecurityEvent(ctx context.Context, db *gorm.DB, userID, event, ip, userA
 	}
 	if err := audit.AppendChained(db.WithContext(ctx), &entry); err != nil {
 		log.Printf("security_log: failed to record %s: %v", event, err)
+	}
+}
+`
+}
+
+// csrfMiddlewareTestGo is internal/middleware/csrf_test.go.
+//
+// The cookie domain is the kind of thing that is right on a developer machine
+// and wrong in production, and the symptom is every write answering 403 with
+// nothing saying why (grit#176). So the test drives the middleware and reads
+// the Set-Cookie header rather than asserting on source.
+func csrfMiddlewareTestGo() string {
+	return `package middleware
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+)
+
+// csrfSetCookie makes one safe request and returns the grit_csrf Set-Cookie.
+func csrfSetCookie(t *testing.T) string {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(AutoCSRF())
+	r.GET("/api/ping", func(c *gin.Context) { c.Status(http.StatusOK) })
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/ping", nil))
+	for _, h := range w.Header().Values("Set-Cookie") {
+		if strings.HasPrefix(h, "grit_csrf=") {
+			return h
+		}
+	}
+	t.Fatalf("no grit_csrf cookie was set; headers: %v", w.Header())
+	return ""
+}
+
+// Unset means host-only, which is what local development needs: the API and
+// the frontend are both on localhost, and a Domain attribute there is a cookie
+// the browser will not set.
+func TestCSRFCookieIsHostOnlyByDefault(t *testing.T) {
+	t.Setenv("CSRF_COOKIE_DOMAIN", "")
+	got := csrfSetCookie(t)
+	if strings.Contains(strings.ToLower(got), "domain=") {
+		t.Errorf("unset CSRF_COOKIE_DOMAIN still produced a Domain: %q", got)
+	}
+}
+
+// And with it set, the cookie is readable from a sibling subdomain.
+//
+// The double-submit pattern needs the FRONTEND's JavaScript to read this
+// cookie and echo it in X-CSRF-Token. Host-only, it cannot, so a frontend on
+// app.example.com talking to an API on api.example.com got 403 on every
+// cookie-authenticated write.
+func TestCSRFCookieCarriesTheConfiguredDomain(t *testing.T) {
+	t.Setenv("CSRF_COOKIE_DOMAIN", ".example.com")
+	got := csrfSetCookie(t)
+	if !strings.Contains(strings.ToLower(got), "domain=example.com") {
+		t.Errorf("Set-Cookie = %q, want a Domain of example.com. Without it a "+
+			"frontend on a sibling subdomain cannot read grit_csrf, and every "+
+			"write answers 403.", got)
 	}
 }
 `

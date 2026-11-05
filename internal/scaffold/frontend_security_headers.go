@@ -370,9 +370,15 @@ RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm ins
 FROM base AS builder
 WORKDIR /app
 
+# Only the root node_modules and the app's own.
+#
+# packages/shared/node_modules was copied here too, and pnpm never creates it:
+# the workspace sets nodeLinker: hoisted, so a package with no binaries of its
+# own gets no node_modules directory at all, and COPY --from has no "if it
+# exists". a docker build stopped on this line, which made a first production
+# deploy of a triple project impossible (grit#177).
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/` + app + `/node_modules ./apps/` + app + `/node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 
 # Vite inlines env at BUILD time (unlike Next.js, which reads it at runtime),

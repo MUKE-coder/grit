@@ -23,6 +23,55 @@ Also worth knowing:
 ---
 
 
+## v3.476.0 - November 5, 2026
+
+### A first production deploy could not work
+
+Three faults, all reported from a real deployment, all reproduced here before anything was changed. Two of them stop a triple project deploying at all.
+
+#### The web and admin images did not build
+
+grit#177. Both Dockerfiles copied `packages/shared/node_modules`, and pnpm never creates it: the workspace sets `nodeLinker: hoisted`, so a package with no binaries of its own gets no `node_modules` directory, and `COPY --from` has no "if it exists".
+
+```bash
+ERROR: failed to solve: failed to compute cache key:
+  "/app/packages/shared/node_modules": not found
+```
+
+The line is gone. Hoisting puts everything in the root `node_modules`, which the line above it already copies. Both images build now, checked with a real `docker build` rather than by reading.
+
+#### On Postgres, the API started with no tables
+
+`cmd/server` migrates only when `DB_PROVIDER=memory`, where the schema cannot outlive the process. The API image carried only the server binary, and the production compose file had no migrate step. So a first deploy came up, answered "relation does not exist" to every request, and had nothing in the image to run by hand.
+
+The migrate binary is in the image, and a one-shot `migrate` service runs before the API:
+
+```yaml
+  api:
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+```
+
+`service_completed_successfully`, not `service_healthy`: this container exits, and waiting for it to become healthy would wait for ever. A failed migration therefore stops the API from starting, which is the behaviour you want. The alternative, a `MIGRATE_ON_BOOT` flag, is worse exactly when it matters: two replicas starting together would both migrate.
+
+Proved by deploying it: Postgres with no relations, then `docker compose up migrate`, then 44 tables, then the API serving `{"data":[],"meta":{...}}` instead of an error. The migration also refused twice on the way, once for placeholder secrets and once for the placeholder encryption key, which is the production safety check doing its job.
+
+#### Every write answered 403 on a sibling subdomain
+
+grit#176. The CSRF cookie was set with an empty `Domain`, which makes it host-only. The double-submit pattern needs the *frontend's* JavaScript to read `grit_csrf` and echo it in a header, and a frontend on `app.example.com` cannot read a cookie the API set on `api.example.com`. So every cookie-authenticated write answered 403, in the exact layout the deploy guide describes.
+
+`.env`
+
+```bash
+CSRF_COOKIE_DOMAIN=.example.com
+```
+
+Unset means host-only, which is what local development needs: both sides are on localhost, where a `Domain` attribute is a cookie the browser will not set. Two tests ship into the project and drive the middleware over HTTP, reading the `Set-Cookie` header, because this is a header question rather than a source question.
+
+One thing the repair work turned up about itself. The migrate service shares its environment and `depends_on` with the API and sits above it, so the two compose tests that build a "previous" file by replacing the first occurrence of a constant were suddenly editing the migrate service and leaving the API alone: constructing a file no project has ever had. They strip the service first now and run both repairs in the order the upgrade runs them.
+
+
 ## v3.475.0 - November 5, 2026
 
 ### "The API validates against the same Zod schema as the form"

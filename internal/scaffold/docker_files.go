@@ -221,6 +221,7 @@ func dockerComposeProd(opts Options) string {
 #     the API over plain HTTP in production.
 
 services:
+` + composeMigrateService + composeDBProvider + composeAPIPostgresNew + composeAPIDependsNew + `
   api:
     build:
       context: ./apps/api
@@ -232,7 +233,9 @@ services:
       - .env
 ` + composeAPICommentNew + `    environment:
 ` + composeDBProvider + composeAPIPostgresNew + composeRedisURLNew + `      MINIO_ENDPOINT: http://minio:9000
-` + composeAPIDependsNew + `      redis:
+` + composeAPIDependsNew + `      migrate:
+        condition: service_completed_successfully
+      redis:
         condition: service_healthy
 `)
 
@@ -467,6 +470,15 @@ COPY . .
 ARG IMAGE_BACKEND
 RUN if [ "$IMAGE_BACKEND" = "vips" ]; then       apk --no-cache add vips-dev build-base pkgconfig &&       CGO_ENABLED=1 GOOS=linux go build -tags vips -o /app/server ./cmd/server ;     else       CGO_ENABLED=0 GOOS=linux go build -o /app/server ./cmd/server ;     fi
 
+# The migrate command, in the same image.
+#
+# It was not here, and cmd/server migrates only for DB_PROVIDER=memory, so a
+# first deploy on Postgres came up with no tables and answered "relation does
+# not exist" to every request, with no binary in the image to run by hand
+# (grit#177). Always the pure-Go build: migrations touch the database and
+# nothing else, so the image backend is irrelevant to them.
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/migrate ./cmd/migrate
+
 # Run stage
 FROM ` + runtimeAlpineImage + `
 ARG IMAGE_BACKEND
@@ -489,6 +501,10 @@ RUN addgroup -S app && adduser -S -G app app
 WORKDIR /app
 
 COPY --from=builder /app/server .
+# Run as its own one-shot step, not from the server's entrypoint: two replicas
+# starting together would both migrate, and a migration is a thing to watch
+# happen once. See the migrate service in docker-compose.prod.yml.
+COPY --from=builder /app/migrate .
 
 RUN chown -R app:app /app
 
@@ -530,9 +546,15 @@ RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm ins
 FROM base AS builder
 WORKDIR /app
 
+# Only the root node_modules and the app's own.
+#
+# packages/shared/node_modules was copied here too, and pnpm never creates it:
+# the workspace sets nodeLinker: hoisted, so a package with no binaries of its
+# own gets no node_modules directory at all, and COPY --from has no "if it
+# exists". a docker build stopped on this line, which made a first production
+# deploy of a triple project impossible (grit#177).
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/%s/node_modules ./apps/%s/node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 
 ARG NEXT_PUBLIC_API_URL
