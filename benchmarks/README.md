@@ -72,6 +72,9 @@ Everything in `results/` is container-to-container.
 ## Running it
 
 ```bash
+# The Grit side is scaffold output, so it is not committed. Build it first:
+./grit-bench.sh                 # grit new + grit generate resource Product
+
 docker compose up -d postgres redis
 docker compose exec -T postgres psql -U bench -d bench \
   -c "CREATE DATABASE bench_grit;" -c "CREATE DATABASE bench_laravel;"
@@ -89,8 +92,8 @@ for db in bench_grit bench_laravel; do
   docker compose exec -T postgres psql -q -U bench -d $db < seed/products.sql
 done
 
-./run.sh              # 3 reps x 4 scenarios x 2 apps
-python aggregate.py   # medians + which rows are DB-bound
+./pair.sh laravel     # 3 reps x 4 scenarios x 2 apps, one opponent
+python pair-report.py laravel   # medians + which rows are DB-bound
 ```
 
 ## Scenarios

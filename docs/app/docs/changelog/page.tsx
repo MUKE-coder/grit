@@ -59,6 +59,145 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.466.0 */}
+            <div className="mb-12" id="v3.466.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.466.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The matrix and the stability page disagreed about the same features</h3>
+                <p>
+                  grit#166. Two-factor, passkeys and RBAC are <code>beta</code> on{' '}
+                  <Link href="/docs/stability">the stability page</Link>, and counted
+                  towards &quot;ready on first run&quot; in the capability matrix with
+                  nothing said about it. Both are this project&apos;s own claims, in two
+                  files, and which one a reader believed depended on which page they found.
+                </p>
+                <p>
+                  The statuses now live in one config that both read. A capability row
+                  points at a stability area by id, the matrix shows that area&apos;s badge
+                  beside the label, and a row cannot be settled in one place and young in
+                  the other because there is only one place.
+                </p>
+                <CodeBlock language="ts" code={`// docs/config/capabilities.ts
+{
+  id: 'twofa',
+  stability: 'twofa',   // -> the area on /docs/stability, whose badge renders here
+  label: 'Two-factor with backup codes',
+}`} />
+                <p>
+                  Eleven of the thirty-three rows point at an area. The other
+                  twenty-two do not, because no stability area covers them, and inventing a
+                  pointer would put a badge on a claim nothing backs. A pointer that
+                  resolves to nothing renders no badge and says nothing, which is the
+                  original bug returning by a rename, so CI now reads both files and fails
+                  on a pointer with no area.
+                </p>
+                <p>
+                  The matrix also says how it was scored, which a self-scored table should:
+                  the rows are Grit&apos;s own list, some of them exist because Grit has
+                  them, the count includes beta and new features, and the file is linked
+                  with an invitation to send a pull request against a single cell. A
+                  comparison that invites corrections is more persuasive than one that does
+                  not.
+                </p>
+
+                <h3>No third-party security audit has been performed</h3>
+                <p>
+                  grit#165. Nothing said so, and for a project that ships a security
+                  dashboard, an audit log with a written threat model and an OWASP page,
+                  silence on that point reads as the other answer. It is now stated in{' '}
+                  <code>SECURITY.md</code> and on the security page, along with which
+                  subsystems have a written threat model and which do not.
+                </p>
+                <p>
+                  &quot;WAF&quot; is the other word. Sentinel blocks known probe patterns
+                  and rate-limits by IP and route, with account-level lockout. That is
+                  useful and it is not ModSecurity with the OWASP Core Rule Set, so
+                  somebody reading &quot;WAF&quot; and expecting the second one was being
+                  surprised in the wrong direction. The README and the batteries diagram
+                  now say request filtering, and the security page qualifies the word where
+                  it still appears.
+                </p>
+                <p>
+                  Also softened: &quot;defends every category of the OWASP Top 10:2025 by
+                  default&quot; is now &quot;every category has a named defence in the
+                  scaffold&quot;, which is what the page actually demonstrates, file path by
+                  file path. And &quot;GDPR tools&quot; is GDPR tooling, with a line saying
+                  it is a mechanism rather than a compliance programme.
+                </p>
+
+                <h3>&quot;No down-migrations&quot; reads as &quot;you cannot roll back&quot;</h3>
+                <p>
+                  Three places on the coming-from page said it. What is true is that there
+                  are no hand-written up and down files, because AutoMigrate works the
+                  change out from the models. Rolling back exists:{' '}
+                  <code>grit migrate down</code> reverses a run from the record of what that
+                  run actually changed, and CI exercises it. Telling somebody arriving from
+                  Laravel that a migration cannot be undone is the most alarming thing you
+                  can say about a migration system, and it was not the case.
+                </p>
+
+                <h3>The policies feature had no documentation page</h3>
+                <p>
+                  grit#169. <code>internal/policies</code> is generated into every project,{' '}
+                  <code>grit generate resource</code> writes the file and registers it, and
+                  nothing under <code>/docs</code> mentioned it. There is a page now, beside
+                  authorization: where a rule goes, what it receives, which paths consult
+                  it, what a refusal looks like over HTTP, and a worked example that is not
+                  a stub.
+                </p>
+                <p>
+                  Writing it caught two things. <code>authz.Actor</code> holds{' '}
+                  <code>UserID</code> and <code>Admin</code> and nothing else, so the first
+                  draft&apos;s example read <code>actor.OrganizationID</code> and would not
+                  have compiled, in a code block on a page whose whole purpose is that
+                  nobody could find out how this works. And <code>authz.Abilities()</code>{' '}
+                  carries a comment saying it is for <code>grit doctor</code>, which does
+                  not call it: the only caller is the gate&apos;s own test.
+                </p>
+
+                <h3>The benchmark nobody else could rebuild</h3>
+                <p>
+                  grit#164. Every side of the benchmark is in the repository except the Grit
+                  one. <code>grit-bench/</code> is gitignored, which was the right call,
+                  since committing scaffold output lets it drift from what the CLI emits
+                  today, and the wrong one at the same time: the single side whose numbers
+                  the page makes a claim about was the side nobody could reproduce.
+                </p>
+                <p>
+                  <code>benchmarks/grit-bench.sh</code> builds it from a pinned CLI version.
+                  The app is still not committed and anybody can produce it, which also
+                  demonstrates the claim the benchmark rests on: there is nothing bespoke in
+                  it, no tuned handler and no benchmark-only shortcut. The README&apos;s
+                  reference to a <code>run.sh</code> that does not exist is now{' '}
+                  <code>pair.sh</code>, which does.
+                </p>
+                <p>
+                  Two things about the numbers. The tabs opened on <code>show</code>, where
+                  the ratio is 26x, and <code>show</code> is one indexed read: the request an
+                  API serves least often. <code>mixed</code> is 5.6x against the same
+                  Laravel and is 85% list, 10% read, 5% write. Leading with 26x invited
+                  exactly the reading the methodology section asks against, three paragraphs
+                  after asking, so <code>mixed</code> leads now.
+                </p>
+                <p>
+                  And <strong>Grit never saturated its own container in any pair, in any
+                  scenario</strong>, sitting at 287 to 310% of its 400% allowance even on{' '}
+                  <code>show</code>. The page said that about the read-heavy rows and not
+                  about <code>show</code>, so the cleanest row read as a ceiling when it is a
+                  floor too. That is a favourable fact being left out, which is the worst
+                  kind to leave out. The host hardware was never recorded with the runs, so
+                  <code>pair.sh</code> now writes a <code>host.txt</code> beside every
+                  result set, and the page says the existing figures predate that.
+                </p>
+              </div>
+            </div>
+
             {/* v3.465.0 */}
             <div className="mb-12" id="v3.465.0">
               <div className="flex items-center gap-3 mb-4">

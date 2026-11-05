@@ -263,6 +263,7 @@ const navItems: NavItem[] = [
       { title: 'Upgrading a project', href: '/docs/upgrades' },
       { title: 'Security Guide (OWASP)', href: '/docs/security' },
       { title: 'Roles & Permissions', href: '/docs/security/authorization' },
+      { title: 'Policies (per-record rules)', href: '/docs/security/policies' },
       { title: 'Enterprise SSO', href: '/docs/security/sso' },
       { title: 'Privacy & Compliance (GDPR)', href: '/docs/security/compliance' },
       { title: 'The audit log', href: '/docs/security/audit-log' },

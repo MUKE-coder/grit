@@ -960,6 +960,12 @@
     "keywords": "grit doctor audits project mistakes fail silently encrypted field no encryption key resource nothing scopes owner method lost scoping accepted request body table shared across organizations multitenant plugin pii plain column append only still mounting writes gorm studio login default password dashboard credentials weak jwt secret framework libraries behind their security floors sentinel counting rate limits per process public allowlist"
   },
   {
+    "title": "Policies: rules about a record",
+    "href": "/docs/security/policies",
+    "section": "Security & Testing",
+    "keywords": "permission says whether somebody may touch invoices all policy they invoice now service has read see already paid rules live internal policies one file per resource written registered grit generate rule func actor authz record any decision returning allow deny reason reaches user 403 three abilities checked update delete getbyid load put patch since v3 451 row bulk edit paths"
+  },
+  {
     "title": "Scout: scanning your own app",
     "href": "/docs/security/scout",
     "section": "Security & Testing",

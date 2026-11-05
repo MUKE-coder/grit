@@ -45,6 +45,13 @@ export interface Capability {
   label: string
   /** what the row actually means, so a reader is not guessing */
   detail: string
+  /**
+   * The id of the subsystem on /docs/stability that this row depends on, where
+   * there is one. The matrix shows that area's badge, so a row cannot read
+   * "ready on first run" here while reading "beta" there (grit#166). Left off
+   * where no stability area covers the row, rather than guessing at one.
+   */
+  stability?: string
   cells: Record<string, Cell>
 }
 
@@ -80,6 +87,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
     rows: [
       {
         id: 'auth',
+        stability: 'auth',
         label: 'Email and password auth',
         detail: 'Register, sign in, refresh, forgot and reset password, with the screens.',
         cells: {
@@ -93,6 +101,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'rbac',
+        stability: 'rbac',
         label: 'Roles and permissions',
         detail:
           'Roles as database rows rather than an enum, per-resource permissions registered by ' +
@@ -108,6 +117,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'twofa',
+        stability: 'twofa',
         label: 'Two-factor with backup codes',
         detail: 'TOTP enrolment, a QR code, ten hashed single-use recovery codes.',
         cells: {
@@ -121,6 +131,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'passkeys',
+        stability: 'twofa',
         label: 'Passkeys',
         detail:
           'WebAuthn sign-in with a fingerprint, face or device PIN. The private key never ' +
@@ -150,6 +161,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'sessions',
+        stability: 'auth',
         label: 'Server-side sessions with device revoke',
         detail:
           'Every refresh token backed by a row, replay detection, and a screen listing the ' +
@@ -165,6 +177,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'recovery',
+        stability: 'twofa',
         label: 'Account recovery',
         detail:
           'A verified second address that gets somebody back in when the primary is gone, ' +
@@ -181,10 +194,11 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
     ],
   },
   {
-    title: 'Security and compliance',
+    title: 'Security and compliance tooling',
     blurb:
       'The rows most frameworks leave to you, because they are product decisions rather than ' +
-      'framework ones. Grit takes a position and ships a screen.',
+      'framework ones. Grit takes a position and ships a screen. Tooling, not legal advice, ' +
+      'and not an audit: no third-party security audit has been performed.',
     rows: [
       {
         id: 'sentinel',
@@ -218,8 +232,11 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'gdpr',
-        label: 'GDPR export and erasure',
-        detail: 'A subject access export and a delete that actually cascades.',
+        label: 'GDPR export and erasure tooling',
+        detail:
+          'A subject access export and a delete that actually cascades. The mechanism, ' +
+          'not a compliance programme: whether your use of it satisfies a regulator is ' +
+          'a question for your lawyer.',
         cells: {
           grit: G('Endpoints and admin screens'),
           laravel: C(),
@@ -335,6 +352,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'backup',
+        stability: 'backups',
         label: 'Scheduled database backup',
         detail: 'A cron entry, an off-site target, and a restore path you can test.',
         cells: {
@@ -401,6 +419,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
     rows: [
       {
         id: 'scaffold',
+        stability: 'crud',
         label: 'Full-stack resource generation',
         detail:
           'One command emitting the model, migration, service, handler, validation schema, ' +
@@ -416,6 +435,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'money',
+        stability: 'money',
         label: 'A money type that does not lose cents',
         detail:
           'Prices stored as integer minor units with the currency beside them, so totals stay ' +
@@ -550,6 +570,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'mobile',
+        stability: 'desktop-mobile',
         label: 'Mobile app',
         detail: 'A React Native client sharing the API types.',
         cells: {
@@ -563,6 +584,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
       },
       {
         id: 'desktop',
+        stability: 'desktop-mobile',
         label: 'Desktop app',
         detail: 'A native window, offline-first with a local database and sync.',
         cells: {

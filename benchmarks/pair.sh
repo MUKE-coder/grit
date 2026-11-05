@@ -111,6 +111,28 @@ if [ -d "$OUT" ] && [ -n "$(ls -A "$OUT" 2>/dev/null)" ]; then
 fi
 mkdir -p "$OUT"
 
+# ── What this ran on ────────────────────────────────────────
+# The container allowances were always stated and the host never was, which
+# makes a figure hard to place against your own machine: this one drifts enough
+# between runs that an identical Grit binary measured 4,536 req/s in one pair
+# and 8,509 in another. Recorded beside the numbers rather than in a README,
+# because a README is edited and these files are not.
+{
+  echo "date:      $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "opponent:  $OPPONENT"
+  echo "reps:      $REPS   vus: $VUS   duration: $DURATION"
+  echo "grit:      $(grit version 2>/dev/null || echo 'not on PATH')"
+  echo "kernel:    $(uname -srm 2>/dev/null || echo unknown)"
+  echo "host-cpus: $(nproc 2>/dev/null || echo unknown)"
+  echo "docker:    $(docker version --format '{{.Server.Version}}' 2>/dev/null || echo unknown)"
+  echo
+  echo "# docker info, which on Docker Desktop reports the VM rather than the host"
+  docker info --format 'cpus: {{.NCPU}}
+memory: {{.MemTotal}}
+os: {{.OperatingSystem}}
+kernel: {{.KernelVersion}}' 2>/dev/null || echo "docker info unavailable"
+} > "$OUT/host.txt"
+
 # ── Measure ─────────────────────────────────────────────────────────
 measure() { # app scenario
   local app="$1" scenario="$2" rep

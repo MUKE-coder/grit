@@ -30,7 +30,7 @@ const COMMANDS: CmdRow[] = [
 const CONCEPTS: { grit: string; is: string }[] = [
   { grit: 'Resource', is: 'One declaration → model, migration, CRUD API, validation, admin page, and typed hooks. Laravel’s make:model -mcr + a Filament resource + your API + your TS client, in a single command.' },
   { grit: 'GORM', is: 'The ORM — the Eloquent / Django-ORM of the Go world. Models are Go structs with tags instead of PHP/Python classes.' },
-  { grit: 'grit migrate', is: 'Explicit, like artisan/manage.py migrate. Uses GORM AutoMigrate (adds tables & columns); there are no Laravel-style down-migrations — reset in dev with grit migrate --fresh.' },
+  { grit: 'grit migrate', is: 'Explicit, like artisan/manage.py migrate. Uses GORM AutoMigrate (adds tables and columns), so there are no migration files to write. Roll back with grit migrate down, or reset in dev with grit migrate --fresh.' },
   { grit: 'Shared types', is: 'Go struct → TypeScript types + Zod, kept in sync by grit sync. There is no Laravel/Django equivalent — your frontend is typed against your backend for free, so you never hand-write an API client.' },
   { grit: 'The admin panel', is: 'Filament-style and resource-driven, but it is generated code you own — not a black box. Style it, override it, or ignore it.' },
 ]
@@ -389,8 +389,10 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
               </Callout>
 
               <Callout type="note" title="What Grit does differently">
-                It&apos;s Go, not PHP/Python &mdash; a compiled, single-binary backend. Migrations use
-                GORM AutoMigrate (no down-migrations; use <code>grit migrate --fresh</code> in dev).
+                It&apos;s Go, not PHP/Python: a compiled, single-binary backend. Migrations use
+                GORM AutoMigrate, so there are no migration files to write. You can still roll
+                back: <code>grit migrate down</code> undoes the last run from a record of what
+                that run changed.
                 And the frontend is React (Next.js or Vite), not Blade/Livewire or Django templates.
                 If you know Go and can read React/TypeScript, everything else is familiar.
               </Callout>
@@ -452,9 +454,11 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
                     a: (
                       <>
                         Grit uses GORM AutoMigrate driven by your models, run with{' '}
-                        <code>grit migrate</code>. There are no hand-written up/down migration files
-                        like Laravel or Django &mdash; in dev, reset with{' '}
-                        <code>grit migrate --fresh</code>. See{' '}
+                        <code>grit migrate</code>, so there are no hand-written up/down
+                        migration files like Laravel or Django. Rolling back does not need
+                        them: every run records what it actually changed, and{' '}
+                        <code>grit migrate down</code> reverses that record. In dev you can
+                        also start over with <code>grit migrate --fresh</code>. See{' '}
                         <Link href="/docs/backend/migrations">Migrations</Link>.
                       </>
                     ),

@@ -14,6 +14,33 @@ import {
   TOTAL_ROWS,
   type Provision,
 } from '@/config/capabilities'
+import { stabilityOf } from '@/config/stability'
+
+/*
+ * Where a row depends on a subsystem /docs/stability calls beta or new, say so
+ * here too. The matrix counts those rows towards "ready on first run", which is
+ * true and is not the whole truth: ready is not the same as settled, and the
+ * stability page was the only place saying which was which (grit#166).
+ */
+function StabilityBadge({ id }: { id?: string }) {
+  const area = stabilityOf(id)
+  if (!area || area.status === 'stable') return null
+  return (
+    <Link
+      href={`/docs/stability`}
+      className={
+        'ml-1.5 inline-flex items-center rounded border px-1.5 py-px align-middle ' +
+        'text-[10px] font-medium leading-none ' +
+        (area.status === 'beta'
+          ? 'border-amber-500/20 bg-amber-500/10 text-amber-400'
+          : 'border-sky-500/20 bg-sky-500/10 text-sky-400')
+      }
+      title={`${area.area} is ${area.status} on the stability page`}
+    >
+      {area.status}
+    </Link>
+  )
+}
 
 /*
  * The capability matrix under the benchmark.
@@ -149,7 +176,10 @@ export function CapabilityMatrix() {
               {group.rows.map((row) => (
                 <tr key={row.id} className="border-t border-border/20">
                   <th scope="row" className="text-left font-normal py-2.5 pr-4 align-top">
-                    <span className="block text-foreground">{row.label}</span>
+                    <span className="block text-foreground">
+                      {row.label}
+                      <StabilityBadge id={row.stability} />
+                    </span>
                     <span className="block text-xs text-muted-foreground mt-0.5 max-w-md">
                       {row.detail}
                     </span>
@@ -213,7 +243,10 @@ export function CapabilityMatrix() {
                       aria-expanded={open}
                       className="w-full min-h-[44px] flex items-center justify-between gap-3 px-3 py-2.5 text-left"
                     >
-                      <span className="text-sm text-foreground">{row.label}</span>
+                      <span className="text-sm text-foreground">
+                        {row.label}
+                        <StabilityBadge id={row.stability} />
+                      </span>
                       <span className="flex items-center gap-2 shrink-0">
                         <Marker state={row.cells.grit?.state ?? 'none'} />
                         <span className="text-[10px] text-muted-foreground/70">
@@ -276,6 +309,23 @@ export function CapabilityMatrix() {
           are marked as such. Express is a router and Bun is a runtime, so Express scoring low is a
           statement about scope and not about quality, which is also why Bun is not a column here
           at all.
+        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
+          Two things about the score, because a self-scored table should say how it was scored.
+          The rows are Grit&apos;s own list, which means Grit chose what counts, and some rows exist
+          because Grit has them. Read the ones you would have asked for and ignore the rest. And the
+          count includes features marked{' '}
+          <Link href="/docs/stability" className="text-accent hover:underline">beta or new</Link>:
+          they run on first install, which is what this table measures, and they are younger than
+          the stable ones, which is what that page measures. The badges above carry it through.
+          Every cell is a claim about somebody else&apos;s software, so if one is wrong,{' '}
+          <Link
+            href="https://github.com/MUKE-coder/grit/blob/main/docs/config/capabilities.ts"
+            className="text-accent hover:underline"
+          >
+            the file is here
+          </Link>{' '}
+          and a pull request against a single cell is welcome.
         </p>
         <Link
           href="/docs/batteries"

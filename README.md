@@ -142,7 +142,7 @@ admin still pages through them instantly.
 ## What ships in every project
 
 <p align="center">
-  <img src="images/batteries.svg" alt="Every Grit project ships with authentication, two-factor, passkeys, RBAC, an admin panel, data tables, a form builder, file storage, email, background jobs, cron, caching, realtime, webhooks, an audit log, feature flags, backups, GDPR tools, API docs, a database browser, a WAF, tracing, AI and one-command deploy" width="100%" />
+  <img src="images/batteries.svg" alt="Every Grit project ships with authentication, two-factor, passkeys, RBAC, an admin panel, data tables, a form builder, file storage, email, background jobs, cron, caching, realtime, webhooks, an audit log, feature flags, backups, GDPR tooling, API docs, a database browser, request filtering, tracing, AI and one-command deploy" width="100%" />
 </p>
 
 <table>
@@ -185,7 +185,7 @@ compiles to one static binary.
 | **Admin panel** | Rebuilt for every project | Tables, forms, filters, bulk actions and widgets from the resource definition |
 | **Test data** | A seed script you write and wait on | `grit seed Contact --count 1000000`: batched, resumable, realistic |
 | **Payments, push, video** | A week of integration each | `grit plugin add stripe` · `push` · `video` |
-| **Security** | A checklist for "later" | CSRF, strict CSP, WAF, rate limiting, 2FA, passkeys, IDOR-safe ownership checks and a verifiable audit log, in the scaffold |
+| **Security** | A checklist for "later" | CSRF, strict CSP, request filtering and rate limiting, 2FA, passkeys, IDOR-safe ownership checks and a verifiable audit log, in the scaffold |
 | **Deploy** | Dockerfiles, reverse proxy, TLS, systemd | `grit deploy --host user@server --domain myapp.com` |
 
 ---
@@ -418,7 +418,7 @@ grit upgrade                           # this project's templates
 | Validation | Zod, shared between apps |
 | Data fetching | TanStack Query |
 | Monorepo | Turborepo · pnpm |
-| Security | Sentinel (WAF, rate limiting) |
+| Security | Sentinel (request filtering, rate limiting) |
 | Observability | Pulse (tracing, metrics) |
 | DB browser | GORM Studio |
 | Desktop / mobile | Wails v2 · Expo |

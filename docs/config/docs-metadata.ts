@@ -387,6 +387,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       "Every authenticated write a Grit API accepts is recorded, and each entry is hashed together with the one before it: hash = SHA-256(prev_hash || canonical(row)). Editing a row, deleting one or inserting forged history breaks every hash from that point forward, and Verify chain names the first entry that disagrees. Bodies are stored as a SHA-256 digest rather than verbatim, so the log proves which payload was sent without becoming the most sensitive table in the database. Reads are opt-in per resource with --audit-reads, recording which records were returned and how many. A weekly audit:prune job trims old entries and re-anchors the chain so what remains still verifies.",
   },
+  '/docs/security/policies': {
+    title: 'Policies: rules about a record',
+    description:
+      "A permission says whether somebody may touch invoices at all; a policy says whether they may touch this invoice, now that the service has read it and can see it is already paid. Rules live in internal/policies, one file per resource, written and registered by grit generate resource. A rule is func(actor authz.Actor, record any) authz.Decision, returning authz.Allow() or authz.Deny(reason), and the reason reaches the user as a 403. Three abilities are checked, read, update and delete, by GetByID, by load on PUT, PATCH and DELETE, and since v3.451.0 per row on the bulk and bulk-edit paths. An ability with no rule allows, so a policy is a narrowing and never a grant. Includes a worked example, authz.Before for a blanket exemption, why an ADMIN is not exempt by default, and how to test a rule without a database.",
+  },
   '/docs/security/doctor': {
     title: 'Project audit: grit doctor',
     description:

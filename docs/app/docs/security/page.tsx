@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
+import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/security')
@@ -102,7 +103,7 @@ func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
         <p>
           Error responses use a generic shape (<code>code</code>, <code>message</code>) that
           never includes a stack trace in production. Sensitive defaults: in production
-          mode Sentinel WAF runs in <em>block</em> rather than <em>log</em> mode.
+          mode Sentinel runs in <em>block</em> rather than <em>log</em> mode.
         </p>
       </>
     ),
@@ -333,7 +334,7 @@ if errors.Is(err, safefetch.ErrBlocked) {
           <strong>Alerting</strong> is wired through Sentinel&apos;s AuthShield + Anomaly
           modules and visible in the <code>/sentinel/ui</code> dashboard. Hook external
           alerting (PagerDuty, Slack, email) via Sentinel webhooks for spikes in failed
-          logins, AuthZ denials, or WAF blocks.
+          logins, AuthZ denials, or requests Sentinel blocked.
         </p>
         <p>
           <strong>SIEM export (OCSF).</strong> The semantic activity log is exposed in the{' '}
@@ -432,9 +433,11 @@ export default function SecurityGuidePage() {
                 Security Guide
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                How Grit defends every category of the OWASP Top 10:2025 by default,
-                with the file path and code for each. Use this page as the audit checklist
-                when a client asks &quot;are we secure?&quot; — walk it with them line by line.
+                Every category of the OWASP Top 10:2025 has a named defence in the
+                scaffold, with the file path and the code for each. Use this page as the
+                checklist when a client asks &quot;are we secure?&quot;, and walk it with
+                them line by line: the point of naming the file is that they can check it
+                rather than take the claim on trust.
               </p>
               <LaneFlow
                 id="sec-owasp"
@@ -464,7 +467,7 @@ export default function SecurityGuidePage() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Go deeper:</strong> the{' '}
                 <Link href="/courses/security-deep-dive" className="text-accent hover:underline">Security Deep Dive</Link>{' '}
-                course walks through auth, 2FA, the WAF and rate limiting hands-on, and{' '}
+                course walks through auth, 2FA, request filtering and rate limiting hands-on, and{' '}
                 <Link href="/courses/audit-log" className="text-accent hover:underline">Audit Log + Hash Chain</Link>{' '}
                 covers tamper-evident activity tracking.
               </p>
@@ -513,12 +516,34 @@ export default function SecurityGuidePage() {
                 </div>
               </div>
 
+              <Callout type="warning" title="No third-party audit has been performed.">
+                Everything on this page is reviewed internally, gated by gosec,
+                govulncheck, Trivy, CodeQL and Scorecard, and exercised by the live CI
+                suite. None of that is an external audit, and this page should not be read
+                as one. Two subsystems have a written threat model, the{' '}
+                <Link href="/docs/security/audit-log">audit log</Link> and the session
+                store; where a page states no threat model, none has been written.
+                <span className="mt-2 block">
+                  <strong>On the word WAF,</strong> which our own short-form copy has used:
+                  Sentinel is a request filter that blocks known probe patterns and
+                  rate-limits by IP and route, with account-level brute-force lockout. It
+                  is not a CRS-class WAF, and in front of a service that needs ModSecurity
+                  with the OWASP Core Rule Set it is not a substitute for one.
+                </span>
+                <span className="mt-2 block">
+                  Some subsystems below are marked beta or new on{' '}
+                  <Link href="/docs/stability">the stability page</Link>. A defence
+                  shipping by default is not the same as a defence nothing has been found
+                  wrong with, and that page is where the difference is recorded.
+                </span>
+              </Callout>
+
               <h2 id="threat-model">Threat model in one paragraph</h2>
               <p>
                 Grit assumes a hostile public internet. The boundary of trust is the
                 handler signature: anything coming in over the wire — body, query, header,
                 cookie, even a JWT — is untrusted until verified. The defence pattern
-                is layered (PHASE 2 §4.1 &quot;defence in depth&quot;) — Sentinel WAF + rate
+                is layered (PHASE 2 §4.1 &quot;defence in depth&quot;) — Sentinel request filtering + rate
                 limit + auth middleware + AuthZ check + parameterised queries + output
                 encoding. A single failed layer never turns into a breach.
               </p>
@@ -653,7 +678,7 @@ govulncheck ./...`} />
                       <td className="px-4 py-2.5 font-mono text-xs">.env</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">SENTINEL_ENABLED=true + WAF in block mode</td>
+                      <td className="px-4 py-2.5">SENTINEL_ENABLED=true + Sentinel in block mode</td>
                       <td className="px-4 py-2.5 font-mono text-xs">.env</td>
                     </tr>
                     <tr className="border-b border-border/20">

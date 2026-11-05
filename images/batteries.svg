@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="280" viewBox="0 0 880 280" role="img" aria-label="What ships in every Grit project: authentication, two-factor, passkeys, RBAC, admin panel, data tables, form builder, file storage, email, background jobs, cron, caching, realtime, webhooks, audit log, feature flags, backups, GDPR tools, API docs, database browser, WAF, tracing, AI, Docker and one-command deploy.">
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="280" viewBox="0 0 880 280" role="img" aria-label="What ships in every Grit project: authentication, two-factor, passkeys, RBAC, admin panel, data tables, form builder, file storage, email, background jobs, cron, caching, realtime, webhooks, audit log, feature flags, backups, GDPR tooling, API docs, database browser, Request filter, tracing, AI, Docker and one-command deploy.">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#0a0a0f"/>
@@ -71,7 +71,7 @@
   <g class="p" fill="#606078">
     <text x="32" y="262">Scalar API docs</text>
     <text x="150" y="262">GORM Studio</text>
-    <text x="252" y="262">Sentinel WAF</text>
+    <text x="252" y="262">Sentinel</text>
     <text x="352" y="262">Pulse tracing</text>
     <text x="452" y="262">AI gateway</text>
     <text x="540" y="262">generated tests</text>

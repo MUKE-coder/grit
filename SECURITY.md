@@ -100,6 +100,24 @@ gh attestation verify grit-linux-amd64.tar.gz --repo MUKE-coder/grit
 **SBOM** — `grit-sbom.spdx.json` is attached to every release for dependency
 scanners.
 
+## What has not been checked
+
+**No third-party security audit has been performed.** Everything below is
+reviewed internally, gated by automated scanning (gosec, govulncheck, Trivy,
+CodeQL, Scorecard) and exercised by the live CI suite. That is not the same
+thing as an external audit, and nobody should read it as one.
+
+Two threat models are written down and worth reading before you rely on the
+thing they describe: the [audit log](https://gritframework.com/docs/security/audit-log)
+and the session store. Where a page does not state a threat model, none has
+been written.
+
+"WAF" appears in some of our own short-form copy. To be precise about what it
+means here: **Sentinel** is a request filter that blocks known probe patterns
+and rate-limits by IP and route, with account-level brute-force lockout. It is
+not a CRS-class WAF, and it is not a substitute for one in front of a service
+that needs ModSecurity with the OWASP Core Rule Set.
+
 ## What Grit generates, security-wise
 
 Scaffolded projects are hardened by default rather than as an opt-in. The

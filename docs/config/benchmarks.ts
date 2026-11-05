@@ -88,6 +88,17 @@ export const GRIT = {
   stack: 'Go 1.22, Gin, GORM',
 }
 
+/*
+ * Order matters: the chart opens on the first one.
+ *
+ * `mixed` leads deliberately, and it is the least flattering row we publish.
+ * `show` is where the biggest ratio lives (26x against Laravel) and it is one
+ * indexed read, which is the request an API serves least often. Leading with it
+ * invited exactly the reading the methodology section asks people not to make,
+ * three paragraphs after asking them. `mixed` is 85% list, 10% read, 5% write,
+ * which is the closest thing here to a real read-heavy API, and against Laravel
+ * it is 5.6x rather than 26x.
+ */
 export const SCENARIOS: {
   id: ScenarioId
   label: string
@@ -97,10 +108,20 @@ export const SCENARIOS: {
   exercises: string
 }[] = [
   {
+    id: 'mixed',
+    label: 'Mixed',
+    title: '85% list / 10% read / 5% write',
+    subtitle: 'Closer to the shape of a real read-heavy API, and the fairest single number here',
+    request: 'a weighted blend of the three below',
+    exercises: 'everything below, in the proportions a real API sees',
+  },
+  {
     id: 'show',
     label: 'Read by ID',
     title: 'GET /products/:id',
-    subtitle: 'One indexed lookup and a JSON encode: the cleanest read of framework overhead',
+    subtitle:
+      'One indexed lookup and a JSON encode: the cleanest read of framework overhead, ' +
+      'and the row with the largest ratio. Grit is not CPU-bound here either',
     request: 'GET /api/v1/products/:id',
     exercises: 'routing, a single primary-key lookup, JSON encoding',
   },
@@ -119,14 +140,6 @@ export const SCENARIOS: {
     subtitle: 'Twenty rows hydrated and encoded, plus a COUNT over the table',
     request: 'GET /api/v1/products?page=N&page_size=20',
     exercises: 'routing, hydrating 20 rows, JSON encoding, and a COUNT(*)',
-  },
-  {
-    id: 'mixed',
-    label: 'Mixed',
-    title: '85% list / 10% read / 5% write',
-    subtitle: 'Closer to the shape of a real read-heavy API',
-    request: 'a weighted blend of the three above',
-    exercises: 'everything above, in the proportions a real API sees',
   },
 ]
 

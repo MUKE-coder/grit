@@ -91,6 +91,15 @@ jobs:
         run: python3 scripts/check-lessons.py
         working-directory: docs
 
+      # The capability matrix counts a feature as ready on first run while the
+      # stability page may call it beta. Those were two files with two opinions
+      # about the same subsystem; now the matrix points at the stability area by
+      # id and shows its badge. A pointer that resolves to nothing renders no
+      # badge, silently, so the row goes back to looking settled.
+      - name: Every capability points at a stability area that exists
+        run: python3 scripts/check-stability-pointers.py
+        working-directory: docs
+
       # The em dash ratchet. It has existed for a while and nothing ran it,
       # so the budgets were a number in a file rather than a rule: an area
       # could go up and the only way to find out was to run it by hand.

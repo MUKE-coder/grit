@@ -75,6 +75,23 @@ export default function BenchmarksPage() {
                 app shares one Postgres on 8 CPUs, deliberately more than any of them gets.
                 Medians of three repetitions, never a best run.
               </p>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                The tabs open on <strong>mixed</strong>, which is the fairest single number
+                here and not the largest: 85% list, 10% read, 5% write. The biggest ratio
+                lives on <code>show</code>, one indexed read, which is the request an API
+                serves least often. Both are measured and both are published; which one
+                leads is an editorial choice, and this is the one that matches the advice
+                two paragraphs down.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                <strong>What this ran on.</strong> A Windows workstation under Docker
+                Desktop, container-to-container inside the Docker network. The host CPU was
+                not recorded alongside these runs, which is a gap:{' '}
+                <code>pair.sh</code> now writes a <code>host.txt</code> beside every result
+                set, so later figures carry it. In the meantime the absolute numbers are
+                specific to a machine nobody else has, which is the reason this page
+                publishes ratios measured in the same sitting rather than a leaderboard.
+              </p>
 
               <div className="space-y-8">
                 {FRAMEWORKS.map((fw) => (
@@ -278,10 +295,14 @@ export default function BenchmarksPage() {
                 so something else bounded it and its figures are a floor.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                The read-heavy rows are different. On <code>list</code> and <code>mixed</code> Grit
-                used about 120&ndash;155% while Postgres sat near 900%: the database ran out first,
-                not the framework. Those rows are a <strong>floor</strong>, and the real gap is
-                wider than the ratio shows. Encore.ts is the mirror image: it never
+                Grit is the second exception, and it is worth saying plainly because it
+                cuts against us as often as for us: <strong>Grit never saturated its own
+                container in any pair, in any scenario.</strong> On <code>show</code> it sat
+                at 287&ndash;310% of its 400% allowance. On <code>list</code> and{' '}
+                <code>mixed</code> it used about 120&ndash;155% while Postgres sat near 900%:
+                the database ran out first, not the framework. So every Grit figure on this
+                page is a <strong>floor</strong> while most of the opponents&apos; are
+                ceilings, and the real gap is wider than the ratio shows. Encore.ts is the mirror image: it never
                 saturated anything, sitting at 155&ndash;211% with Postgres at 30&ndash;200%, so
                 something else bounded it (most likely the Drizzle / node-postgres path rather than
                 its Rust HTTP layer) and its numbers are a floor for Encore too.
