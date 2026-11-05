@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.477.0 - November 5, 2026
+
+### The toolchain grit doctor never looked at
+
+grit#178. A project was building and testing on go1.27.2, which carries GO-2026-6809 in `crypto/x509`, and `grit doctor` said nothing. It was found by running `govulncheck` by hand.
+
+The interesting part is why it did not matter and did. The scaffold's Dockerfile pins a safe Go, so what was deployed was fine. What was not was every local test run, every `grit start` and every desktop build, which use whatever `go` is on PATH. A safe pin in an image says nothing about the machine the code is written on.
+
+```bash
+⚠ go toolchain
+    go1.27.2 is on your PATH, and go1.27.3 is the oldest patch of 1.27 without
+    known standard-library vulnerabilities. Your deployed image pins a safe Go,
+    so this is about local test runs, grit start and desktop builds
+    → go env -w GOTOOLCHAIN=go1.27.3   (or install it: https://go.dev/dl/)
+```
+
+**Offline, with the floors compiled in**, rather than fetched from go.dev as the issue suggests. That is the shape the framework-library check already uses, and it is what keeps `grit doctor` fast, usable in CI and identical on a machine with no network. The cost is stated rather than hidden: a Go security release published after a given Grit is one that Grit does not know about. It is a floor, not a vulnerability scanner, and the message says which.
+
+A Go newer than the release knows about is never warned on. Inventing a vulnerability in something that did not exist yet is how a check gets switched off.
+
+The floors and the `go` directive a generated `go.mod` carries are now one constant, with a test that the pin is in the table: otherwise doctor could accept a toolchain older than the project's own pin.
+
+### Two warnings that were wrong
+
+Both on a multitenant project, which is the shape most likely to hit them. The rule for a check here is that it stays quiet on a project that is right, because a linter that cries wolf is a linter people turn off.
+
+`resource-could-be-owned` told a `tenant.Owned` model to scope itself by user. It is already scoped: the callers who can see a row are the ones in its organization. And a user column on such a model is usually somebody the row *names*, an account manager or an assignee, so "regenerate with --owned-by user" was wrong advice as well as unnecessary.
+
+`tenant-sso-no-organization` warned at a project that had already registered `services.OnSSOLogin`, which is where the membership policy goes. It looks for the registration now, and not merely for the name: the hook is *declared* in every project that has the plugin, so matching that would have silenced the warning for everybody.
+
+
 ## v3.476.0 - November 5, 2026
 
 ### A first production deploy could not work

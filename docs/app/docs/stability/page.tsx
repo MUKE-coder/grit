@@ -43,8 +43,8 @@ const testing: { label: string; detail: string }[] = [
       'the eight shapes the stack selector offers, each scaffolded fresh, built, type-checked, migrated, started and driven through a browser as a contact app. It found thirty faults in one pass, every one of them now a test: a Content-Security-Policy that authorised a different host from the one the client called, an owner picker whose answer the server discarded, a mobile app shipping the framework\u2019s logo as its own, a desktop app that did not build, and a Next single-binary project whose admin panel could not reach its API in development. Five of the thirty were the same fault in five places, which is why there is now a test for that family across every shape.',
   },
   {
-    label: '13 project checks in grit doctor',
-    detail: 'the mistakes that fail silently, reported in your own project: an encrypted field with no key, a resource nothing scopes, a table shared across organizations, a database browser with no login.',
+    label: '24 project checks in grit doctor',
+    detail: 'the mistakes that fail silently, reported in your own project: an encrypted field with no key, a resource nothing scopes, a table shared across organizations, a database browser with no login, and a Go toolchain on PATH with known standard-library vulnerabilities while the deployed image pins a safe one.',
   },
   {
     label: 'gosec, govulncheck, Trivy, CodeQL, Scorecard',

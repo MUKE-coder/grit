@@ -72,6 +72,86 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.477.0 */}
+            <div className="mb-12" id="v3.477.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.477.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The toolchain grit doctor never looked at</h3>
+                <p>
+                  grit#178. A project was building and testing on go1.27.2,
+                  which carries GO-2026-6809 in <code>crypto/x509</code>, and{' '}
+                  <code>grit doctor</code> said nothing. It was found by running{' '}
+                  <code>govulncheck</code> by hand.
+                </p>
+                <p>
+                  The interesting part is why it did not matter and did. The
+                  scaffold&apos;s Dockerfile pins a safe Go, so what was
+                  deployed was fine. What was not was every local test run,
+                  every <code>grit start</code> and every desktop build, which
+                  use whatever <code>go</code> is on PATH. A safe pin in an
+                  image says nothing about the machine the code is written on.
+                </p>
+                <CodeBlock terminal code={`⚠ go toolchain
+    go1.27.2 is on your PATH, and go1.27.3 is the oldest patch of 1.27 without
+    known standard-library vulnerabilities. Your deployed image pins a safe Go,
+    so this is about local test runs, grit start and desktop builds
+    → go env -w GOTOOLCHAIN=go1.27.3   (or install it: https://go.dev/dl/)`} />
+                <p>
+                  <strong>Offline, with the floors compiled in</strong>, rather
+                  than fetched from go.dev as the issue suggests. That is the
+                  shape the framework-library check already uses, and it is what
+                  keeps <code>grit doctor</code> fast, usable in CI and
+                  identical on a machine with no network. The cost is stated
+                  rather than hidden: a Go security release published after a
+                  given Grit is one that Grit does not know about. It is a floor,
+                  not a vulnerability scanner, and the message says which.
+                </p>
+                <p>
+                  A Go newer than the release knows about is never warned on.
+                  Inventing a vulnerability in something that did not exist yet
+                  is how a check gets switched off.
+                </p>
+                <p>
+                  The floors and the <code>go</code> directive a generated{' '}
+                  <code>go.mod</code> carries are now one constant, with a test
+                  that the pin is in the table: otherwise doctor could accept a
+                  toolchain older than the project&apos;s own pin.
+                </p>
+
+                <h3>Two warnings that were wrong</h3>
+                <p>
+                  Both on a multitenant project, which is the shape most likely
+                  to hit them. The rule for a check here is that it stays quiet
+                  on a project that is right, because a linter that cries wolf
+                  is a linter people turn off.
+                </p>
+                <p>
+                  <code>resource-could-be-owned</code> told a{' '}
+                  <code>tenant.Owned</code> model to scope itself by user. It is
+                  already scoped: the callers who can see a row are the ones in
+                  its organization. And a user column on such a model is usually
+                  somebody the row <em>names</em>, an account manager or an
+                  assignee, so &quot;regenerate with --owned-by user&quot; was
+                  wrong advice as well as unnecessary.
+                </p>
+                <p>
+                  <code>tenant-sso-no-organization</code> warned at a project
+                  that had already registered{' '}
+                  <code>services.OnSSOLogin</code>, which is where the
+                  membership policy goes. It looks for the registration now, and
+                  not merely for the name: the hook is <em>declared</em> in
+                  every project that has the plugin, so matching that would have
+                  silenced the warning for everybody.
+                </p>
+              </div>
+            </div>
+
             {/* v3.476.0 */}
             <div className="mb-12" id="v3.476.0">
               <div className="flex items-center gap-3 mb-4">

@@ -78,6 +78,9 @@ var checks = []struct {
 	{"studio-unprotected", checkStudio},
 	{"default-credentials", checkCredentials},
 	{"framework-library-behind", checkFrameworkDeps},
+	// The Go on PATH, not the one the image pins: a safe Dockerfile says
+	// nothing about the toolchain every local test run uses (grit#178).
+	{"go-toolchain-vulnerable", checkGoToolchain},
 	{"rate-limits-per-process", checkSentinelCounters},
 	{"public-allowlist-sensitive", checkPublicAllowlist},
 	{"outbox-topic-undelivered", checkOutboxRelays},
@@ -437,6 +440,14 @@ func checkUnownedUserResource(p *project) []Finding {
 		if m.OwnerColumn != "" || !m.hasUserRelation() {
 			continue
 		}
+		// A tenant-owned model is already scoped: the callers who can see a row
+		// are the ones in its organization, not everybody signed in. And a user
+		// column on such a model is usually a person the row NAMES, an account
+		// manager or an assignee, rather than the person it belongs to, so
+		// "regenerate with --owned-by user" would be wrong advice (grit#178).
+		if m.TenantOwned {
+			continue
+		}
 		out = append(out, Finding{
 			Level:    "warning",
 			Resource: name,
@@ -579,6 +590,17 @@ func checkTenantSSOProvisioning(p *project) []Finding {
 		!strings.Contains(p.routes, "oauthHandler") {
 		return nil
 	}
+	// A project that registers the hook has answered this. OnSSOLogin is where
+	// the membership is decided, and warning at somebody who has already
+	// written it is the kind of noise that gets a linter switched off
+	// (grit#178).
+	//
+	// The registration, not the hook's own declaration: services.OnSSOLogin is
+	// defined in every project that has the plugin, so looking for the name
+	// alone would silence this for everybody.
+	if strings.Contains(p.allGo, "OnSSOLogin(") && !onlyDeclaresSSOHook(p.allGo) {
+		return nil
+	}
 	return []Finding{{
 		Level:    "warning",
 		Check:    "tenant-sso-no-organization",
@@ -588,6 +610,16 @@ func checkTenantSSOProvisioning(p *project) []Finding {
 		Fix: "add the membership where you know the policy: map the email domain or the SSO connection to an " +
 			"organization after sign-in, or have an administrator invite them",
 	}}
+}
+
+// onlyDeclaresSSOHook reports whether every OnSSOLogin in the project is its
+// own declaration rather than a call registering a handler.
+//
+// `func OnSSOLogin(` is the plugin's own definition and is present in every
+// project that has it. A call site is anything else, and that is what means
+// somebody has decided the membership policy.
+func onlyDeclaresSSOHook(src string) bool {
+	return strings.Count(src, "OnSSOLogin(") == strings.Count(src, "func OnSSOLogin(")
 }
 
 // piiColumns are column names that usually hold something that should not be
