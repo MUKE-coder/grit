@@ -139,6 +139,33 @@ PATCH /api/v1/lots/42          If-Match: W/"7"   {"current_bid": 210}
               it holds under any amount of contention and across any number of copies. Measured: twenty
               simultaneous bids on version 1, split across two copies, landed one and refused nineteen.
             </p>
+            <p>
+              <strong className="text-foreground">The generated clients send it.</strong>{' '}
+              Every admin form and every generated web hook passes the version
+              it loaded, so two operators editing the same record is a readable
+              refusal rather than a lost edit. Until v3.483.0 none of them did:
+              the column, the hook, the <code>ETag</code> and the{' '}
+              <code>409</code> were all there and nothing sent the header, which
+              is the one state that looks exactly like a working one.
+            </p>
+            <p>
+              The bulk-edit grid sends a version <em>per row</em>, in the body,
+              because one header cannot hold forty and in a grid every row has
+              its own. A row somebody else saved is reported by its index, so
+              the message lands on that line, and the whole save is refused:
+              half a spreadsheet saved is worse than none.
+            </p>
+            <CodeBlock language="text" code={`POST /api/v1/lots/bulk-edit
+  {"items": [{"id": "...", "patch": {...}, "version": 7},
+             {"id": "...", "patch": {...}, "version": 3}]}
+
+  422 {"error": {"code": "VALIDATION_ERROR", "details": {"rows": [
+        {"index": 1, "message": "somebody else saved this row since you loaded it (it is at version 4)"}]}}}`} />
+            <p>
+              A client that sends no version is unaffected, in either shape.
+              Making the precondition compulsory would break every script and
+              every integration that writes to this API.
+            </p>
 
             <h2 id="your-code">In your own code</h2>
             <p>

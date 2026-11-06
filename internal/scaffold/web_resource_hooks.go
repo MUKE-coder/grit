@@ -85,6 +85,27 @@ export function resourceKeys(resource: string) {
  * packages/shared, which is generated from the Go model, so a field renamed in
  * Go is a type error here rather than a 422 at runtime.
  */
+/**
+ * Whether an error is the API refusing a stale write.
+ *
+ * By code rather than by status: 409 is also what a unique-constraint
+ * violation answers, and that one is the caller's to fix rather than a reason
+ * to reload.
+ */
+export function isVersionConflict(error: unknown): boolean {
+  const body = (error as { response?: { data?: { error?: { code?: string } } } })?.response?.data;
+  return body?.error?.code === "VERSION_CONFLICT";
+}
+
+/** The version the record is at now, out of that 409. */
+export function currentVersion(error: unknown): number | undefined {
+  const details = (error as {
+    response?: { data?: { error?: { details?: { current_version?: unknown } } } };
+  })?.response?.data?.error?.details;
+  const current = details?.current_version;
+  return typeof current === "number" ? current : undefined;
+}
+
 export function resourceHooks<T, C = Partial<T>, U = Partial<C>>(
   resource: string,
   endpoint: string,
@@ -151,11 +172,34 @@ export function resourceHooks<T, C = Partial<T>, U = Partial<C>>(
     });
   }
 
+  /**
+   * Save an edit.
+   *
+   * version is the one the record was at when it was loaded, from useOne, and
+   * it is sent as If-Match. The API applies the write only if the record is
+   * still there and answers 409 VERSION_CONFLICT with the current version if it
+   * is not, so two people editing the same row cannot silently overwrite each
+   * other. Pass undefined to mean "overwrite whatever is there", and say so
+   * where you do.
+   *
+   * Required rather than optional on purpose: a call site that does not pass it
+   * does not compile. Optional, every one of them would have gone on sending no
+   * header, which is the state this replaced (grit#182).
+   */
   function useUpdate() {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: async ({ id, ...input }: { id: string } & U) => {
-        const { data } = await apiClient.put(endpoint + "/" + id, input);
+      mutationFn: async ({
+        id,
+        version,
+        ...input
+      }: { id: string; version: number | undefined } & U) => {
+        const { data } = await apiClient.put(endpoint + "/" + id, input, {
+          headers:
+            typeof version === "number"
+              ? { "If-Match": 'W/"' + version + '"' }
+              : undefined,
+        });
         return data.data as T;
       },
       onSuccess: (_result, variables) => {
@@ -163,6 +207,14 @@ export function resourceHooks<T, C = Partial<T>, U = Partial<C>>(
         // page showing what was there before the edit it just made.
         queryClient.invalidateQueries({ queryKey: keys.detail(variables.id) });
         queryClient.invalidateQueries({ queryKey: keys.lists() });
+      },
+      onError: (error, variables) => {
+        // Somebody else saved first. Refetch, so whatever the page does with
+        // the error is reading the record as it is rather than as it was.
+        if (isVersionConflict(error)) {
+          queryClient.invalidateQueries({ queryKey: keys.detail(variables.id) });
+          queryClient.invalidateQueries({ queryKey: keys.lists() });
+        }
       },
     });
   }

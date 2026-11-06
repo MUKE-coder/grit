@@ -726,6 +726,14 @@ type {{Pascal}}RowError struct {
 type {{Pascal}}GridEdit struct {
 	ID    string                 ` + "`" + `json:"id"` + "`" + `
 	Patch map[string]interface{} ` + "`" + `json:"patch"` + "`" + `
+	// Version is what this row was at when the grid loaded it, the same
+	// precondition If-Match carries on a single-row save.
+	//
+	// In the body rather than in a header, because one header cannot hold
+	// forty versions and each row in a grid has its own. Nil means no
+	// precondition for that row, so a client that sends none behaves as it
+	// always did (grit#182).
+	Version *int ` + "`" + `json:"version"` + "`" + `
 }
 
 // BulkEdit writes a different patch to each row, in one transaction.
@@ -743,6 +751,7 @@ func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}Grid
 	type write struct {
 		id      string
 		updates map[string]interface{}
+		version *int
 	}
 	writes := make([]write, 0, len(edits))
 
@@ -767,7 +776,7 @@ func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}Grid
 		}
 		// Not expanded yet: s.checked below decodes these keys as json tags,
 		// and a money field's two columns are not that.
-		writes = append(writes, write{id: edit.ID, updates: updates})
+		writes = append(writes, write{id: edit.ID, updates: updates, version: edit.Version})
 	}
 	if len(rowErrors) > 0 {
 		return nil, rowErrors, nil
@@ -814,12 +823,42 @@ func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}Grid
 		return nil, rowErrors, nil
 	}
 
-	// And the model's own rules, per row, against the row as it will be.
-	// Reported by index so a grid can put the message on the cell.
 	current := make(map[string]*models.{{Pascal}}, len(allowed))
 	for i := range allowed {
 		current[allowed[i].ID] = &allowed[i]
 	}
+
+	// A row somebody else has saved since the grid loaded it.
+	//
+	// Checked before the writes and reported by index, so the operator is told
+	// which line is stale rather than having the whole save refused with one
+	// banner. The statement below is ALSO scoped by the version: this check
+	// closes the common case with a readable message, and the WHERE closes the
+	// gap between this read and that write.
+	for i, w := range writes {
+		if w.version == nil {
+			continue
+		}
+		row, ok := current[w.id]
+		if !ok {
+			continue
+		}
+		if row.Version != *w.version {
+			rowErrors = append(rowErrors, {{Pascal}}RowError{
+				Index:   i,
+				// fmt rather than strconv: the service imports fmt already, and
+				// a new import in a generated file is a block to rebuild
+				// rather than a line to add.
+				Message: fmt.Sprintf("somebody else saved this row since you loaded it (it is at version %d)", row.Version),
+			})
+		}
+	}
+	if len(rowErrors) > 0 {
+		return nil, rowErrors, nil
+	}
+
+	// And the model's own rules, per row, against the row as it will be.
+	// Reported by index so a grid can put the message on the cell.
 	for i, w := range writes {
 		row, ok := current[w.id]
 		if !ok {
@@ -845,8 +884,19 @@ func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}Grid
 			// Row by row, because each has its own values. One statement per
 			// row inside one transaction: the round trips are the cost of the
 			// feature, and the atomicity is the point of it.
-			if err := tx.Model(&models.{{Pascal}}{}).Where("id = ?", w.id).Updates(w.updates).Error; err != nil {
-				return err
+			q := tx.Model(&models.{{Pascal}}{}).Where("id = ?", w.id)
+			if w.version != nil {
+				q = q.Where("version = ?", *w.version)
+			}
+			res := q.Updates(w.updates)
+			if res.Error != nil {
+				return res.Error
+			}
+			// Nothing written where a version was asserted: the row moved
+			// between the check above and this statement. The whole grid rolls
+			// back, because half a spreadsheet saved is worse than none.
+			if w.version != nil && res.RowsAffected == 0 {
+				return &concurrency.ErrConflict{Current: *w.version}
 			}
 			saved = append(saved, w.id)
 		}

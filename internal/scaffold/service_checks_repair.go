@@ -34,9 +34,23 @@ func RepairGeneratedServiceChecks(src, module string) (string, bool) {
 	}
 	pascal := m[1]
 
-	// Already done, by this repair or by a newer generator.
-	if strings.Contains(src, "func (s *"+pascal+"Service) checked(") {
-		return src, false
+	// The precondition pass is independent of the ones below and has to run on
+	// a service they have already fixed.
+	//
+	// Every project repaired between v3.451.0 and v3.482.0 has the whitelist
+	// checks and the policy pass, so the "already done" return below skipped it
+	// entirely: the first version of this change reached new projects and no
+	// existing one, which is the bug it was fixing in the first place
+	// (grit#182).
+	//
+	// After them, not before: the policy pass anchors on the write struct, the
+	// append and the statement, all of which the precondition pass edits. Run
+	// first, it would move the anchors out from under the pass that has to run
+	// on a pre-grid service.
+	alreadyChecked := strings.Contains(src, "func (s *"+pascal+"Service) checked(")
+	if alreadyChecked {
+		out := checkBulkEditVersion(src, pascal)
+		return out, out != src
 	}
 
 	plural := serviceOwnsPlural(src, pascal)
@@ -72,6 +86,10 @@ func RepairGeneratedServiceChecks(src, module string) (string, bool) {
 
 	return out, true
 }
+
+// Repaired twice, the second run has to change nothing. checkBulkEditVersion
+// is the one pass that can run on an already-repaired service, so it is also
+// the one that could report a change on every upgrade for ever.
 
 // addAuthzImport brings in internal/authz if nothing else has.
 func addAuthzImport(src, module string) (string, bool) {
@@ -284,16 +302,31 @@ func checkBulk(src, pascal, plural string) (string, bool) {
 	return strings.Replace(src, body, patched, 1), true
 }
 
-// checkBulkEdit brings the grid's save up to the same two checks.
+// checkBulkEdit brings the grid's save up to the same two checks, and to the
+// per-row version check that came with them.
 //
-// Four edits, not two: the policy pass returns the rows it refused, and those
+// Six edits, not two: the policy pass returns the rows it refused, and those
 // have to be reported by index so the grid can put the message on the row.
 // Adding the call and ignoring its second return is a service that does not
 // compile, which is how this was found.
 //
+// The last two are the precondition (grit#182): a grid sends a version per row,
+// because one If-Match header cannot carry forty, and a row somebody else saved
+// has to be refused rather than overwritten.
+//
+// TestRepairedBulkEditIsTheGeneratedBulkEdit compares the output of this
+// against the generator's, so the two cannot drift. It is what caught the
+// version check being added to one and not the other.
+//
 // A service generated before the grid shipped has no BulkEdit at all. That is
 // not a failure; having one and leaving it unchecked would be.
 func checkBulkEdit(src, pascal string) string {
+	return checkBulkEditVersion(checkBulkEditPolicy(src, pascal), pascal)
+}
+
+// checkBulkEditPolicy is the first pass: the whitelist checks and the policy,
+// which brings a service generated before them up to the v3.482.0 shape.
+func checkBulkEditPolicy(src, pascal string) string {
 	sig := "func (s *" + pascal + "Service) BulkEdit(ctx context.Context"
 	body, ok := methodBody(src, sig)
 	if !ok {
@@ -373,8 +406,9 @@ func checkBulkEdit(src, pascal string) string {
 			"\tsaved := make([]string, 0, len(writes))\n",
 	})
 
-	// All four or none. A BulkEdit that has drifted from the template gets the
-	// policy pass alone otherwise, and that is the shape that does not build.
+	// All of them or none. A BulkEdit that has drifted from the template gets
+	// the policy pass alone otherwise, and that is the shape that does not
+	// build.
 	patched := body
 	for _, e := range edits {
 		if strings.Count(patched, e[0]) != 1 {
@@ -383,6 +417,128 @@ func checkBulkEdit(src, pascal string) string {
 		patched = strings.Replace(patched, e[0], e[1], 1)
 	}
 	return strings.Replace(src, body, patched, 1)
+}
+
+// checkBulkEditVersion is the second pass: the precondition (grit#182).
+//
+// Separate from the policy pass because a project repaired before v3.483.0
+// already has that one, so a single function gated on it returned early and the
+// precondition never arrived. Each pass is all-or-nothing on its own, and they
+// compose: a pre-grid service gets both in order, and a v3.482.0 service gets
+// this one alone.
+func checkBulkEditVersion(src, pascal string) string {
+	sig := "func (s *" + pascal + "Service) BulkEdit(ctx context.Context"
+	body, ok := methodBody(src, sig)
+	if !ok {
+		return src
+	}
+	if strings.Contains(body, "w.version") {
+		return src
+	}
+
+	edits := [][2]string{
+		// The write carries the version the row was read at.
+		{
+			"\ttype write struct {\n\t\tid      string\n\t\tupdates map[string]interface{}\n\t}\n",
+			"\ttype write struct {\n\t\tid      string\n\t\tupdates map[string]interface{}\n\t\tversion *int\n\t}\n",
+		},
+		{
+			"\t\twrites = append(writes, write{id: edit.ID, updates: updates})\n",
+			"\t\twrites = append(writes, write{id: edit.ID, updates: updates, version: edit.Version})\n",
+		},
+		// The check, between the rows being loaded and the model's own rules.
+		{
+			"\t// And the model's own rules, per row, against the row as it will be.\n" +
+				"\t// Reported by index so a grid can put the message on the cell.\n" +
+				"\tcurrent := make(map[string]*models." + pascal + ", len(allowed))\n" +
+				"\tfor i := range allowed {\n" +
+				"\t\tcurrent[allowed[i].ID] = &allowed[i]\n\t}\n",
+			"\tcurrent := make(map[string]*models." + pascal + ", len(allowed))\n" +
+				"\tfor i := range allowed {\n" +
+				"\t\tcurrent[allowed[i].ID] = &allowed[i]\n\t}\n\n" +
+				"\t// A row somebody else has saved since the grid loaded it.\n" +
+				"\t//\n" +
+				"\t// Checked before the writes and reported by index, so the operator is told\n" +
+				"\t// which line is stale rather than having the whole save refused with one\n" +
+				"\t// banner. The statement below is ALSO scoped by the version: this check\n" +
+				"\t// closes the common case with a readable message, and the WHERE closes the\n" +
+				"\t// gap between this read and that write.\n" +
+				"\tfor i, w := range writes {\n" +
+				"\t\tif w.version == nil {\n\t\t\tcontinue\n\t\t}\n" +
+				"\t\trow, ok := current[w.id]\n" +
+				"\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n" +
+				"\t\tif row.Version != *w.version {\n" +
+				"\t\t\trowErrors = append(rowErrors, " + pascal + "RowError{\n" +
+				"\t\t\t\tIndex: i,\n" +
+				"\t\t\t\t// fmt rather than strconv: the service imports fmt already, and\n" +
+				"\t\t\t\t// a new import in a generated file is a block to rebuild\n" +
+				"\t\t\t\t// rather than a line to add.\n" +
+				"\t\t\t\tMessage: fmt.Sprintf(\"somebody else saved this row since you loaded it (it is at version %d)\", row.Version),\n" +
+				"\t\t\t})\n" +
+				"\t\t}\n\t}\n" +
+				"\tif len(rowErrors) > 0 {\n\t\treturn nil, rowErrors, nil\n\t}\n\n" +
+				"\t// And the model's own rules, per row, against the row as it will be.\n" +
+				"\t// Reported by index so a grid can put the message on the cell.\n",
+		},
+		// And the statement, scoped by the version when one was asserted.
+		{
+			"\t\t\tif err := tx.Model(&models." + pascal + "{}).Where(\"id = ?\", w.id).Updates(w.updates).Error; err != nil {\n" +
+				"\t\t\t\treturn err\n\t\t\t}\n",
+			"\t\t\tq := tx.Model(&models." + pascal + "{}).Where(\"id = ?\", w.id)\n" +
+				"\t\t\tif w.version != nil {\n" +
+				"\t\t\t\tq = q.Where(\"version = ?\", *w.version)\n\t\t\t}\n" +
+				"\t\t\tres := q.Updates(w.updates)\n" +
+				"\t\t\tif res.Error != nil {\n\t\t\t\treturn res.Error\n\t\t\t}\n" +
+				"\t\t\t// Nothing written where a version was asserted: the row moved\n" +
+				"\t\t\t// between the check above and this statement. The whole grid rolls\n" +
+				"\t\t\t// back, because half a spreadsheet saved is worse than none.\n" +
+				"\t\t\tif w.version != nil && res.RowsAffected == 0 {\n" +
+				"\t\t\t\treturn &concurrency.ErrConflict{Current: *w.version}\n\t\t\t}\n",
+		},
+	}
+
+	patched := body
+	for _, e := range edits {
+		if strings.Count(patched, e[0]) != 1 {
+			return src
+		}
+		patched = strings.Replace(patched, e[0], e[1], 1)
+	}
+	out := strings.Replace(src, body, patched, 1)
+
+	// The field edit.Version comes out of.
+	//
+	// Outside BulkEdit's body, so it is applied to the file rather than to the
+	// method, and after the body edits so a BulkEdit that could not be repaired
+	// does not leave a struct field nothing reads.
+	if strings.Count(out, gridEditOld(pascal)) == 1 {
+		out = strings.Replace(out, gridEditOld(pascal), gridEditNew(pascal), 1)
+	}
+	return out
+}
+
+// gridEditOld is the grid's edit type before the precondition.
+func gridEditOld(pascal string) string {
+	return "type " + pascal + "GridEdit struct {\n" +
+		"\tID    string                 `json:\"id\"`\n" +
+		"\tPatch map[string]interface{} `json:\"patch\"`\n" +
+		"}\n"
+}
+
+// gridEditNew is the same with the version each row was read at.
+func gridEditNew(pascal string) string {
+	return "type " + pascal + "GridEdit struct {\n" +
+		"\tID    string                 `json:\"id\"`\n" +
+		"\tPatch map[string]interface{} `json:\"patch\"`\n" +
+		"\t// Version is what this row was at when the grid loaded it, the same\n" +
+		"\t// precondition If-Match carries on a single-row save.\n" +
+		"\t//\n" +
+		"\t// In the body rather than in a header, because one header cannot hold\n" +
+		"\t// forty versions and each row in a grid has its own. Nil means no\n" +
+		"\t// precondition for that row, so a client that sends none behaves as it\n" +
+		"\t// always did (grit#182).\n" +
+		"\tVersion *int `json:\"version\"`\n" +
+		"}\n"
 }
 
 // RepairServiceChecks applies the write checks to every generated service in
@@ -454,7 +610,17 @@ func repairGeneratedServiceChecks(root string, opts Options) error {
 			out, changed := RepairGeneratedServiceChecks(src, module)
 			var fixed []string
 			if changed {
-				fixed = append(fixed, "a patch or a bulk action is checked against the model's own rules and the row policy, instead of writing whatever the whitelist let through")
+				// Two things this repair can have done, and a service that
+				// already had the checks gets only the second. Reporting the
+				// first either way told people their policy checks had just
+				// been added when they had been there for thirty releases.
+				const preconditionAdded = "somebody else saved this row"
+				switch {
+				case !strings.Contains(src, preconditionAdded) && strings.Contains(out, preconditionAdded) && strings.Contains(src, "s.permitted(ctx, allowed,"):
+					fixed = append(fixed, "the grid refuses a row somebody else saved while it was open, instead of overwriting it")
+				default:
+					fixed = append(fixed, "a patch or a bulk action is checked against the model's own rules and the row policy, instead of writing whatever the whitelist let through")
+				}
 			}
 			if unwrapped, ok := repairServicePrintfRule(out); ok {
 				out = unwrapped

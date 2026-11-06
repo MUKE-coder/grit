@@ -83,6 +83,8 @@ func mount%s(t *testing.T) (*testkit.Client, *gorm.DB, *services.AuthService) {
 	guarded := r.Group("/api/v1", middleware.Auth(db, auth))
 	guarded.GET("/%s", middleware.RequireRole("ADMIN", "perm:%s.view"), handler.List)
 	guarded.GET("/%s/:id", middleware.RequireRole("ADMIN", "perm:%s.view"), handler.GetByID)
+	guarded.PUT("/%s/:id", middleware.RequireRole("ADMIN", "perm:%s.edit"), handler.Update)
+	guarded.POST("/%s/bulk-edit", middleware.RequireRole("ADMIN", "perm:%s.edit"), handler.BulkEdit)
 
 	return testkit.New(t, r), db, auth
 }
@@ -142,7 +144,9 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 		g.Module+"/internal/testkit",
 		// 6, 7, 8: mount's doc comment, mount, the handler type.
 		names.Pascal, names.Pascal, names.Pascal,
-		// 9 to 12: the two routes.
+		// 9 to 16: the four routes.
+		names.PluralKebab, names.PluralSnake,
+		names.PluralKebab, names.PluralSnake,
 		names.PluralKebab, names.PluralSnake,
 		names.PluralKebab, names.PluralSnake,
 		// 13 to 15, 16 to 18: the two refusal tests.
@@ -155,6 +159,43 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 		names.PluralKebab,
 		// 25 to 27: the 404 test.
 		names.Pascal, names.Pascal, names.PluralKebab,
+	)
+
+	// The grid test needs a patch with something in it. BulkEdit skips an edit
+	// whose writable columns are all unchanged, which is correct (touching a
+	// cell and putting it back is a thing people do) and means an empty patch
+	// never reaches the version check: the first version of this test asserted
+	// a 422 and got a 200 for that reason. A resource with no plain text column
+	// gets the stale-save test and not this one, rather than a test that cannot
+	// assert what it says.
+	patchKey, patchValue := g.patchableTextField()
+	if patchKey == "" {
+		// No column this test could change, so the grid half is left out
+		// rather than emitted asserting a 422 it cannot cause.
+		fmt.Fprintf(&b, staleSaveTest,
+			names.Pascal, names.Pascal,
+			parentFixtures, names.Pascal, parentOverride,
+			names.PluralKebab, names.PluralKebab, names.PluralKebab, names.PluralKebab,
+		)
+		return b.String()
+	}
+
+	// A second Fprintf rather than more of the first: that one is already
+	// twenty-seven positional arguments, and inserting into the middle of it
+	// renumbers every comment that explains which is which.
+	fmt.Fprintf(&b, staleSaveTest,
+		names.Pascal, names.Pascal,
+		parentFixtures, names.Pascal, parentOverride,
+		names.PluralKebab, names.PluralKebab, names.PluralKebab, names.PluralKebab,
+	)
+	fmt.Fprintf(&b, gridStaleRowTest,
+		names.Pascal, names.Pascal,
+		parentFixtures, names.Pascal, parentOverride,
+		parentFixtures, names.Pascal, parentOverride,
+		names.PluralKebab,
+		names.PluralKebab, patchKey, patchValue, patchKey, patchValue,
+		names.PluralKebab,
+		names.PluralKebab, patchKey, patchValue,
 	)
 
 	return b.String()
@@ -200,3 +241,117 @@ func (g *Generator) parentFixtures(names Names) (fixtures, override string) {
 		names.Pascal, strings.Join(assignments, ""))
 	return fixtures, override
 }
+
+// patchableTextField is a column the grid test can change: the first plain text
+// field that is not unique.
+//
+// Not unique, because writing one value to two rows of a unique column is
+// either a constraint violation or, worse, not one. Plain text, because the
+// value has to be writable as a JSON string without knowing the column's
+// format: a money field is two columns, an enum rejects anything off its list,
+// and a date wants a layout.
+func (g *Generator) patchableTextField() (key, value string) {
+	for _, f := range g.Definition.Fields {
+		if f.Unique || f.ServerSet || f.IsBelongsTo() {
+			continue
+		}
+		switch FieldType(f.Type) {
+		case FieldString, FieldText, FieldRichtext:
+			return toSnakeCase(f.Name), "edited by the grid test"
+		}
+	}
+	return "", ""
+}
+
+// staleSaveTest is the If-Match round trip, for every resource.
+const staleSaveTest = `
+
+// Two people editing the same record.
+//
+// The API has carried a version column, an ETag and a 409 for this since long
+// before any client sent the precondition, so the whole mechanism was inert and
+// looked exactly like a working one (grit#182). It is only visible from the
+// request: hence a test on the header rather than on the handler.
+func Test%s_StaleSaveIsRefused(t *testing.T) {
+	client, db, auth := mount%s(t)
+
+	admin := testkit.User(t, db, "admin-version@example.com", models.RoleAdmin)
+%s	record := factory.Create%s(t, db%s)
+	client = client.As(testkit.SignIn(t, db, auth, admin))
+
+	// The version the record is at, and the ETag the client is meant to send
+	// back. Both, because a detail response missing the ETag is a client with
+	// nothing to send.
+	client.Get("/api/v1/%s/" + record.ID).
+		AssertOK().
+		AssertHeader("ETag", ` + "`" + `W/"1"` + "`" + `).
+		JSON().
+		Where("data.version", float64(1))
+
+	// The first save, with the version that was read.
+	client.With("If-Match", ` + "`" + `W/"1"` + "`" + `).
+		Put("/api/v1/%s/" + record.ID, map[string]any{}).
+		AssertOK()
+
+	// The second, with the same version, which the record has moved past. This
+	// is somebody saving a form they opened before the first save landed.
+	client.With("If-Match", ` + "`" + `W/"1"` + "`" + `).
+		Put("/api/v1/%s/" + record.ID, map[string]any{}).
+		AssertConflict().
+		AssertCode("VERSION_CONFLICT")
+
+	// And a client that sends no precondition is unaffected. Making the header
+	// compulsory would break every script and every integration that writes to
+	// this API.
+	client.Put("/api/v1/%s/" + record.ID, map[string]any{}).AssertOK()
+}
+`
+
+// gridStaleRowTest is the same for bulk-edit, emitted only for a resource with
+// a plain text column the test can change.
+const gridStaleRowTest = `
+// The same, for the grid, which is where two people editing at once is likeliest.
+//
+// One If-Match header cannot carry a version per row, so each item in a
+// bulk-edit carries its own, and a stale row is reported by its index so the
+// grid can put the message on that line.
+func Test%s_BulkEditRefusesAStaleRow(t *testing.T) {
+	client, db, auth := mount%s(t)
+
+	admin := testkit.User(t, db, "admin-grid@example.com", models.RoleAdmin)
+%s	first := factory.Create%s(t, db%s)
+%s	second := factory.Create%s(t, db%s)
+	client = client.As(testkit.SignIn(t, db, auth, admin))
+
+	// Somebody else saves the second row, so the grid's copy of it is stale.
+	client.With("If-Match", ` + "`" + `W/"1"` + "`" + `).
+		Put("/api/v1/%s/" + second.ID, map[string]any{}).
+		AssertOK()
+
+	client.Post("/api/v1/%s/bulk-edit", map[string]any{
+		"items": []map[string]any{
+			{"id": first.ID, "patch": map[string]any{%q: %q}, "version": 1},
+			{"id": second.ID, "patch": map[string]any{%q: %q}, "version": 1},
+		},
+	}).
+		AssertUnprocessable().
+		JSON().
+		Where("error.details.rows.0.index", float64(1))
+
+	// The first row is untouched: the whole grid is refused rather than the
+	// half of it that was still current. A spreadsheet half saved is worse than
+	// one not saved.
+	client.Get("/api/v1/%s/" + first.ID).
+		AssertOK().
+		JSON().
+		Where("data.version", float64(1))
+
+	// With no versions at all, as a client written before this did, the save
+	// goes through.
+	client.Post("/api/v1/%s/bulk-edit", map[string]any{
+		"items": []map[string]any{
+			{"id": first.ID, "patch": map[string]any{%q: %q}},
+		},
+	}).AssertOK()
+}
+`

@@ -2602,10 +2602,43 @@ type MutationSpec<TVars> = {
   method: "post" | "put" | "patch" | "delete";
   url: (endpoint: string, vars: TVars) => string;
   body?: (vars: TVars) => Record<string, unknown> | undefined;
+  /** Per-call headers. Used for If-Match: see ifMatch below. */
+  headers?: (vars: TVars) => Record<string, string> | undefined;
   refresh: "all" | "saved";
   success: (label?: string) => string;
   failure: (label?: string) => string;
 };
+
+// versionOf reads the version column off a record the UI has loaded.
+//
+// Exported because every form passes it to useUpdateResource, and a cast at
+// each of those seven call sites is seven chances to write a different one.
+export function versionOf(item: unknown): number | undefined {
+  const version = (item as { version?: unknown } | null | undefined)?.version;
+  return typeof version === "number" ? version : undefined;
+}
+
+// ifMatch is the precondition header for an update, from the version the caller
+// loaded.
+//
+// Every generated model carries a version column, every update increments it,
+// and the API answers 409 VERSION_CONFLICT to a write whose If-Match no longer
+// matches. None of that did anything for three hundred releases, because the
+// admin never sent the header: the service took its "no precondition" path and
+// the last write won, which is the thing the column exists to prevent
+// (grit#182).
+//
+// The version is an argument rather than something read out of the query
+// cache. A cache lookup would miss whenever the form was opened from a list row
+// rather than a detail page, and the miss would be silent: no header, no
+// protection, and nothing anywhere saying so.
+function ifMatch(version: number | undefined): Record<string, string> | undefined {
+  // A record with no version column, or a create. Nothing to assert.
+  if (typeof version !== "number") return undefined;
+  // The weak form the API's own ETag uses, so what is sent back is what was
+  // received.
+  return { "If-Match": 'W/"' + version + '"' };
+}
 
 function makeResourceMutation<TVars>(spec: MutationSpec<TVars>) {
   return function useResourceMutation(endpoint: string, label?: string) {
@@ -2617,6 +2650,7 @@ function makeResourceMutation<TVars>(spec: MutationSpec<TVars>) {
           method: spec.method,
           url: spec.url(endpoint, vars),
           data: spec.body?.(vars),
+          headers: spec.headers?.(vars),
         });
         return data;
       },
@@ -2629,10 +2663,38 @@ function makeResourceMutation<TVars>(spec: MutationSpec<TVars>) {
         toast.success(spec.success(label));
       },
       onError: (err: unknown) => {
+        // A version conflict is not a failure to save: it is somebody else
+        // having saved first. The server's message says so, and refetching is
+        // the useful half of the answer, because the form is now showing values
+        // that are not what the record holds.
+        if (isVersionConflict(err)) {
+          refreshAfterSave(queryClient, endpoint);
+          queryClient.invalidateQueries({ queryKey: resourceKeys.all(endpoint) });
+        }
         toast.error(getApiErrorMessage(err, spec.failure(label)));
       },
     });
   };
+}
+
+// isVersionConflict reads the 409 the API answers a stale write with.
+//
+// By code rather than by status: 409 is also what a unique-constraint
+// violation answers, and that one is the caller's to fix rather than a reason
+// to reload.
+export function isVersionConflict(err: unknown): boolean {
+  const body = (err as { response?: { data?: { error?: { code?: string } } } })?.response?.data;
+  return body?.error?.code === "VERSION_CONFLICT";
+}
+
+// currentVersion is the version the record is at now, out of that 409, so a
+// caller can offer to reload or to overwrite.
+export function currentVersion(err: unknown): number | undefined {
+  const details = (err as {
+    response?: { data?: { error?: { details?: { current_version?: unknown } } } };
+  })?.response?.data?.error?.details;
+  const current = details?.current_version;
+  return typeof current === "number" ? current : undefined;
 }
 
 export const useCreateResource = makeResourceMutation<Record<string, unknown>>({
@@ -2644,10 +2706,20 @@ export const useCreateResource = makeResourceMutation<Record<string, unknown>>({
   failure: (label) => failed(label, "create"),
 });
 
-export const useUpdateResource = makeResourceMutation<{ id: string; body: Record<string, unknown> }>({
+// version is required, not optional, and that is deliberate: a call site that
+// does not pass it does not compile. Optional, every existing call site would
+// have kept compiling and kept sending no header, which is the state this
+// change exists to leave. Pass undefined to mean "overwrite whatever is there",
+// and say so where you do.
+export const useUpdateResource = makeResourceMutation<{
+  id: string;
+  body: Record<string, unknown>;
+  version: number | undefined;
+}>({
   method: "put",
   url: (endpoint, { id }) => endpoint + "/" + id,
   body: ({ body }) => body,
+  headers: ({ version }) => ifMatch(version),
   refresh: "saved",
   success: (label) => said(label, "updated successfully"),
   failure: (label) => failed(label, "update"),
@@ -2657,10 +2729,15 @@ export const useUpdateResource = makeResourceMutation<{ id: string; body: Record
 // button calls patch() with only the fields it owns. The Go-side Patch handler
 // whitelists writable columns and silently drops anything else, so it is safe
 // to send only a subset.
-export const usePatchResource = makeResourceMutation<{ id: string; body: Record<string, unknown> }>({
+export const usePatchResource = makeResourceMutation<{
+  id: string;
+  body: Record<string, unknown>;
+  version: number | undefined;
+}>({
   method: "patch",
   url: (endpoint, { id }) => endpoint + "/" + id,
   body: ({ body }) => body,
+  headers: ({ version }) => ifMatch(version),
   refresh: "saved",
   success: (label) => (label ? label + " saved" : "Saved"),
   failure: (label) => failed(label, "save"),

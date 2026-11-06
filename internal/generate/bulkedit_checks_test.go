@@ -88,3 +88,33 @@ func bulkEditOf(t *testing.T, src string) string {
 	}
 	return rest[:end+3]
 }
+
+// The repair also has to add the field edit.Version reads.
+//
+// TestRepairedBulkEditIsTheGeneratedBulkEdit compares BulkEdit's BODY, so it
+// cannot see this: a repaired body referring to a field the type does not have
+// is a project that stops compiling, and that comparison passes.
+func TestRepairedGridEditCarriesTheVersion(t *testing.T) {
+	const module = "cors107/apps/api"
+
+	old := fixture(t, "grid_service.go.txt")
+	if strings.Contains(old, "Version *int") {
+		t.Fatal("the fixture already has the field, so this test compares nothing")
+	}
+
+	out, changed := scaffold.RepairGeneratedServiceChecks(old, module)
+	if !changed {
+		t.Fatal("the grid service was not repaired")
+	}
+	if !strings.Contains(out, "Version *int `json:\"version\"`") {
+		t.Error("the repaired ContactGridEdit has no Version field, so edit.Version " +
+			"in the repaired BulkEdit does not compile")
+	}
+
+	// And the generated one spells it the same way, because the client sends
+	// one JSON key and only one of these two shapes can be right.
+	generated := renderService(t, module, "Contact", "name:string,phone:string", nil)
+	if !strings.Contains(generated, "Version *int `json:\"version\"`") {
+		t.Error("the generated ContactGridEdit has no Version field")
+	}
+}

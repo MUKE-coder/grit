@@ -638,7 +638,7 @@ func adminFormModal() string {
 import { useT } from "@/lib/i18n";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "./form-builder";
-import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
+import { useCreateResource, useUpdateResource, versionOf } from "@/hooks/use-resource";
 import { X } from "@/lib/icons";
 
 // Generic in the row type for the same reason DataTable is: a typed
@@ -670,7 +670,7 @@ export function FormModal<T extends object = Record<string, unknown>>({
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
       update(
-        { id: String(item.id), body: data },
+        { id: String(item.id), body: data, version: versionOf(item) },
         { onSuccess: () => onClose() }
       );
     } else {
@@ -728,7 +728,7 @@ import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "./form-builder";
-import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
+import { useCreateResource, useUpdateResource, versionOf } from "@/hooks/use-resource";
 import { X, Maximize2, Minimize2 } from "@/lib/icons";
 
 interface FormSheetProps<T extends object = Record<string, unknown>> {
@@ -761,7 +761,7 @@ export function FormSheet<T extends object = Record<string, unknown>>({
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
       update(
-        { id: String(item.id), body: data },
+        { id: String(item.id), body: data, version: versionOf(item) },
         { onSuccess: () => onClose() }
       );
     } else {
@@ -831,7 +831,7 @@ import { useLocalizedResource, useT } from "@/lib/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "@/components/forms/form-builder";
-import { useCreateResource, useUpdateResource, useResourceItem } from "@/hooks/use-resource";
+import { useCreateResource, useUpdateResource, useResourceItem, versionOf } from "@/hooks/use-resource";
 import { ChevronLeft } from "@/lib/icons";
 
 interface FormPageProps {
@@ -861,7 +861,7 @@ export function FormPage({ resource: definition }: FormPageProps) {
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit && editId) {
       update(
-        { id: editId, body: data },
+        { id: editId, body: data, version: versionOf(item) },
         { onSuccess: () => router.push(` + "`" + `/resources/${resource.slug}` + "`" + `) }
       );
     } else {
@@ -1405,7 +1405,7 @@ func adminFormModalSteps() string {
 
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormStepper } from "./form-stepper";
-import { useCreateResource, useUpdateResource, usePatchResource } from "@/hooks/use-resource";
+import { useCreateResource, useUpdateResource, usePatchResource, versionOf } from "@/hooks/use-resource";
 import { X } from "@/lib/icons";
 
 interface FormModalStepsProps<T extends object = Record<string, unknown>> {
@@ -1432,7 +1432,7 @@ export function FormModalSteps<T extends object = Record<string, unknown>>({
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
       update(
-        { id: String(item.id), body: data },
+        { id: String(item.id), body: data, version: versionOf(item) },
         { onSuccess: () => onClose() }
       );
     } else {
@@ -1468,7 +1468,7 @@ export function FormModalSteps<T extends object = Record<string, unknown>>({
             submitLabel={isEdit ? "Update" : "Create"}
             onStepSave={
               perStepSave && item
-                ? (values) => patch({ id: String(item.id), body: values })
+                ? (values) => patch({ id: String(item.id), body: values, version: versionOf(item) })
                 : undefined
             }
             doneLabel="Close"
@@ -1494,7 +1494,7 @@ import { useForm } from "react-hook-form";
 import type { ResourceDefinition, FieldDefinition, GroupDefinition } from "@/lib/resource";
 import { writableValues } from "@/lib/form-values";
 import { FieldRenderer, useConditionalFields } from "@/components/forms/form-builder";
-import { useResourceItem, usePatchResource } from "@/hooks/use-resource";
+import { useResourceItem, usePatchResource, versionOf } from "@/hooks/use-resource";
 import { ChevronLeft, Loader2 } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 
@@ -1602,7 +1602,14 @@ function GroupCard({ resource, group, record, id }: GroupCardProps) {
   const onSave = handleSubmit((values) => {
     // Send only the values belonging to this group — that's the whole
     // point of PATCH-per-group.
-    patch({ id, body: writableValues(groupFields, values) }, { onSuccess: () => setIsDirty(false) });
+    // versionOf(record) rather than a version captured when this card
+    // mounted: a sibling group saving first increments it, the page refetches,
+    // and this read picks up the new one. Captured, every group but the first
+    // would 409 on a page whose own copy says the sections are independent.
+    patch(
+      { id, body: writableValues(groupFields, values), version: versionOf(record) },
+      { onSuccess: () => setIsDirty(false) }
+    );
   });
 
   return (
@@ -1643,7 +1650,7 @@ func adminFormPageSteps() string {
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormStepper } from "@/components/forms/form-stepper";
-import { useCreateResource, useUpdateResource, usePatchResource, useResourceItem } from "@/hooks/use-resource";
+import { useCreateResource, useUpdateResource, usePatchResource, useResourceItem, versionOf } from "@/hooks/use-resource";
 import { ChevronLeft } from "@/lib/icons";
 
 interface FormPageStepsProps {
@@ -1675,7 +1682,7 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit && editId) {
       update(
-        { id: editId, body: data },
+        { id: editId, body: data, version: versionOf(item) },
         { onSuccess: () => router.push(` + "`" + `/resources/${resource.slug}` + "`" + `) }
       );
     } else {
@@ -1738,7 +1745,7 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
           submitLabel={isEdit ? "Update" : "Create"}
           onStepSave={
             perStepSave && editId
-              ? (values) => patch({ id: editId, body: values })
+              ? (values) => patch({ id: editId, body: values, version: versionOf(item) })
               : undefined
           }
           doneLabel="Back to list"

@@ -23,6 +23,55 @@ Also worth knowing:
 ---
 
 
+## v3.483.0 - November 6, 2026
+
+### The precondition nothing was sending
+
+grit#182. The API has implemented optimistic concurrency on every generated resource for a long time: a `version` column, a `BeforeUpdate` that increments it, an `ETag` on the detail response, a `WHERE version = ?` on the update, and a `409 VERSION_CONFLICT` carrying the version the record is at now. The handler even labelled the field for the client:
+
+```go
+// The version to send back as If-Match when saving.
+c.Header("ETag", concurrency.Tag(item.Version))
+```
+
+Nothing sent it back. One mention of `If-Match` existed in a scaffolded project, in the error catalogue, describing a status nothing could produce. Every admin form took the service's &ldquo;no precondition&rdquo; path, so the last write won, which is the thing the column exists to prevent.
+
+Now every admin form and every generated web hook sends the version it loaded. A conflict refetches the record as well as reporting it, because the form is at that point showing values the record does not hold.
+
+#### The grid sends one per row
+
+The bulk-edit grid is where two operators editing at once is likeliest, and one `If-Match` header cannot carry forty versions. So each item in a bulk-edit carries its own, in the body, and a stale row is reported by its index the way a row with a bad value already was:
+
+```text
+422 {"error": {"code": "VALIDATION_ERROR", "details": {"rows": [
+      {"index": 1, "message": "somebody else saved this row since you loaded it (it is at version 2)"}]}}}
+```
+
+Two layers, and both earn their place. The pre-check gives the per-row message; the `WHERE` on each statement closes the gap between that check and the write. Taking the pre-check out and re-running the test showed it: the save was still refused, as a whole-request 409 with no row index, which is correct and much less useful.
+
+The whole grid rolls back. Half a spreadsheet saved is worse than none.
+
+#### Required, not optional
+
+`version` is a required argument to `useUpdateResource`, `usePatchResource` and the web `useUpdate`, so a call site that does not pass it does not compile. Optional, every existing one would have kept compiling and kept sending no header, which is exactly the state this release found. Pass `undefined` to mean &ldquo;overwrite whatever is there&rdquo;, and say so where you do.
+
+A client that sends no version is unaffected in either shape. Making the precondition compulsory would break every script and every integration that writes to this API.
+
+#### Verified, both directions
+
+Against a live API: `ETag: W/"1"` on the read, 200 with that version, 409 with it again, `current_version: 2` in the body, and 200 with no header at all. Then the same for the grid, including the untouched row staying at version 1 after the refused save.
+
+Six new shipped tests. Every generated resource now gets `StaleSaveIsRefused` and, where it has a column the test can change, `BulkEditRefusesAStaleRow`. The admin gets `if-match.test.tsx`, which asserts on the request, because what reaches the API is the only place the difference shows. Dropping the header from the hook fails two of them; neutering the version comparison in the service fails the grid one.
+
+#### The repair that reached nobody
+
+The first version of the server half added the check to `checkBulkEdit`, which `grit upgrade` skips entirely for a service that already has the whitelist and policy checks. That is every project repaired between v3.451.0 and v3.482.0, which is to say every project. It went to new projects and nobody else, which is precisely the bug this release exists to fix, one layer down.
+
+So the precondition is its own pass, run after the others rather than instead of them, and it runs on a service they have already fixed. After, because they anchor on the write struct, the append and the statement, all of which it edits: run first, it moves the anchors out from under the pass that has to work on a pre-grid service. Verified on a real project from v3.474.0: the field and the check arrive, the API compiles, its tests pass, and a second upgrade reports nothing.
+
+The grid test needed one correction worth recording: `BulkEdit` skips an edit whose writable columns are all unchanged, which is right, so the first version of the test sent an empty patch, never reached the version check, and asserted a 422 against a 200. It sends a real change now, and a resource with no plain text column gets the stale-save test and not this one, rather than a test that cannot assert what it says.
+
+
 ## v3.482.0 - November 5, 2026
 
 ### A verified flow is a file now, and it found two bugs on the first day

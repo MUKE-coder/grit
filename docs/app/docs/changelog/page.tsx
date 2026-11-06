@@ -72,6 +72,139 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.483.0 */}
+            <div className="mb-12" id="v3.483.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.483.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The precondition nothing was sending</h3>
+                <p>
+                  grit#182. The API has implemented optimistic concurrency on
+                  every generated resource for a long time: a{' '}
+                  <code>version</code> column, a <code>BeforeUpdate</code> that
+                  increments it, an <code>ETag</code> on the detail response, a{' '}
+                  <code>WHERE version = ?</code> on the update, and a{' '}
+                  <code>409 VERSION_CONFLICT</code> carrying the version the
+                  record is at now. The handler even labelled the field for the
+                  client:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`// The version to send back as If-Match when saving.
+c.Header("ETag", concurrency.Tag(item.Version))`}
+                />
+                <p>
+                  Nothing sent it back. One mention of{' '}
+                  <code>If-Match</code> existed in a scaffolded project, in the
+                  error catalogue, describing a status nothing could produce.
+                  Every admin form took the service&apos;s &ldquo;no
+                  precondition&rdquo; path, so the last write won, which is the
+                  thing the column exists to prevent.
+                </p>
+                <p>
+                  Now every admin form and every generated web hook sends the
+                  version it loaded. A conflict refetches the record as well as
+                  reporting it, because the form is at that point showing values
+                  the record does not hold.
+                </p>
+                <h4>The grid sends one per row</h4>
+                <p>
+                  The bulk-edit grid is where two operators editing at once is
+                  likeliest, and one <code>If-Match</code> header cannot carry
+                  forty versions. So each item in a bulk-edit carries its own, in
+                  the body, and a stale row is reported by its index the way a
+                  row with a bad value already was:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`422 {"error": {"code": "VALIDATION_ERROR", "details": {"rows": [
+      {"index": 1, "message": "somebody else saved this row since you loaded it (it is at version 2)"}]}}}`}
+                />
+                <p>
+                  Two layers, and both earn their place. The pre-check gives the
+                  per-row message; the <code>WHERE</code> on each statement
+                  closes the gap between that check and the write. Taking the
+                  pre-check out and re-running the test showed it: the save was
+                  still refused, as a whole-request 409 with no row index, which
+                  is correct and much less useful.
+                </p>
+                <p>
+                  The whole grid rolls back. Half a spreadsheet saved is worse
+                  than none.
+                </p>
+                <h4>Required, not optional</h4>
+                <p>
+                  <code>version</code> is a required argument to{' '}
+                  <code>useUpdateResource</code>, <code>usePatchResource</code>{' '}
+                  and the web <code>useUpdate</code>, so a call site that does
+                  not pass it does not compile. Optional, every existing one
+                  would have kept compiling and kept sending no header, which is
+                  exactly the state this release found. Pass{' '}
+                  <code>undefined</code> to mean &ldquo;overwrite whatever is
+                  there&rdquo;, and say so where you do.
+                </p>
+                <p>
+                  A client that sends no version is unaffected in either shape.
+                  Making the precondition compulsory would break every script
+                  and every integration that writes to this API.
+                </p>
+                <h4>Verified, both directions</h4>
+                <p>
+                  Against a live API: <code>ETag: W/&quot;1&quot;</code> on the
+                  read, 200 with that version, 409 with it again,{' '}
+                  <code>current_version: 2</code> in the body, and 200 with no
+                  header at all. Then the same for the grid, including the
+                  untouched row staying at version 1 after the refused save.
+                </p>
+                <p>
+                  Six new shipped tests. Every generated resource now gets{' '}
+                  <code>StaleSaveIsRefused</code> and, where it has a column the
+                  test can change, <code>BulkEditRefusesAStaleRow</code>. The
+                  admin gets <code>if-match.test.tsx</code>, which asserts on the
+                  request, because what reaches the API is the only place the
+                  difference shows. Dropping the header from the hook fails two
+                  of them; neutering the version comparison in the service fails
+                  the grid one.
+                </p>
+                <h4>The repair that reached nobody</h4>
+                <p>
+                  The first version of the server half added the check to{' '}
+                  <code>checkBulkEdit</code>, which <code>grit upgrade</code>{' '}
+                  skips entirely for a service that already has the whitelist
+                  and policy checks. That is every project repaired between
+                  v3.451.0 and v3.482.0, which is to say every project. It went
+                  to new projects and nobody else, which is precisely the bug
+                  this release exists to fix, one layer down.
+                </p>
+                <p>
+                  So the precondition is its own pass, run after the others
+                  rather than instead of them, and it runs on a service they
+                  have already fixed. After, because they anchor on the write
+                  struct, the append and the statement, all of which it edits:
+                  run first, it moves the anchors out from under the pass that
+                  has to work on a pre-grid service. Verified on a real project
+                  from v3.474.0: the field and the check arrive, the API
+                  compiles, its tests pass, and a second upgrade reports
+                  nothing.
+                </p>
+                <p>
+                  The grid test needed one correction worth recording:{' '}
+                  <code>BulkEdit</code> skips an edit whose writable columns are
+                  all unchanged, which is right, so the first version of the test
+                  sent an empty patch, never reached the version check, and
+                  asserted a 422 against a 200. It sends a real change now, and a
+                  resource with no plain text column gets the stale-save test and
+                  not this one, rather than a test that cannot assert what it
+                  says.
+                </p>
+              </div>
+            </div>
+
             {/* v3.482.0 */}
             <div className="mb-12" id="v3.482.0">
               <div className="flex items-center gap-3 mb-4">

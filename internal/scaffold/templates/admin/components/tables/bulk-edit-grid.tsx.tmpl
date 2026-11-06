@@ -5,6 +5,7 @@ import type { ResourceDefinition } from "@/lib/resource";
 import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage } from "@/lib/api-core";
 import { DataGrid, GridDialog, griddableFields, type GridRow } from "./data-grid";
+import { versionOf } from "@/hooks/use-resource";
 
 /*
  * Edit the selected rows in a grid, each with its own values.
@@ -40,6 +41,19 @@ export function BulkEditGrid({ resource, rows, onSaved, onClose }: BulkEditGridP
     () => griddableFields(resource.form.fields).filter((f) => !f.unique),
     [resource.form.fields],
   );
+
+  // The version each row was at when the dialog opened, sent back with that
+  // row's patch so a save refuses a row somebody else changed in the meantime.
+  //
+  // Per row in the body rather than one If-Match header, which is what a
+  // single-row save uses: one header cannot hold forty versions, and in a grid
+  // every row has its own. A row with no version is sent without one and
+  // behaves as every row did before this (grit#182).
+  const versions = useMemo(() => {
+    const map: Record<string, number | undefined> = {};
+    for (const row of rows) map[String(row.id)] = versionOf(row);
+    return map;
+  }, [rows]);
 
   // The values as they were when the dialog opened, so a cell can be compared
   // against where it started rather than against whatever is in the table now.
@@ -81,10 +95,10 @@ export function BulkEditGrid({ resource, rows, onSaved, onClose }: BulkEditGridP
             const after = row.values[field.key];
             if (!same(before, after)) patch[field.key] = after;
           }
-          return { id: row.id as string, patch };
+          return { id: row.id as string, patch, version: versions[row.key] };
         })
         .filter((edit) => Object.keys(edit.patch).length > 0),
-    [grid, fields, original],
+    [grid, fields, original, versions],
   );
 
   async function save() {
