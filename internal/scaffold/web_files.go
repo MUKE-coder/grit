@@ -1367,7 +1367,15 @@ api.interceptors.response.use(undefined, async (error: AxiosError) => {
     .finally(() => {
       refreshing = null;
     });
-  await refreshing;
+  try {
+    await refreshing;
+  } catch {
+    // The session is gone, or the refresh itself failed (no cookie, an expired
+    // refresh token). Surface the request's own 401: that is the answer a page
+    // can act on, and "No refresh token" is not this caller's story. Without
+    // this, an anonymous request showed the refresh error instead.
+    throw error;
+  }
   return api.request(config);
 });
 

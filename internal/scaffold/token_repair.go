@@ -108,7 +108,7 @@ const refreshSessionBlock = `	// Keep the session id through rotation, so the ne
 func repairRefreshHandlerSource(src string) (string, []string, []string) {
 	const decl = "func (h *AuthHandler) Refresh(c *gin.Context) {"
 	start := strings.Index(src, decl)
-	if start < 0 || strings.Contains(src, "GenerateSessionTokenPair(") {
+	if start < 0 {
 		return src, nil, nil
 	}
 	end := strings.Index(src[start+len(decl):], "\nfunc ")
@@ -118,14 +118,64 @@ func repairRefreshHandlerSource(src string) (string, []string, []string) {
 	end += start + len(decl)
 	body := src[start:end]
 
-	const validate = "h.AuthService.ValidateToken(refreshToken)"
-	const mint = "\ttokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)\n"
-	if strings.Count(body, validate) != 1 || strings.Count(body, mint) != 1 {
-		return src, nil, []string{"Refresh is not the handler Grit wrote: validate with ValidateRefreshToken and mint with GenerateSessionTokenPair and the session id, or refreshed tokens name no session and are refused"}
+	var fixes []string
+
+	// No cookie, no body: a browser whose session is gone. The handler used to
+	// bind an empty body and answer 422 with the decoder's "EOF", which a
+	// client's 401-refresh interceptor surfaced instead of the 401 the page
+	// could act on.
+	const bindOld = `	} else {
+		var req RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond.Fail(c, respond.CodeValidationError, err.Error())
+			return
+		}
+		refreshToken = req.RefreshToken
 	}
-	body = strings.Replace(body, validate, "h.AuthService.ValidateRefreshToken(refreshToken)", 1)
-	body = strings.Replace(body, mint, refreshSessionBlock, 1)
-	return src[:start] + body + src[end:], []string{"refresh accepts only refresh tokens, and keeps the session id"}, nil
+`
+	const bindNew = `	} else {
+		var req RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			if errors.Is(err, io.EOF) {
+				respond.Fail(c, respond.CodeInvalidToken, "No refresh token")
+				return
+			}
+			respond.Fail(c, respond.CodeValidationError, err.Error())
+			return
+		}
+		if req.RefreshToken == "" {
+			respond.Fail(c, respond.CodeInvalidToken, "No refresh token")
+			return
+		}
+		refreshToken = req.RefreshToken
+	}
+`
+	needsIO := false
+	if strings.Contains(body, bindOld) {
+		body = strings.Replace(body, bindOld, bindNew, 1)
+		needsIO = true
+		fixes = append(fixes, "a refresh without a cookie or a body answers INVALID_TOKEN instead of 422 EOF")
+	}
+
+	if !strings.Contains(src, "GenerateSessionTokenPair(") {
+		const validate = "h.AuthService.ValidateToken(refreshToken)"
+		const mint = "\ttokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)\n"
+		if strings.Count(body, validate) != 1 || strings.Count(body, mint) != 1 {
+			return src, nil, []string{"Refresh is not the handler Grit wrote: validate with ValidateRefreshToken and mint with GenerateSessionTokenPair and the session id, or refreshed tokens name no session and are refused"}
+		}
+		body = strings.Replace(body, validate, "h.AuthService.ValidateRefreshToken(refreshToken)", 1)
+		body = strings.Replace(body, mint, refreshSessionBlock, 1)
+		fixes = append(fixes, "refresh accepts only refresh tokens, and keeps the session id")
+	}
+
+	if len(fixes) == 0 {
+		return src, nil, nil
+	}
+	out := src[:start] + body + src[end:]
+	if needsIO && !strings.Contains(out, `"io"`) {
+		out = strings.Replace(out, "import (\n", "import (\n\t\"io\"\n", 1)
+	}
+	return out, fixes, nil
 }
 
 const totpSessionBlock = `	// Record the session. An access token names its session, and one whose
