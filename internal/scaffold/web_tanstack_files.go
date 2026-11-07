@@ -279,9 +279,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 func webTanStackRootRoute(opts Options) string {
 	_ = opts
 	return `import { createRootRoute, Outlet } from '@tanstack/react-router'
+// grit:web-org-imports
 
 export const Route = createRootRoute({
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      {/* grit:web-org-switcher */}
+      <Outlet />
+    </>
+  ),
 })
 `
 }

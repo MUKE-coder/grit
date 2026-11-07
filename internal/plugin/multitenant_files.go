@@ -8,6 +8,7 @@ func mtMiddleware(ctx Context) string {
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -51,9 +52,26 @@ func Tenant(db *gorm.DB) gin.HandlerFunc {
 		uid, _ := userID.(string)
 
 		requested := c.GetHeader("X-Organization-ID")
+		// Organization control routes are how a client recovers from a stale
+		// saved choice. Resolve those from their route id (when present), not
+		// from the old header; otherwise a revoked membership would also block
+		// listing organizations and accepting a fresh invitation.
+		fullPath := c.FullPath()
+		if strings.Contains(fullPath, "/organizations") {
+			requested = c.Param("id")
+			if strings.HasSuffix(fullPath, "/restore") {
+				requested = ""
+			}
+		}
+		if strings.Contains(fullPath, "/organization-invitations/accept") || strings.Contains(fullPath, "/auth/verify-email") {
+			requested = ""
+		}
 
 		var memberships []models.OrganizationMember
-		if err := db.Where("user_id = ?", uid).Find(&memberships).Error; err != nil {
+		if err := tenant.Unscoped(db).Model(&models.OrganizationMember{}).
+			Joins("JOIN organizations ON organizations.id = organization_members.organization_id").
+			Where("organization_members.user_id = ? AND organizations.active = ?", uid, true).
+			Find(&memberships).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not resolve organization"},
 			})
@@ -89,6 +107,13 @@ func Tenant(db *gorm.DB) gin.HandlerFunc {
 			roleID := roleFor(memberships, active)
 			c.Set("org_role_id", roleID)
 			addOrgGrants(c, db, roleID)
+			for _, membership := range memberships {
+				if membership.OrganizationID == active && membership.Role == "admin" {
+					addGrant(c, "orgmembers.manage")
+					addGrant(c, "orgroles.manage")
+					break
+				}
+			}
 			c.Request = c.Request.WithContext(tenant.WithOrg(c.Request.Context(), active))
 		}
 		c.Next()
@@ -129,6 +154,13 @@ func addOrgGrants(c *gin.Context, db *gorm.DB, roleID string) {
 	c.Set("user_grants", merged)
 }
 
+func addGrant(c *gin.Context, grant string) {
+	existing, _ := c.Get("user_grants")
+	list, _ := existing.([]string)
+	for _, current := range list { if current == grant { return } }
+	c.Set("user_grants", append(list, grant))
+}
+
 func roleFor(memberships []models.OrganizationMember, orgID string) string {
 	for _, m := range memberships {
 		if m.OrganizationID == orgID {
@@ -165,8 +197,12 @@ func mtHandler(ctx Context) string {
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -174,16 +210,18 @@ import (
 	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/storage"
 	"{{MODULE}}/internal/tenant"
 )
 
 // OrganizationHandler serves organization + membership endpoints.
 type OrganizationHandler struct {
-	DB *gorm.DB
+	DB      *gorm.DB
+	Storage *storage.Storage
 }
 
-func NewOrganizationHandler(db *gorm.DB) *OrganizationHandler {
-	return &OrganizationHandler{DB: db}
+func NewOrganizationHandler(db *gorm.DB, storageService *storage.Storage) *OrganizationHandler {
+	return &OrganizationHandler{DB: db, Storage: storageService}
 }
 
 func (h *OrganizationHandler) roles() *services.RoleService {
@@ -200,7 +238,10 @@ func (h *OrganizationHandler) MyOrganizations(c *gin.Context) {
 	uid, _ := userID.(string)
 
 	var memberships []models.OrganizationMember
-	if err := h.DB.Where("user_id = ?", uid).Find(&memberships).Error; err != nil {
+	if err := tenant.Unscoped(h.DB).Model(&models.OrganizationMember{}).
+		Joins("JOIN organizations ON organizations.id = organization_members.organization_id").
+		Where("organization_members.user_id = ? AND organizations.active = ?", uid, true).
+		Find(&memberships).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not load organizations"}})
 		return
 	}
@@ -226,6 +267,19 @@ func (h *OrganizationHandler) MyOrganizations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": orgs, "active": active})
 }
 
+// MyArchivedOrganizations lets an owner restore an organization without
+// exposing archived tenant data to other former members.
+func (h *OrganizationHandler) MyArchivedOrganizations(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(string)
+	var orgs []models.Organization
+	if err := tenant.Unscoped(h.DB).Where("owner_id = ? AND active = ?", uid, false).Order("updated_at desc").Find(&orgs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code":"INTERNAL_ERROR", "message":"Could not load archived organizations"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data":orgs})
+}
+
 type createOrgInput struct {
 	Name        string ~json:"name" binding:"required"~
 	Description string ~json:"description"~
@@ -244,9 +298,12 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 
 	org := models.Organization{
 		Name:        strings.TrimSpace(in.Name),
-		Slug:        slugify(in.Name),
+		Slug:        h.availableSlug(slugify(in.Name), ""),
 		Description: in.Description,
 		OwnerID:     uid,
+		OwnerLabel:  "Owner",
+		AdminLabel:  "Admin",
+		MemberLabel: "Member",
 		Active:      true,
 	}
 
@@ -270,6 +327,7 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 		return tenant.Unscoped(tx).Create(&models.OrganizationMember{
 			UserID:         uid,
 			OrganizationID: org.ID,
+			Role:           "owner",
 		}).Error
 	})
 	if err != nil {
@@ -280,13 +338,334 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": org, "message": "Organization created"})
 }
 
+// Get returns one organization's profile to any member of it.
+func (h *OrganizationHandler) Get(c *gin.Context) {
+	orgID := c.Param("id")
+	if !h.isMember(c, orgID) {
+		return
+	}
+	var org models.Organization
+	if err := tenant.Unscoped(h.DB).Where("id = ?", orgID).First(&org).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "Organization not found"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": org})
+}
+
+var organizationSlugPattern = regexp.MustCompile("^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+func normalizeSlug(raw string) string {
+	return strings.Trim(strings.ToLower(strings.TrimSpace(raw)), "-")
+}
+
+func validateSlug(slug string) string {
+	if slug == "" {
+		return "A slug is required"
+	}
+	if len(slug) > 160 {
+		return "The slug must be 160 characters or fewer"
+	}
+	if !organizationSlugPattern.MatchString(slug) {
+		return "The slug may contain lowercase letters, digits and single hyphens"
+	}
+	return ""
+}
+
+// availableSlug returns a free slug, starting from base and adding -2, -3 and
+// so on. Creating two organizations called "Acme" used to fail on the unique
+// index instead of naming the second one.
+func (h *OrganizationHandler) availableSlug(base, excludeID string) string {
+	base = normalizeSlug(base)
+	if base == "" {
+		base = "org"
+	}
+	if len(base) > 150 {
+		base = strings.Trim(base[:150], "-")
+	}
+	candidate := base
+	for i := 2; i < 1000; i++ {
+		query := tenant.Unscoped(h.DB).Model(&models.Organization{}).Where("slug = ?", candidate)
+		if excludeID != "" {
+			query = query.Where("id <> ?", excludeID)
+		}
+		var count int64
+		if err := query.Count(&count).Error; err != nil {
+			return candidate
+		}
+		if count == 0 {
+			return candidate
+		}
+		candidate = fmt.Sprintf("%s-%d", base, i)
+	}
+	return fmt.Sprintf("%s-%d", base, time.Now().UnixNano())
+}
+
+// SlugAvailable is the form's live check. It answers 200 either way: the slug
+// "taken" is a normal answer to "is this one free", not an error.
+func (h *OrganizationHandler) SlugAvailable(c *gin.Context) {
+	slug := normalizeSlug(c.Query("slug"))
+	if reason := validateSlug(slug); reason != "" {
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{"slug": slug, "available": false, "reason": reason}})
+		return
+	}
+	query := tenant.Unscoped(h.DB).Model(&models.Organization{}).Where("slug = ?", slug)
+	if exclude := strings.TrimSpace(c.Query("exclude")); exclude != "" {
+		query = query.Where("id <> ?", exclude)
+	}
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not check the slug"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"slug": slug, "available": count == 0}})
+}
+
+type organizationProfileInput struct {
+	Name        string ~json:"name" binding:"required"~
+	Slug        string ~json:"slug"~
+	Description string ~json:"description"~
+	Website     string ~json:"website"~
+	LegalName   string ~json:"legal_name"~
+	TaxID       string ~json:"tax_id"~
+	TaxCountry  string ~json:"tax_country"~
+	AddressLine1 string ~json:"address_line1"~
+	AddressLine2 string ~json:"address_line2"~
+	City        string ~json:"city"~
+	Region      string ~json:"region"~
+	PostalCode  string ~json:"postal_code"~
+	Country     string ~json:"country"~
+}
+
+func normalizeISO2(raw string) string {
+	return strings.ToUpper(strings.TrimSpace(raw))
+}
+
+func validISO2(value string) bool {
+	if value == "" {
+		return true
+	}
+	if len(value) != 2 {
+		return false
+	}
+	for _, r := range value {
+		if r < 'A' || r > 'Z' {
+			return false
+		}
+	}
+	return true
+}
+
+// Update replaces the organization's profile.
+//
+// Owner or platform administrator only: these are the fields that identify the
+// tenant, and a member manager's job is who belongs, not what the company is
+// called. The logo is not here; it has its own upload endpoint and URL.
+func (h *OrganizationHandler) Update(c *gin.Context) {
+	orgID := c.Param("id")
+	if !h.isOwner(c, orgID) && !authz.IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "Only the organization owner may change its details"}})
+		return
+	}
+	var in organizationProfileInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "A name is required"}})
+		return
+	}
+
+	name := strings.TrimSpace(in.Name)
+	if name == "" || len([]rune(name)) > 160 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "The name must contain 1 to 160 characters"}})
+		return
+	}
+	slug := normalizeSlug(in.Slug)
+	if reason := validateSlug(slug); reason != "" {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": reason}})
+		return
+	}
+	var conflict models.Organization
+	err := tenant.Unscoped(h.DB).Where("slug = ? AND id <> ?", slug, orgID).First(&conflict).Error
+	switch {
+	case err == nil:
+		c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "SLUG_TAKEN", "message": "That slug is already in use"}})
+		return
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not check the slug"}})
+		return
+	}
+
+	website := strings.TrimSpace(in.Website)
+	if website != "" {
+		parsed, perr := url.Parse(website)
+		if perr != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "The website must be an http or https URL"}})
+			return
+		}
+	}
+
+	taxCountry := normalizeISO2(in.TaxCountry)
+	country := normalizeISO2(in.Country)
+	if !validISO2(taxCountry) || !validISO2(country) {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "Countries must be two-letter ISO codes"}})
+		return
+	}
+
+	taxID := strings.ToUpper(strings.TrimSpace(in.TaxID))
+	var taxIDValue *string
+	if taxID != "" {
+		if len(taxID) > 64 {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "The tax id must be 64 characters or fewer"}})
+			return
+		}
+		taxIDValue = &taxID
+		var existing models.Organization
+		err := tenant.Unscoped(h.DB).Where("tax_id = ? AND id <> ?", taxID, orgID).First(&existing).Error
+		switch {
+		case err == nil:
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "TAX_ID_TAKEN", "message": "That tax id already belongs to another organization"}})
+			return
+		case !errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not check the tax id"}})
+			return
+		}
+	}
+
+	description := strings.TrimSpace(in.Description)
+	if len([]rune(description)) > 500 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "The description must be 500 characters or fewer"}})
+		return
+	}
+	if len([]rune(strings.TrimSpace(in.PostalCode))) > 32 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "The postal code must be 32 characters or fewer"}})
+		return
+	}
+
+	update := models.Organization{
+		Name:         name,
+		Slug:         slug,
+		Description:  description,
+		Website:      website,
+		LegalName:    strings.TrimSpace(in.LegalName),
+		TaxID:        taxIDValue,
+		TaxCountry:   taxCountry,
+		AddressLine1: strings.TrimSpace(in.AddressLine1),
+		AddressLine2: strings.TrimSpace(in.AddressLine2),
+		City:         strings.TrimSpace(in.City),
+		Region:       strings.TrimSpace(in.Region),
+		PostalCode:   strings.TrimSpace(in.PostalCode),
+		Country:      country,
+	}
+	// A struct update with Select, so cleared fields are written and the
+	// BeforeUpdate version bump keeps working (a map dest cannot carry it).
+	if err := tenant.Unscoped(h.DB).Model(&models.Organization{}).
+		Select("name", "slug", "description", "website", "legal_name", "tax_id", "tax_country", "address_line1", "address_line2", "city", "region", "postal_code", "country").
+		Where("id = ? AND active = ?", orgID, true).
+		Updates(update).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not update organization"}})
+		return
+	}
+
+	var org models.Organization
+	if err := tenant.Unscoped(h.DB).Where("id = ?", orgID).First(&org).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not load organization"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": org, "message": "Organization updated"})
+}
+
+// The logo is stored by the project's configured storage driver, the same one
+// every upload uses, so a local disk in development and a bucket in production
+// both work without the plugin knowing which.
+const organizationLogoMax = 2 << 20
+
+func (h *OrganizationHandler) UploadLogo(c *gin.Context) {
+	orgID := c.Param("id")
+	if !h.isOwner(c, orgID) && !authz.IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "Only the organization owner may change its logo"}})
+		return
+	}
+	if h.Storage == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "File storage is not configured"}})
+		return
+	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, organizationLogoMax)
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_FILE", "message": "No image was provided"}})
+		return
+	}
+	defer file.Close()
+	if header.Size > organizationLogoMax {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "FILE_TOO_LARGE", "message": "The logo must be 2 MB or smaller"}})
+		return
+	}
+	// Sniffed, not trusted: the declared type is whatever the client typed.
+	mimeType, err := storage.DetectContentType(file, header.Header.Get("Content-Type"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "That file is not an accepted image"}})
+		return
+	}
+	switch mimeType {
+	case "image/png", "image/jpeg", "image/webp", "image/gif":
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "The logo must be a PNG, JPEG, WebP or GIF image"}})
+		return
+	}
+
+	// Under uploads/, which is the storage package's public prefix: a logo is
+	// linked directly from pages, and a key outside it is served only through
+	// a signed temporary URL, so the browser would have got a 404.
+	key := storage.NewKey("uploads/organizations/"+orgID+"/logo", storage.Extension(header.Filename, mimeType))
+	if err := h.Storage.Upload(c.Request.Context(), key, file, mimeType); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not store the logo"}})
+		return
+	}
+	logoURL := h.Storage.GetURL(key)
+	update := models.Organization{LogoURL: logoURL}
+	if err := tenant.Unscoped(h.DB).Model(&models.Organization{}).
+		Select("logo_url").Where("id = ?", orgID).Updates(update).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not save the logo"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"logo_url": logoURL}, "message": "Logo updated"})
+}
+
+// RemoveLogo clears the reference. The stored object is left in place: a delete
+// that races the CDN or a cached page is worse than an orphaned key, and the
+// storage driver owns its own cleanup.
+func (h *OrganizationHandler) RemoveLogo(c *gin.Context) {
+	orgID := c.Param("id")
+	if !h.isOwner(c, orgID) && !authz.IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "Only the organization owner may change its logo"}})
+		return
+	}
+	update := models.Organization{LogoURL: ""}
+	if err := tenant.Unscoped(h.DB).Model(&models.Organization{}).
+		Select("logo_url").Where("id = ?", orgID).Updates(update).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not remove the logo"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"logo_url": ""}, "message": "Logo removed"})
+}
+
 // Members lists an organization's members. Callers must belong to it.
 func (h *OrganizationHandler) Members(c *gin.Context) {
 	if !h.isMember(c, c.Param("id")) {
 		return
 	}
-	var members []models.OrganizationMember
-	if err := tenant.Unscoped(h.DB).Where("organization_id = ?", c.Param("id")).Find(&members).Error; err != nil {
+	var members []struct {
+		UserID    string    ~gorm:"column:user_id" json:"user_id"~
+		Email     string    ~gorm:"column:email" json:"email"~
+		FirstName string    ~gorm:"column:first_name" json:"first_name"~
+		LastName  string    ~gorm:"column:last_name" json:"last_name"~
+		Role      string    ~gorm:"column:role" json:"role"~
+		RoleID    string    ~gorm:"column:role_id" json:"role_id,omitempty"~
+		CreatedAt time.Time ~gorm:"column:created_at" json:"created_at"~
+	}
+	if err := tenant.Unscoped(h.DB).Table("organization_members").
+		Select("organization_members.user_id, users.email, users.first_name, users.last_name, CASE WHEN organizations.owner_id = organization_members.user_id THEN 'owner' WHEN organization_members.role = '' THEN 'member' ELSE organization_members.role END AS role, organization_members.role_id, organization_members.created_at").
+		Joins("JOIN users ON users.id = organization_members.user_id").
+		Joins("JOIN organizations ON organizations.id = organization_members.organization_id").
+		Where("organization_members.organization_id = ?", c.Param("id")).Find(&members).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not load members"}})
 		return
 	}
@@ -296,6 +675,7 @@ func (h *OrganizationHandler) Members(c *gin.Context) {
 type addMemberInput struct {
 	UserID string ~json:"user_id" binding:"required"~
 	RoleID string ~json:"role_id"~
+	Role string ~json:"role"~
 }
 
 // AddMember adds a user to an organization with a role.
@@ -319,12 +699,40 @@ func (h *OrganizationHandler) AddMember(c *gin.Context) {
 		return
 	}
 
-	member := models.OrganizationMember{UserID: in.UserID, OrganizationID: orgID, RoleID: in.RoleID}
+	memberRole := strings.ToLower(strings.TrimSpace(in.Role))
+	if memberRole == "" { memberRole = "member" }
+	if memberRole != "member" && memberRole != "admin" {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code":"VALIDATION_ERROR", "message":"Role must be member or admin"}})
+		return
+	}
+	if memberRole == "admin" && !h.isOwner(c, orgID) && !authz.IsAdmin(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code":"FORBIDDEN", "message":"Only the organization owner may assign the admin role"}})
+		return
+	}
+	member := models.OrganizationMember{UserID: in.UserID, OrganizationID: orgID, RoleID: in.RoleID, Role: memberRole}
 	// Upsert: re-adding an existing member updates their role rather than
-	// failing on the composite primary key.
-	if err := tenant.Unscoped(h.DB).Save(&member).Error; err != nil {
+	// failing on the composite primary key. An explicit update, not Save:
+	// Save writes every column, so the zero CreatedAt in this struct replaced
+	// the row's original join date with 0001-01-01.
+	var existing models.OrganizationMember
+	err := tenant.Unscoped(h.DB).Where("user_id = ? AND organization_id = ?", in.UserID, orgID).First(&existing).Error
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		if err := tenant.Unscoped(h.DB).Create(&member).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not add member"}})
+			return
+		}
+	case err != nil:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not add member"}})
 		return
+	default:
+		if err := tenant.Unscoped(h.DB).Model(&models.OrganizationMember{}).
+			Where("user_id = ? AND organization_id = ?", in.UserID, orgID).
+			Updates(map[string]any{"role_id": in.RoleID, "role": memberRole}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not add member"}})
+			return
+		}
+		member.CreatedAt = existing.CreatedAt
 	}
 	c.JSON(http.StatusOK, gin.H{"data": member, "message": "Member added"})
 }
@@ -353,6 +761,154 @@ func (h *OrganizationHandler) RemoveMember(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Member removed"})
+}
+
+// Leave removes the caller's membership, but the owner must transfer ownership
+// first so the organization can never be orphaned.
+func (h *OrganizationHandler) Leave(c *gin.Context) {
+	orgID := c.Param("id")
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(string)
+	var org models.Organization
+	if err := tenant.Unscoped(h.DB).Where("id = ? AND active = ?", orgID, true).First(&org).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code":"NOT_FOUND", "message":"Organization not found"}})
+		return
+	}
+	if org.OwnerID == uid {
+		c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code":"OWNER_TRANSFER_REQUIRED", "message":"Transfer ownership before leaving this organization"}})
+		return
+	}
+	result := tenant.Unscoped(h.DB).Where("organization_id = ? AND user_id = ?", orgID, uid).Delete(&models.OrganizationMember{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code":"INTERNAL_ERROR", "message":"Could not leave organization"}})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code":"NOT_FOUND", "message":"Organization membership not found"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message":"You left the organization"})
+}
+
+type organizationLabelsInput struct {
+	OwnerLabel string ~json:"owner_label"~
+	AdminLabel string ~json:"admin_label"~
+	MemberLabel string ~json:"member_label"~
+}
+
+// UpdateLabels changes only display text. Authorization and role keys remain
+// stable so terminology customization cannot change what a member may do.
+func (h *OrganizationHandler) UpdateLabels(c *gin.Context) {
+	orgID := c.Param("id")
+	if !h.isOwner(c, orgID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code":"FORBIDDEN", "message":"Only the organization owner may change role labels"}})
+		return
+	}
+	var in organizationLabelsInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code":"VALIDATION_ERROR", "message":"Role labels are invalid"}})
+		return
+	}
+	labels := map[string]string{"owner_label":strings.TrimSpace(in.OwnerLabel), "admin_label":strings.TrimSpace(in.AdminLabel), "member_label":strings.TrimSpace(in.MemberLabel)}
+	for key, value := range labels {
+		if value == "" || len([]rune(value)) > 40 {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code":"VALIDATION_ERROR", "message":key + " must contain 1 to 40 characters"}})
+			return
+		}
+	}
+	// A struct update, not a map: Organization.BeforeUpdate bumps version with
+	// SetColumn, and GORM's SetColumn cannot apply to a map dest ("unsupported
+	// data"), which made every label save answer 500.
+	update := models.Organization{
+		OwnerLabel:  labels["owner_label"],
+		AdminLabel:  labels["admin_label"],
+		MemberLabel: labels["member_label"],
+	}
+	if err := tenant.Unscoped(h.DB).Model(&models.Organization{}).
+		Select("owner_label", "admin_label", "member_label").
+		Where("id = ? AND active = ?", orgID, true).
+		Updates(update).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code":"INTERNAL_ERROR", "message":"Could not update role labels"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data":labels, "message":"Role labels updated"})
+}
+
+type transferOrganizationInput struct { UserID string ~json:"user_id" binding:"required"~ }
+
+// TransferOwner requires the new owner to already be a member and keeps the
+// previous owner as an organization admin, so the transfer cannot orphan data.
+func (h *OrganizationHandler) TransferOwner(c *gin.Context) {
+	orgID := c.Param("id")
+	if !h.isOwner(c, orgID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code":"FORBIDDEN", "message":"Only the current owner may transfer ownership"}})
+		return
+	}
+	var in transferOrganizationInput
+	if err := c.ShouldBindJSON(&in); err != nil || in.UserID == "" {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code":"VALIDATION_ERROR", "message":"A member user_id is required"}})
+		return
+	}
+	current, _ := c.Get("user_id")
+	currentID, _ := current.(string)
+	if currentID == in.UserID {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"code":"VALIDATION_ERROR", "message":"Choose another organization member"}})
+		return
+	}
+	err := h.DB.Transaction(func(tx *gorm.DB) error {
+		var member models.OrganizationMember
+		if err := tenant.Unscoped(tx).Where("organization_id = ? AND user_id = ?", orgID, in.UserID).First(&member).Error; err != nil { return gorm.ErrRecordNotFound }
+		transfer := tenant.Unscoped(tx).Model(&models.Organization{}).Where("id = ? AND owner_id = ? AND active = ?", orgID, currentID, true).Update("owner_id", in.UserID)
+		if transfer.Error != nil { return transfer.Error }
+		if transfer.RowsAffected == 0 { return gorm.ErrRecordNotFound }
+		if err := tenant.Unscoped(tx).Model(&models.OrganizationMember{}).Where("organization_id = ? AND user_id = ?", orgID, in.UserID).Update("role", "owner").Error; err != nil { return err }
+		return tenant.Unscoped(tx).Model(&models.OrganizationMember{}).Where("organization_id = ? AND user_id = ?", orgID, currentID).Update("role", "admin").Error
+	})
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code":"NOT_FOUND", "message":"Organization member not found"}})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code":"INTERNAL_ERROR", "message":"Could not transfer ownership"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message":"Organization ownership transferred"})
+}
+
+// Archive disables access without deleting tenant-owned records.
+func (h *OrganizationHandler) Archive(c *gin.Context) {
+	orgID := c.Param("id")
+	if !h.isOwner(c, orgID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code":"FORBIDDEN", "message":"Only the organization owner may archive it"}})
+		return
+	}
+	result := tenant.Unscoped(h.DB).Model(&models.Organization{}).Where("id = ? AND active = ?", orgID, true).Update("active", false)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code":"INTERNAL_ERROR", "message":"Could not archive organization"}})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code":"NOT_FOUND", "message":"Organization not found"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message":"Organization archived; its data has been retained"})
+}
+
+// Restore reactivates an archived organization without changing its data.
+func (h *OrganizationHandler) Restore(c *gin.Context) {
+	orgID := c.Param("id")
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(string)
+	result := tenant.Unscoped(h.DB).Model(&models.Organization{}).Where("id = ? AND owner_id = ? AND active = ?", orgID, uid, false).Update("active", true)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code":"INTERNAL_ERROR", "message":"Could not restore organization"}})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code":"NOT_FOUND", "message":"Archived organization not found"}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message":"Organization restored"})
 }
 
 // The permissions a per-organization role carries so a customer's own

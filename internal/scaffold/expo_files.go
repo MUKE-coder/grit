@@ -373,6 +373,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { queryClient } from "@/lib/query-client";
 import { ImportProgressBanner } from "@/components/ui/import-progress-banner";
+// grit:mobile-imports
 
 SplashScreen.preventAutoHideAsync();
 
@@ -412,6 +413,7 @@ function RootNav() {
         <Stack.Screen name="(tabs)" />
       </Stack>
       {/* grit:mobile-banner — persistent background-import progress */}
+      {/* grit:mobile-tenant-switcher */}
       {isAuthenticated ? <ImportProgressBanner /> : null}
     </>
   );
@@ -2501,6 +2503,7 @@ class ApiClient {
       "X-Grit-Client": "native",
       ...options.headers,
     };
+    // grit:mobile-active-organization
     if (token) {
       headers["Authorization"] = ` + "`" + `Bearer ${token}` + "`" + `;
     }

@@ -776,6 +776,7 @@ import Link from "next/link";
 import { Menu, X, Github, Shield } from "lucide-react";
 
 import { MegaMenu, MegaMenuMobile } from "@/components/mega-menu";
+// grit:nav:imports
 
 const DOCS_URL = "https://gritframework.dev/docs";
 // Where the admin panel is.
@@ -911,6 +912,7 @@ import { Menu, X, Github, Shield } from "lucide-react";
 
 import { MegaMenu, MegaMenuMobile } from "@/components/mega-menu";
 import { UserMenu } from "@/components/UserMenu";
+// grit:nav:imports
 
 const DOCS_URL = "https://gritframework.dev/docs";
 // Where the admin panel is.
