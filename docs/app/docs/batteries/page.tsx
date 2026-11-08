@@ -96,7 +96,7 @@ const BATTERIES: Battery[] = [
     href: '/docs/batteries/ai',
     icon: Sparkles,
     file: 'ai.go',
-    code: 'stream, err := ai.Stream(ctx, ai.Request{\n  Model:  "anthropic/claude-sonnet-4-6",\n  Prompt: "Summarise this ticket",\n})',
+    code: 'stream, err := ai.Stream(ctx, ai.Request{\n  Model:  "anthropic/claude-sonnet-5.5",\n  Prompt: "Summarise this ticket",\n})',
   },
   {
     title: 'Sentinel',
@@ -167,7 +167,7 @@ const FAQS = [
         Yes &mdash; that&apos;s the point of the wrappers. Storage speaks the S3 API, so MinIO in
         dev and Cloudflare R2 or AWS S3 in prod are a config change. Email is Resend by default but
         the mailer is an interface. AI routes through the Vercel AI Gateway, so switching from{' '}
-        <code>anthropic/claude-sonnet-4-6</code> to another model is a one-string edit.
+        <code>anthropic/claude-sonnet-5.5</code> to another model is a one-string edit.
       </>
     ),
   },

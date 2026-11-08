@@ -457,12 +457,12 @@ GORM_STUDIO_DISABLE_SQL=false           # Turn off the raw SQL editor`} />
             <div className="mb-10">
               <CodeBlock language="bash" filename=".env" code={`# AI — Vercel AI Gateway (one key, hundreds of models)
 AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`} />
               <div className="mt-4 space-y-3">
                 {[
                   { variable: 'AI_GATEWAY_API_KEY', default: '(your key)', desc: 'Your Vercel AI Gateway API key. Get one at vercel.com/ai-gateway. A single key gives you access to all providers (Anthropic, OpenAI, Google, and more). Leave empty if you do not use AI features.' },
-                  { variable: 'AI_GATEWAY_MODEL', default: 'anthropic/claude-sonnet-4-6', desc: 'The model to use, in provider/model format. Examples: anthropic/claude-sonnet-4-6, openai/gpt-5.4, google/gemini-2.5-pro.' },
+                  { variable: 'AI_GATEWAY_MODEL', default: 'anthropic/claude-sonnet-5.5', desc: 'The model to use, in provider/model format. Examples: anthropic/claude-sonnet-5.5, openai/gpt-5.4, google/gemini-2.5-pro.' },
                   { variable: 'AI_GATEWAY_URL', default: 'https://ai-gateway.vercel.sh/v1', desc: 'The Vercel AI Gateway endpoint URL. This is the same for all providers and models. You should not need to change this.' },
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
@@ -734,7 +734,7 @@ GORM_STUDIO_PASSWORD=studio
 
 # AI (Vercel AI Gateway)
 AI_GATEWAY_API_KEY=
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # Two-Factor Authentication (TOTP)

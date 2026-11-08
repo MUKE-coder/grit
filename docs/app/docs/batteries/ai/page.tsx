@@ -61,14 +61,14 @@ export default function AIPage() {
 
                 <CodeBlock language="bash" filename=".env" code={`# AI Configuration (Vercel AI Gateway)
 AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`} />
 
                 <div className="rounded-lg border border-border/20 bg-accent/20 p-3 mt-4">
                   <p className="text-sm text-muted-foreground/70">
                     <strong className="text-foreground/80">Model format:</strong>{" "}
                     Models use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">provider/model</code> format.
-                    Examples: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">anthropic/claude-sonnet-4-6</code>,{" "}
+                    Examples: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">anthropic/claude-sonnet-5.5</code>,{" "}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">openai/gpt-5.4</code>,{" "}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">google/gemini-2.5-pro</code>.
                     See the full list at{" "}
@@ -139,7 +139,7 @@ func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHa
                   The simplest way to use the AI service. Send a prompt, get a response.
                 </p>
 
-                <CodeBlock filename="complete-example.go" code={`aiService := ai.New(apiKey, "anthropic/claude-sonnet-4-6", "https://ai-gateway.vercel.sh/v1")
+                <CodeBlock filename="complete-example.go" code={`aiService := ai.New(apiKey, "anthropic/claude-sonnet-5.5", "https://ai-gateway.vercel.sh/v1")
 
 resp, err := aiService.Complete(ctx, ai.CompletionRequest{
     Prompt:    "Explain the Go concurrency model in 3 sentences.",
@@ -150,7 +150,7 @@ if err != nil {
 }
 
 fmt.Println(resp.Content)  // "Go uses goroutines..."
-fmt.Println(resp.Model)    // "anthropic/claude-sonnet-4-6"
+fmt.Println(resp.Model)    // "anthropic/claude-sonnet-5.5"
 fmt.Println(resp.Usage.InputTokens)  // 12
 fmt.Println(resp.Usage.OutputTokens) // 87`} />
 
@@ -217,7 +217,7 @@ fmt.Println(resp.Usage.OutputTokens) // 87`} />
 {
   "data": {
     "content": "To generate a resource in Grit, use the CLI...",
-    "model": "anthropic/claude-sonnet-4-6",
+    "model": "anthropic/claude-sonnet-5.5",
     "usage": {
       "input_tokens": 45,
       "output_tokens": 120
@@ -366,7 +366,7 @@ err := aiService.Stream(ctx, ai.CompletionRequest{
                   protocols behind a single OpenAI-compatible endpoint.
                 </p>
 
-                <CodeBlock filename=".env (Anthropic Claude)" code={`AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`} />
+                <CodeBlock filename=".env (Anthropic Claude)" code={`AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5`} />
 
                 <CodeBlock filename=".env (OpenAI)" code={`AI_GATEWAY_MODEL=openai/gpt-5.4`} />
 

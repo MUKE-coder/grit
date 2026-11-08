@@ -138,6 +138,11 @@ const checks: { name: string; level: string; what: string }[] = [
     level: 'warning',
     what: 'Next is a range rather than an exact version, so an install can adopt a release published hours ago. One such release threw on every page.',
   },
+  {
+    name: 'ai-model-id-unresolvable',
+    level: 'error',
+    what: 'AI_GATEWAY_MODEL is not a model the gateway can resolve, so every AI request answers with a model error. Grit shipped such a default itself: anthropic/claude-sonnet-4-6, where the catalogue spells the minor with a dot.',
+  },
 ]
 
 export default function DoctorPage() {
@@ -164,7 +169,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  26 checks over 0 resource(s)
+  27 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -183,7 +188,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  26 checks over 10 resource(s)
+  27 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment

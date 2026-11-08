@@ -1433,7 +1433,7 @@ Features:
 ` + "```bash" + `
 # .env configuration (Vercel AI Gateway)
 AI_GATEWAY_API_KEY=your-key        # One key for all models
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5  # provider/model format
 ` + "```" + `
 
 ## Configuration
@@ -1460,7 +1460,7 @@ SMTP_PORT=1025
 
 # AI (Vercel AI Gateway: one key, hundreds of models)
 AI_GATEWAY_API_KEY=your-key
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5
 ` + "```" + `
 
 ## Docker Services

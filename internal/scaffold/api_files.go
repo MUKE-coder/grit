@@ -1173,7 +1173,7 @@ func Load() (*Config, error) {
 		GORMStudioDisableSQL: getEnv("GORM_STUDIO_DISABLE_SQL", "false") == "true",
 
 		AIGatewayAPIKey: getEnv("AI_GATEWAY_API_KEY", ""),
-		AIGatewayModel:  getEnv("AI_GATEWAY_MODEL", "anthropic/claude-sonnet-4-6"),
+		AIGatewayModel:  getEnv("AI_GATEWAY_MODEL", "anthropic/claude-sonnet-5.5"),
 		AIGatewayURL:    getEnv("AI_GATEWAY_URL", "https://ai-gateway.vercel.sh/v1"),
 
 		TOTPIssuer: getEnv("TOTP_ISSUER", getEnv("APP_NAME", "grit-app")),

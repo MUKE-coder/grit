@@ -515,7 +515,7 @@ err := jobs.DispatchWithOptions("cleanup:tokens", nil, asynq.ProcessIn(1*time.Ho
 {`# AI Gateway configuration
 AI_GATEWAY_URL=https://gateway.ai.vercel.app/v1
 AI_GATEWAY_API_KEY=your-api-key-here
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5`}
           </CodeBlock>
 
           <CodeBlock filename="Testing the Complete Endpoint">

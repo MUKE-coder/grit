@@ -533,8 +533,8 @@ MODULE_TWOFACTOR=true
 # then refuses the request with "Free tier users do not have access to this
 # model", so if /api/v1/ai/complete returns AI_FORBIDDEN, this line is why:
 # either add credits or set a model your plan covers.
-AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_API_KEY=                           # Get from vercel.com/docs/ai-gateway/authentication-and-byok/api-keys
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # Two-Factor Authentication (TOTP)
@@ -766,8 +766,8 @@ GORM_STUDIO_READ_ONLY=false             # Refuse every write from Studio
 GORM_STUDIO_DISABLE_SQL=true            # The SQL editor bypasses every GORM guard
 
 # ─── AI (Vercel AI Gateway) ──────────────────────────
-AI_GATEWAY_API_KEY=your-gateway-key  # Get from vercel.com/ai-gateway
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_API_KEY=your-gateway-key  # Get from vercel.com/docs/ai-gateway/authentication-and-byok/api-keys
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # ─── TOTP (Two-Factor Authentication) ────────────────

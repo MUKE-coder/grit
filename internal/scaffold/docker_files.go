@@ -130,9 +130,9 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
+`+minioInitService+`  minio:
     `+minioImageNew+`    container_name: %s-minio
-    restart: unless-stopped
+`+minioRunAsUser+``+minioInitDependsOn+`    restart: unless-stopped
     ports:
       # Host 9002 / 9003 (not the MinIO-default 9000 / 9001) avoids
       # collisions with Portainer (9000) and a handful of monitoring
@@ -346,8 +346,8 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    `+minioImageNew+`    restart: unless-stopped
+`+minioInitService+`  minio:
+    `+minioImageNew+``+minioRunAsUser+``+minioInitDependsOn+`    restart: unless-stopped
     # Only its root credentials, with no default. Presigned uploads put MinIO
     # behind the public proxy, where minioadmin/minioadmin is the whole bucket.
     environment:

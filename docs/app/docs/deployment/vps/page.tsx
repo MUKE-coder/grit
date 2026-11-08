@@ -377,7 +377,7 @@ MAIL_FROM=noreply@yourdomain.com
 
 # AI (optional — Vercel AI Gateway)
 AI_GATEWAY_API_KEY=your-gateway-key
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # Disable GORM Studio in production

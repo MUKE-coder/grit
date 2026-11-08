@@ -91,6 +91,64 @@ const (
 	minioImageOldQuay = "image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z\n"
 	minioImageNew     = "image: alpine/minio:RELEASE.2025-10-15T17-29-55Z\n"
 
+	// The user MinIO runs as, and the owner its data directory needs. One pair
+	// in one place: the image ships /data owned by root while its own process
+	// is uid 100, Docker copies that ownership onto a fresh named volume, and
+	// MinIO then cannot write to its own backend:
+	//
+	//	FATAL Unable to initialize backend: file access denied
+	//
+	// So `docker compose up` failed for anybody who had not already been
+	// running MinIO before v3.416.0 pinned this image: an existing volume was
+	// made by the old root-running image and kept working, which is why this
+	// only ever broke a project starting clean. Reported as grit#185.
+	//
+	// `user:` is written out rather than left to the image's default so the two
+	// halves agree by construction. An image that changes its uid would
+	// otherwise take the chown out from under itself, silently, on a fresh
+	// volume only. minioRunAsUser and the uid in minioInitService are checked
+	// against each other by TestMinioInitClaimsTheUserMinioRunsAs.
+	minioRunAsUID  = "100"
+	minioRunAsGID  = "101"
+	minioRunAsUser = "    user: \"" + minioRunAsUID + ":" + minioRunAsGID + "\"\n"
+
+	// Idempotent, and O(1) on a volume that is already right: -maxdepth 0 tests
+	// the directory itself, so the recursive chown runs only when its owner
+	// says it has to and a production bucket is not walked on every deploy.
+	// Both cases exit 0, which is what depends_on waits for.
+	//
+	// find rather than a shell test on purpose. `stat -c %u` would be the
+	// obvious way to write this, but both compose files are fmt.Sprintf format
+	// strings and %u in one renders as %!u(MISSING); escaping it to %%u would
+	// then be wrong for the upgrade repair, which splices this same text in
+	// directly. This form carries no % and no $, so it is correct in both
+	// places. busybox find spells it -user, not -uid.
+	minioInitService = "  # Claims the data volume before MinIO starts.\n" +
+		"  #\n" +
+		"  # The MinIO image runs as uid 100 but ships /data owned by root, and Docker\n" +
+		"  # copies that ownership onto a fresh named volume, so MinIO cannot write to\n" +
+		"  # its own backend and exits with \"Unable to initialize backend: file access\n" +
+		"  # denied\". This hands the directory over first.\n" +
+		"  #\n" +
+		"  # It runs once, exits, and does nothing to a volume that is already right.\n" +
+		"  # The uid here and the `user:` on minio below are one pair: change them\n" +
+		"  # together, or MinIO loses the directory again.\n" +
+		"  minio-init:\n" +
+		"    image: alpine:3\n" +
+		"    user: \"0:0\"\n" +
+		"    command: [\"find\", \"/data\", \"-maxdepth\", \"0\", \"!\", \"-user\", \"" +
+		minioRunAsUID + "\", \"-exec\", \"chown\", \"-R\", \"" +
+		minioRunAsUID + ":" + minioRunAsGID + "\", \"{}\", \";\"]\n" +
+		"    volumes:\n" +
+		"      - minio-data:/data\n" +
+		"\n"
+
+	// Nothing starts MinIO until that has exited 0, so a failed chown surfaces
+	// as the init service failing rather than as MinIO's stack trace.
+	minioInitDependsOn = "    depends_on:\n" +
+		"      minio-init:\n" +
+		"        condition: service_completed_successfully\n"
+
 	composeDBProviderAnchor = "      APP_ENV: production\n"
 	composeDBProvider       = "      APP_ENV: production\n" +
 		"      # Postgres, whatever DB_PROVIDER a development .env says. SQLite here lives\n" +
@@ -263,6 +321,37 @@ func repairDeployHardening(root string, opts Options) error {
 	return writeAdminEdgeGuard(root, opts)
 }
 
+// addMinioInit gives the MinIO service an init container that owns its volume.
+//
+// The reason is in minioRunAsUID: a fresh named volume arrives root-owned and
+// MinIO, which is not root, cannot initialise its backend. This is the half
+// that reaches projects that already exist, and it is the half that matters,
+// because a project with a MinIO volume already on disk was never broken.
+//
+// Anchored on `restart: unless-stopped` because both compose templates put it
+// directly after these keys, which makes a repaired file byte-for-byte the
+// generated one. TestRepairedComposeIsTheGeneratedCompose holds that.
+func addMinioInit(src string) (string, string, string) {
+	start, end, ok := serviceBlock(src, "minio")
+	if !ok || strings.Contains(src, "\n  minio-init:\n") {
+		return src, "", ""
+	}
+	block := src[start:end]
+	if strings.Contains(block, "user:") {
+		return src, "", ""
+	}
+	const restart = "    restart: unless-stopped\n"
+	if !strings.Contains(block, restart) {
+		return src, "", "the minio service is not the one Grit wrote: a fresh named volume arrives owned by root and MinIO does not run as root, so give it `user: \"" +
+			minioRunAsUID + ":" + minioRunAsGID + "\"` and a one-shot service that chowns /data first, or it will fail with \"Unable to initialize backend: file access denied\""
+	}
+	block = strings.Replace(block, restart, minioRunAsUser+minioInitDependsOn+restart, 1)
+	// block opens with the newline before "  minio:", which the init service
+	// now needs instead.
+	out := src[:start] + "\n" + minioInitService + strings.TrimPrefix(block, "\n") + src[end:]
+	return out, "MinIO claims its data volume before it starts, so a stack whose volume does not exist yet comes up instead of failing with \"Unable to initialize backend: file access denied\"", ""
+}
+
 func repairDockerIgnoreSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "**/node_modules") {
 		return src, nil, nil
@@ -308,6 +397,13 @@ func repairComposeHardeningSource(src string) (string, []string, []string) {
 	}
 	if out != src {
 		changes = append(changes, "pgbouncer and MinIO run pinned image versions, and MinIO comes from an image that still pulls without a login")
+	}
+	out, minioChange, minioWarning := addMinioInit(out)
+	if minioChange != "" {
+		changes = append(changes, minioChange)
+	}
+	if minioWarning != "" {
+		warnings = append(warnings, minioWarning)
 	}
 	if start, end, ok := serviceBlock(out, "api"); ok && strings.Contains(out[start:end], composeRedisURLOld) {
 		block := out[start:end]

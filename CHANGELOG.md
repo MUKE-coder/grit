@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.487.0 - November 8, 2026
+
+### Two defaults that were wrong in a way nobody could see
+
+Both found by the same app and reported as grit#185 and grit#186. Both are values Grit itself shipped, which is why they lasted: a project that follows the instructions inherits the mistake, and the project is not where the fix belongs.
+
+#### MinIO could not start on a volume it had not already made
+
+```text
+FATAL Unable to initialize backend: file access denied
+```
+
+The image runs as uid 100. It also ships `/data` owned by root, and Docker copies that ownership onto a fresh named volume, so MinIO cannot write to its own backend and restarts forever.
+
+What hid it is that an *existing* volume was fine. The volumes on this machine were made by the old root-running image, before v3.416.0 moved to this one, and they kept working. So the people who hit it were the people starting clean, which is to say anybody new, and nobody who could already reproduce it.
+
+A one-shot `minio-init` service now claims the directory before MinIO starts, in both compose files. It is conditional: the recursive chown runs only when the directory's owner says it must, so a production bucket is not walked on every deploy. Nothing starts MinIO until it has exited 0, so a chown that fails says so itself instead of surfacing as MinIO's stack trace.
+
+Verified by running it: a fresh volume on the shipped compose file restarts in a loop with six of those errors, and the same project after this change answers 200 on MinIO's health endpoint with `/data` owned by the user the process runs as. `grit upgrade` repairs an existing project and a second run finds nothing to do.
+
+Two small decisions worth writing down. The uid is spelled out on the `minio` service rather than left to the image, so the chown and the process it is for cannot drift apart when an image changes its default: that would break fresh volumes only, and silently. And the init command uses `find` rather than `stat -c %u`, because both compose files are format strings where a stray `%` renders as `%!u(MISSING)`, while escaping it would be wrong for the upgrade repair, which splices the same text in directly.
+
+#### The default AI model was not a model
+
+`AI_GATEWAY_MODEL` defaulted to `anthropic/claude-sonnet-4-6`. There is no such model. The gateway spells every Anthropic minor with a dot, and the catalogue at `ai-gateway.vercel.sh/v1/models` lists 498 models with no dashed minor among them. So the AI endpoints answered with a model error for everybody who read the `.env.example` and left it alone.
+
+The default is now `anthropic/claude-sonnet-5.5`, which is both newer and cheaper than the dotted form of what was there: $2 and $10 per million tokens against $3 and $15, on the same one million token context. Thirty-six places said the old id, across the templates, the docs, the course and the three checked-in example apps.
+
+And a 27th `grit doctor` check, `ai-model-id-unresolvable`, because `grit upgrade` does not rewrite values in your `.env` and should not. The issue asked for the id to be resolved against the live catalogue; doctor reads files and compiled-in floors and never the network, which is what makes it usable in CI and on a machine with no credentials. So it checks the shape instead, which is enough for the mistake that actually happens: a dashed Anthropic minor, or an id with no provider in front of it. It is an error when a gateway key is set and a warning when there is none, and it deliberately says nothing about the model name itself, because a catalogue that grows every month cannot be compiled into a binary and a check that calls a real new model wrong is worse than no check.
+
+A test reads the scaffold's own default and runs the new check over it. Shipping a default that Grit's own checker rejects is exactly what this was.
+
+
 ## v3.486.0 - November 8, 2026
 
 ### Invitations, and an organization that belongs to its members

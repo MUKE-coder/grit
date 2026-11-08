@@ -355,7 +355,7 @@ result, err := ai.Complete(ctx, ai.CompletionRequest{Prompt: "Summarize..."})
 ai.Stream(ctx, req, func(chunk string) { /* SSE */ })
 ```
 
-One key, hundreds of models. Config: `AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL` (e.g. `anthropic/claude-sonnet-4-6`).
+One key, hundreds of models. Config: `AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL` (e.g. `anthropic/claude-sonnet-5.5`).
 
 ### Security (Sentinel)
 

@@ -98,6 +98,10 @@ var checks = []struct {
 	{"app-url-port-mismatch", checkAppURLPort},
 	{"api-address-mismatch", checkAPIAddressAgrees},
 	{"next-not-pinned", checkNextPinned},
+	// A model id the gateway cannot resolve. Grit shipped one as its own
+	// default for months (grit#186), so the projects that have it are the
+	// ones that trusted the .env.example.
+	{"ai-model-id-unresolvable", checkAIModelID},
 }
 
 // Run audits the project at root.

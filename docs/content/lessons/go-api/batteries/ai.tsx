@@ -27,7 +27,7 @@ export default function Lesson() {
         language="dotenv"
         filename=".env"
         code={`AI_GATEWAY_API_KEY=vck_...               # from vercel.com/ai-gateway
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`}
       />
       <p>

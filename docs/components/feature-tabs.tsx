@@ -84,7 +84,7 @@ const TABS: Tab[] = [
     // Vercel AI Gateway.
     stream, err := h.AI.Stream(c.Request.Context(),
         ai.StreamOptions{
-            Model:    "anthropic/claude-sonnet-4-6",
+            Model:    "anthropic/claude-sonnet-5.5",
             Messages: req.Messages,
         })
     if err != nil {

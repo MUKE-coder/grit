@@ -738,7 +738,7 @@ MAIL_FROM=noreply@localhost
 
 # AI (Vercel AI Gateway)
 AI_GATEWAY_API_KEY=
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5`}
           </CodeBlock>
 
           <Definition term="Environment Variables">

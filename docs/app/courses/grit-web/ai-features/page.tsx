@@ -130,7 +130,7 @@ export default function AIFeaturesCourse() {
           </Definition>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Models use a <Code>provider/model</Code> format. For example, <Code>anthropic/claude-sonnet-4-6</Code> means
+            Models use a <Code>provider/model</Code> format. For example, <Code>anthropic/claude-sonnet-5.5</Code> means
             {'"'}use the Claude Sonnet model from Anthropic.{'"'} The gateway reads the provider prefix
             and routes the request accordingly.
           </p>
@@ -177,7 +177,7 @@ export default function AIFeaturesCourse() {
 
           <CodeBlock filename=".env">
 {`AI_GATEWAY_API_KEY=your-key        # Get from vercel.com/ai-gateway
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`}
           </CodeBlock>
 
@@ -199,7 +199,7 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`}
               <span className="text-accent">•</span>
               <div>
                 <strong className="text-foreground">AI_GATEWAY_MODEL</strong> — The model to use, in <Code>provider/model-name</Code> format.
-                For example, <Code>anthropic/claude-sonnet-4-6</Code> routes to Anthropic{"'"}s Claude Sonnet model.
+                For example, <Code>anthropic/claude-sonnet-5.5</Code> routes to Anthropic{"'"}s Claude Sonnet model.
                 Change this one variable to switch to any other model — no code changes required.
               </div>
             </li>
@@ -302,7 +302,7 @@ func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHa
 {`{
   "data": {
     "content": "An interface in Go defines a set of method signatures that a type must implement to satisfy the interface. Unlike other languages, Go interfaces are satisfied implicitly — there is no 'implements' keyword.",
-    "model": "anthropic/claude-sonnet-4-6",
+    "model": "anthropic/claude-sonnet-5.5",
     "usage": {
       "input_tokens": 12,
       "output_tokens": 45
@@ -472,7 +472,7 @@ data: [DONE]`}
 
           <CodeBlock filename=".env — Model Options">
 {`# Claude (Anthropic) — excellent for reasoning and code
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-5.5
 
 # GPT (OpenAI) — widely used, great general-purpose model
 AI_GATEWAY_MODEL=openai/gpt-5.4
