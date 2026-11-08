@@ -63,6 +63,13 @@ var publicFieldTypeExpectations = map[FieldType]struct {
 	FieldBelongsTo:  {false, "", "a relation publishes a whole record nobody vetted"},
 	FieldManyToMany: {false, "", "a relation publishes a whole record nobody vetted"},
 	FieldOneToOne:   {false, "", "a relation publishes a whole record nobody vetted"},
+
+	// An embedding is 1536 floats a row, which is a large payload to hand an
+	// anonymous caller, and it is derived from the row's text closely enough
+	// that handing it out hands out something about the text. It is also not a
+	// value any public reader has a use for: what they want is the result of a
+	// search over it, which is an endpoint somebody writes deliberately.
+	FieldVector: {false, "", "1536 floats a row, derived from the text, and no use to a public reader"},
 }
 
 // Every field type declared in field.go appears in the table above.

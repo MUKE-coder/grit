@@ -2,8 +2,10 @@ package generate
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
+	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // FieldType represents a supported Grit field type.
@@ -63,6 +65,16 @@ const (
 	FieldRating  FieldType = "rating"
 	FieldTime    FieldType = "time"
 	FieldJSON    FieldType = "json"
+
+	// An embedding, for retrieval. Declared with its dimension, because the
+	// dimension is part of the column type and not a property of the value:
+	// `embedding:vector[1536]`.
+	//
+	// Postgres with pgvector gets a real `vector(n)` column, its distance
+	// operators and an index. Everywhere else it is text that round-trips, so
+	// a project developing on SQLite stores and reads the same values and
+	// loses only the operators. See internal/vectors.
+	FieldVector FieldType = "vector"
 )
 
 // DefaultRatingMax is the number of stars a rating field has when the
@@ -515,6 +527,11 @@ func (f Field) GoType() string {
 	case FieldJSON:
 		// jsonb on Postgres, JSON on MySQL and SQLite, which stores it as text.
 		return "datatypes.JSON"
+	case FieldVector:
+		// The column type is decided by the type itself, per database: see
+		// vectors.GormDBDataType. The dimension travels in the struct tag,
+		// because a length cannot be part of a Go slice type.
+		return "vectors.Vector"
 	default:
 		return "string"
 	}
@@ -675,6 +692,8 @@ func (f Field) TSType() string {
 		return "number"
 	case FieldJSON:
 		return "unknown"
+	case FieldVector:
+		return "number[]"
 	default:
 		// email, url, domain, tel, country, color and time are strings.
 		return "string"
@@ -738,6 +757,12 @@ func (f Field) ZodType() string {
 		}
 	case FieldFiles:
 		base = "z.array(FileRefSchema).default([])"
+	case FieldVector:
+		// A plain array of numbers. The dimension is not checked here: the
+		// column enforces it, and a client that sends the wrong width gets a
+		// database error naming the real constraint rather than a Zod message
+		// repeating a number this file would have to keep in step.
+		base = "z.array(z.number())"
 	default:
 		base = "z.string()"
 	}
@@ -953,7 +978,40 @@ func (f Field) IsSearchable() bool {
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
 	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "money", "slug", "belongs_to", "one_to_one", "many_to_many", "string_array", "file", "files",
-		"email", "url", "domain", "tel", "country", "color", "percent", "rating", "time", "json"}
+		"email", "url", "domain", "tel", "country", "color", "percent", "rating", "time", "json",
+		"vector"}
+}
+
+// IsVector reports an embedding column.
+func (f Field) IsVector() bool { return FieldType(f.Type) == FieldVector }
+
+// VectorDim is the declared number of dimensions, or 0 when the declaration
+// left it out, which pgvector allows and no index does.
+func (f Field) VectorDim() int {
+	if !f.IsVector() {
+		return 0
+	}
+	return f.Max
+}
+
+// VectorTag is the value of the model's vector:"..." struct tag, which is the
+// only place the dimension can live: Go has no way to put a length in a slice
+// type, and internal/vectors reads it to decide the column type.
+func (f Field) VectorTag() string {
+	if dim := f.VectorDim(); dim > 0 {
+		return strconv.Itoa(dim)
+	}
+	return ""
+}
+
+// NeedsVectorsImport reports whether the model needs internal/vectors.
+func NeedsVectorsImport(fields []Field) bool {
+	for _, f := range fields {
+		if f.IsVector() {
+			return true
+		}
+	}
+	return false
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.

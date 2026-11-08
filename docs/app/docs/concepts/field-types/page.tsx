@@ -49,6 +49,7 @@ const ROWS: Row[] = [
   { type: 'rating', syntax: 'score:rating[10]', go: 'int', ts: 'number', zod: 'ratingSchema(10)' },
   { type: 'time', syntax: 'opens_at:time', go: 'string (HH:MM)', ts: 'string', zod: 'TimeSchema' },
   { type: 'json', syntax: 'settings:json', go: 'datatypes.JSON', ts: 'unknown', zod: 'JsonValueSchema' },
+  { type: 'vector', syntax: 'embedding:vector[1536]', go: 'vectors.Vector', ts: 'number[]', zod: 'z.array(z.number())' },
 ]
 
 // What each type becomes in the database, and the thing about it that is not
@@ -82,6 +83,7 @@ const COLUMNS: { type: string; tag: string; note: string }[] = [
   { type: 'rating', tag: '(none)', note: 'An int bounded by the argument, enforced in Zod rather than in the column.' },
   { type: 'time', tag: 'size:5', note: 'HH:MM. A clock time with no date, for opening hours and the like.' },
   { type: 'json', tag: 'datatypes.JSON', note: 'Anything. Nothing validates its shape, which is the point and the risk.' },
+  { type: 'vector', tag: 'vector:"1536"', note: 'vector(1536) on Postgres with pgvector, text everywhere else. The tag is not a gorm setting: internal/vectors reads it to decide the column type, because Go cannot put a length in a slice type.' },
 ]
 
 // Modifiers that change the tags rather than the type.
@@ -121,6 +123,7 @@ const FORMATTED: { type: string; stored: string; refused: string }[] = [
   { type: 'rating', stored: 'Whole stars; 0 means not rated', refused: 'A fraction, or more stars than the field has' },
   { type: 'time', stored: 'HH:MM on a 24-hour clock; seconds are dropped', refused: 'A time that does not exist, such as 25:00' },
   { type: 'json', stored: 'jsonb on Postgres, JSON on MySQL, text on SQLite', refused: 'Text that does not parse as JSON' },
+  { type: 'vector', stored: 'vector(n) on Postgres with pgvector, text elsewhere', refused: 'A value that is not a list of numbers' },
 ]
 
 // Default admin rendering per type (form control + table column format).
@@ -152,6 +155,7 @@ const RENDER: { type: string; form: string; table: string }[] = [
   { type: 'rating', form: 'Stars (a keyboard radio group)', table: 'rating (stars)' },
   { type: 'time', form: 'Time input', table: 'time (2:30 PM in the viewer\'s clock)' },
   { type: 'json', form: 'JSON editor that checks as you type', table: 'json (collapsible)' },
+  { type: 'vector', form: 'Nothing. An embedding is computed, not typed', table: 'Nothing. 1536 numbers in a cell is not a column' },
 ]
 
 export default function FieldTypesPage() {
@@ -544,6 +548,106 @@ export default function FieldTypesPage() {
                   for that one. The Expo form uses the phone keyboard and checks E.164 for tel,
                   and the matching keyboard for email, url and domain; the desktop forms use the
                   browser&apos;s own email, url, tel, time and colour inputs.
+                </p>
+              </div>
+
+              {/* Vector */}
+              <div className="mb-12" id="vector">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Embeddings, and the vector type
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The AI battery produces embeddings. <code>vector</code> is where they go:
+                </p>
+                <CodeBlock
+                  terminal
+                  code={`grit generate resource Document --fields "title:string,body:text,embedding:vector[1536]"`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  That writes a <code>vector(1536)</code> column on Postgres with pgvector, a
+                  <code>vectors.Vector</code> field on the model, the shared{' '}
+                  <code>number[]</code> type, and a checked-in migration pair holding the hnsw
+                  index. <code>grit migrate</code> creates the extension before it migrates, so
+                  there is nothing to run by hand.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Searching is an ordering, and it goes through <code>Clauses</code> rather than{' '}
+                  <code>Order</code>:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`var out []models.Document
+db.Model(&models.Document{}).
+	Clauses(vectors.Nearest("embedding", query)).
+	Limit(10).
+	Find(&out)`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  <code>Order()</code> would compile and do nothing. GORM&apos;s{' '}
+                  <code>Order</code> switches on its argument&apos;s type and handles a string and
+                  a <code>clause.OrderByColumn</code>; anything else falls through, so the query
+                  runs with no <code>ORDER BY</code> and returns rows in scan order, which looks
+                  like a working search until the table grows.{' '}
+                  <code>Nearest</code>, <code>NearestL2</code> and{' '}
+                  <code>NearestByInnerProduct</code> are the three distances;{' '}
+                  <code>CosineDistance</code> and its pair are the raw expressions, for a{' '}
+                  <code>Select</code> that returns the distance or a <code>Where</code> that puts a
+                  ceiling on it.
+                </p>
+
+                <h3 className="text-lg font-semibold tracking-tight mt-6 mb-3">
+                  Your Postgres needs pgvector
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The stock image does not carry it, and the failure is a{' '}
+                  <code>CREATE EXTENSION</code> error rather than anything that names the image.
+                  In <code>docker-compose.yml</code>:
+                </p>
+                <CodeBlock
+                  language="yaml"
+                  code={`  postgres:
+    image: pgvector/pgvector:pg16   # not postgres:16-alpine`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  The extension is created before AutoMigrate, and only when some model actually
+                  has a vector column. It has to be before: AutoMigrate is what creates the
+                  column, and it cannot run <code>CREATE EXTENSION</code> itself. A SQL migration
+                  pair is the wrong place for it, because the pairs run{' '}
+                  <em>after</em> AutoMigrate and the migration would already have failed with{' '}
+                  <code>type &quot;vector&quot; does not exist</code>. The index is the opposite
+                  case and is a pair, because the table has to exist first.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  On SQLite and MySQL the column is text and the values round-trip, so a project
+                  developing on SQLite stores and reads the same embeddings. What it loses is the
+                  distance operators and the index, which are what you move to Postgres for.
+                </p>
+
+                <h3 className="text-lg font-semibold tracking-tight mt-6 mb-3">
+                  The dimension is a schema decision
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  It is part of the column type, which is why it is in the declaration and has no
+                  default. Changing it later is a migration <em>and</em> re-embedding every row,
+                  so it is cheap to get right now and expensive afterwards. The number follows the
+                  embedding model: 1536 for OpenAI&apos;s text-embedding-3-small, 3072 for its
+                  large, 768 for many open models. Picking the model is picking the number.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Past 2000 dimensions pgvector has no index: the column is still valid and the
+                  search still works by reading every row, which is exact and gets slower as the
+                  table grows. The generated migration says so instead of writing a statement that
+                  would fail. OpenAI&apos;s API takes a <code>dimensions</code> parameter to
+                  shorten a larger model&apos;s output, which is usually a better trade than the
+                  scan.
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  An embedding is not in the admin form or the list table, and not published by{' '}
+                  <code>--public</code>. It is computed from the row&apos;s own text rather than
+                  typed, 1536 numbers in a table cell is not a column anybody can read, and
+                  handing the vector to an anonymous caller hands out something about the text it
+                  came from. The column is in the API and the shared type, where the code that
+                  writes it and the query that reads it both live.
                 </p>
               </div>
 

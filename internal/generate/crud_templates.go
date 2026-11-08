@@ -486,6 +486,10 @@ type %sLinks struct {
 	if strings.Contains(p.createFields+p.updateFields, "files.") {
 		p.handlerImports += "\n\t\"" + g.Module + "/internal/files\""
 	}
+	// And the same for an embedding: the request structs name vectors.Vector.
+	if strings.Contains(p.createFields+p.updateFields, "vectors.") {
+		p.handlerImports += "\n\t\"" + g.Module + "/internal/vectors\""
+	}
 	if p.hasFiles {
 		p.handlerImports += "\n\t\"" + g.Module + "/internal/storage\""
 	}

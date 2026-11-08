@@ -700,6 +700,11 @@ func goTypeToTS(goType string) string {
 		return "string"
 	case "*jsontime.DateTime", "*jsontime.Date":
 		return "string | null"
+	// An embedding is a list of numbers to everyone but the database. Without
+	// this it fell through to unknown, and `grit sync` would have rewritten
+	// the type the generator had just written.
+	case "vectors.Vector":
+		return "number[]"
 	default:
 		if strings.Contains(goType, "JSONSlice[string]") {
 			return "string[]"
@@ -778,6 +783,10 @@ func goTypeToZod(goType, gormTag string) string {
 		return "z.string()"
 	case "*jsontime.DateTime", "*jsontime.Date":
 		return "z.string().nullable()"
+	// An embedding. The column enforces the width, so the schema says only
+	// what it is: a list of numbers.
+	case "vectors.Vector":
+		return "z.array(z.number())"
 	default:
 		if strings.Contains(goType, "JSONSlice[string]") {
 			return "z.array(z.string()).optional()"

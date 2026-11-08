@@ -114,7 +114,11 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		t := FieldType(f.Type)
 		if t == FieldSlug || t == FieldFile || t == FieldFiles ||
 			t == FieldManyToMany || t == FieldStringArray ||
-			t == FieldDatetime || t == FieldDate {
+			t == FieldDatetime || t == FieldDate ||
+			// An embedding is not something anybody types into a spreadsheet.
+			// It is 1536 numbers produced by a model from the row's own text,
+			// so it is computed after the import rather than carried by it.
+			t == FieldVector {
 			continue
 		}
 

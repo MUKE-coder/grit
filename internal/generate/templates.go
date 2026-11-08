@@ -177,6 +177,10 @@ func (g *Generator) writeGoModel(names Names) error {
 	if g.Definition.TenantOwned {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/tenant\"", g.Module))
 	}
+	// vectors carries an embedding column, and sorts last of these.
+	if NeedsVectorsImport(fields) {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/vectors\"", g.Module))
+	}
 	projImports = g.appendOnlyImports(projImports)
 	if len(projImports) > 0 {
 		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n\n\t%s\n)", stdImports, extImports, strings.Join(projImports, "\n\t"))
@@ -436,6 +440,12 @@ func (g *Generator) writeGoModel(names Names) error {
 			if docs := f.DocsTag(); docs != "" {
 				tags += fmt.Sprintf(` docs:"%s"`, docs)
 			}
+		}
+		// The dimension of an embedding. Not a gorm setting: internal/vectors
+		// reads it in GormDBDataType to decide between vector(n) and text, so
+		// the column type follows the database rather than the declaration.
+		if dim := f.VectorTag(); dim != "" {
+			tags += fmt.Sprintf(` vector:"%s"`, dim)
 		}
 		if f.IsSearchable() && !f.IsRelationship() {
 			// The same columns List searches. grit migrate gives them a trigram
@@ -1235,6 +1245,14 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	for _, f := range g.Definition.Fields {
 		colName := toSnakeCase(f.Name)
 
+		// An embedding is 1536 numbers. In a table cell it is noise that
+		// pushes every readable column off the screen, and there is nothing an
+		// operator can tell from looking at it. It stays in the API and in the
+		// shared type; it is not a column (grit#191).
+		if f.IsVector() {
+			continue
+		}
+
 		// Is this field part of a pack? Either emit the pack (when this
 		// field is the pack's primary key) or skip silently.
 		if pack, ok := packs[colName]; ok {
@@ -1311,6 +1329,12 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		// Auto-number fields are filled by the server in BeforeCreate — keep them
 		// out of the create/edit form entirely (they still show in the table/detail).
 		if f.IsAuto() {
+			continue
+		}
+		// An embedding is produced by a model from the row's own text, not
+		// typed. A text input asking for 1536 comma-separated floats is a
+		// field nobody can fill in correctly (grit#191).
+		if f.IsVector() {
 			continue
 		}
 

@@ -23,6 +23,87 @@ Also worth knowing:
 ---
 
 
+## v3.491.0 - November 8, 2026
+
+### Embeddings have somewhere to live
+
+grit#191. The AI battery produced embeddings and there was no way to declare where one goes, so the retrieval half of an AI feature was four hand-built pieces in every project that tried it: the extension, the column, the index, and a Go type implementing `sql.Scanner` and `driver.Valuer`. Each of them slightly different each time.
+
+```bash
+grit generate resource Document --fields "title:string,body:text,embedding:vector[1536]"
+```
+
+That writes a real `vector(1536)` column, the Go type, the shared `number[]`, and a checked-in migration pair holding the hnsw index with `vector_cosine_ops` on it. `grit migrate` creates the extension before it migrates, so there is nothing to run by hand.
+
+#### Three orderings that had to be right
+
+The extension has to be created **before** AutoMigrate, because AutoMigrate is what creates the column and cannot run `CREATE EXTENSION` itself. A SQL migration pair is the wrong place for it: the pairs run after AutoMigrate, so the migration would already have failed with `type "vector" does not exist`. That is why the reporter needed two pairs and still had to write the column by hand.
+
+The index is the opposite case and is a pair, because the table has to exist first. And the extension is created only when some model actually has a vector column, found by reflection over the model registry rather than from a list somebody maintains: running it unconditionally would fail every Postgres project whose server has no pgvector, which is most of them.
+
+#### The bug that looked like a working feature
+
+The first version of the search helper was used like this, and it is wrong:
+
+```go
+db.Model(&models.Document{}).
+	Order(vectors.CosineDistance("embedding", query))   // does nothing
+```
+
+GORM's `Order()` switches on its argument's type and handles a string and a `clause.OrderByColumn`. An expression falls through and nothing is added, so the query ran with no `ORDER BY` at all and returned rows in scan order, which for three freshly inserted rows is insertion order, and read exactly like a working nearest-neighbour search. It was caught by printing the SQL GORM actually builds, not by reading the result.
+
+The ordering goes through `Clauses` now, and the test for it reads the statement GORM would send rather than the string the helper returns:
+
+```go
+db.Model(&models.Document{}).
+	Clauses(vectors.Nearest("embedding", query)).
+	Limit(10).
+	Find(&out)
+```
+
+The same shape bit the column-name guard. A rejected name produced `ORDER BY (SELECT 1/0)` on the theory that it could not run; the planner drops an ordering by a constant, so the query succeeded and ordered by nothing. It is a call to a function no database has, which must resolve at parse time:
+
+```text
+ERROR: function grit_vectors_rejected_column_name() does not exist (SQLSTATE 42883)
+```
+
+#### Verified on a real pgvector
+
+Against `pgvector/pgvector:pg16`, not by reading:
+
+```text
+embedding            | vector(1536)
+"idx_documents_embedding" hnsw (embedding vector_cosine_ops)
+vector|0.8.7
+
+three 1536-dimension embeddings written through the API and read back
+  round trip exact: True
+ordered by doc c's own vector:  doc c, doc a, doc b
+SELECT ... ORDER BY embedding <=> $1 LIMIT $2
+```
+
+Ordering by a different document's own vector puts that document first, which insertion order would not, and the injected column name errors while the table survives.
+
+#### Where an embedding is not
+
+Not in the admin form or the list table, not in the CSV importer, and not published by `--public`. It is computed from the row's own text rather than typed, 1536 numbers in a table cell is not a column anybody reads, and handing the vector to an anonymous caller hands out something about the text it came from. The importer one was a compile error, found the only way these are found: by generating a resource with the type and building it.
+
+The dimension has no default. It is part of the column type, so changing it later is a migration and re-embedding every row: 1536 is text-embedding-3-small, 3072 its large, 768 many open models. Past 2000 pgvector has no index, and the generated pair says so rather than writing a statement that fails.
+
+### And the CI failure in v3.490.0
+
+Making SSO a module that defaults off broke a test in every generated project:
+
+```text
+modules_test.go:28: module "sso" defaulted to OFF; upgrading an app must not disable features
+modules_test.go:76: Map has 12 entries; keep it in step with the ModuleFlags fields
+```
+
+That test is right to exist and right to be strict, so it names its exception now rather than losing the rule, and says why the exception is safe: `grit upgrade` writes `MODULE_SSO=true` into an existing project, so no app loses anything either.
+
+Two delivery problems came out of the same corner. `writeSecurityFiles` writes that test and its only callers are the two new-project paths, so the fix would have reached a new project and nothing else; the repair that already existed for the file carries it instead. And `internal/vectors` had the same gap in the other direction: it was in both new-project paths and not in the upgrade, while `cmd/migrate/main.go`, which the upgrade does rewrite, imports it. Every existing project would have upgraded into a main.go importing a package that was not there. Caught by upgrading a real project and running `go build`, which is the only thing that sees it.
+
+
 ## v3.490.0 - November 8, 2026
 
 ### A new project no longer fails its own security gate

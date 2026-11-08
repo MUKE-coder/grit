@@ -406,6 +406,19 @@ func (g *Generator) Run() error {
 	}
 	fmt.Printf("  ✓ %sinternal/policies/%s.go\n", apiPrefix, names.Snake)
 
+	// The index an embedding needs, as a checked-in pair. Postgres only, and
+	// only for a resource that has one: see internal/generate/vector_index.go.
+	for _, f := range g.Definition.Fields {
+		name, err := g.writeVectorIndexMigration(names, f)
+		if err != nil {
+			return err
+		}
+		if name != "" {
+			fmt.Printf("  ✓ %smigrations/%s.{up,down}.sql\n", apiPrefix, name)
+			fmt.Printf("      the hnsw index for %s. Run grit migrate to build it\n", toSnakeCase(f.Name))
+		}
+	}
+
 	if err := g.ensureFactoryCounter(); err != nil {
 		return err
 	}
@@ -612,6 +625,23 @@ func (g *Generator) Run() error {
 	// The server does not migrate on start, so without step 2 the first request
 	// to the new resource is a 500 about a table that does not exist, and these
 	// steps were the only instructions on screen.
+	// An embedding column needs the extension, and the stock image has no
+	// pgvector. grit migrate creates the extension itself, so the only thing
+	// left to say is which image carries it (grit#191).
+	for _, f := range g.Definition.Fields {
+		if !f.IsVector() {
+			continue
+		}
+		fmt.Printf("  %s is a pgvector column.\n", toSnakeCase(f.Name))
+		fmt.Printf("    grit migrate creates the extension before it migrates, so there is\n")
+		fmt.Printf("    nothing to run by hand. It needs a server that carries pgvector:\n")
+		fmt.Printf("    the stock postgres image does not. In docker-compose.yml use\n\n")
+		fmt.Printf("        image: pgvector/pgvector:pg16\n\n")
+		fmt.Printf("    %d dimensions is part of the column type, so changing it later means\n", f.VectorDim())
+		fmt.Printf("    a migration and re-embedding every row. It is cheap to get right now.\n\n")
+		break
+	}
+
 	fmt.Printf("  Next steps:\n")
 	if g.Architecture == "single" {
 		fmt.Printf("    1. go build ./...\n")

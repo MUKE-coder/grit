@@ -4,7 +4,10 @@ package scaffold
 //
 // The load-bearing assertion is TestModules_DefaultOn: every module defaults to
 // TRUE, so an app upgrading to a version that adds this never silently loses a
-// feature. The others pin that disabling one module doesn't disturb the rest,
+// feature. SSO is the one exception and is named as such, because its cost is
+// four public endpoints most projects never use; an app that already had it
+// keeps it, because grit upgrade writes MODULE_SSO=true into its .env.
+// The others pin that disabling one module doesn't disturb the rest,
 // that an unknown name fails CLOSED (a typo hides a feature rather than
 // exposing one), and that Map() stays in step with the struct — the admin hides
 // nav from Map(), so a missing key leaves a dead link.
@@ -25,9 +28,18 @@ func init() {
 	os.Setenv("APP_ENV", "development")
 }
 
+// defaultOff names the modules that ship disabled.
+//
+// SSO is the only one, and it is here rather than absent so that adding
+// another is a deliberate edit to this list. Its cost is four public
+// endpoints, one of which parses a SAML assertion through a package with a
+// called advisory and no fixed version, and most projects never configure an
+// identity provider.
+var defaultOff = map[string]bool{"sso": true}
+
 // Default ON: an existing app upgrading must behave exactly as before.
 func TestModules_DefaultOn(t *testing.T) {
-	for _, k := range []string{"MODULE_AI", "MODULE_JOBS", "MODULE_BACKUP"} {
+	for _, k := range []string{"MODULE_AI", "MODULE_JOBS", "MODULE_BACKUP", "MODULE_SSO"} {
 		os.Unsetenv(k)
 	}
 	cfg, err := Load()
@@ -35,6 +47,12 @@ func TestModules_DefaultOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, on := range cfg.Modules.Map() {
+		if defaultOff[name] {
+			if on {
+				t.Errorf("module %q defaulted to ON and is meant to ship disabled", name)
+			}
+			continue
+		}
 		if !on {
 			t.Errorf("module %q defaulted to OFF; upgrading an app must not disable features", name)
 		}
@@ -83,12 +101,17 @@ func TestModules_MapCoversAllFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := cfg.Modules.Map()
-	if len(m) != 11 {
+	if len(m) != 12 {
 		t.Errorf("Map has %d entries; keep it in step with the ModuleFlags fields", len(m))
 	}
-	for name := range m {
-		if !cfg.Modules.Enabled(name) {
-			t.Errorf("Map key %q is not handled by Enabled()", name)
+	// Enabled must agree with Map, rather than be true: a module that ships
+	// disabled is false in both, and the thing that would break the admin is
+	// the two disagreeing.
+	for name, on := range m {
+		if cfg.Modules.Enabled(name) != on {
+			t.Errorf("Map says %q is %v and Enabled() says %v; the admin hides nav "+
+				"from Map and the API gates on Enabled, so the two disagreeing shows "+
+				"a screen whose routes are not mounted", name, on, cfg.Modules.Enabled(name))
 		}
 	}
 }

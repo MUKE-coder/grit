@@ -72,6 +72,176 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.491.0 */}
+            <div className="mb-12" id="v3.491.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.491.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Embeddings have somewhere to live</h3>
+                <p>
+                  grit#191. The AI battery produced embeddings and there was no
+                  way to declare where one goes, so the retrieval half of an AI
+                  feature was four hand-built pieces in every project that
+                  tried it: the extension, the column, the index, and a Go type
+                  implementing <code>sql.Scanner</code> and{' '}
+                  <code>driver.Valuer</code>. Each of them slightly different
+                  each time.
+                </p>
+                <CodeBlock
+                  terminal
+                  code={`grit generate resource Document --fields "title:string,body:text,embedding:vector[1536]"`}
+                />
+                <p>
+                  That writes a real <code>vector(1536)</code> column, the Go
+                  type, the shared <code>number[]</code>, and a checked-in
+                  migration pair holding the hnsw index with{' '}
+                  <code>vector_cosine_ops</code> on it.{' '}
+                  <code>grit migrate</code> creates the extension before it
+                  migrates, so there is nothing to run by hand.
+                </p>
+                <h4>Three orderings that had to be right</h4>
+                <p>
+                  The extension has to be created <strong>before</strong>{' '}
+                  AutoMigrate, because AutoMigrate is what creates the column
+                  and cannot run <code>CREATE EXTENSION</code> itself. A SQL
+                  migration pair is the wrong place for it: the pairs run after
+                  AutoMigrate, so the migration would already have failed with{' '}
+                  <code>type &quot;vector&quot; does not exist</code>. That is
+                  why the reporter needed two pairs and still had to write the
+                  column by hand.
+                </p>
+                <p>
+                  The index is the opposite case and is a pair, because the
+                  table has to exist first. And the extension is created only
+                  when some model actually has a vector column, found by
+                  reflection over the model registry rather than from a list
+                  somebody maintains: running it unconditionally would fail
+                  every Postgres project whose server has no pgvector, which is
+                  most of them.
+                </p>
+                <h4>The bug that looked like a working feature</h4>
+                <p>
+                  The first version of the search helper was used like this, and
+                  it is wrong:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`db.Model(&models.Document{}).
+	Order(vectors.CosineDistance("embedding", query))   // does nothing`}
+                />
+                <p>
+                  GORM&apos;s <code>Order()</code> switches on its
+                  argument&apos;s type and handles a string and a{' '}
+                  <code>clause.OrderByColumn</code>. An expression falls
+                  through and nothing is added, so the query ran with no{' '}
+                  <code>ORDER BY</code> at all and returned rows in scan order,
+                  which for three freshly inserted rows is insertion order, and
+                  read exactly like a working nearest-neighbour search. It was
+                  caught by printing the SQL GORM actually builds, not by
+                  reading the result.
+                </p>
+                <p>
+                  The ordering goes through <code>Clauses</code> now, and the
+                  test for it reads the statement GORM would send rather than
+                  the string the helper returns:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`db.Model(&models.Document{}).
+	Clauses(vectors.Nearest("embedding", query)).
+	Limit(10).
+	Find(&out)`}
+                />
+                <p>
+                  The same shape bit the column-name guard. A rejected name
+                  produced <code>ORDER BY (SELECT 1/0)</code> on the theory that
+                  it could not run; the planner drops an ordering by a constant,
+                  so the query succeeded and ordered by nothing. It is a call to
+                  a function no database has, which must resolve at parse time:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`ERROR: function grit_vectors_rejected_column_name() does not exist (SQLSTATE 42883)`}
+                />
+                <h4>Verified on a real pgvector</h4>
+                <p>
+                  Against <code>pgvector/pgvector:pg16</code>, not by reading:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`embedding            | vector(1536)
+"idx_documents_embedding" hnsw (embedding vector_cosine_ops)
+vector|0.8.7
+
+three 1536-dimension embeddings written through the API and read back
+  round trip exact: True
+ordered by doc c's own vector:  doc c, doc a, doc b
+SELECT ... ORDER BY embedding <=> $1 LIMIT $2`}
+                />
+                <p>
+                  Ordering by a different document&apos;s own vector puts that
+                  document first, which insertion order would not, and the
+                  injected column name errors while the table survives.
+                </p>
+                <h4>Where an embedding is not</h4>
+                <p>
+                  Not in the admin form or the list table, not in the CSV
+                  importer, and not published by <code>--public</code>. It is
+                  computed from the row&apos;s own text rather than typed, 1536
+                  numbers in a table cell is not a column anybody reads, and
+                  handing the vector to an anonymous caller hands out something
+                  about the text it came from. The importer one was a compile
+                  error, found the only way these are found: by generating a
+                  resource with the type and building it.
+                </p>
+                <p>
+                  The dimension has no default. It is part of the column type,
+                  so changing it later is a migration and re-embedding every
+                  row: 1536 is text-embedding-3-small, 3072 its large, 768 many
+                  open models. Past 2000 pgvector has no index, and the
+                  generated pair says so rather than writing a statement that
+                  fails.
+                </p>
+
+                <h3>And the CI failure in v3.490.0</h3>
+                <p>
+                  Making SSO a module that defaults off broke a test in every
+                  generated project:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`modules_test.go:28: module "sso" defaulted to OFF; upgrading an app must not disable features
+modules_test.go:76: Map has 12 entries; keep it in step with the ModuleFlags fields`}
+                />
+                <p>
+                  That test is right to exist and right to be strict, so it
+                  names its exception now rather than losing the rule, and says
+                  why the exception is safe: <code>grit upgrade</code> writes{' '}
+                  <code>MODULE_SSO=true</code> into an existing project, so no
+                  app loses anything either.
+                </p>
+                <p>
+                  Two delivery problems came out of the same corner.{' '}
+                  <code>writeSecurityFiles</code> writes that test and its only
+                  callers are the two new-project paths, so the fix would have
+                  reached a new project and nothing else; the repair that
+                  already existed for the file carries it instead. And{' '}
+                  <code>internal/vectors</code> had the same gap in the other
+                  direction: it was in both new-project paths and not in the
+                  upgrade, while <code>cmd/migrate/main.go</code>, which the
+                  upgrade does rewrite, imports it. Every existing project would
+                  have upgraded into a main.go importing a package that was not
+                  there. Caught by upgrading a real project and running{' '}
+                  <code>go build</code>, which is the only thing that sees it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.490.0 */}
             <div className="mb-12" id="v3.490.0">
               <div className="flex items-center gap-3 mb-4">

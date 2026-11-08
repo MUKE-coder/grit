@@ -288,6 +288,11 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 			tags += fmt.Sprintf(` docs:"%s"`, docs)
 		}
 	}
+	// See templates.go: the dimension internal/vectors reads. Both writers
+	// emit it, and TestBothModelWritersEmitTheVectorTag reads both.
+	if dim := f.VectorTag(); dim != "" {
+		tags += fmt.Sprintf(` vector:"%s"`, dim)
+	}
 	line := fmt.Sprintf("\t%s %s `%s`", goName, f.GoType(), tags)
 	return injectModelLine(path, names.Pascal, line)
 }

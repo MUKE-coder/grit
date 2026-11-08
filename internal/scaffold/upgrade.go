@@ -229,6 +229,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeMoneyFiles(root, opts); err != nil {
 			return fmt.Errorf("updating money files: %w", err)
 		}
+		// internal/vectors, which cmd/migrate/main.go now imports. That file is
+		// rewritten by this upgrade, so without this the project gets a main.go
+		// importing a package that is not there and stops compiling: the
+		// scaffold's two delivery lists are the new-project path and this one,
+		// and a framework-owned file needs both (grit#191).
+		if err := writeVectorFiles(root, opts); err != nil {
+			return fmt.Errorf("updating vector files: %w", err)
+		}
 		// These two were in the new-project path and nowhere else, so every
 		// file they own was frozen at the version a project was scaffolded
 		// with. The callers are refreshed by other paths, which is how it

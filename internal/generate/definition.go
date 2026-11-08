@@ -724,6 +724,33 @@ func parseFieldInput(input string) (Field, error) {
 		return f, nil
 	}
 
+	// A vector's third part is its dimension, not a modifier. It is part of
+	// the column type, so it cannot be changed later without a migration and
+	// a full re-embed, which is why it is required rather than defaulted: a
+	// guess here is expensive and silent.
+	if typ == "vector" {
+		if len(parts) < 3 || strings.TrimSpace(parts[2]) == "" {
+			return Field{}, fmt.Errorf("field %q: a vector needs its number of dimensions, "+
+				"as in %s:vector[1536]. It is part of the column type, so changing it later "+
+				"means a migration and re-embedding every row: 1536 is OpenAI's "+
+				"text-embedding-3-small, 3072 its large, 768 many open models", name, name)
+		}
+		dim, err := strconv.Atoi(strings.TrimSpace(parts[2]))
+		if err != nil || dim <= 0 {
+			return Field{}, fmt.Errorf("field %q: %q is not a number of dimensions",
+				name, strings.TrimSpace(parts[2]))
+		}
+		if dim > vectorMaxDimension {
+			return Field{}, fmt.Errorf("field %q: %d dimensions is past pgvector's limit of %d",
+				name, dim, vectorMaxDimension)
+		}
+		f := Field{Name: name, Type: typ, Max: dim}
+		if err := applyFieldModifiers(&f, modsAfter(parts, 3)); err != nil {
+			return Field{}, err
+		}
+		return f, nil
+	}
+
 	// Slug fields: third part is the source field name, not a modifier
 	if typ == "slug" {
 		slugSource := ""
@@ -975,6 +1002,11 @@ func parseFieldOptions(s string) ([]FieldOption, error) {
 	}
 	return out, nil
 }
+
+// vectorMaxDimension is pgvector's ceiling for a vector column. An hnsw or
+// ivfflat index stops at 2000, which is a different limit and a warning rather
+// than a refusal: a wider column still stores and still searches.
+const vectorMaxDimension = 16000
 
 func isValidType(t string) bool {
 	for _, valid := range ValidFieldTypes() {

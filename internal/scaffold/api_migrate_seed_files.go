@@ -98,6 +98,7 @@ import (
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sync"
+	"{{MODULE}}/internal/vectors"
 	"{{MODULE}}/migrations"
 )
 
@@ -205,6 +206,15 @@ func main() {
 		if err := db.Exec("UPDATE webhook_events SET external_id = NULL WHERE external_id = ''").Error; err != nil {
 			log.Printf("migrate: clearing empty webhook external ids (the unique index may refuse them): %v", err)
 		}
+	}
+
+	// pgvector, if and only if some model has an embedding column. AutoMigrate
+	// creates that column and cannot run CREATE EXTENSION, and the SQL pairs
+	// further down run after it, so this is the only place the ordering works.
+	// A no-op on every other database and on every project with no vector
+	// field (grit#191).
+	if err := vectors.EnsureExtension(db, models.Models()...); err != nil {
+		log.Fatalf("%v", err)
 	}
 
 	fmt.Println("Running migrations...")
@@ -523,6 +533,7 @@ import (
 	"{{MODULE}}/internal/config"
 	"{{MODULE}}/internal/database"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/vectors"
 )
 
 // With no flags it runs every seeder, as it always has. With -resource and
@@ -548,6 +559,15 @@ func main() {
 	}
 
 	// Ensure tables exist before seeding
+	// pgvector, if and only if some model has an embedding column. AutoMigrate
+	// creates that column and cannot run CREATE EXTENSION, and the SQL pairs
+	// further down run after it, so this is the only place the ordering works.
+	// A no-op on every other database and on every project with no vector
+	// field (grit#191).
+	if err := vectors.EnsureExtension(db, models.Models()...); err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	fmt.Println("Running migrations...")
 	if err := models.Migrate(db); err != nil {
 		log.Fatalf("Migration failed: %v", err)

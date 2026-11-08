@@ -98,6 +98,14 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 		if isAutoField(fieldKey) || f.Name == "Version" || isAssociation(f, s.Fields) {
 			continue
 		}
+		// An embedding, which the generator deliberately leaves out of both
+		// the table and the form: 1536 numbers in a cell, and a text input
+		// nobody can fill in. This is the other writer, so without the same
+		// skip `grit sync` would add back what `grit generate` left out
+		// (grit#191).
+		if f.GoType == "vectors.Vector" {
+			continue
+		}
 
 		// Skip if already referenced anywhere in the file — covers both
 		// inside-the-markers and a customised version the operator moved
