@@ -285,6 +285,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "chrome", "NotificationBell.tsx"):   adminNotificationBellComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "CollapsibleSidebar.tsx"): adminCollapsibleSidebarComponent(opts),
 		filepath.Join(adminRoot, "components", "chrome", "SessionWatchdog.tsx"):    adminSessionWatchdogComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "system-guard.tsx"):       adminSystemGuardComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "QuickAccess.tsx"):        adminQuickAccessComponent(),
 
 		// UI primitives (v3.29) — responsive form/table building blocks.
@@ -1682,13 +1683,19 @@ func adminDashboardLayout() string {
 	// A server component: AdminLayout is the client boundary, and a layout
 	// marked "use client" only moves that boundary up for no gain.
 	return `import { AdminLayout } from "@/components/layout/admin-layout";
+import { SystemGuard } from "@/components/chrome/system-guard";
 
 export default function DashboardGroupLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminLayout>{children}</AdminLayout>;
+  return (
+    <AdminLayout>
+      <SystemGuard />
+      {children}
+    </AdminLayout>
+  );
 }
 `
 }

@@ -498,6 +498,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "chrome", "CollapsibleSidebar.tsx"): nextToTanStack(adminCollapsibleSidebarComponent(opts)),
 		filepath.Join(adminRoot, "src", "components", "chrome", "QuickAccess.tsx"):        nextToTanStack(adminQuickAccessComponent()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "SessionWatchdog.tsx"):    nextToTanStack(adminSessionWatchdogComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "system-guard.tsx"):       nextToTanStack(adminSystemGuardComponent()),
 		// UserMenu owns the sign-out action; PageHeader is imported by every
 		// system page. Both were missing, so logout did nothing and the system
 		// pages could not render.
@@ -879,6 +880,7 @@ export const Route = createFileRoute('/_auth')({
 func adminTanStackDashboardLayout() string {
 	return `import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AdminLayout } from '@/components/layout/admin-layout'
+import { SystemGuard } from '@/components/chrome/system-guard'
 import { apiClient } from '@/lib/api-client'
 
 export const Route = createFileRoute('/_dashboard')({
@@ -895,6 +897,7 @@ export const Route = createFileRoute('/_dashboard')({
   },
   component: () => (
     <AdminLayout>
+      <SystemGuard />
       <Outlet />
     </AdminLayout>
   ),

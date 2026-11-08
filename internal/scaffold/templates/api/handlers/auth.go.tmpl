@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"sync"
@@ -537,7 +538,20 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	} else {
 		var req RefreshRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
+			// No cookie and no body: a browser whose session is already gone.
+			// This used to answer 422 with the decoder's "EOF", and the
+			// client's 401-refresh interceptor surfaced that instead of the
+			// original 401, so a page showed "EOF" for a request that only
+			// needed a sign-in.
+			if errors.Is(err, io.EOF) {
+				respond.Fail(c, respond.CodeInvalidToken, "No refresh token")
+				return
+			}
 			respond.Fail(c, respond.CodeValidationError, err.Error())
+			return
+		}
+		if req.RefreshToken == "" {
+			respond.Fail(c, respond.CodeInvalidToken, "No refresh token")
 			return
 		}
 		refreshToken = req.RefreshToken
