@@ -250,6 +250,17 @@ func (m *ImportJob) BeforeCreate(tx *gorm.DB) error {
 // job says which table it targeted.
 func importJobHandlerGo() string { return tmpl("api/handlers/import_job.go") }
 
+// XNetVersion is the golang.org/x/net floor, read by the API's go.mod and the
+// desktop's.
+//
+// Two modules and a test asserted it as three separate literals, which is how
+// a floor gets raised in one and left in the other. It is raised for
+// CVE-2026-78661, a denial of service in x/net/html via crafted input, found
+// by Trivy on the generated API: govulncheck does not report it because
+// nothing generated calls that package, which is the whole reason that job
+// exists.
+const XNetVersion = "v0.62.0"
+
 func apiGoMod(opts Options) string {
 	return fmt.Sprintf(`module %s
 
@@ -373,7 +384,7 @@ require (
 	// HTTP/2 again, and reached from the API's own server: GO-2026-6617 is the
 	// HPACK encoder race that go1.26.10 fixes in the standard library's copy,
 	// and this module carries its own. Raising the toolchain does not raise it.
-	golang.org/x/net v0.60.0 // GO-2026-6617, -6612, -6611, -6603
+	golang.org/x/net ` + XNetVersion + ` // GO-2026-6617, -6612, -6611, -6603, CVE-2026-78661
 	golang.org/x/oauth2 v0.27.0 // CVE-2025-22868
 	golang.org/x/text v0.39.0 // GO-2026-5970
 	// Pulled in by the MySQL driver; govulncheck flags releases before v1.1.1.

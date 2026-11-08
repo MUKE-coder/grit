@@ -23,6 +23,21 @@ Also worth knowing:
 ---
 
 
+## v3.497.0 - November 8, 2026
+
+### A HIGH in x/net, and the last red workflow
+
+`golang.org/x/net` was pinned at v0.60.0, which carries CVE-2026-78661: a denial of service in `x/net/html` via crafted input, fixed in v0.62.0. Both the API module and the desktop module are on v0.62.0 now.
+
+Found by the Trivy job on a generated app, which is the job that exists for exactly this. `govulncheck` never reported it, correctly: nothing generated calls `x/net/html`, so it is not a called vulnerability. It is in the dependency graph of the binary that takes requests, which is a different question and the one Trivy answers.
+
+The pin lived in three places: the API's go.mod, the desktop's, and a test asserting the desktop one. Three literals that have to agree is how a floor gets raised in one module and left in the other, so they read one constant now.
+
+Verified on a generated project: both modules select v0.62.0 rather than merely asking for it, both build, and `govulncheck` reports only the crewjam/saml finding that is allowlisted in both allowlists. Trivy itself is not installed here, so that half is CI's to confirm: its one finding named v0.60.0 and its fixed version, and that version is now what both modules resolve to.
+
+This was the last of the four workflows that were red when this run of work started. CI had been failing for 30 releases, Live for longer, Scan since the SAML advisory landed, and each one turned out to be hiding a real defect rather than being noise: a generated project that could not compile its tests, a `grit migrate down` that would roll back the run that built the database, and this.
+
+
 ## v3.496.0 - November 8, 2026
 
 ### The desktop app type-checks for every field type

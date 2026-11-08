@@ -133,7 +133,7 @@ func TestTheWailsVersionsAgree(t *testing.T) {
 // GO-2026-6617 and three others.
 func TestTheDesktopModulePinsAPatchedXNet(t *testing.T) {
 	gomod := desktopClientGoMod("app/apps/desktop")
-	if !strings.Contains(gomod, "golang.org/x/net v0.60.0") {
+	if !strings.Contains(gomod, "golang.org/x/net "+XNetVersion) {
 		t.Error("the desktop go.mod does not raise golang.org/x/net, so `go mod tidy` " +
 			"takes the version Wails asks for, which is below the patched one")
 	}

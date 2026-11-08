@@ -727,8 +727,10 @@ require (
 
 // Wails asks for an older x/net than the API module pins. This is a separate
 // module, so it needs the floor too: v0.58.0 and below carry GO-2026-6617,
-// the HPACK encoder race, and three others.
-require golang.org/x/net v0.60.0
+// the HPACK encoder race, and three others, and v0.60.0 carries
+// CVE-2026-78661 in x/net/html. One constant for both modules, because three
+// literals that have to agree is how one of them gets left behind.
+require golang.org/x/net ` + XNetVersion + `
 
 // The keychain's own floor. Wails pulls 99designs/keyring, which pulls jose2go,
 // and at v1.5.0 govulncheck traces GO-2025-4123 and GO-2023-2409 to

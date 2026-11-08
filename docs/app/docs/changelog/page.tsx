@@ -72,6 +72,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.497.0 */}
+            <div className="mb-12" id="v3.497.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.497.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A HIGH in x/net, and the last red workflow</h3>
+                <p>
+                  <code>golang.org/x/net</code> was pinned at v0.60.0, which
+                  carries CVE-2026-78661: a denial of service in{' '}
+                  <code>x/net/html</code> via crafted input, fixed in v0.62.0.
+                  Both the API module and the desktop module are on v0.62.0 now.
+                </p>
+                <p>
+                  Found by the Trivy job on a generated app, which is the job
+                  that exists for exactly this.{' '}
+                  <code>govulncheck</code> never reported it, correctly:
+                  nothing generated calls <code>x/net/html</code>, so it is not
+                  a called vulnerability. It is in the dependency graph of the
+                  binary that takes requests, which is a different question and
+                  the one Trivy answers.
+                </p>
+                <p>
+                  The pin lived in three places: the API&apos;s go.mod, the
+                  desktop&apos;s, and a test asserting the desktop one. Three
+                  literals that have to agree is how a floor gets raised in one
+                  module and left in the other, so they read one constant now.
+                </p>
+                <p>
+                  Verified on a generated project: both modules select v0.62.0
+                  rather than merely asking for it, both build, and{' '}
+                  <code>govulncheck</code> reports only the crewjam/saml finding
+                  that is allowlisted in both allowlists. Trivy itself is not
+                  installed here, so that half is CI&apos;s to confirm: its one
+                  finding named v0.60.0 and its fixed version, and that version
+                  is now what both modules resolve to.
+                </p>
+                <p>
+                  This was the last of the four workflows that were red when
+                  this run of work started. CI had been failing for 30 releases,
+                  Live for longer, Scan since the SAML advisory landed, and each
+                  one turned out to be hiding a real defect rather than being
+                  noise: a generated project that could not compile its tests, a{' '}
+                  <code>grit migrate down</code> that would roll back the run
+                  that built the database, and this.
+                </p>
+              </div>
+            </div>
+
             {/* v3.496.0 */}
             <div className="mb-12" id="v3.496.0">
               <div className="flex items-center gap-3 mb-4">
