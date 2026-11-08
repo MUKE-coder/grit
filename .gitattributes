@@ -17,3 +17,12 @@ internal/scaffold/templates/** text eol=lf
 # make every anchor miss on a Windows clone.
 internal/scaffold/testdata/** text eol=lf
 internal/generate/testdata/** text eol=lf
+
+# docs/components/error-codes.ts is written by tools/errorcodes and compared
+# against that tool's output byte for byte by TestDocsTableIsCurrent. Without
+# this, a Windows clone gets CRLF on checkout and the test fails on a file
+# nobody has touched, telling you to regenerate something that is already
+# correct. Found reviewing grit#184, where it looked like the contributor's
+# mistake and was not: `git checkout -- docs/components/error-codes.ts` is
+# enough to break it, and CI never sees it because CI runs on Linux.
+docs/components/error-codes.ts text eol=lf
