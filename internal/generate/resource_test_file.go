@@ -168,6 +168,15 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 	// a 422 and got a 200 for that reason. A resource with no plain text column
 	// gets the stale-save test and not this one, rather than a test that cannot
 	// assert what it says.
+	// An append-only resource has no update to be stale about. It has no PUT
+	// route, the GORM guard refuses the write, and the database trigger
+	// refuses it under that: a version conflict cannot happen because no
+	// version can change. These tests passed until v3.494.0 only because the
+	// test database had no triggers, which is the hole grit#194 closed.
+	if g.Definition.AppendOnly {
+		return b.String()
+	}
+
 	patchKey, patchValue := g.patchableTextField()
 	if patchKey == "" {
 		// No column this test could change, so the grid half is left out

@@ -56,7 +56,7 @@ const ROWS: Row[] = [
 // obvious from the Go type. Source of truth: internal/generate/field.go
 // (GORMTag) and internal/generate/templates.go (the tags beside it).
 const COLUMNS: { type: string; tag: string; note: string }[] = [
-  { type: 'string / text / richtext / slug / email / url / domain / tel', tag: 'search:"trigram"', note: 'Automatic, on every one of these, and not something you ask for: there is no :searchable modifier. It is what makes the list endpoint\'s ?search= an indexed query on Postgres rather than a scan. An encrypted column never gets it, because ciphertext differs on every write and LIKE can never match it.' },
+  { type: 'string, text, richtext, slug, email, url, domain, tel', tag: 'search:"trigram"', note: 'Automatic: there is no :searchable modifier. It is what makes ?search= an indexed query rather than a scan. Never on an encrypted column, whose ciphertext differs on every write.' },
   { type: 'string', tag: 'size:255', note: 'A name containing "url" or "link" gets size:500, and a long-form one such as "description" gets type:text. Guessed from the field name, because a 255-character limit on a tracking URL fails in production and not in testing.' },
   { type: 'text', tag: 'type:text', note: 'No length limit. Rendered as a textarea.' },
   { type: 'richtext', tag: 'type:text', note: 'Also gets sanitize:"html": it is rendered as HTML wherever it is shown, so every write is cleaned before it is stored.' },

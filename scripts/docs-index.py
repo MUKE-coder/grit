@@ -262,8 +262,20 @@ def doc_pages(meta):
             # the content and the prose is the commentary. Sharing one cap let
             # the prose push the flags table off the end, which is the same
             # bug as not indexing it at all for anybody looking for a flag.
+            #
+            # The table cap was 8000 and the field-types page sat exactly on
+            # it, so adding one sentence to any of its tables silently cut the
+            # last one off the end: --append-only vanished from the page every
+            # agent is told to read before generating a resource. It was caught
+            # by TestFieldTypesPageCarriesItsMappings, which is the only thing
+            # that would have.
+            #
+            # 12000 because that page is the only one anywhere near the cap,
+            # measured: one page out of 486, so this costs a few KB and leaves
+            # every other page byte-identical. Check that again before lowering
+            # it, rather than trimming a table to fit.
             "text": (" ".join(prose(source))[:6000] + " "
-                     + " ".join(data_tables(source))[:8000]).strip(),
+                     + " ".join(data_tables(source))[:12000]).strip(),
             "kind": "docs",
         })
     return pages

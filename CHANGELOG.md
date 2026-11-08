@@ -23,6 +23,32 @@ Also worth knowing:
 ---
 
 
+## v3.495.0 - November 8, 2026
+
+### An append-only resource was tested for something it refuses
+
+v3.494.0 made the test database install the append-only triggers, so an append-only table behaves in a test the way it behaves in production. Three generated projects then failed, and they were right to:
+
+```text
+[500] PUT /api/v1/entries/01a1... | entries is append-only: UPDATE refused
+entry_test.go:117: error code "INTERNAL_ERROR", want "VERSION_CONFLICT"
+```
+
+The generator writes two optimistic-concurrency tests for every resource, and both update a row. An append-only resource cannot be updated: it has no PUT route, a GORM guard refuses the write, and now the database trigger refuses it under that. A version conflict cannot happen, because no version can change.
+
+Those tests had been passing since v3.483.0 purely because the harness did not enforce the constraint the resource exists to have. They also mounted a PUT and a bulk-edit route of their own, which the real application does not. So installing the triggers did not break them; it showed that they asserted the opposite of what `--append-only` promises. They are no longer generated for such a resource, and a normal resource keeps both.
+
+This is the second time in two releases that closing a hole in the test harness has found a test that was green for the wrong reason. The reporter of grit#194 predicted exactly this: a suite that would never notice if the guarantee stopped holding.
+
+### And a documentation sentence that deleted a table
+
+The field-types page is indexed for `grit docs search` with separate budgets for prose and tables, and the table budget was 8000 characters. That page sat exactly on it. The sentence v3.494.0 added about automatic trigram indexes pushed the last table off the end, so `--append-only`, `--faker` and the rest of the flags vanished from the page every agent is told to read before generating a resource.
+
+Caught by `TestFieldTypesPageCarriesItsMappings`, which exists because this happened once before and asserts the content rather than the mechanism. The budget is 12000 now: that page is the only one of 486 anywhere near the cap, so it costs 4 KB and leaves every other page byte-identical, and the margin goes from 116 characters to 3462.
+
+The reason it reached CI at all is worth recording. The repo suite ran green before the release scripts regenerated the docs index, and the index is what that test reads, so the committed state was never the tested state. The suite belongs after the generators, not before them.
+
+
 ## v3.494.0 - November 8, 2026
 
 ### An append-only table was not append-only in a test
