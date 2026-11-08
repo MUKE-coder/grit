@@ -235,6 +235,7 @@ export default function ProfilePage() {
               <label className="text-sm font-medium text-text-secondary">Email</label>
               <input
                 type="email"
+                autoComplete="email"
                 {...personalForm.register("email")}
                 className={personalForm.formState.errors.email ? errorInputClass : inputClass}
               />

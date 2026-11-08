@@ -800,6 +800,7 @@ function ContactNewPage() {
               <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
               <input
                 type="email"
+                autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@example.com"
@@ -961,6 +962,7 @@ function ContactEditPage() {
               <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
               <input
                 type="email"
+                autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@example.com"

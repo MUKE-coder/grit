@@ -137,6 +137,7 @@ export function SSOSignIn() {
     <div className="space-y-2">
       <input
         type="email"
+        autoComplete="username"
         autoFocus
         value={email}
         onChange={(e) => setEmail(e.target.value)}

@@ -226,6 +226,7 @@ export default function AccountPage() {
           <Field label="Email" error={personalForm.formState.errors.email?.message}>
             <input
               type="email"
+              autoComplete="email"
               {...personalForm.register("email")}
               className={personalForm.formState.errors.email ? errorInputClass : inputClass}
               placeholder="you@example.com"

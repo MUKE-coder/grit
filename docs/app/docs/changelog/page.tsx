@@ -72,6 +72,96 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.489.0 */}
+            <div className="mb-12" id="v3.489.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.489.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A password manager can save a generated sign-in</h3>
+                <p>
+                  grit#180. The password field on a generated login page said{' '}
+                  <code>current-password</code>. The email field beside it said
+                  nothing at all, so there was no username field for a manager
+                  to anchor the credential to. Chrome says so on a fresh
+                  scaffold:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`[DOM] Input elements should have autocomplete attributes (suggested: "username")`}
+                />
+                <p>
+                  Saving is unreliable without the pair and filling often does
+                  not happen, which is the thing that pushes somebody back to
+                  typing a password they then reuse.
+                </p>
+                <h4>Which attribute, per form</h4>
+                <p>
+                  The care here is that these are not all the same form. A
+                  blanket sweep over every <code>type=&quot;email&quot;</code>{' '}
+                  would be wrong:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`sign in, sign up, forgot password   username   the credential's identifier
+account, change your email          email      the reader's own address
+a contact, or an admin creating
+  somebody else's account           off        somebody else's address`}
+                />
+                <p>
+                  An account page marked <code>username</code> would offer to
+                  overwrite the saved credential for the site. And the third row
+                  is the one nobody asks for and everybody has met: without it a
+                  browser offers the signed-in reader&apos;s own address while
+                  they are filling in a contact record, which is a wrong value
+                  silently accepted rather than a missing convenience.
+                </p>
+                <h4>33 fields, and why the count is the point</h4>
+                <p>
+                  The issue named 29 sites across fourteen files. The fix is 33
+                  across nineteen, because it was done as a sweep over the whole
+                  package rather than against that list, and the sweep found
+                  five more: the SSO sign-in field in a sixth auth surface, two
+                  contact forms, an admin&apos;s create-user form, and the login
+                  test&apos;s own mock form, which should carry what the page it
+                  stands for carries.
+                </p>
+                <p>
+                  It also found eight credential fields that already said{' '}
+                  <code>email</code>, which is not broken and is not the pair. On
+                  the four admin styles, the themed pages, the web app, the
+                  desktop app and the single-architecture app, the same three
+                  forms would otherwise have disagreed with each other.
+                </p>
+                <p>
+                  The Expo screens keep <code>email</code> deliberately. React
+                  Native&apos;s <code>autoComplete</code> is a different
+                  mechanism from the DOM attribute: it maps to Android autofill
+                  hints, it sits beside{' '}
+                  <code>keyboardType=&quot;email-address&quot;</code>, and{' '}
+                  <code>email</code> is correct there.
+                </p>
+                <p>
+                  The test is a sweep too, not a list of the pages that exist
+                  today. One attribute being a nineteen-file change is exactly
+                  the condition under which a new auth style ships without it,
+                  and a test naming the pages would pass.
+                </p>
+                <p>
+                  Verified on a generated project: the admin&apos;s login,
+                  sign-up and forgot-password pages carry{' '}
+                  <code>username</code> beside their password field, the account
+                  page carries <code>email</code>, and{' '}
+                  <code>grit upgrade</code> delivers it to a project that
+                  already exists.
+                </p>
+              </div>
+            </div>
+
             {/* v3.488.0 */}
             <div className="mb-12" id="v3.488.0">
               <div className="flex items-center gap-3 mb-4">

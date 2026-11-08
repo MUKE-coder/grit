@@ -60,6 +60,7 @@ export default function LoginPage() {
               <input
                 id="email"
                 type="email"
+                autoComplete="username"
                 {...register("email")}
                 className={errors.email ? errorInputClass : inputClass}
                 placeholder="you@example.com"
@@ -216,6 +217,7 @@ export default function SignUpPage() {
               <input
                 id="email"
                 type="email"
+                autoComplete="username"
                 {...register("email")}
                 className={errors.email ? errorInputClass : inputClass}
                 placeholder="you@example.com"
@@ -379,6 +381,7 @@ export default function ForgotPasswordPage() {
                 <input
                   id="email"
                   type="email"
+                  autoComplete="username"
                   {...register("email")}
                   className={errors.email ? errorInputClass : inputClass}
                   placeholder="you@example.com"

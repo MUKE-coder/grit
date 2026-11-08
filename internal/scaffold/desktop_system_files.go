@@ -309,7 +309,7 @@ function UserForm({
         </div>
         <div>
           <label className="mb-1.5 block text-[13px] font-medium text-foreground">Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+          <input type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
         </div>
         <div>
           <label className="mb-1.5 block text-[13px] font-medium text-foreground">

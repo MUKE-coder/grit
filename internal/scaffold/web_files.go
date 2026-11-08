@@ -1678,6 +1678,7 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
@@ -1887,6 +1888,7 @@ export default function RegisterPage() {
             <input
               id="email"
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
@@ -2056,6 +2058,7 @@ export default function ForgotPasswordPage() {
               <input
                 id="email"
                 type="email"
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputClass}

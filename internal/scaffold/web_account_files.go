@@ -363,7 +363,7 @@ export default function AccountProfilePage() {
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-foreground">Email</span>
-          <input type="email" {...field("email")} />
+          <input type="email" autoComplete="email" {...field("email")} />
         </label>
 
         <label className="block space-y-1.5">

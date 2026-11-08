@@ -307,7 +307,7 @@ function LoginPage() {
           <input
             type="email"
             required
-            autoComplete="email"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent"
@@ -415,7 +415,7 @@ function RegisterPage() {
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-foreground">Email</span>
-          <input type="email" required autoComplete="email" {...field('email')} />
+          <input type="email" required autoComplete="username" {...field('email')} />
         </label>
 
         <label className="block space-y-1.5">
@@ -504,7 +504,7 @@ function ForgotPasswordPage() {
             <input
               type="email"
               required
-              autoComplete="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent"
@@ -942,7 +942,7 @@ function AccountProfile() {
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-foreground">Email</span>
-          <input type="email" {...field('email')} />
+          <input type="email" autoComplete="email" {...field('email')} />
         </label>
 
         <label className="block space-y-1.5">

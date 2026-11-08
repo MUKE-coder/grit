@@ -119,6 +119,7 @@ function LoginPage() {
               <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
               <input
                 type="email"
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@example.com"
@@ -248,6 +249,7 @@ function RegisterPage() {
               <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
               <input
                 type="email"
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"

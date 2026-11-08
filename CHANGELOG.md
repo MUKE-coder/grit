@@ -23,6 +23,44 @@ Also worth knowing:
 ---
 
 
+## v3.489.0 - November 8, 2026
+
+### A password manager can save a generated sign-in
+
+grit#180. The password field on a generated login page said `current-password`. The email field beside it said nothing at all, so there was no username field for a manager to anchor the credential to. Chrome says so on a fresh scaffold:
+
+```text
+[DOM] Input elements should have autocomplete attributes (suggested: "username")
+```
+
+Saving is unreliable without the pair and filling often does not happen, which is the thing that pushes somebody back to typing a password they then reuse.
+
+#### Which attribute, per form
+
+The care here is that these are not all the same form. A blanket sweep over every `type="email"` would be wrong:
+
+```text
+sign in, sign up, forgot password   username   the credential's identifier
+account, change your email          email      the reader's own address
+a contact, or an admin creating
+  somebody else's account           off        somebody else's address
+```
+
+An account page marked `username` would offer to overwrite the saved credential for the site. And the third row is the one nobody asks for and everybody has met: without it a browser offers the signed-in reader's own address while they are filling in a contact record, which is a wrong value silently accepted rather than a missing convenience.
+
+#### 33 fields, and why the count is the point
+
+The issue named 29 sites across fourteen files. The fix is 33 across nineteen, because it was done as a sweep over the whole package rather than against that list, and the sweep found five more: the SSO sign-in field in a sixth auth surface, two contact forms, an admin's create-user form, and the login test's own mock form, which should carry what the page it stands for carries.
+
+It also found eight credential fields that already said `email`, which is not broken and is not the pair. On the four admin styles, the themed pages, the web app, the desktop app and the single-architecture app, the same three forms would otherwise have disagreed with each other.
+
+The Expo screens keep `email` deliberately. React Native's `autoComplete` is a different mechanism from the DOM attribute: it maps to Android autofill hints, it sits beside `keyboardType="email-address"`, and `email` is correct there.
+
+The test is a sweep too, not a list of the pages that exist today. One attribute being a nineteen-file change is exactly the condition under which a new auth style ships without it, and a test naming the pages would pass.
+
+Verified on a generated project: the admin's login, sign-up and forgot-password pages carry `username` beside their password field, the account page carries `email`, and `grit upgrade` delivers it to a project that already exists.
+
+
 ## v3.488.0 - November 8, 2026
 
 ### A generated project could not build its own tests, for 30 releases

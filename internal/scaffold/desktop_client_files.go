@@ -1624,7 +1624,7 @@ function LoginPage() {
           <input
             id="email"
             type="email"
-            autoComplete="email"
+            autoComplete="username"
             placeholder="you@example.com"
             className={authInputCls}
             style={authInputStyle}
@@ -1726,7 +1726,7 @@ function RegisterPage() {
 
         <div className="space-y-1.5">
           <label className="block text-sm font-medium">Email</label>
-          <input type="email" autoComplete="email" placeholder="you@example.com" className={authInputCls} style={authInputStyle} {...register("email")} />
+          <input type="email" autoComplete="username" placeholder="you@example.com" className={authInputCls} style={authInputStyle} {...register("email")} />
           {errors.email && <p className="text-xs text-[#dc2626]">{errors.email.message}</p>}
         </div>
 
@@ -2568,7 +2568,7 @@ function ProfilePage() {
             </div>
             <div>
               <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+              <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
             </div>
             <div className="flex justify-end">
               <button onClick={() => update.mutate({ first_name: firstName, last_name: lastName, email })} disabled={update.isPending} className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">

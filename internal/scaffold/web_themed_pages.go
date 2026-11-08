@@ -184,6 +184,7 @@ function LoginForm() {
           <input
             id="email"
             type="email"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={inputOk}
@@ -335,6 +336,7 @@ export default function RegisterPage() {
           <input
             id="email"
             type="email"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={inputOk}
@@ -576,6 +578,7 @@ export default function ForgotPasswordPage() {
             <input
               id="email"
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputOk}

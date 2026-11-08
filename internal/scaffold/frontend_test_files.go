@@ -228,7 +228,7 @@ function LoginFormStub({
       }}
     >
       <label htmlFor="email">Email</label>
-      <input id="email" name="email" type="email" required />
+      <input id="email" name="email" type="email" autoComplete="username" required />
       <label htmlFor="password">Password</label>
       <input id="password" name="password" type="password" autoComplete="current-password" required />
       <button type="submit">Sign in</button>
