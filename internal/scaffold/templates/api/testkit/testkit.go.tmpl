@@ -41,6 +41,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"{{MODULE}}/internal/appendonly"
 	"{{MODULE}}/internal/config"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
@@ -110,7 +111,25 @@ func sqliteDB(tb testing.TB) *gorm.DB {
 	if err := db.AutoMigrate(models.Models()...); err != nil {
 		tb.Fatalf("migrating the test database: %v", err)
 	}
+	installTriggers(tb, db)
 	return db
+}
+
+// installTriggers finishes the schema.
+//
+// AutoMigrate builds tables and columns. It does not install the append-only
+// triggers: models.Migrate does that, by calling appendonly.InstallTriggers
+// after it migrates. A test database built from AutoMigrate alone therefore
+// accepts UPDATE and DELETE on a table the application believes is immutable,
+// so a test written to prove the guarantee fails for a reason that is not
+// about the guarantee (grit#194).
+//
+// Idempotent, and a no-op in a project with no append-only resource.
+func installTriggers(tb testing.TB, db *gorm.DB) {
+	tb.Helper()
+	if err := appendonly.InstallTriggers(db); err != nil {
+		tb.Fatalf("installing the append-only triggers on the test database: %v", err)
+	}
 }
 
 // postgresDB gives the test its own schema on a real Postgres, and drops it
@@ -146,7 +165,14 @@ func postgresDB(tb testing.TB, url string) *gorm.DB {
 		}
 	})
 
-	if err := db.Exec("SET search_path TO " + schema).Error; err != nil {
+	// The test's own schema first, then public. CREATE TABLE lands in the
+	// first one on the path, so the isolation below is unchanged; public is
+	// here because types owned by an extension live in it. pgvector's `vector`
+	// is the one that matters: without public on the path, AutoMigrate fails
+	// with `type "vector" does not exist` on the first model that has an
+	// embedding, and takes every Postgres test in the package with it,
+	// including the ones that have nothing to do with embeddings (grit#194).
+	if err := db.Exec("SET search_path TO " + schema + ", public").Error; err != nil {
 		tb.Fatalf("setting search_path: %v", err)
 	}
 	// One connection, so every statement sees the search_path set above. A
@@ -159,6 +185,7 @@ func postgresDB(tb testing.TB, url string) *gorm.DB {
 	if err := db.AutoMigrate(models.Models()...); err != nil {
 		tb.Fatalf("migrating schema %s: %v", schema, err)
 	}
+	installTriggers(tb, db)
 	return db
 }
 

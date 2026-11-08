@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 2 to 8, 2026",
-    count: 31,
+    count: 32,
     entries: [
+      { version: "3.494.0", title: "An append-only table was not append-only in a test" },
       { version: "3.493.0", title: "Two relations the new factory had not met" },
       { version: "3.492.0", title: "grit migrate down would roll back the run that built your database" },
       { version: "3.491.0", title: "Embeddings have somewhere to live" },

@@ -56,6 +56,7 @@ const ROWS: Row[] = [
 // obvious from the Go type. Source of truth: internal/generate/field.go
 // (GORMTag) and internal/generate/templates.go (the tags beside it).
 const COLUMNS: { type: string; tag: string; note: string }[] = [
+  { type: 'string / text / richtext / slug / email / url / domain / tel', tag: 'search:"trigram"', note: 'Automatic, on every one of these, and not something you ask for: there is no :searchable modifier. It is what makes the list endpoint\'s ?search= an indexed query on Postgres rather than a scan. An encrypted column never gets it, because ciphertext differs on every write and LIKE can never match it.' },
   { type: 'string', tag: 'size:255', note: 'A name containing "url" or "link" gets size:500, and a long-form one such as "description" gets type:text. Guessed from the field name, because a 255-character limit on a tracking URL fails in production and not in testing.' },
   { type: 'text', tag: 'type:text', note: 'No length limit. Rendered as a textarea.' },
   { type: 'richtext', tag: 'type:text', note: 'Also gets sanitize:"html": it is rendered as HTML wherever it is shown, so every write is cleaned before it is stored.' },
@@ -93,8 +94,11 @@ const MODIFIER_TAGS: { modifier: string; tag: string; note: string }[] = [
   { modifier: ':optional', tag: 'default:null', note: 'Drops the binding tag and allows null.' },
   { modifier: 'if x == y', tag: 'requiredif:"x=y"', note: 'Required only when the other field has that value, checked where the row is, not at binding. Binding runs before anything has looked at the row, so it cannot evaluate a condition.' },
   { modifier: ':encrypted', tag: 'type:text', note: 'Ciphertext is longer than its plaintext, so a sized column would reject a value that fits.' },
-  { modifier: ':searchable', tag: 'search:"trigram"', note: 'A trigram index, so a LIKE %term% stops being a scan.' },
 ]
+
+// Not a modifier: there is no :searchable, and the generator refuses it. The
+// tag is automatic for every type whose values a LIKE could match, which is the
+// fact worth knowing, so it is in the column table instead (grit#192).
 
 // The flags, from `grit generate resource --help`.
 const FLAGS: { flag: string; what: string }[] = [
@@ -244,7 +248,7 @@ export default function FieldTypesPage() {
 
                 <ul className="space-y-2.5 mt-4 mb-4">
                   {[
-                    ['Modifiers', 'name:string:unique — append :unique, :required, :optional, :encrypted or :searchable. They always come last, after whatever argument the type takes: phone:tel[UG]:unique, category:belongs_to[Category]:optional. A condition is written if kind == recurring and goes last of all; :when=kind=recurring is the older spelling of the same thing. String fields default to required; everything else defaults to optional.'],
+                    ['Modifiers', 'name:string:unique — append :unique, :required, :optional or :encrypted. They always come last, after whatever argument the type takes: phone:tel[UG]:unique, category:belongs_to[Category]:optional. A condition is written if kind == recurring and goes last of all; :when=kind=recurring is the older spelling of the same thing. String fields default to required; everything else defaults to optional.'],
                     ['Conditional', 'cycle:select[monthly, annually] if kind == recurring — the field applies only while another field of the same resource holds a particular value. kind is a sibling field, named as it appears in the spec; recurring is one of its stored values, not a label. The admin hides the input and drops its required rule when the condition is false; the model gets requiredif:"kind=recurring", which the API enforces on every write. See conditional fields.'],
                     ['Auto-number', 'number:string:auto:INV (string only) — the server fills it from an atomic, gap-free counter (INV-202607-0001) in BeforeCreate. Optional and hidden from the form; the prefix is optional. Shorthand for grit generate sequence; use that command directly for yearly/never resets or a custom width.'],
                     ['Encrypted', 'notes:text:encrypted (string, text and richtext only). Stored with AES-256-GCM at rest, plaintext in code and over the API; needs FIELD_ENCRYPTION_KEY. Cannot be :unique, and is left out of search, sorting and filters, because ciphertext changes on every write.'],

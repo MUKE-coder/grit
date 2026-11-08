@@ -23,6 +23,49 @@ Also worth knowing:
 ---
 
 
+## v3.494.0 - November 8, 2026
+
+### An append-only table was not append-only in a test
+
+grit#194, and the reporter's framing of why it matters is the right one. `--append-only` sells one thing: the rule survives somebody with a SQL client. The triggers that enforce it are installed by `models.Migrate`, which calls `appendonly.InstallTriggers` after it migrates. `testkit.DB` built its schema with AutoMigrate and stopped there, so in a test database:
+
+```go
+db := testkit.DB(t)
+row := factory.CreateLedger(t, db)
+
+err := db.Exec("UPDATE ledgers SET memo = ? WHERE id = ?", "typed", row.ID).Error
+// err was nil. The row changed.
+```
+
+So a project that writes the obvious test for its own guarantee got a red build caused by the harness, and the natural next move is to weaken the test until it passes. A project that did not write it had a table it believed was immutable and a suite that would never have noticed if it stopped being. `testkit.DB` installs the triggers now, on both dialects, after the migration.
+
+The underlying shape is worth naming because it will recur: testkit builds its schema with AutoMigrate, and AutoMigrate is not what `grit migrate` does. Everything the migrate command adds afterwards is exactly what AutoMigrate cannot express, and therefore exactly what no test sees.
+
+### And a vector column broke every Postgres test
+
+The same issue, and a direct consequence of v3.491.0. `postgresDB` gives each test its own schema and sets `search_path` to it. pgvector's `vector` type lives in `public`, so with public off the path AutoMigrate died on the first model with an embedding and took the whole package with it, including tests that have nothing to do with embeddings:
+
+```text
+migrating schema test_1_testsentenceoriginrefusesupdatefromrawsql:
+  ERROR: type "vector" does not exist (SQLSTATE 42704)
+```
+
+The error names the type and not the path, so it reads as a missing extension. The test's own schema stays first, so `CREATE TABLE` still lands there and the isolation is unchanged; public is on the path only so that types owned by an extension resolve.
+
+Both verified against a real Postgres with pgvector and a vector column in the models, including each counterfactual: reverting either fix reproduces the reporter's exact error.
+
+### A documented modifier the generator rejects
+
+grit#192. The field-types page listed `:searchable` in its modifier table, and there is no such modifier:
+
+```text
+invalid modifier "searchable" for field "extracted_text"
+  (valid: unique, required, optional, auto, encrypted, when=<field>=<value>)
+```
+
+The behaviour it promised was already there without it: string, text, richtext, slug, email, url, domain and tel all carry `search:"trigram"` automatically, which is what makes a list endpoint's `?search=` an indexed query on Postgres rather than a scan. The reporter's point is that this is the better design and the more useful fact, so the row is gone and the default is documented where a reader meets the tag in their own model and wonders who asked for it.
+
+
 ## v3.493.0 - November 8, 2026
 
 ### Two relations the new factory had not met

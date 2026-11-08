@@ -72,6 +72,105 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.494.0 */}
+            <div className="mb-12" id="v3.494.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.494.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An append-only table was not append-only in a test</h3>
+                <p>
+                  grit#194, and the reporter&apos;s framing of why it matters is
+                  the right one. <code>--append-only</code> sells one thing:
+                  the rule survives somebody with a SQL client. The triggers
+                  that enforce it are installed by{' '}
+                  <code>models.Migrate</code>, which calls{' '}
+                  <code>appendonly.InstallTriggers</code> after it migrates.{' '}
+                  <code>testkit.DB</code> built its schema with AutoMigrate and
+                  stopped there, so in a test database:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`db := testkit.DB(t)
+row := factory.CreateLedger(t, db)
+
+err := db.Exec("UPDATE ledgers SET memo = ? WHERE id = ?", "typed", row.ID).Error
+// err was nil. The row changed.`}
+                />
+                <p>
+                  So a project that writes the obvious test for its own
+                  guarantee got a red build caused by the harness, and the
+                  natural next move is to weaken the test until it passes. A
+                  project that did not write it had a table it believed was
+                  immutable and a suite that would never have noticed if it
+                  stopped being. <code>testkit.DB</code> installs the triggers
+                  now, on both dialects, after the migration.
+                </p>
+                <p>
+                  The underlying shape is worth naming because it will recur:
+                  testkit builds its schema with AutoMigrate, and AutoMigrate is
+                  not what <code>grit migrate</code> does. Everything the
+                  migrate command adds afterwards is exactly what AutoMigrate
+                  cannot express, and therefore exactly what no test sees.
+                </p>
+
+                <h3>And a vector column broke every Postgres test</h3>
+                <p>
+                  The same issue, and a direct consequence of v3.491.0.{' '}
+                  <code>postgresDB</code> gives each test its own schema and
+                  sets <code>search_path</code> to it. pgvector&apos;s{' '}
+                  <code>vector</code> type lives in <code>public</code>, so with
+                  public off the path AutoMigrate died on the first model with
+                  an embedding and took the whole package with it, including
+                  tests that have nothing to do with embeddings:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`migrating schema test_1_testsentenceoriginrefusesupdatefromrawsql:
+  ERROR: type "vector" does not exist (SQLSTATE 42704)`}
+                />
+                <p>
+                  The error names the type and not the path, so it reads as a
+                  missing extension. The test&apos;s own schema stays first, so{' '}
+                  <code>CREATE TABLE</code> still lands there and the isolation
+                  is unchanged; public is on the path only so that types owned
+                  by an extension resolve.
+                </p>
+                <p>
+                  Both verified against a real Postgres with pgvector and a
+                  vector column in the models, including each
+                  counterfactual: reverting either fix reproduces the
+                  reporter&apos;s exact error.
+                </p>
+
+                <h3>A documented modifier the generator rejects</h3>
+                <p>
+                  grit#192. The field-types page listed <code>:searchable</code>{' '}
+                  in its modifier table, and there is no such modifier:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`invalid modifier "searchable" for field "extracted_text"
+  (valid: unique, required, optional, auto, encrypted, when=<field>=<value>)`}
+                />
+                <p>
+                  The behaviour it promised was already there without it:
+                  string, text, richtext, slug, email, url, domain and tel all
+                  carry <code>search:&quot;trigram&quot;</code> automatically,
+                  which is what makes a list endpoint&apos;s{' '}
+                  <code>?search=</code> an indexed query on Postgres rather than
+                  a scan. The reporter&apos;s point is that this is the better
+                  design and the more useful fact, so the row is gone and the
+                  default is documented where a reader meets the tag in their
+                  own model and wonders who asked for it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.493.0 */}
             <div className="mb-12" id="v3.493.0">
               <div className="flex items-center gap-3 mb-4">
