@@ -204,3 +204,17 @@ func TestEveryTanStackTypeCheckGeneratesItsRouteTree(t *testing.T) {
 		}
 	}
 }
+
+// The same for jose2go, which is two steps further out: Wails pulls
+// 99designs/keyring, which pulls jose2go, and at v1.5.0 govulncheck traces
+// GO-2025-4123 and GO-2023-2409 to desktop.Keychain.Get. Both are reachable
+// from the path that reads the signed-in user's token off their machine, which
+// is the one dependency floor in this module worth a test (grit#188).
+func TestTheDesktopModulePinsAPatchedJose2Go(t *testing.T) {
+	gomod := desktopClientGoMod("app/apps/desktop")
+	if !strings.Contains(gomod, "github.com/dvsekhvalnov/jose2go v1.11.0") {
+		t.Error("the desktop go.mod does not raise github.com/dvsekhvalnov/jose2go, so " +
+			"`go mod tidy` takes the v1.5.0 that keyring asks for and the keychain path " +
+			"carries two called advisories")
+	}
+}

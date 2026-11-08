@@ -729,6 +729,14 @@ require (
 // module, so it needs the floor too: v0.58.0 and below carry GO-2026-6617,
 // the HPACK encoder race, and three others.
 require golang.org/x/net v0.60.0
+
+// The keychain's own floor. Wails pulls 99designs/keyring, which pulls jose2go,
+// and at v1.5.0 govulncheck traces GO-2025-4123 and GO-2023-2409 to
+// desktop.Keychain.Get: both are reachable from the path that reads the
+// signed-in user's token off their machine (grit#188). Denial of service rather
+// than key disclosure, and it needs control of the keyring file, so it is not
+// an emergency; it is also one line.
+require github.com/dvsekhvalnov/jose2go v1.11.0
 `
 }
 

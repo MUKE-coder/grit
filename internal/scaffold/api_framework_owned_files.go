@@ -65,6 +65,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// and did not. On Windows that is not air's to fix (grit#110).
 		filepath.Join(apiRoot, "internal", "devserver", "devserver.go"): apiDevServerGo(),
 
+		// Test factories for the framework's own models. `grit generate
+		// resource X --fields "...:belongs_to:User"` emits
+		// `factory.CreateUser(t, db)`, and factories are generated per
+		// resource, so User's and Upload's were never written by anything:
+		// every such resource produced a test package that refused to build.
+		filepath.Join(apiRoot, "internal", "factory", "factory.go"): apiFactoryCounterGo(),
+		filepath.Join(apiRoot, "internal", "factory", "user.go"):    apiUserFactoryGo(),
+		filepath.Join(apiRoot, "internal", "factory", "upload.go"):  apiUploadFactoryGo(),
+
 		// The audit tables' read side: the request log, the semantic feed and the
 		// OCSF export a collector polls, which had a query each in three handlers.
 		// Writing to them stays with the LogX functions.

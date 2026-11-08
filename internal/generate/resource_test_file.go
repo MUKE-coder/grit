@@ -190,8 +190,10 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 	)
 	fmt.Fprintf(&b, gridStaleRowTest,
 		names.Pascal, names.Pascal,
+		// The parents are created once and both rows share them: two of them
+		// would redeclare the same variables, which is what v3.483.0 did.
 		parentFixtures, names.Pascal, parentOverride,
-		parentFixtures, names.Pascal, parentOverride,
+		names.Pascal, parentOverride,
 		names.PluralKebab,
 		names.PluralKebab, patchKey, patchValue, patchKey, patchValue,
 		names.PluralKebab,
@@ -320,7 +322,7 @@ func Test%s_BulkEditRefusesAStaleRow(t *testing.T) {
 
 	admin := testkit.User(t, db, "admin-grid@example.com", models.RoleAdmin)
 %s	first := factory.Create%s(t, db%s)
-%s	second := factory.Create%s(t, db%s)
+	second := factory.Create%s(t, db%s)
 	client = client.As(testkit.SignIn(t, db, auth, admin))
 
 	// Somebody else saves the second row, so the grid's copy of it is stale.

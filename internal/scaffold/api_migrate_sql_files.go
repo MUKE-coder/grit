@@ -196,6 +196,27 @@ func EnsureSQLHistory(db *gorm.DB) error {
 	return nil
 }
 
+// ResetSQL forgets which pairs have run, for --fresh.
+//
+// --fresh drops every table, this one included, and the history is read again
+// straight afterwards: without this it fails with "relation
+// grit_sql_migrations does not exist" and every checked-in pair is skipped by
+// that run, on a database that otherwise looks correctly migrated. The pairs
+// are the ones AutoMigrate cannot express, so the ones missed are triggers,
+// backfills and extensions (grit#189).
+//
+// Dropping first rather than only ensuring, because --fresh means an empty
+// database: a driver whose DropAll leaves this table behind would otherwise
+// keep a history of migrations whose schema is gone.
+func ResetSQL(db *gorm.DB) error {
+	if db.Migrator().HasTable(&AppliedSQLMigration{}) {
+		if err := db.Migrator().DropTable(&AppliedSQLMigration{}); err != nil {
+			return fmt.Errorf("clearing the SQL migration history: %w", err)
+		}
+	}
+	return EnsureSQLHistory(db)
+}
+
 // LoadSQLMigrations reads every pair out of fsys, in version order.
 //
 // A .up.sql with no .down.sql is an error rather than a warning: it is a

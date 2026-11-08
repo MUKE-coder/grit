@@ -318,6 +318,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := raiseHookformResolvers(root, opts); err != nil {
 			fmt.Printf("  ⚠ raising @hookform/resolvers: %v\n", err)
 		}
+		// A generated handlers test that redeclares a parent fixture, so the
+		// test package refuses to build at all. v3.483.0 to v3.487.0 wrote it
+		// that way for any resource with a belongs_to.
+		if err := repairDuplicateFixtures(root, opts); err != nil {
+			fmt.Printf("  ⚠ removing a redeclared test fixture: %v\n", err)
+		}
 		// Production is the default and the strict mode: default secrets are
 		// refused, GORM Studio and /docs are off, and the auth rate limits match
 		// the routes they are for.

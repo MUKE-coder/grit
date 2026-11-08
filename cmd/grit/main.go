@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.487.0"
+var version = "3.488.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1291,14 +1291,15 @@ func generateResourceCmd() *cobra.Command {
 }
 
 func migrateCmd() *cobra.Command {
-	var fresh bool
+	var fresh, yes bool
 
 	cmd := &cobra.Command{
 		Use:   "migrate",
 		Short: "Run database migrations",
 		Long: "Connect to the database and run GORM AutoMigrate for all models. Use --fresh to drop all tables first.\n\n" +
 			"Each run records what it added, so `grit migrate status` shows the history and\n" +
-			"`grit migrate down` undoes the last run.",
+			"`grit migrate down` undoes the last run.\n\n" +
+			"--fresh drops every table and asks first. Pass --yes to mean it without being asked.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// The migrate tool says why it refused; a usage dump buries it.
 			cmd.SilenceUsage = true
@@ -1307,6 +1308,9 @@ func migrateCmd() *cobra.Command {
 			goArgs := []string{"run", "cmd/migrate/main.go", "--grit-version", version}
 			if fresh {
 				goArgs = append(goArgs, "--fresh")
+			}
+			if yes {
+				goArgs = append(goArgs, "--yes")
 			}
 			if fresh {
 				cHeading.Println("\n  Running fresh migration (drop + re-migrate)...")
@@ -1319,6 +1323,8 @@ func migrateCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&fresh, "fresh", false, "Drop all tables before migrating (migrate:fresh)")
+	cmd.Flags().BoolVar(&yes, "yes", false,
+		"Skip the confirmation --fresh asks for. For CI and scripts, where there is no one to answer")
 	cmd.AddCommand(migrateStatusCmd(), migrateDownCmd())
 
 	return cmd

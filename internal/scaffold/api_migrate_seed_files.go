@@ -157,12 +157,28 @@ func main() {
 	}
 
 	if *fresh {
+		// The most destructive thing this command does, and the only one that
+		// used to do it without asking: grit migrate down has a confirmation
+		// and --fresh did not.
+		if !*yes {
+			fmt.Print("--fresh drops every table in the database, and nothing brings the rows back. ")
+			if !confirmed() {
+				fmt.Println("Nothing was dropped.")
+				return
+			}
+		}
 		fmt.Println("Dropping all tables...")
 		if err := database.DropAll(db); err != nil {
 			log.Fatalf("Failed to drop tables: %v", err)
 		}
-		// The history described a schema that no longer exists.
+		// Both histories described a schema that no longer exists. The SQL one
+		// is read again a few lines below, and DropAll has just taken its
+		// table: without this that read fails and every checked-in pair is
+		// skipped by this run.
 		if err := migrate.Reset(db); err != nil {
+			log.Fatalf("%v", err)
+		}
+		if err := migrate.ResetSQL(db); err != nil {
 			log.Fatalf("%v", err)
 		}
 		fmt.Println("All tables dropped.")

@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 2 to 8, 2026",
-    count: 25,
+    count: 26,
     entries: [
+      { version: "3.488.0", title: "A generated project could not build its own tests, for 30 releases" },
       { version: "3.487.0", title: "Two defaults that were wrong in a way nobody could see" },
       { version: "3.486.0", title: "Invitations, and an organization that belongs to its members" },
       { version: "3.485.0", title: "The Vite admin could not build, for five releases" },

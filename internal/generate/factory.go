@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // writeFactory emits internal/factory/<snake>.go: a builder that makes a valid
@@ -69,13 +71,14 @@ func (g *Generator) factorySource(names Names) string {
 	b.WriteString("// in the same test do not collide.\n")
 	if len(relations) > 0 {
 		b.WriteString("//\n")
-		fmt.Fprintf(&b, "// %s is left empty: the factory cannot know which parent you mean, and\n",
-			humanList(relations))
-		b.WriteString("// inserting one would make every test that touches this resource write rows in\n")
-		b.WriteString("// another table too. Pass it in:\n//\n")
+		fmt.Fprintf(&b, "// %s is left empty here. Create%s fills it with a fresh parent when\n",
+			humanList(relationFields(relations)), names.Pascal)
+		b.WriteString("// nothing else has, because the column is a string rather than a pointer: its\n")
+		b.WriteString("// zero value is the empty string, not NULL, and no parent row has that id.\n")
+		b.WriteString("// To attach it to one you already have, pass it in and the override wins:\n//\n")
 		fmt.Fprintf(&b, "//\t%s := factory.Create%s(t, db, func(m *models.%s) {\n",
 			names.Camel, names.Pascal, names.Pascal)
-		fmt.Fprintf(&b, "//\t\tm.%s = parent.ID\n", relations[0])
+		fmt.Fprintf(&b, "//\t\tm.%s = parent.ID\n", relations[0].Field)
 		b.WriteString("//\t})\n")
 	}
 	fmt.Fprintf(&b, "func New%s(overrides ...func(*models.%s)) *models.%s {\n",
@@ -102,6 +105,16 @@ func (g *Generator) factorySource(names Names) string {
 		names.Pascal, names.Pascal, names.Pascal)
 	b.WriteString("\ttb.Helper()\n")
 	fmt.Fprintf(&b, "\trecord := New%s(overrides...)\n", names.Pascal)
+	// A parent per empty foreign key. The overrides have already run inside
+	// New, so a caller that passed one keeps it.
+	for _, rel := range relations {
+		if rel.Self || !g.parentFactoryExists(rel.Parent) {
+			continue
+		}
+		fmt.Fprintf(&b, "\tif record.%s == \"\" {\n", rel.Field)
+		fmt.Fprintf(&b, "\t\trecord.%s = Create%s(tb, db).ID\n", rel.Field, rel.Parent)
+		b.WriteString("\t}\n")
+	}
 	b.WriteString("\tif err := db.Create(record).Error; err != nil {\n")
 	fmt.Fprintf(&b, "\t\ttb.Fatalf(\"creating a %s fixture: %%v\", err)\n", names.Lower)
 	b.WriteString("\t}\n\treturn record\n}\n\n")
@@ -118,8 +131,32 @@ func (g *Generator) factorySource(names Names) string {
 	return b.String()
 }
 
+// factoryRelation is one belongs_to, as the factory needs to see it: the
+// column to fill, and whose factory fills it.
+type factoryRelation struct {
+	Field  string // AuthorID
+	Parent string // User
+	Self   bool   // a resource that belongs_to its own kind
+}
+
+// parentFactoryExists reports whether Create<Parent> will resolve.
+//
+// Two sources, because there are two kinds of parent: the framework's own
+// models, whose factories the scaffold ships, and another generated resource,
+// whose factory is already on disk because its model had to exist before this
+// one could point at it.
+func (g *Generator) parentFactoryExists(parent string) bool {
+	for _, known := range scaffold.FrameworkFactoryModels {
+		if known == parent {
+			return true
+		}
+	}
+	return fileExists(filepath.Join(g.APIRoot(), "internal", "factory",
+		toSnakeCase(parent)+".go"))
+}
+
 // factoryFields renders the struct literal body, and reports what it needed.
-func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, needsTime, needsMoney, needsCrypto, needsJSONTime bool, relations []string) {
+func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, needsTime, needsMoney, needsCrypto, needsJSONTime bool, relations []factoryRelation) {
 	var b strings.Builder
 
 	for _, f := range g.Definition.Fields {
@@ -133,7 +170,11 @@ func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, ne
 		goName := toPascalCase(f.Name)
 
 		if f.IsBelongsTo() {
-			relations = append(relations, toPascalCase(f.FKColumnName()))
+			relations = append(relations, factoryRelation{
+				Field:  toPascalCase(f.FKColumnName()),
+				Parent: f.RelatedModelName(),
+				Self:   f.RelatedModelName() == names.Pascal,
+			})
 			continue
 		}
 
@@ -160,6 +201,15 @@ func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, ne
 	}
 
 	return b.String(), needsFmt, needsTime, needsMoney, needsCrypto, needsJSONTime, relations
+}
+
+// relationFields is just the column names, for the doc comment.
+func relationFields(relations []factoryRelation) []string {
+	out := make([]string, 0, len(relations))
+	for _, rel := range relations {
+		out = append(out, rel.Field)
+	}
+	return out
 }
 
 // factoryValue is a plausible value for one field.
@@ -256,44 +306,13 @@ func humanList(values []string) string {
 	}
 }
 
-// factoryCounterSource is internal/factory/factory.go: the shared counter.
+// factoryCounterSource is the shared counter file, owned by internal/scaffold.
 //
-// Written once per project rather than once per resource, because every factory
-// draws from the same sequence and two resources sharing it is what keeps a test
-// that creates one of each from seeing the same number twice.
+// It is read from there rather than copied so the two cannot drift: the
+// scaffold ships this file to every new project and `grit upgrade` keeps it
+// current, and this write only covers a project old enough not to have it yet.
 func factoryCounterSource() string {
-	return `package factory
-
-// Package factory builds valid records for tests.
-//
-// One builder per resource, generated beside the model, so the knowledge of
-// what a valid row looks like lives in one place rather than in every test that
-// needs one. Adding a required field is then one edit here instead of one per
-// test file.
-
-import "sync/atomic"
-
-// counter makes each fixture distinct.
-//
-// Shared across every resource in the package on purpose: two resources with
-// their own counters would both start at 1, and a test creating one of each
-// would get two rows claiming to be the first, which is exactly the collision
-// a unique column then rejects.
-var counter atomic.Int64
-
-// next is the number the builders interpolate into unique fields.
-func next() int {
-	return int(counter.Add(1))
-}
-
-// Reset puts the counter back, for a test that asserts on an exact generated
-// value. Rarely what you want: asserting on "Widget 1" rather than on the value
-// the factory returned is a test that breaks when somebody adds a fixture above
-// it.
-func Reset() {
-	counter.Store(0)
-}
-`
+	return scaffold.FactoryCounterGo()
 }
 
 // ensureFactoryCounter writes internal/factory/factory.go when it is not

@@ -23,6 +23,64 @@ Also worth knowing:
 ---
 
 
+## v3.488.0 - November 8, 2026
+
+### A generated project could not build its own tests, for 30 releases
+
+CI has a job called &ldquo;A generated app survives Grit being deleted&rdquo;. It scaffolds a project, generates a resource, and runs the project's tests. It had been failing continuously since v3.464.0, and the reason nobody noticed is the reason it matters: nothing else can see this. The repository's own tests pass, `grit doctor` passes, and `go build ./...` on the generated project passes. Only running its tests fails, because `go test` runs part of vet as an error first, so the package refuses to build rather than failing.
+
+Three faults, stacked, each hiding the next. Filed as grit#190.
+
+#### One: no factory for a framework model
+
+```text
+vet: internal/handlers/note_test.go:62:20: undefined: factory.CreateUser
+```
+
+A generated test creates each `belongs_to` parent with `factory.CreateUser(t, db)`. Factories are generated per resource, and `User` and `Upload` are the framework's models rather than generated resources, so nothing ever wrote theirs. The existing test asserted the emitted text contained that line, which it did; nothing asserted the line resolved. Both factories now ship with the project, and `grit upgrade` delivers them.
+
+#### Two: the same fixture declared twice
+
+```text
+vet: internal/handlers/attachment_test.go:147:7: no new variables on left side of :=
+```
+
+The bulk-edit stale-row test added in v3.483.0 wrote the parent fixtures once per row, so a resource with a `belongs_to` got two identical `file := factory.CreateUpload(t, db)` lines in one function. Both rows share the parents now. For the resources already generated in that window, `grit upgrade` deletes the duplicated line: that file cannot compile, so there is nothing in it to preserve, and the repair only ever touches a line this generator wrote.
+
+#### Three: a factory that could not save
+
+```text
+task_test.go:62: creating a note fixture: FOREIGN KEY constraint failed
+```
+
+A generated factory left its `belongs_to` column empty and documented that the caller fills it. That works for a test, which knows about the parent, and not at all for another factory's parent fixture: the column is a string, so its zero value is the empty string rather than NULL, and no row has that id. So `project:belongs_to:Note,assignee:belongs_to:User` could never have worked, however the first two were fixed.
+
+`Create` now fills an empty required parent itself, recursively, and an override still wins because overrides run first. It only emits the call when that parent's factory is known to exist, because generating a call to a function nothing writes would trade a failing test for a package that does not compile.
+
+Verified on a real project: 41 packages pass, zero failures, on a scaffold with three resources covering a framework parent, a generated parent and two parents at once. Each new test was checked by putting its bug back.
+
+### And two from the field
+
+#### grit migrate --fresh skipped every SQL migration
+
+grit#189. `--fresh` drops every table, including `grit_sql_migrations`, and then the SQL history is read a few lines further down:
+
+```text
+ERROR: relation "grit_sql_migrations" does not exist (SQLSTATE 42P01)
+reading the SQL migration history: ...
+```
+
+So the command the docs recommend as the fast way through a schema change was also the one that silently did not apply any checked-in pair. The pairs are the things AutoMigrate cannot express, which means what went missing was triggers, backfills and extensions, on a database that otherwise looked correctly migrated. The append-only battery installs its trigger that way, so a `--fresh` in development was a plausible route to an append-only table with no trigger while the app still believed it was protected.
+
+The AutoMigrate half already handled this: `migrate.Reset` drops its own tables and recreates them. There is now a `ResetSQL` beside it, so both halves of `--fresh` read alike.
+
+`--fresh` also asks before dropping now. It is the most destructive thing the command does and was the only one that did it without a question, while `grit migrate down` has always had one. And `grit migrate --fresh --yes` works: the reporter guessed that flag by analogy and got `unknown flag: --yes`, because the generated migrate tool parsed it and the CLI never passed it on.
+
+#### Two called advisories in the desktop keychain
+
+grit#188. Wails pulls `99designs/keyring`, which pulls `jose2go` at v1.5.0, and `govulncheck` traces both advisories against it to `desktop.Keychain.Get`: the path that reads the signed-in user's token off their machine. Denial of service rather than key disclosure, and reaching it needs control of the keyring file, so not an emergency. It is also one line. Pinned to v1.11.0, after which `govulncheck ./...` in `apps/desktop` reports nothing and the module still builds.
+
+
 ## v3.487.0 - November 8, 2026
 
 ### Two defaults that were wrong in a way nobody could see
