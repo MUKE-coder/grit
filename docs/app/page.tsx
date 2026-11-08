@@ -152,6 +152,22 @@ export default function HomePage() {
             />
           </Reveal>
           <Batteries />
+          <div className="mt-10 rounded-2xl border border-border/40 bg-card/30 p-6 md:p-8">
+            <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wider text-accent">For multi-tenant products</p>
+                <h3 className="mt-2 text-2xl font-semibold tracking-tight text-fg">Organizations, membership and invitations</h3>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg-muted">
+                  Add verified email invitations, organization switching across web, admin and mobile,
+                  and opt-in tenant scoping on the models your product owns.
+                </p>
+              </div>
+              <Button href="/docs/plugins/multitenant" variant="secondary" size="md">
+                Explore the plugin
+                <ButtonArrow />
+              </Button>
+            </div>
+          </div>
         </Section>
 
         {/* ── 4. The resource definition ───────────────────────────── */}

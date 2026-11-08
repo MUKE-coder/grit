@@ -59,6 +59,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useMe, useLogout } from "@/hooks/use-auth";
 import { ChevronDown, LogOut, User as UserIcon } from "lucide-react";
+// grit:web-org-imports
 
 export function UserMenu() {
   const { data: user, isLoading } = useMe();
@@ -116,6 +117,7 @@ export function UserMenu() {
 
   return (
     <div ref={rootRef} className="relative">
+      {/* grit:web-org-switcher */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

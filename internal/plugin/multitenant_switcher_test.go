@@ -20,17 +20,21 @@ func switcherFiles(t *testing.T, arch, frontend string) map[string]string {
 	})
 }
 
-// A project with an admin gets the switcher and the hook.
+// A project with an admin gets the switcher and the hook. A double has no
+// second app: its panel is embedded in the web app, and the switcher belongs
+// with it.
 func TestTheSwitcherIsWrittenWhereThereIsAnAdmin(t *testing.T) {
-	for _, arch := range []string{"triple", "full"} {
-		files := switcherFiles(t, arch, "next")
-		for _, want := range []string{
-			"apps/admin/hooks/use-organizations.ts",
-			"apps/admin/components/chrome/OrganizationSwitcher.tsx",
-		} {
+	for _, tc := range []struct{ arch, frontend, hook, switcher string }{
+		{"triple", "next", "apps/admin/hooks/use-organizations.ts", "apps/admin/components/chrome/OrganizationSwitcher.tsx"},
+		{"full", "next", "apps/admin/hooks/use-organizations.ts", "apps/admin/components/chrome/OrganizationSwitcher.tsx"},
+		{"double", "next", "apps/web/admin-panel/hooks/use-organizations.ts", "apps/web/admin-panel/components/chrome/OrganizationSwitcher.tsx"},
+		{"double", "tanstack", "apps/web/src/admin-panel/hooks/use-organizations.ts", "apps/web/src/admin-panel/components/chrome/OrganizationSwitcher.tsx"},
+	} {
+		files := switcherFiles(t, tc.arch, tc.frontend)
+		for _, want := range []string{tc.hook, tc.switcher} {
 			if _, ok := files[want]; !ok {
-				t.Errorf("%s: %s was not written, so somebody in two organizations "+
-					"has no way to choose between them (grit#141)", arch, want)
+				t.Errorf("%s/%s: %s was not written, so somebody in two organizations "+
+					"has no way to choose between them (grit#141)", tc.arch, tc.frontend, want)
 			}
 		}
 	}
@@ -38,10 +42,10 @@ func TestTheSwitcherIsWrittenWhereThereIsAnAdmin(t *testing.T) {
 
 // And a project with no admin gets neither, rather than files nothing compiles.
 func TestNoSwitcherWhereThereIsNoAdmin(t *testing.T) {
-	for _, arch := range []string{"api", "single", "double"} {
+	for _, arch := range []string{"api", "single"} {
 		for path := range switcherFiles(t, arch, "next") {
-			if strings.Contains(path, "apps/admin") {
-				t.Errorf("%s: wrote %s into a project with no admin app", arch, path)
+			if strings.Contains(path, "admin") {
+				t.Errorf("%s: wrote %s into a project with no admin", arch, path)
 			}
 		}
 	}

@@ -17,7 +17,10 @@ func TestSingleRootRouteDrawsNothing(t *testing.T) {
 	if strings.Contains(root, "<Navbar />") || strings.Contains(root, "useRouterState") {
 		t.Error("the root route is deciding chrome again; the sections own their layouts")
 	}
-	if !strings.Contains(root, "component: () => <Outlet />") {
+	// The marker comment renders nothing; it is where a plugin mounts a
+	// control the layout owns, and it is why the root is no longer a one-line
+	// component.
+	if !strings.Contains(root, "<Outlet />") {
 		t.Error("the root route should render an outlet")
 	}
 

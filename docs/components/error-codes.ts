@@ -176,6 +176,48 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         meaning: 'The row belongs to an organization and the request has no active one: the caller belongs to none, or to several and named neither.',
         client: 'Send the active organization as X-Organization-ID. If the caller belongs to no organization, they cannot read this at all: put them in one, or send them somewhere that does not need one.',
       },
+      {
+        code: 'SLUG_TAKEN',
+        status: 409,
+        category: 'conflict',
+        meaning: 'Another organization already uses that URL slug.',
+        client: 'Offer a free variant. The slug-availability endpoint answers the same question before the form is submitted.',
+      },
+      {
+        code: 'TAX_ID_TAKEN',
+        status: 409,
+        category: 'conflict',
+        meaning: 'Another organization already claims that tax id. One company is one tenant here.',
+        client: 'Show which organization holds it to an operator. Do not retry with the same value.',
+      },
+      {
+        code: 'OWNER_TRANSFER_REQUIRED',
+        status: 409,
+        category: 'conflict',
+        meaning: 'The owner tried to leave the organization, which would leave it with nobody able to administer it.',
+        client: 'Transfer ownership to another member first, then leave.',
+      },
+      {
+        code: 'EMAIL_MISMATCH',
+        status: 403,
+        category: 'permission',
+        meaning: 'The invitation is valid, and the signed-in account is not the address it was sent to.',
+        client: 'Offer to sign in with the invited address, or sign out and back in. Do not try the link with another account.',
+      },
+      {
+        code: 'INVITATION_INVALID',
+        status: 404,
+        category: 'notfound',
+        meaning: 'The invitation token is unknown, expired, revoked, already used, or the signed-in address does not match the invited one.',
+        client: 'Do not reveal which of those it was. Offer to ask for a new invitation.',
+      },
+      {
+        code: 'MAIL_UNAVAILABLE',
+        status: 503,
+        category: 'disabled',
+        meaning: 'Email delivery is not configured, so an invitation cannot be sent.',
+        client: 'Tell the operator to configure the mail driver. Nothing the recipient can change will help.',
+      },
     ],
   },
   {
@@ -1010,7 +1052,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 117
+export const errorCodeCount = 123
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

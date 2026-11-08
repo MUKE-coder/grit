@@ -35,21 +35,20 @@ func init() { Register(multitenantPlugin()) }
 func multitenantPlugin() Plugin {
 	return Plugin{
 		Name: "multitenant",
-		// 1.0.1 scopes the GORM Row callback, after a cross-tenant read was
-		// reported by daljo25 (github.com/daljo25). Before it, Scan and Rows read
-		// across organizations on tenant-owned models while Find and First
-		// were scoped correctly. If a project reports 1.0.0, it is affected:
-		// grit plugin update multitenant.
-		Version: "1.0.1",
-		Summary: "Organizations, per-org roles, and automatic query scoping",
+		// 2.1.0 adds the organization profile (identity, tax, address and a
+		// stored logo) with an editable, availability-checked slug.
+		Version: "2.1.0",
+		Summary: "Organization onboarding, profile, invitations, members, and automatic query scoping",
 		Description: `Adds multi-tenancy where one user belongs to many organizations, holding a
-different role in each.
+ different role in each, with invitation emails and organization management.
 
   • Organization + OrganizationMember models
   • Active organization resolved from a header or the session — no subdomains
   • Automatic org scoping on every query via a GORM callback, so a forgotten
     WHERE cannot leak data across tenants
   • Per-organization permissions, reusing the roles you already have
+  • Expiring, revocable email invitations and verified-email acceptance
+  • Fixed owner/admin/member roles with organization-specific display labels
 
 Requires the roles system (Grit v3.66.0+).`,
 
@@ -58,6 +57,9 @@ Requires the roles system (Grit v3.66.0+).`,
 			"Add `tenant.Owned` to every model that belongs to an organization",
 			"Until you do, a model is shared: scoping only applies to models that have OrgID",
 			"Clients send the active org as X-Organization-ID; the admin gets a switcher, which appears once somebody belongs to two",
+			"Invitation emails use the project's configured mail service; set GRIT_WEB_URL if the web app is on another origin",
+			"Invitation expiry defaults to 7 days; GRIT_ORG_INVITATION_TTL accepts a duration from 1h to 720h",
+			"Organization logos use the project's configured storage driver; the profile screen uploads through the API",
 			"Read internal/tenant/tenant.go for how to opt a query OUT of scoping",
 		},
 
@@ -109,10 +111,12 @@ func multitenantFiles(ctx Context) map[string]string {
 
 	files := map[string]string{
 		p("internal/models/organization.go"):   mtOrganizationModel(ctx),
+		p("internal/models/organization_invitation.go"): mtInvitationModel(ctx),
 		p("internal/tenant/tenant.go"):         mtTenantPackage(ctx),
 		p("internal/tenant/tenant_test.go"):    mtTenantTests(ctx),
 		p("internal/middleware/tenant.go"):     mtMiddleware(ctx),
 		p("internal/handlers/organization.go"): mtHandler(ctx),
+		p("internal/handlers/organization_invitation.go"): mtInvitationHandler(ctx),
 	}
 
 	// The switcher, for a project that has an admin to put it in.
@@ -125,9 +129,49 @@ func multitenantFiles(ctx Context) map[string]string {
 	// The header itself is the framework's, in lib/active-org.ts and the
 	// api-core interceptor, and is inert until something sets a value. Only
 	// the part that is genuinely about organizations lives here.
-	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
+	// The panel exists as its own app in a triple and embedded in the web app
+	// in a double. It gets the selector and nothing else: choosing the active
+	// organization is what a platform screen needs. Managing an organization
+	// belongs to its members, in the account area of the web app, never in the
+	// panel that also carries /system.
+	if ctx.Architecture == "triple" || ctx.Architecture == "full" || ctx.Architecture == "double" {
 		files[adminFile(ctx, "hooks/use-organizations.ts")] = adminSource(ctx, mtOrganizationsHook())
 		files[adminFile(ctx, "components/chrome/OrganizationSwitcher.tsx")] = adminSource(ctx, mtOrganizationSwitcher())
+	}
+	if ctx.Architecture == "triple" || ctx.Architecture == "double" || ctx.Architecture == "full" {
+		if ctx.Frontend == "next" {
+			files["apps/web/hooks/use-organizations.ts"] = mtWebOrganizationHook()
+			files["apps/web/components/OrganizationSwitcher.tsx"] = mtWebOrganizationSwitcher()
+			files["apps/web/lib/organization-client.ts"] = mtOrganizationClient("apiClient", "(process.env.NEXT_PUBLIC_ADMIN_URL || \"http://localhost:3001\") + \"/login\"")
+			files["apps/web/app/invitations/accept/page.tsx"] = mtWebInvitationPage()
+			files["apps/web/app/account/organization/page.tsx"] = mtWebOrganizationPage()
+		} else {
+			// A Vite app keeps code under src/, exports `api` rather than
+			// `apiClient`, and has no framework active-org module, so the client
+			// half ships with the plugin here.
+			files["apps/web/src/hooks/use-organizations.ts"] = mtTanStackWebOrganizationHook()
+			files["apps/web/src/components/OrganizationSwitcher.tsx"] = mtWebOrganizationSwitcher()
+			files["apps/web/src/lib/active-org.ts"] = mtTanStackActiveOrg()
+			files["apps/web/src/lib/organization-client.ts"] = mtOrganizationClient("api", "(import.meta.env.VITE_ADMIN_URL || \"http://localhost:3001\") + \"/login\"")
+			files["apps/web/src/pages/invitation-accept.tsx"] = mtWebInvitationPage()
+			files["apps/web/src/pages/organization.tsx"] = mtWebOrganizationPage()
+			files["apps/web/src/routes/invitations.accept.tsx"] = `import { createFileRoute } from "@tanstack/react-router";
+import Page from "@/pages/invitation-accept";
+
+export const Route = createFileRoute("/invitations/accept")({ component: Page });
+`
+			files["apps/web/src/routes/account.organization.tsx"] = `import { createFileRoute } from "@tanstack/react-router";
+import Page from "@/pages/organization";
+
+export const Route = createFileRoute("/account/organization")({ component: Page });
+`
+		}
+	}
+	if ctx.Root != "" {
+		if _, err := os.Stat(filepath.Join(ctx.Root, "apps", "expo", "app", "_layout.tsx")); err == nil {
+			files["apps/expo/components/organization-switcher.tsx"] = mtExpoSwitcher()
+			files["apps/expo/app/invitations/accept.tsx"] = mtExpoInvitationPage()
+		}
 	}
 
 	return files
@@ -149,12 +193,13 @@ func multitenantInjections(ctx Context) []Injection {
 		{
 			File:   p("internal/models/user.go"),
 			Marker: "// grit:models",
-			Code:   "\t\t&Organization{},\n\t\t&OrganizationMember{},",
+			Code:   "\t\t&Organization{},\n\t\t&OrganizationMember{},\n\t\t&OrganizationInvitation{},",
 		},
 		{
 			File:   p("internal/routes/routes.go"),
 			Marker: "// grit:handlers",
-			Code:   "\torgHandler := handlers.NewOrganizationHandler(db)",
+			Code: "\torgHandler := handlers.NewOrganizationHandler(db, svc.Storage)\n" +
+				"\torgInvitationHandler := handlers.NewOrganizationInvitationHandler(db, svc.Mailer)",
 		},
 		{
 			File:   p("internal/routes/routes.go"),
@@ -201,15 +246,39 @@ func multitenantInjections(ctx Context) []Injection {
 			Code:   "\tadmin.Use(middleware.Tenant(db))",
 		},
 		{
+			// Public, and outside the API-key group: the invitation page has to
+			// ask what a link is before anybody can sign in. The token is the
+			// credential; nothing but the invitation's own fields is returned.
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:routes:custom",
+			Code:   "\tv1.GET(\"/organization-invitations/preview\", orgInvitationHandler.Preview)",
+		},
+		{
 			File:   p("internal/routes/routes.go"),
 			Marker: "// grit:routes:protected",
 			Code: `		// Organizations. Listing and switching are available to any signed-in
 		// user — they need to see the orgs they belong to before one is active.
 		protected.GET("/organizations", orgHandler.MyOrganizations)
+		protected.GET("/organizations/archived", orgHandler.MyArchivedOrganizations)
 		protected.POST("/organizations", orgHandler.Create)
+		protected.GET("/organizations/slug-availability", orgHandler.SlugAvailable)
+		protected.GET("/organizations/:id", orgHandler.Get)
+		protected.PATCH("/organizations/:id", orgHandler.Update)
+		protected.POST("/organizations/:id/logo", orgHandler.UploadLogo)
+		protected.DELETE("/organizations/:id/logo", orgHandler.RemoveLogo)
 		protected.GET("/organizations/:id/members", orgHandler.Members)
 		protected.POST("/organizations/:id/members", orgHandler.AddMember)
 		protected.DELETE("/organizations/:id/members/:userId", orgHandler.RemoveMember)
+		protected.DELETE("/organizations/:id/membership", orgHandler.Leave)
+		protected.POST("/organizations/:id/invitations", orgInvitationHandler.Create)
+		protected.GET("/organizations/:id/invitations", orgInvitationHandler.List)
+		protected.DELETE("/organizations/:id/invitations/:invitationId", orgInvitationHandler.Revoke)
+		protected.POST("/organizations/:id/invitations/:invitationId/resend", orgInvitationHandler.Resend)
+		protected.POST("/organization-invitations/accept", orgInvitationHandler.Accept)
+		protected.PATCH("/organizations/:id/role-labels", orgHandler.UpdateLabels)
+		protected.POST("/organizations/:id/transfer-owner", orgHandler.TransferOwner)
+		protected.POST("/organizations/:id/archive", orgHandler.Archive)
+		protected.POST("/organizations/:id/restore", orgHandler.Restore)
 
 		// An organization's own roles. Any member may read them; the owner, a
 		// platform administrator, or a member holding orgroles.manage may
@@ -225,13 +294,19 @@ func multitenantInjections(ctx Context) []Injection {
 	// the upgrade respects. The navbar would be the obvious home and is the
 	// wrong one: it is rewritten by every upgrade and has no marker, so the
 	// switcher would vanish from a project that upgraded (grit#141).
-	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
+	if ctx.Architecture == "triple" || ctx.Architecture == "full" || ctx.Architecture == "double" {
 		layout := adminDir(ctx) + "/components/layout/admin-layout.tsx"
+		// An embedded panel imports through @admin/, the standalone one
+		// through @/. The wrong alias compiles to nothing the app uses.
+		switcher := "@/components/chrome/OrganizationSwitcher"
+		if ctx.Architecture == "double" {
+			switcher = "@admin/components/chrome/OrganizationSwitcher"
+		}
 		injections = append(injections,
 			Injection{
 				File:   layout,
 				Marker: "// grit:layout:imports",
-				Code:   `import { OrganizationSwitcher } from "@/components/chrome/OrganizationSwitcher";`,
+				Code:   `import { OrganizationSwitcher } from "` + switcher + `";`,
 			},
 			Injection{
 				File:   layout,
@@ -239,6 +314,29 @@ func multitenantInjections(ctx Context) []Injection {
 				Code:   "        <OrganizationSwitcher />",
 			},
 		)
+		if ctx.Frontend == "next" {
+			injections = append(injections,
+				Injection{File:"apps/web/components/navbar.tsx", Marker:"// grit:nav:imports", Optional:true, Code:`import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";`},
+				Injection{File:"apps/web/components/navbar.tsx", Marker:"{/* grit:nav:account-desktop */}", Optional:true, Code:`          <OrganizationSwitcher />`},
+				Injection{File:"apps/web/components/navbar.tsx", Marker:"{/* grit:nav:account-mobile */}", Optional:true, Code:`            <OrganizationSwitcher />`},
+			)
+		}
+	}
+	if (ctx.Architecture == "double" || ctx.Architecture == "triple" || ctx.Architecture == "full") && ctx.Frontend == "tanstack" {
+		injections = append(injections,
+			Injection{File:"apps/web/src/routes/__root.tsx", Marker:"// grit:web-org-imports", Optional:true, Code:`import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";`},
+			Injection{File:"apps/web/src/routes/__root.tsx", Marker:"{/* grit:web-org-switcher */}", Optional:true, Code:`      <OrganizationSwitcher />`},
+		)
+	}
+	if ctx.Root != "" {
+		if _, err := os.Stat(filepath.Join(ctx.Root, "apps", "expo", "app", "_layout.tsx")); err == nil {
+			injections = append(injections,
+				Injection{File:"apps/expo/app/_layout.tsx", Marker:"// grit:mobile-imports", Optional:true, Code:`import { OrganizationSwitcher } from "@/components/organization-switcher";`},
+				Injection{File:"apps/expo/app/_layout.tsx", Marker:"{/* grit:mobile-tenant-switcher */}", Optional:true, Code:`      {isAuthenticated ? <OrganizationSwitcher /> : null}`},
+				Injection{File:"apps/expo/lib/api.ts", Marker:"// grit:mobile-active-organization", Optional:true, Code:`    const activeOrganizationID = await SecureStore.getItemAsync("active_org_id");
+    if (activeOrganizationID) headers["X-Organization-ID"] = activeOrganizationID;`},
+			)
+		}
 	}
 
 	return injections
@@ -265,6 +363,27 @@ type Organization struct {
 	Name        string ~gorm:"size:160;not null" json:"name" binding:"required"~
 	Slug        string ~gorm:"size:160;uniqueIndex;not null" json:"slug"~
 	Description string ~gorm:"size:500" json:"description"~
+	OwnerLabel   string ~gorm:"size:40;not null;default:Owner" json:"owner_label"~
+	AdminLabel   string ~gorm:"size:40;not null;default:Admin" json:"admin_label"~
+	MemberLabel  string ~gorm:"size:40;not null;default:Member" json:"member_label"~
+
+	// Profile. Every field is optional except the name: a project that only
+	// wants organizations, not invoices, should not be asked for a tax id.
+	LogoURL     string  ~gorm:"size:500" json:"logo_url"~
+	Website     string  ~gorm:"size:300" json:"website"~
+	LegalName   string  ~gorm:"size:200" json:"legal_name"~
+	// A pointer so "not provided" is NULL and not "". A unique index on a
+	// string column makes the second organization with no tax id collide in
+	// MySQL, which swallows NULL but not empty strings; every database allows
+	// many NULLs.
+	TaxID       *string ~gorm:"size:64;uniqueIndex" json:"tax_id,omitempty"~
+	TaxCountry  string  ~gorm:"size:2" json:"tax_country"~
+	AddressLine1 string ~gorm:"size:200" json:"address_line1"~
+	AddressLine2 string ~gorm:"size:200" json:"address_line2"~
+	City        string  ~gorm:"size:120" json:"city"~
+	Region      string  ~gorm:"size:120" json:"region"~
+	PostalCode  string  ~gorm:"size:32" json:"postal_code"~
+	Country     string  ~gorm:"size:2" json:"country"~
 
 	// OwnerID is the user who created the organization. Kept separate from
 	// membership roles so an owner can't be locked out by a permission change.
@@ -301,6 +420,7 @@ type OrganizationMember struct {
 	UserID         string ~gorm:"primaryKey;size:36;index" json:"user_id"~
 	OrganizationID string ~gorm:"primaryKey;size:36;index" json:"organization_id"~
 	RoleID         string ~gorm:"size:36;index" json:"role_id"~
+	Role           string ~gorm:"size:24;not null;default:member" json:"role"~
 
 	// No DeletedAt: soft-delete tombstones collide with the composite primary
 	// key when someone is re-invited, which surfaces as a unique-constraint

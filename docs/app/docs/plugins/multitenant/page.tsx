@@ -17,12 +17,12 @@ const STEPS: PluginStep[] = [
   {
     title: 'Install it',
     run: 'grit plugin add multitenant',
-    then: 'Writes the Organization and OrganizationMember models, the tenant package holding the GORM callbacks, the organisation screens in the admin, and the switcher in the navbar.',
+    then: 'Writes the organization, membership and invitation models, the tenant package holding the GORM callbacks, and organization controls for generated clients.',
   },
   {
     title: 'Run the migration',
     run: 'cd apps/api && go run cmd/migrate/main.go',
-    then: 'Creates the two tables. Nothing else in the project has changed shape yet.',
+    then: 'Applies the plugin models through Grit migration history. Existing tenant data is not moved or deleted.',
   },
   {
     title: 'Make a model tenant-owned',
@@ -242,7 +242,7 @@ curl -X POST https://api.example.com/api/v1/organizations/01H.../members \\
               one organization has it activated automatically and never sends the header at all.
             </p>
             <p>
-              A user who belongs to two gets a switcher in the admin, which the plugin installs.
+              A user who belongs to two gets a switcher in the web and Expo mobile clients, and in the admin panel where a platform screen needs to know which organization it is acting on.
               It renders nothing below two organizations, so a single-tenant project looks as it
               did. Switching clears the React Query cache rather than invalidating it: an
               invalidated query serves its old data while it refetches, and that data belongs to
@@ -253,6 +253,63 @@ curl -X POST https://api.example.com/api/v1/organizations/01H.../members \\
               the <code>api-core</code> interceptor, and it is present in every project whether
               or not the plugin is. It sends nothing until something sets a value, so a
               single-tenant project carries a few inert lines and nothing else.
+            </p>
+
+            <h2>Onboarding, members and invitations</h2>
+            <p>
+              Create an organization and manage it from the account area of the web app, at
+              <code>/account/organization</code>: profile, logo, invitations, members and
+              role labels all live there. Tenant users never need the platform admin panel,
+              which also carries the system tools. Invitations expire after seven days by default;
+              set <code>GRIT_ORG_INVITATION_TTL</code> to a duration from <code>1h</code> to{' '}
+              <code>720h</code> to change that. Re-sending rotates the single-use token, while
+              revoking invalidates it immediately. The API stores a token hash, not the token.
+            </p>
+            <p>
+              The accept page carries the whole flow. It asks a public preview endpoint what the
+              link is, then offers the right action: sign in with the invited address, create the
+              account there (the email is fixed to the invitation), verify the address, or accept.
+              A link opened while signed in as somebody else says so and offers to switch. Nobody
+              needs to find a separate login page first, and a person with no account is not left
+              at a dead end.
+            </p>
+            <p>
+              Accepting requires a verified address and is idempotent: a second click, or a return
+              after the first request already added the member, lands in the organization instead
+              of answering invalid. A spent link is only a way back in for the person it added.
+              Delivery uses the project&apos;s configured mail service. Set <code>GRIT_WEB_URL</code>
+              {' '}when the web app is hosted at a different origin from the API.
+            </p>
+            <p>
+              Organization owners can manage members, transfer ownership, edit the visible
+              Owner, Admin and Member labels, and archive or restore an organization. Labels
+              never change the underlying role identifiers or permissions. Archiving suspends
+              access while retaining tenant-owned data. The database remains shared; only
+              models embedding <code>tenant.Owned</code> are scoped.
+            </p>
+
+            <h2>The organization profile</h2>
+            <p>
+              The settings screen edits the organization&apos;s identity and, when the project
+              needs them, its legal and postal details: name, slug, description, website, logo,
+              legal name, tax id, tax country, address, city, region, postal code and country.
+              Only the name is required. The fields are optional storage, not behaviour: a
+              single-tenant-style project that never fills them behaves exactly as before.
+            </p>
+            <p>
+              The slug is editable and checked against the database before saving; the same
+              check backs a live availability endpoint for the form. Creating two organizations
+              with the same name no longer fails, because the second gets a suffixed slug
+              (<code>acme</code>, <code>acme-2</code>). A tax id is unique across organizations,
+              stored normalized in upper case, and empty values are stored as <code>NULL</code>
+              so organizations without one do not collide.
+            </p>
+            <p>
+              The logo is uploaded through the API and stored by the project&apos;s configured
+              storage driver, the same one every other upload uses. It appears in the
+              organization switcher on the admin, web and mobile clients, and as a preview in
+              the settings form. PNG, JPEG, WebP and GIF up to 2 MB are accepted; the type is
+              sniffed from the bytes rather than trusted from the request.
             </p>
 
             <h2>An organization has roles of its own</h2>
@@ -297,9 +354,25 @@ curl -X POST https://api.example.com/api/v1/organizations/01H.../members \\
             <h2>Endpoints</h2>
             <CodeBlock language="text" code={`GET    /api/organizations                       orgs you belong to
 POST   /api/organizations                       create (you become owner)
+GET    /api/organizations/archived              archived orgs you own
+GET    /api/organizations/:id                   profile, any member
+PATCH  /api/organizations/:id                   owner or platform admin
+GET    /api/organizations/slug-availability     live slug check
+POST   /api/organizations/:id/logo              multipart image
+DELETE /api/organizations/:id/logo
 GET    /api/organizations/:id/members
 POST   /api/organizations/:id/members
 DELETE /api/organizations/:id/members/:userId
+POST   /api/organizations/:id/invitations       invite by email
+GET    /api/organizations/:id/invitations       list pending invitations
+POST   /api/organizations/:id/invitations/:invitationId/resend
+DELETE /api/organizations/:id/invitations/:invitationId
+GET    /api/organization-invitations/preview    public; token is the credential
+POST   /api/organization-invitations/accept     verified email required
+PATCH  /api/organizations/:id/role-labels
+POST   /api/organizations/:id/transfer-owner
+POST   /api/organizations/:id/archive
+POST   /api/organizations/:id/restore
 
 GET    /api/organizations/:id/roles             any member may read
 POST   /api/organizations/:id/roles             owner, admin, or orgroles.manage
