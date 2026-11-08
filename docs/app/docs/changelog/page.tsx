@@ -72,6 +72,114 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.493.0 */}
+            <div className="mb-12" id="v3.493.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.493.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two relations the new factory had not met</h3>
+                <p>
+                  v3.488.0 gave a generated factory the ability to fill in a
+                  required parent, which is what made{' '}
+                  <code>factory.CreateNote(t, db)</code> able to save at all.
+                  Both of these are that change meeting a shape it was not
+                  written for, and both were found by generating the resource
+                  and building it.
+                </p>
+
+                <h4>An optional belongs_to does not compile</h4>
+                <p>
+                  grit#193. <code>:optional</code> gives the model a{' '}
+                  <code>*string</code> foreign key, which is right. The fill
+                  emitted the required form for both cardinalities:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`internal/factory/ai_run.go:56:25: invalid operation: record.ProjectID == ""
+  (mismatched types *string and untyped string)
+internal/factory/ai_run.go:57:22: cannot use CreateProject(tb, db).ID
+  (variable of type string) as *string value in assignment`}
+                />
+                <p>
+                  It hit 5 of 19 resources on the reporter&apos;s project, so
+                  not an edge case for anybody who models optional parents.
+                </p>
+                <p>
+                  The obvious fix is a pointer-aware version, and the
+                  reporter&apos;s argument against it is the one to follow: it
+                  compiles and is still wrong, because it makes an optional
+                  relation mandatory in every fixture. A test asking for one
+                  row would quietly write three, and the case the column exists
+                  to express, a row with no parent, would never be the default.
+                </p>
+                <p>
+                  So an optional parent gets no fill, in the factory and in the
+                  generated test, which had the same problem from the same
+                  helper. nil is the right fixture value, and the factory says
+                  so where somebody will read it:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`// ProjectID and DocumentID stay nil: the relation is optional, so no parent is
+// created for them. Pass one to attach it, remembering the column is a pointer:
+//
+//	aiRun := factory.CreateAIRun(t, db, func(m *models.AIRun) {
+//		m.ProjectID = &parent.ID
+//	})`}
+                />
+
+                <h4>Two rows cannot share a one_to_one parent</h4>
+                <p>
+                  grit#195. v3.488.0 made both rows of the bulk-edit stale-row
+                  test share the parent fixtures, which fixed a redeclared
+                  variable and is right for a <code>belongs_to</code>. A{' '}
+                  <code>one_to_one</code> is a belongs_to with a unique foreign
+                  key, so the second insert is refused:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`--- FAIL: TestMethodologyProfile_BulkEditRefusesAStaleRow
+    methodology_profile_test.go:153: creating a methodologyprofile fixture:
+      UNIQUE constraint failed: methodology_profiles.project_id`}
+                />
+                <p>
+                  The second row omits the assignment now, and the factory
+                  gives it a parent of its own because the column is empty. A
+                  plain belongs_to still shares, because two of every parent
+                  would be rows nothing asked for, and the test is about a stale
+                  row in a bulk edit either way.
+                </p>
+
+                <h4>One of the new tests was worthless and said it passed</h4>
+                <p>
+                  Worth writing down, because it is the failure mode these
+                  releases keep running into. The first version of the
+                  optional-parent test generated the resource into a project
+                  where the parents did not exist, so{' '}
+                  <code>parentFactoryExists</code> was false and the fill was
+                  skipped for a reason that had nothing to do with the fix. It
+                  passed with the bug put back.
+                </p>
+                <p>
+                  It generates the parents first now, and asserts that their
+                  factories are there before asserting anything else, so a
+                  future version of this test cannot pass for the wrong reason.
+                  Both fixes were then checked by reintroducing their bugs and
+                  watching the tests fail.
+                </p>
+                <p>
+                  Verified on the reporter&apos;s own command, including{' '}
+                  <code>--owned-by user --append-only</code>: it builds, vets
+                  and tests clean.
+                </p>
+              </div>
+            </div>
+
             {/* v3.492.0 */}
             <div className="mb-12" id="v3.492.0">
               <div className="flex items-center gap-3 mb-4">

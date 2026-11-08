@@ -51,7 +51,7 @@ func (g *Generator) resourceTestSource(names Names) string {
 	// not enforce foreign keys, and Postgres, which is what the project runs
 	// on, refused it. Green where nobody ships, red where everybody does.
 	// See grit#137.
-	parentFixtures, parentOverride := g.parentFixtures(names)
+	parentFixtures, parentOverride, secondRowOverride := g.parentFixtures(names)
 
 	fmt.Fprintf(&b, `package handlers
 
@@ -192,8 +192,10 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 		names.Pascal, names.Pascal,
 		// The parents are created once and both rows share them: two of them
 		// would redeclare the same variables, which is what v3.483.0 did.
+		// The second row drops any one_to_one, whose foreign key is unique and
+		// cannot be pointed at twice (grit#195).
 		parentFixtures, names.Pascal, parentOverride,
-		names.Pascal, parentOverride,
+		names.Pascal, secondRowOverride,
 		names.PluralKebab,
 		names.PluralKebab, patchKey, patchValue, patchKey, patchValue,
 		names.PluralKebab,
@@ -209,9 +211,14 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 // A self-reference is skipped: a resource whose parent is its own kind can be
 // created with none, and making one first would need the same override and
 // recurse.
-func (g *Generator) parentFixtures(names Names) (fixtures, override string) {
+func (g *Generator) parentFixtures(names Names) (fixtures, override, secondOverride string) {
 	var created []string
 	var assignments []string
+	// The same, without the relations whose foreign key is unique. A second row
+	// cannot point at the same parent through a one_to_one, so it points at one
+	// of its own: the factory makes it, because the column is left empty
+	// (grit#195).
+	var shareable []string
 	seen := map[string]bool{}
 
 	for _, f := range g.Definition.Fields {
@@ -222,6 +229,14 @@ func (g *Generator) parentFixtures(names Names) (fixtures, override string) {
 		if related == "" || related == names.Pascal {
 			continue
 		}
+		// An optional parent is left nil, like the factory leaves it. The
+		// column is a *string, so assigning parent.ID does not compile; and a
+		// row without the relation is a valid row, which is what the column
+		// being optional means, so the test does not need the parent at all
+		// (grit#193).
+		if g.relOptional(f) {
+			continue
+		}
 		variable := toCamelCase(f.Name)
 		if seen[variable] {
 			continue
@@ -230,18 +245,33 @@ func (g *Generator) parentFixtures(names Names) (fixtures, override string) {
 
 		created = append(created, fmt.Sprintf("\t%s := factory.Create%s(t, db)\n",
 			variable, related))
-		assignments = append(assignments, fmt.Sprintf("\t\tm.%s = %s.ID\n",
-			toPascalCase(f.FKColumnName()), variable))
+		assignment := fmt.Sprintf("\t\tm.%s = %s.ID\n",
+			toPascalCase(f.FKColumnName()), variable)
+		assignments = append(assignments, assignment)
+		if !f.IsOneToOne() {
+			shareable = append(shareable, assignment)
+		}
 	}
 
 	if len(created) == 0 {
-		return "", ""
+		return "", "", ""
 	}
 
 	fixtures = strings.Join(created, "") + "\n"
 	override = fmt.Sprintf(", func(m *models.%s) {\n%s\t}",
 		names.Pascal, strings.Join(assignments, ""))
-	return fixtures, override
+	secondOverride = override
+	if len(shareable) != len(assignments) {
+		if len(shareable) == 0 {
+			// Every relation this resource has is unique, so the second row
+			// shares nothing and the factory fills all of it.
+			secondOverride = ""
+		} else {
+			secondOverride = fmt.Sprintf(", func(m *models.%s) {\n%s\t}",
+				names.Pascal, strings.Join(shareable, ""))
+		}
+	}
+	return fixtures, override, secondOverride
 }
 
 // patchableTextField is a column the grid test can change: the first plain text

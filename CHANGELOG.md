@@ -23,6 +23,59 @@ Also worth knowing:
 ---
 
 
+## v3.493.0 - November 8, 2026
+
+### Two relations the new factory had not met
+
+v3.488.0 gave a generated factory the ability to fill in a required parent, which is what made `factory.CreateNote(t, db)` able to save at all. Both of these are that change meeting a shape it was not written for, and both were found by generating the resource and building it.
+
+#### An optional belongs_to does not compile
+
+grit#193. `:optional` gives the model a `*string` foreign key, which is right. The fill emitted the required form for both cardinalities:
+
+```text
+internal/factory/ai_run.go:56:25: invalid operation: record.ProjectID == ""
+  (mismatched types *string and untyped string)
+internal/factory/ai_run.go:57:22: cannot use CreateProject(tb, db).ID
+  (variable of type string) as *string value in assignment
+```
+
+It hit 5 of 19 resources on the reporter's project, so not an edge case for anybody who models optional parents.
+
+The obvious fix is a pointer-aware version, and the reporter's argument against it is the one to follow: it compiles and is still wrong, because it makes an optional relation mandatory in every fixture. A test asking for one row would quietly write three, and the case the column exists to express, a row with no parent, would never be the default.
+
+So an optional parent gets no fill, in the factory and in the generated test, which had the same problem from the same helper. nil is the right fixture value, and the factory says so where somebody will read it:
+
+```go
+// ProjectID and DocumentID stay nil: the relation is optional, so no parent is
+// created for them. Pass one to attach it, remembering the column is a pointer:
+//
+//	aiRun := factory.CreateAIRun(t, db, func(m *models.AIRun) {
+//		m.ProjectID = &parent.ID
+//	})
+```
+
+#### Two rows cannot share a one_to_one parent
+
+grit#195. v3.488.0 made both rows of the bulk-edit stale-row test share the parent fixtures, which fixed a redeclared variable and is right for a `belongs_to`. A `one_to_one` is a belongs_to with a unique foreign key, so the second insert is refused:
+
+```text
+--- FAIL: TestMethodologyProfile_BulkEditRefusesAStaleRow
+    methodology_profile_test.go:153: creating a methodologyprofile fixture:
+      UNIQUE constraint failed: methodology_profiles.project_id
+```
+
+The second row omits the assignment now, and the factory gives it a parent of its own because the column is empty. A plain belongs_to still shares, because two of every parent would be rows nothing asked for, and the test is about a stale row in a bulk edit either way.
+
+#### One of the new tests was worthless and said it passed
+
+Worth writing down, because it is the failure mode these releases keep running into. The first version of the optional-parent test generated the resource into a project where the parents did not exist, so `parentFactoryExists` was false and the fill was skipped for a reason that had nothing to do with the fix. It passed with the bug put back.
+
+It generates the parents first now, and asserts that their factories are there before asserting anything else, so a future version of this test cannot pass for the wrong reason. Both fixes were then checked by reintroducing their bugs and watching the tests fail.
+
+Verified on the reporter's own command, including `--owned-by user --append-only`: it builds, vets and tests clean.
+
+
 ## v3.492.0 - November 8, 2026
 
 ### grit migrate down would roll back the run that built your database

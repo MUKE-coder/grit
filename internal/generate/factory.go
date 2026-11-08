@@ -69,16 +69,33 @@ func (g *Generator) factorySource(names Names) string {
 	fmt.Fprintf(&b, "// New%s builds a valid %s without saving it.\n//\n", names.Pascal, names.Pascal)
 	b.WriteString("// Every call produces different values for the unique fields, so two rows made\n")
 	b.WriteString("// in the same test do not collide.\n")
-	if len(relations) > 0 {
+	if required := requiredRelations(relations); len(required) > 0 {
 		b.WriteString("//\n")
 		fmt.Fprintf(&b, "// %s is left empty here. Create%s fills it with a fresh parent when\n",
-			humanList(relationFields(relations)), names.Pascal)
+			humanList(relationFields(required)), names.Pascal)
 		b.WriteString("// nothing else has, because the column is a string rather than a pointer: its\n")
 		b.WriteString("// zero value is the empty string, not NULL, and no parent row has that id.\n")
 		b.WriteString("// To attach it to one you already have, pass it in and the override wins:\n//\n")
 		fmt.Fprintf(&b, "//\t%s := factory.Create%s(t, db, func(m *models.%s) {\n",
 			names.Camel, names.Pascal, names.Pascal)
-		fmt.Fprintf(&b, "//\t\tm.%s = parent.ID\n", relations[0].Field)
+		fmt.Fprintf(&b, "//\t\tm.%s = parent.ID\n", required[0].Field)
+		b.WriteString("//\t})\n")
+	}
+	// The optional ones stay nil, which is the half worth saying: a fixture
+	// with no parent is the case the column exists to express, and filling it
+	// would make one row write two.
+	if optional := optionalRelations(relations); len(optional) > 0 {
+		b.WriteString("//\n")
+		verb, pronoun := "stays", "it"
+		if len(optional) > 1 {
+			verb, pronoun = "stay", "them"
+		}
+		fmt.Fprintf(&b, "// %s %s nil: the relation is optional, so no parent is created for\n",
+			humanList(relationFields(optional)), verb)
+		fmt.Fprintf(&b, "// %s. Pass one to attach it, remembering the column is a pointer:\n//\n", pronoun)
+		fmt.Fprintf(&b, "//\t%s := factory.Create%s(t, db, func(m *models.%s) {\n",
+			names.Camel, names.Pascal, names.Pascal)
+		fmt.Fprintf(&b, "//\t\tm.%s = &parent.ID\n", optional[0].Field)
 		b.WriteString("//\t})\n")
 	}
 	fmt.Fprintf(&b, "func New%s(overrides ...func(*models.%s)) *models.%s {\n",
@@ -111,6 +128,15 @@ func (g *Generator) factorySource(names Names) string {
 		if rel.Self || !g.parentFactoryExists(rel.Parent) {
 			continue
 		}
+		// An optional parent is left nil. The column is a *string, so the
+		// required form does not compile against it; and a pointer-aware
+		// version would make the relation mandatory in every fixture, so one
+		// row would write three and the case this column exists to express, a
+		// row with no parent, would never be the default. A test that wants
+		// the relation passes it (grit#193).
+		if rel.Optional {
+			continue
+		}
 		fmt.Fprintf(&b, "\tif record.%s == \"\" {\n", rel.Field)
 		fmt.Fprintf(&b, "\t\trecord.%s = Create%s(tb, db).ID\n", rel.Field, rel.Parent)
 		b.WriteString("\t}\n")
@@ -134,9 +160,10 @@ func (g *Generator) factorySource(names Names) string {
 // factoryRelation is one belongs_to, as the factory needs to see it: the
 // column to fill, and whose factory fills it.
 type factoryRelation struct {
-	Field  string // AuthorID
-	Parent string // User
-	Self   bool   // a resource that belongs_to its own kind
+	Field    string // AuthorID
+	Parent   string // User
+	Self     bool   // a resource that belongs_to its own kind
+	Optional bool   // the column is *string and nil is a valid value
 }
 
 // parentFactoryExists reports whether Create<Parent> will resolve.
@@ -171,9 +198,10 @@ func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, ne
 
 		if f.IsBelongsTo() {
 			relations = append(relations, factoryRelation{
-				Field:  toPascalCase(f.FKColumnName()),
-				Parent: f.RelatedModelName(),
-				Self:   f.RelatedModelName() == names.Pascal,
+				Field:    toPascalCase(f.FKColumnName()),
+				Parent:   f.RelatedModelName(),
+				Self:     f.RelatedModelName() == names.Pascal,
+				Optional: g.relOptional(f),
 			})
 			continue
 		}
@@ -201,6 +229,29 @@ func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, ne
 	}
 
 	return b.String(), needsFmt, needsTime, needsMoney, needsCrypto, needsJSONTime, relations
+}
+
+// requiredRelations are the parents Create fills in, and optionalRelations the
+// ones it leaves nil. Split because the doc comment says different things
+// about them and the auto-fill only covers the first.
+func requiredRelations(relations []factoryRelation) []factoryRelation {
+	var out []factoryRelation
+	for _, rel := range relations {
+		if !rel.Optional {
+			out = append(out, rel)
+		}
+	}
+	return out
+}
+
+func optionalRelations(relations []factoryRelation) []factoryRelation {
+	var out []factoryRelation
+	for _, rel := range relations {
+		if rel.Optional {
+			out = append(out, rel)
+		}
+	}
+	return out
 }
 
 // relationFields is just the column names, for the doc comment.
