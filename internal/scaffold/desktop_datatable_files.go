@@ -210,11 +210,23 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { formatMoney, type Money } from "@repo/shared/types";
 import { DateFilter, rangeToBounds, type DateRange } from "@/components/tables/date-filter";
 
+// The same list the admin's ColumnFormat carries, because the generator emits
+// one format per field type and writes it into both frontends. Nine of these
+// were missing here, so a resource with a money, percent, json or country
+// column failed tsc -b in apps/desktop while building fine in the admin
+// (grit#196).
+//
+// currency is an alias for money and renders through the same case: money is
+// the field type and what the generator emits, and currency is what this file
+// said for several releases.
 export type ColumnFormat =
-  | "text" | "badge" | "currency" | "date" | "relative"
-  | "boolean" | "email" | "link" | "image";
+  | "text" | "badge" | "currency" | "money" | "date" | "relative"
+  | "boolean" | "image" | "video" | "file" | "files" | "link" | "email"
+  | "color" | "richtext" | "user" | "domain" | "tel" | "country"
+  | "percent" | "rating" | "time" | "json";
 
 export interface DataColumn {
   key: string;
@@ -284,8 +296,21 @@ function imageUrl(value: unknown): string {
 function cellText(value: unknown, format?: ColumnFormat): string {
   if (value === null || value === undefined || value === "") return "";
   switch (format) {
+    case "money":
     case "currency":
+      // A Money is { amount, currency } in minor units. formatMoney reads the
+      // currency's own exponent, because dividing by 100 shows a 50,000
+      // shilling price as 500: UGX and JPY have no minor unit, KWD has three.
+      if (typeof value === "object" && value !== null && "amount" in value) {
+        return formatMoney(value as Money);
+      }
       return formatCurrency(Number(value));
+    case "percent":
+      return Number(value).toLocaleString(undefined, { style: "percent", maximumFractionDigits: 2 });
+    case "rating":
+      return String(value);
+    case "json":
+      return typeof value === "string" ? value : JSON.stringify(value);
     case "date":
       return formatDate(String(value));
     case "relative":
@@ -699,6 +724,12 @@ function Cell({ value, format }: { value: unknown; format?: ColumnFormat }) {
     return <span className="text-foreground-muted">—</span>;
   }
   switch (format) {
+    case "json": {
+      // One line in the cell. The whole value belongs on the detail page, not
+      // in a column that has to stay the height of a row.
+      const text = typeof value === "string" ? value : JSON.stringify(value);
+      return <span className="font-mono text-[11.5px] text-foreground-muted">{text.length > 60 ? text.slice(0, 60) + "…" : text}</span>;
+    }
     case "boolean":
       // Yes and No: this renders every boolean column, not just one called
       // "active".

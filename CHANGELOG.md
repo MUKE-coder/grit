@@ -23,6 +23,44 @@ Also worth knowing:
 ---
 
 
+## v3.496.0 - November 8, 2026
+
+### The desktop app type-checks for every field type
+
+grit#196. A `--desktop` project failed `tsc -b` for any resource using one of six field types: money, percent, json, country, toggle or vector. Ten resources of nineteen on the reporter's project, sixteen errors. `vite build` was fine, so it was quiet until CI.
+
+#### Two unions for one format
+
+```text
+src/routes/app/ai_runs.index.tsx(32,33): Type '"money"' is not assignable
+  to type 'ColumnFormat | undefined'.
+```
+
+The generator emits one `ColumnFormat` per field type and writes it into both frontends. The admin's union has twenty-three members and the desktop's had nine, so the desktop silently stopped accepting what the generator emits. It takes the same list now, and `money`, `percent` and `json` render rather than falling through to the default.
+
+On the reporter's question of whether `currency` or `money` wins: money, because it is the field type and the thing the generator writes. `currency` stays as an alias through the same case, because it is what the desktop has said for several releases and somebody may have written it by hand.
+
+#### Three fields the form held as strings
+
+```text
+ai-runs-form.tsx(69,7):       Type 'string' is not assignable to type 'Money'.
+ai-runs-form.tsx(70,7):       Type 'string' is not assignable to type 'boolean | undefined'.
+source-chunks-form.tsx(57,7): Type 'string' is not assignable to type 'number[]'.
+```
+
+Three separate causes, all falling through to the string default: money had no case at all, toggle was missed because the boolean case tested only `bool` and toggle is its own type, and vector had no case and should not have a form field.
+
+A money field is now a number and a currency, and the conversion goes through the shared `toMajor` and `fromMajor` rather than a second exponent table. The reporter's point there is the one that mattered: the minor unit is per-currency, and a desktop form dividing by 100 shows a 50,000 shilling price as 500 in the currency this product actually bills in. The table already exists on the frontend for exactly that reason, so the form uses it rather than a copy that can disagree.
+
+A vector gets no form field, which is what the admin already does: nobody types a 384-dimension embedding, the ingest pipeline writes it.
+
+#### And a package.json that pointed at nothing
+
+`@repo/shared` set `main` and `types` to `./index.ts`, which has never existed, while `exports` listed only subpaths. The fields are gone rather than the barrel written: this package is subpath-only on purpose, because `./types` carries no runtime dependency while `./schemas` pulls in zod and libphonenumber-js, and a root barrel would hand both to every consumer that wanted a type. The reason is in the file now, so the next reader does not add the barrel back.
+
+Verified the way the reporter verified it: `pnpm build` on a generated `--triple --next --desktop` project with a resource carrying all six types plus a vector, which runs `vite build && tsc -b`. Zero TypeScript errors, and the admin and web builds are green too, which is what checks the shared-package change.
+
+
 ## v3.495.0 - November 8, 2026
 
 ### An append-only resource was tested for something it refuses

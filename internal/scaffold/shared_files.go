@@ -69,8 +69,7 @@ func sharedPackageJSON(opts Options) string {
   "name": "@repo/shared",
   "version": "0.1.0",
   "private": true,
-  "main": "./index.ts",
-  "types": "./index.ts",
+  "_comment": "No main or types on purpose. This package is subpath-only: ./types carries no runtime dependency, while ./schemas pulls in zod and libphonenumber-js. A root barrel would hand both to every consumer that wanted a type, which is a real cost in the desktop and Expo bundles. main and types used to point at an ./index.ts that was never written (grit#196), so the fields said the opposite of what the exports map means.",
   "exports": {
     "./schemas": "./schemas/index.ts",
     "./types": "./types/index.ts",

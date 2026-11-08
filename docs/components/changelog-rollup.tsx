@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 2 to 8, 2026",
-    count: 33,
+    count: 34,
     entries: [
+      { version: "3.496.0", title: "The desktop app type-checks for every field type" },
       { version: "3.495.0", title: "An append-only resource was tested for something it refuses" },
       { version: "3.494.0", title: "An append-only table was not append-only in a test" },
       { version: "3.493.0", title: "Two relations the new factory had not met" },

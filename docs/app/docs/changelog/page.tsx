@@ -72,6 +72,103 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.496.0 */}
+            <div className="mb-12" id="v3.496.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.496.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The desktop app type-checks for every field type</h3>
+                <p>
+                  grit#196. A <code>--desktop</code> project failed{' '}
+                  <code>tsc -b</code> for any resource using one of six field
+                  types: money, percent, json, country, toggle or vector. Ten
+                  resources of nineteen on the reporter&apos;s project, sixteen
+                  errors. <code>vite build</code> was fine, so it was quiet
+                  until CI.
+                </p>
+                <h4>Two unions for one format</h4>
+                <CodeBlock
+                  language="text"
+                  code={`src/routes/app/ai_runs.index.tsx(32,33): Type '"money"' is not assignable
+  to type 'ColumnFormat | undefined'.`}
+                />
+                <p>
+                  The generator emits one <code>ColumnFormat</code> per field
+                  type and writes it into both frontends. The admin&apos;s union
+                  has twenty-three members and the desktop&apos;s had nine, so
+                  the desktop silently stopped accepting what the generator
+                  emits. It takes the same list now, and{' '}
+                  <code>money</code>, <code>percent</code> and{' '}
+                  <code>json</code> render rather than falling through to the
+                  default.
+                </p>
+                <p>
+                  On the reporter&apos;s question of whether{' '}
+                  <code>currency</code> or <code>money</code> wins: money,
+                  because it is the field type and the thing the generator
+                  writes. <code>currency</code> stays as an alias through the
+                  same case, because it is what the desktop has said for
+                  several releases and somebody may have written it by hand.
+                </p>
+                <h4>Three fields the form held as strings</h4>
+                <CodeBlock
+                  language="text"
+                  code={`ai-runs-form.tsx(69,7):       Type 'string' is not assignable to type 'Money'.
+ai-runs-form.tsx(70,7):       Type 'string' is not assignable to type 'boolean | undefined'.
+source-chunks-form.tsx(57,7): Type 'string' is not assignable to type 'number[]'.`}
+                />
+                <p>
+                  Three separate causes, all falling through to the string
+                  default: money had no case at all, toggle was missed because
+                  the boolean case tested only <code>bool</code> and toggle is
+                  its own type, and vector had no case and should not have a
+                  form field.
+                </p>
+                <p>
+                  A money field is now a number and a currency, and the
+                  conversion goes through the shared{' '}
+                  <code>toMajor</code> and <code>fromMajor</code> rather than a
+                  second exponent table. The reporter&apos;s point there is the
+                  one that mattered: the minor unit is per-currency, and a
+                  desktop form dividing by 100 shows a 50,000 shilling price as
+                  500 in the currency this product actually bills in. The table
+                  already exists on the frontend for exactly that reason, so the
+                  form uses it rather than a copy that can disagree.
+                </p>
+                <p>
+                  A vector gets no form field, which is what the admin already
+                  does: nobody types a 384-dimension embedding, the ingest
+                  pipeline writes it.
+                </p>
+                <h4>And a package.json that pointed at nothing</h4>
+                <p>
+                  <code>@repo/shared</code> set <code>main</code> and{' '}
+                  <code>types</code> to <code>./index.ts</code>, which has never
+                  existed, while <code>exports</code> listed only subpaths. The
+                  fields are gone rather than the barrel written: this package is
+                  subpath-only on purpose, because <code>./types</code> carries
+                  no runtime dependency while <code>./schemas</code> pulls in
+                  zod and libphonenumber-js, and a root barrel would hand both to
+                  every consumer that wanted a type. The reason is in the file
+                  now, so the next reader does not add the barrel back.
+                </p>
+                <p>
+                  Verified the way the reporter verified it:{' '}
+                  <code>pnpm build</code> on a generated{' '}
+                  <code>--triple --next --desktop</code> project with a resource
+                  carrying all six types plus a vector, which runs{' '}
+                  <code>vite build &amp;&amp; tsc -b</code>. Zero TypeScript
+                  errors, and the admin and web builds are green too, which is
+                  what checks the shared-package change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.495.0 */}
             <div className="mb-12" id="v3.495.0">
               <div className="flex items-center gap-3 mb-4">

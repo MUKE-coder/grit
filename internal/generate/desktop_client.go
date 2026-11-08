@@ -146,10 +146,18 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 	seenFileImport := false
 	seenNumberImport := false
 	seenSelectImport := false
+	seenMoneyImport := false
 
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() || f.IsManyToMany() || f.IsStringArray() {
 			// slug is auto; array/m2m aren't rendered in the offline form.
+			continue
+		}
+		// An embedding is written by the code that produced it, from the row's
+		// own text. A text input asking somebody to type 1536 floats is a field
+		// nobody can fill in, and it typed as a string against a number[]
+		// column (grit#196). The admin form omits it for the same reason.
+		if f.IsVector() {
 			continue
 		}
 		camel := lowerCamel(f.Name)
@@ -227,7 +235,7 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 			jsx.WriteString("        </div>\n")
 			pay.WriteString("      " + json + ": " + camel + ",\n")
 
-		case ft == FieldBool:
+		case ft == FieldBool || ft == FieldToggle:
 			st.WriteString("  const [" + camel + ", " + setter + "] = useState<boolean>(false);\n")
 			pf.WriteString("      " + setter + "(Boolean(record." + json + "));\n")
 			jsx.WriteString("        <label className=\"flex items-center gap-2 text-[13px] text-foreground\">\n")
@@ -250,6 +258,33 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 			jsx.WriteString("          <input type=\"" + inputType + "\" value={" + camel + "} onChange={(e) => " + setter + "(e.target.value)} className={inputCls} />\n")
 			jsx.WriteString("        </div>\n")
 			pay.WriteString("      " + json + ": " + camel + ",\n")
+
+		case ft == FieldMoney:
+			// Money is { amount, currency } in minor units, and the amount a
+			// person types is major units. The conversion goes through the
+			// shared helpers because the exponent is per-currency: UGX and JPY
+			// have no minor unit, KWD has three, and a hardcoded /100 shows a
+			// 50,000 shilling price as 500.
+			if !seenMoneyImport {
+				imp.WriteString("import { fromMajor, toMajor, type Money } from \"@repo/shared/types\";\n")
+				seenMoneyImport = true
+			}
+			if !seenNumberImport {
+				imp.WriteString("import { NumberInput } from \"@/components/number-input\";\n")
+				seenNumberImport = true
+			}
+			st.WriteString("  const [" + camel + ", " + setter + "] = useState<number>(0);\n")
+			st.WriteString("  const [" + camel + "Currency, " + setter + "Currency] = useState<string>(\"USD\");\n")
+			pf.WriteString("      " + setter + "(toMajor(record." + json + " as Money | null));\n")
+			pf.WriteString("      " + setter + "Currency((record." + json + " as Money | null)?.currency ?? \"USD\");\n")
+			jsx.WriteString("        <div>\n")
+			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
+			jsx.WriteString("          <div className=\"flex gap-2\">\n")
+			jsx.WriteString("            <NumberInput value={" + camel + "} onChange={" + setter + "} kind=\"float\" className={inputCls} />\n")
+			jsx.WriteString("            <input type=\"text\" value={" + camel + "Currency} onChange={(e) => " + setter + "Currency(e.target.value.toUpperCase())} maxLength={3} className={inputCls + \" w-20 text-center uppercase\"} aria-label=\"Currency\" />\n")
+			jsx.WriteString("          </div>\n")
+			jsx.WriteString("        </div>\n")
+			pay.WriteString("      " + json + ": fromMajor(" + camel + ", " + camel + "Currency),\n")
 
 		case ft == FieldJSON:
 			// Edited as text and sent parsed; the API refuses what does not parse.
