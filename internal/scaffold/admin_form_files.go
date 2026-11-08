@@ -2,6 +2,20 @@ package scaffold
 
 import "strings"
 
+// HookformResolversVersion is the @hookform/resolvers pin for every app that
+// ships FormBuilder.
+//
+// FormBuilder imports @hookform/resolvers/standard-schema, a subpath that
+// arrived in resolvers 4 and is how a generated form validates against the same
+// Zod schema the API uses (grit#145, v3.475.0).
+//
+// A constant because three package.json templates ship that component and only
+// two of them were raised: the TanStack admin kept ^3.9.1, which has no such
+// subpath, so from v3.475.0 to v3.484.0 every --vite project failed to build
+// its admin with "Rollup failed to resolve import". Nothing caught it because
+// CI type-checks the Next admin and the two web apps, and not this one.
+const HookformResolversVersion = "^5.9.0"
+
 // adminFormBuilder returns the dynamic form builder component.
 func adminFormBuilder() string {
 	return `"use client";

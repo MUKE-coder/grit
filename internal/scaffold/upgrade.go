@@ -311,6 +311,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := ensureRichTextSafety(root, opts); err != nil {
 			fmt.Printf("  ⚠ sanitising rich text: %v\n", err)
 		}
+		// An admin that cannot build because its @hookform/resolvers predates
+		// the subpath FormBuilder imports. Edits the one line rather than the
+		// whole file: a project that added a dependency of its own has that
+		// package.json held back, correctly, and would otherwise stay broken.
+		if err := raiseHookformResolvers(root, opts); err != nil {
+			fmt.Printf("  ⚠ raising @hookform/resolvers: %v\n", err)
+		}
 		// Production is the default and the strict mode: default secrets are
 		// refused, GORM Studio and /docs are off, and the auth rate limits match
 		// the routes they are for.

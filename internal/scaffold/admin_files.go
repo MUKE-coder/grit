@@ -578,7 +578,7 @@ func adminPackageJSON(opts Options) string {
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "^5.9.0",
+`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "`+HookformResolversVersion+`",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",

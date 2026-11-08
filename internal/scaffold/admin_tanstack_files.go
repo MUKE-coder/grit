@@ -621,7 +621,7 @@ func adminTanStackPackageJSON(opts Options) string {
     "test:watch": "vitest"
   },
   "dependencies": {
-`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "^3.9.1",
+`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "`+HookformResolversVersion+`",
     "@react-pdf/renderer": "^4.1.5",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-router": "^1.93.0",

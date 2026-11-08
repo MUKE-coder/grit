@@ -278,7 +278,7 @@ func ensureSPAAdminWiring(feRoot string, opts Options) ([]string, error) {
 	deps := [][2]string{
 		{"@base-ui/react", baseUIVersion},
 		{"libphonenumber-js", libphonenumberVersion},
-		{"@hookform/resolvers", "^5.9.0"},
+		{"@hookform/resolvers", HookformResolversVersion},
 		{"@react-pdf/renderer", "^4.1.5"},
 		{"react-dropzone", "^14.2.0"},
 		{"react-hook-form", "^7.55.0"},
