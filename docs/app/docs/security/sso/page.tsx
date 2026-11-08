@@ -29,6 +29,49 @@ export default function SSOPage() {
           </p>
 
           <div className="prose-grit">
+            <h2 id="off-by-default">It is off until you turn it on</h2>
+            <p>
+              SSO is the one module that ships disabled. Set{' '}
+              <code>MODULE_SSO=true</code> in <code>.env</code> and the OIDC and
+              SAML endpoints are mounted; leave it and they are not, so a
+              project with no identity provider has no SSO surface rather than
+              four public endpoints answering for a connection that does not
+              exist.
+            </p>
+            <p>
+              There is a reason beyond tidiness.{' '}
+              <code>POST /api/v1/auth/saml/:slug/acs</code> parses a signed
+              assertion through <code>github.com/crewjam/saml</code>, and that
+              package carries a live advisory with{' '}
+              <strong>no fixed version</strong>:
+            </p>
+            <CodeBlock
+              language="text"
+              code={`GO-2026-6909
+  Nil-pointer panic in validateAssertion and namespace-blind Subject.NameID
+  in github.com/crewjam/saml
+
+  Fixed in: N/A`}
+            />
+            <p>
+              A nil-pointer panic is a denial of service. The namespace-blind{' '}
+              <code>Subject.NameID</code> is the authentication-bypass-shaped
+              half, and it is the one to weigh. Reaching either needs a
+              registered service provider and an enabled row in{' '}
+              <code>sso_connections</code>, so it is unreachable in a project
+              that has not configured SAML and live in one that has.
+            </p>
+            <p>
+              Which means <strong>turning SAML on is accepting that advisory</strong>,
+              and there is no version to upgrade to. A generated project ships{' '}
+              <code>.github/govulncheck-allow.txt</code> with the finding
+              already listed, so its CI is green and the warning prints on every
+              run. If you enable SAML, read that entry and decide deliberately
+              rather than inheriting the decision: OIDC alone does not touch
+              this code path, so a customer who can use OpenID Connect instead
+              of SAML costs you nothing here.
+            </p>
+
             <h2 id="providers">What works</h2>
             <p>
               Any identity provider with an OpenID Connect discovery document — which is all of the

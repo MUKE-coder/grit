@@ -72,6 +72,119 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.490.0 */}
+            <div className="mb-12" id="v3.490.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.490.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A new project no longer fails its own security gate</h3>
+                <p>
+                  grit#187. A freshly scaffolded project failed its own{' '}
+                  <code>govulncheck</code> job on the first push, before anybody
+                  had written a line, on a called vulnerability in framework
+                  code with no fix available:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`Vulnerability #1: GO-2026-6909
+  Nil-pointer panic in validateAssertion and namespace-blind Subject.NameID
+  in github.com/crewjam/saml
+    Fixed in: N/A
+      internal/handlers/saml.go:128:36: handlers.SSOHandler.SAMLACS calls
+        saml.ServiceProvider.ParseResponse`}
+                />
+                <p>
+                  <code>.github/govulncheck-allow.txt</code> shipped containing
+                  only its header, so the gate was red and there was no version
+                  to move to.
+                </p>
+                <h4>SSO is a module now, and it is off</h4>
+                <p>
+                  <code>MODULE_SSO</code> decides whether the OIDC and SAML
+                  endpoints are mounted, and it is the one module that defaults
+                  to false. Every other battery costs nothing to leave on. This
+                  one costs four public endpoints, and{' '}
+                  <code>POST /auth/saml/:slug/acs</code> is the route that
+                  reaches the advisory. Most projects never configure an
+                  identity provider.
+                </p>
+                <p>
+                  Checked by running it rather than by reading the diff. With
+                  the flag off, on a live server:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`POST /api/v1/auth/saml/anything/acs   404   (was 307)
+POST /api/v1/auth/sso/discover        404   (was 400)
+POST /api/v1/auth/login               422   still there`}
+                />
+                <p>
+                  and with it on, 307 and 400 again. The admin&apos;s
+                  connection screens are gated too, so a disabled module really
+                  mounts no routes, which is what <code>ModuleFlags</code> has
+                  always promised.
+                </p>
+                <h4>And the allowlist entry ships with the project</h4>
+                <p>
+                  A runtime flag cannot satisfy <code>govulncheck</code>, which
+                  is static: the symbol is still reachable from{' '}
+                  <code>main</code> whatever the condition says at run time. So
+                  the entry ships too, with the reasoning next to it, because
+                  every project inherits the same finding from the same
+                  framework code and every project was going to write the same
+                  line. The warning still prints on every run, which is what
+                  that file is for.
+                </p>
+                <p>
+                  Verified with the workflow&apos;s own logic over a real
+                  report: one called vulnerability, and it is the allowlisted
+                  one, so the gate passes.
+                </p>
+                <h4>Existing projects keep what they had</h4>
+                <p>
+                  <code>config.go</code> and <code>routes.go</code> are both the
+                  developer&apos;s files, so each gets a repair rather than a
+                  rewrite, in that order: a <code>routes.go</code> naming{' '}
+                  <code>cfg.Modules.SSO</code> against a config that has no such
+                  field is a project that does not compile, and an upgrade must
+                  not be the reason for that.
+                </p>
+                <p>
+                  And <code>grit upgrade</code> writes{' '}
+                  <code>MODULE_SSO=true</code> into an existing project&apos;s{' '}
+                  <code>.env</code>. The compiled default is false, which is
+                  right for a new project and would be a silent breaking change
+                  to one that has SAML configured. The flag arrives, nothing
+                  changes today, and turning it off becomes a decision somebody
+                  makes by reading the line. Verified on a real pre-flag
+                  project: all three repairs fire, it builds and vets clean, and
+                  a second upgrade finds nothing to do.
+                </p>
+                <h4>What it costs to turn on, said once</h4>
+                <p>
+                  The SSO docs now open with it. A nil-pointer panic is a denial
+                  of service; the namespace-blind <code>Subject.NameID</code> is
+                  the authentication-bypass-shaped half, and that is the one to
+                  weigh. Reaching either needs a registered service provider and
+                  an enabled connection row, so it is unreachable in a project
+                  that has not configured SAML and live in one that has. OIDC
+                  alone does not touch that code path, which makes a customer
+                  who can use OpenID Connect instead of SAML free here.
+                </p>
+                <p>
+                  The reporter&apos;s own point is the reason that paragraph
+                  exists: a team turning on SAML to satisfy an enterprise
+                  customer is exactly the team that will not be running{' '}
+                  <code>govulncheck</code> first.
+                </p>
+              </div>
+            </div>
+
             {/* v3.489.0 */}
             <div className="mb-12" id="v3.489.0">
               <div className="flex items-center gap-3 mb-4">

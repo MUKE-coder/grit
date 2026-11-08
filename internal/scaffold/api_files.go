@@ -901,6 +901,17 @@ type ModuleFlags struct {
 	Audit     bool // activity log
 	Flags     bool // feature flags
 	TwoFactor bool // TOTP / 2FA
+	// Enterprise SSO: OIDC and SAML. The one module that is OFF by default.
+	//
+	// Every other battery costs nothing to leave on. This one mounts four
+	// public endpoints, and POST /auth/saml/:slug/acs parses a signed
+	// assertion through github.com/crewjam/saml, which carries a called
+	// advisory with no fixed version: GO-2026-6909, a nil-pointer panic and a
+	// namespace-blind Subject.NameID. Most projects never configure an IdP, so
+	// the route was surface nobody asked for (grit#187).
+	//
+	// Turning it on is a deliberate act, and the docs say what it costs.
+	SSO bool
 }
 
 // Enabled reports whether a module is on, by the name used in the API and the
@@ -930,6 +941,8 @@ func (m ModuleFlags) Enabled(name string) bool {
 		return m.Flags
 	case "twofactor":
 		return m.TwoFactor
+	case "sso":
+		return m.SSO
 	}
 	return false
 }
@@ -948,6 +961,7 @@ func (m ModuleFlags) Map() map[string]bool {
 		"mail":      m.Mail,
 		"audit":     m.Audit,
 		"flags":     m.Flags,
+		"sso":       m.SSO,
 		"twofactor": m.TwoFactor,
 	}
 }
@@ -1163,6 +1177,8 @@ func Load() (*Config, error) {
 			Audit:     getEnv("MODULE_AUDIT", "true") == "true",
 			Flags:     getEnv("MODULE_FLAGS", "true") == "true",
 			TwoFactor: getEnv("MODULE_TWOFACTOR", "true") == "true",
+			// The one that defaults off: see ModuleFlags.SSO.
+			SSO: getEnv("MODULE_SSO", "false") == "true",
 		},
 
 		GORMStudioEnabled:  getEnv("GORM_STUDIO_ENABLED", "true") == "true",
@@ -8416,7 +8432,7 @@ func mountPulse(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services) {
 // Public by necessity. These are the sign-in, so there is nobody to
 // authenticate yet; what makes each safe is its own protocol, a server-side
 // challenge for passkeys and a short-lived pending token for TOTP.
-func mountAuthRoutes(v1 *gin.RouterGroup, authHandler *handlers.AuthHandler, ssoHandler *handlers.SSOHandler, totpHandler *handlers.TOTPHandler, passkeyHandler *handlers.PasskeyHandler) {
+func mountAuthRoutes(v1 *gin.RouterGroup, authHandler *handlers.AuthHandler, ssoHandler *handlers.SSOHandler, totpHandler *handlers.TOTPHandler, passkeyHandler *handlers.PasskeyHandler, ssoEnabled bool) {
 	// Public auth routes
 	auth := v1.Group("/auth")
 	{
@@ -8451,22 +8467,34 @@ func mountAuthRoutes(v1 *gin.RouterGroup, authHandler *handlers.AuthHandler, sso
 	// Like the OAuth callbacks above, /callback is registered in the customer's
 	// IdP console, so its unversioned path must keep working — see the note on
 	// APIVersion.
-	sso := auth.Group("/sso")
-	{
-		sso.POST("/discover", ssoHandler.Discover)
-		sso.GET("/:slug", ssoHandler.Begin)
-		sso.GET("/:slug/callback", ssoHandler.Callback)
+	//
+	// Only when MODULE_SSO=true. Nothing is mounted otherwise, so a project
+	// with no IdP has no SSO surface at all rather than endpoints that answer
+	// for a connection that does not exist.
+	if ssoEnabled {
+		sso := auth.Group("/sso")
+		{
+			sso.POST("/discover", ssoHandler.Discover)
+			sso.GET("/:slug", ssoHandler.Begin)
+			sso.GET("/:slug/callback", ssoHandler.Callback)
+		}
 	}
 
 	// SAML 2.0. /metadata is what the customer uploads to their IdP and /acs is
 	// where that IdP POSTs the signed assertion — both get registered on their
 	// side, so like the OAuth callbacks these unversioned paths must keep
 	// working across API version bumps.
-	samlGroup := auth.Group("/saml")
-	{
-		samlGroup.GET("/:slug/metadata", ssoHandler.SAMLMetadata)
-		samlGroup.GET("/:slug", ssoHandler.SAMLBegin)
-		samlGroup.POST("/:slug/acs", ssoHandler.SAMLACS)
+	//
+	// /acs is the one that parses an assertion through crewjam/saml, which is
+	// where GO-2026-6909 lives with no fixed version, so MODULE_SSO=false is
+	// what keeps it off the router (grit#187).
+	if ssoEnabled {
+		samlGroup := auth.Group("/saml")
+		{
+			samlGroup.GET("/:slug/metadata", ssoHandler.SAMLMetadata)
+			samlGroup.GET("/:slug", ssoHandler.SAMLBegin)
+			samlGroup.POST("/:slug/acs", ssoHandler.SAMLACS)
+		}
 	}
 
 	// TOTP verification (public — uses pending tokens, not JWT)
@@ -8772,7 +8800,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// grit:routes:public
 	}
 
-	mountAuthRoutes(v1, authHandler, ssoHandler, totpHandler, passkeyHandler)
+	mountAuthRoutes(v1, authHandler, ssoHandler, totpHandler, passkeyHandler, cfg.Modules.SSO)
 
 	// Protected routes
 	protected := v1.Group("")
@@ -9059,11 +9087,16 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// SSO connections. Client secrets are write-only: they go in on create
 		// and update and are never returned, so a compromised admin session
 		// cannot read a customer's IdP credentials back out.
-		admin.GET("/sso/connections", ssoHandler.List)
-		admin.POST("/sso/connections", ssoHandler.Create)
-		admin.PUT("/sso/connections/:id", ssoHandler.Update)
-		admin.DELETE("/sso/connections/:id", ssoHandler.Delete)
-		admin.GET("/sso/connections/:id/test", ssoHandler.Test)
+		// The management side of the same module. A disabled module mounts no
+		// routes at all, which is what ModuleFlags promises, and the admin nav
+		// hides the screen because /system/modules reports it off.
+		if cfg.Modules.SSO {
+			admin.GET("/sso/connections", ssoHandler.List)
+			admin.POST("/sso/connections", ssoHandler.Create)
+			admin.PUT("/sso/connections/:id", ssoHandler.Update)
+			admin.DELETE("/sso/connections/:id", ssoHandler.Delete)
+			admin.GET("/sso/connections/:id/test", ssoHandler.Test)
+		}
 
 		// Public form sharing, its field preview, and the log of submissions.
 		admin.GET("/admin/form-shares", formShareHandler.List)

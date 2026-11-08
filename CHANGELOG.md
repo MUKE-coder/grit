@@ -23,6 +23,56 @@ Also worth knowing:
 ---
 
 
+## v3.490.0 - November 8, 2026
+
+### A new project no longer fails its own security gate
+
+grit#187. A freshly scaffolded project failed its own `govulncheck` job on the first push, before anybody had written a line, on a called vulnerability in framework code with no fix available:
+
+```text
+Vulnerability #1: GO-2026-6909
+  Nil-pointer panic in validateAssertion and namespace-blind Subject.NameID
+  in github.com/crewjam/saml
+    Fixed in: N/A
+      internal/handlers/saml.go:128:36: handlers.SSOHandler.SAMLACS calls
+        saml.ServiceProvider.ParseResponse
+```
+
+`.github/govulncheck-allow.txt` shipped containing only its header, so the gate was red and there was no version to move to.
+
+#### SSO is a module now, and it is off
+
+`MODULE_SSO` decides whether the OIDC and SAML endpoints are mounted, and it is the one module that defaults to false. Every other battery costs nothing to leave on. This one costs four public endpoints, and `POST /auth/saml/:slug/acs` is the route that reaches the advisory. Most projects never configure an identity provider.
+
+Checked by running it rather than by reading the diff. With the flag off, on a live server:
+
+```text
+POST /api/v1/auth/saml/anything/acs   404   (was 307)
+POST /api/v1/auth/sso/discover        404   (was 400)
+POST /api/v1/auth/login               422   still there
+```
+
+and with it on, 307 and 400 again. The admin's connection screens are gated too, so a disabled module really mounts no routes, which is what `ModuleFlags` has always promised.
+
+#### And the allowlist entry ships with the project
+
+A runtime flag cannot satisfy `govulncheck`, which is static: the symbol is still reachable from `main` whatever the condition says at run time. So the entry ships too, with the reasoning next to it, because every project inherits the same finding from the same framework code and every project was going to write the same line. The warning still prints on every run, which is what that file is for.
+
+Verified with the workflow's own logic over a real report: one called vulnerability, and it is the allowlisted one, so the gate passes.
+
+#### Existing projects keep what they had
+
+`config.go` and `routes.go` are both the developer's files, so each gets a repair rather than a rewrite, in that order: a `routes.go` naming `cfg.Modules.SSO` against a config that has no such field is a project that does not compile, and an upgrade must not be the reason for that.
+
+And `grit upgrade` writes `MODULE_SSO=true` into an existing project's `.env`. The compiled default is false, which is right for a new project and would be a silent breaking change to one that has SAML configured. The flag arrives, nothing changes today, and turning it off becomes a decision somebody makes by reading the line. Verified on a real pre-flag project: all three repairs fire, it builds and vets clean, and a second upgrade finds nothing to do.
+
+#### What it costs to turn on, said once
+
+The SSO docs now open with it. A nil-pointer panic is a denial of service; the namespace-blind `Subject.NameID` is the authentication-bypass-shaped half, and that is the one to weigh. Reaching either needs a registered service provider and an enabled connection row, so it is unreachable in a project that has not configured SAML and live in one that has. OIDC alone does not touch that code path, which makes a customer who can use OpenID Connect instead of SAML free here.
+
+The reporter's own point is the reason that paragraph exists: a team turning on SAML to satisfy an enterprise customer is exactly the team that will not be running `govulncheck` first.
+
+
 ## v3.489.0 - November 8, 2026
 
 ### A password manager can save a generated sign-in

@@ -166,6 +166,27 @@ func govulncheckAllowTXT() string {
 #   <OSV id> | <why it is accepted> | <issue tracking the real fix>
 # Each prints as a warning on every run. Remove a line as soon as a fix ships;
 # anything not listed fails the scan.
+#
+# This entry ships with the project, because every Grit project inherits it from
+# the same framework code and there is no version to move to: the advisory
+# affects every release of crewjam/saml and is marked Fixed in: N/A. Without the
+# line, a brand-new project's CI is red on its first push with nothing it can do.
+#
+# What it actually costs you:
+#
+#   The trace is handlers.SSOHandler.SAMLACS -> saml.ServiceProvider.ParseResponse,
+#   on POST /api/v1/auth/saml/:slug/acs. Reaching the vulnerable call needs a
+#   registered service provider AND an enabled row in sso_connections, and it
+#   needs MODULE_SSO=true, which is the default-off flag that decides whether the
+#   route is mounted at all. With no IdP configured the request takes the failure
+#   redirect and the process survives.
+#
+#   So this is unreachable in a project that has not configured SAML, and live in
+#   one that has. The finding is a nil-pointer panic plus a namespace-blind
+#   Subject.NameID in assertion parsing, and the second half of that is the
+#   authentication-bypass-shaped one. If you turn SAML on, you are accepting it:
+#   delete this line and decide deliberately rather than inheriting the decision.
+GO-2026-6909 | crewjam/saml assertion parsing: no fixed version exists. Unreachable unless MODULE_SSO=true and an sso_connections row is enabled; see the note above before turning SAML on. | https://github.com/MUKE-coder/grit/issues/187
 `
 }
 

@@ -527,6 +527,16 @@ MODULE_AUDIT=true
 MODULE_FLAGS=true
 MODULE_TWOFACTOR=true
 
+# Enterprise SSO (OIDC + SAML). The one module that defaults to false.
+#
+# It mounts four public endpoints, and POST /auth/saml/:slug/acs parses a signed
+# assertion through github.com/crewjam/saml, which has a called advisory with no
+# fixed version: GO-2026-6909, a nil-pointer panic and a namespace-blind
+# Subject.NameID in assertion parsing. Most projects never configure an IdP, so
+# this is off until you need it. Turning it on means accepting that advisory:
+# see docs/security for what it is and is not.
+MODULE_SSO=false
+
 # AI — Vercel AI Gateway (one key, hundreds of models)
 #
 # The default model needs paid credits. A free-tier key authenticates fine and

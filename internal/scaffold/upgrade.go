@@ -324,6 +324,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairDuplicateFixtures(root, opts); err != nil {
 			fmt.Printf("  ⚠ removing a redeclared test fixture: %v\n", err)
 		}
+		// SSO becomes a module, off in a new project. config.go and routes.go
+		// are both the developer's, so the field and the two route guards each
+		// need a repair, in that order; and the project's .env gets
+		// MODULE_SSO=true, so the upgrade is not the reason its SAML stops
+		// working (grit#187).
+		if err := addSSOModuleFlag(root, opts); err != nil {
+			fmt.Printf("  ⚠ making SSO a module: %v\n", err)
+		}
 		// Production is the default and the strict mode: default secrets are
 		// refused, GORM Studio and /docs are off, and the auth rate limits match
 		// the routes they are for.
