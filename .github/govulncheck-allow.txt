@@ -1,3 +1,20 @@
 # Called vulnerabilities the generated-app scan accepts, one per line:
 #   <OSV id> | <why it is accepted> | <issue tracking the real fix>
 # Remove a line as soon as a fix ships. Anything not listed fails the scan.
+#
+# This is the same entry a generated project now ships with, for the same
+# reason: the advisory affects every release of crewjam/saml and is marked
+# Fixed in: N/A, so there is no version to move to. See
+# internal/scaffold/api_ci_files.go (govulncheckAllowTXT), which has the long
+# form of the note, and keep the two in step.
+#
+# The trace is handlers.SSOHandler.SAMLACS -> saml.ServiceProvider.ParseResponse,
+# on POST /api/v1/auth/saml/:slug/acs. Since v3.490.0 that route is mounted only
+# when MODULE_SSO=true, which defaults to false, and reaching the vulnerable
+# call additionally needs an enabled row in sso_connections. So it is
+# unreachable in the app this job scaffolds, and live in one that turns SAML on.
+#
+# govulncheck is static, so the flag does not make it go away: the symbol stays
+# reachable from main whatever the condition says at run time. That is why the
+# line is here as well as in the template.
+GO-2026-6909 | crewjam/saml assertion parsing: no fixed version exists. Unreachable unless MODULE_SSO=true and an sso_connections row is enabled. | https://github.com/MUKE-coder/grit/issues/187

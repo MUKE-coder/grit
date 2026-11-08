@@ -23,6 +23,34 @@ Also worth knowing:
 ---
 
 
+## v3.492.0 - November 8, 2026
+
+### grit migrate down would roll back the run that built your database
+
+A run is recorded as the *baseline*, the one that created the schema, when the snapshot taken before it was empty. Rolling that one back is not a rollback, it is dropping the database, so the command refuses it and points at `--fresh`.
+
+It had stopped refusing. `Snapshot` skips the migrate package's own bookkeeping tables, so they do not count as the application's schema. v3.480.0 added a third one, `grit_sql_migrations`, created before that snapshot is taken, and did not add it to the list. So a fresh database no longer looked empty, no run was ever marked as the baseline, and the first run on a new project was offered up for rollback like any other.
+
+Reproduced on a fresh project: the single recorded run had `baseline = 0`, and `grit migrate down --yes` dropped all 42 tables and reported success. Now:
+
+```text
+run 20261108-114137.302 is the baseline, the run that built this schema:
+rolling it back would drop the database. Use grit migrate --fresh to start over
+```
+
+The exclusion list is built from the types' own `TableName` methods now, rather than written out, so the next bookkeeping table cannot be forgotten. A test reads every `TableName` in the package and insists the list knows about it, which is the test that would have caught this in v3.480.0.
+
+Checked end to end on a real project: a generated field migrates, that run rolls back, the resource's own run rolls back, and the baseline is refused. `grit upgrade` delivers it, verified on a pre-fix project.
+
+### And the Scan workflow was red for the same reason a new project was
+
+v3.490.0 shipped the crewjam/saml allowlist entry into generated projects, which turned a new project's security gate green. This repository's own Scan workflow scaffolds a project and scans it against **this repository's** `.github/govulncheck-allow.txt`, which was still empty, so it kept failing on the identical advisory.
+
+Both lists carry it now, and a test holds the direction that matters: everything a generated project accepts must also be accepted here, because this job scans the thing the template produces. The reverse is not required.
+
+Neither of these was a regression from the release before it. Both were workflows that had been red long enough to stop being read, which is the same way the build failure in grit#190 survived 30 releases. The lesson is getting repetitive: a red workflow is either fixed or deleted, because a permanently red one is a test suite that has been turned off without anybody deciding to turn it off.
+
+
 ## v3.491.0 - November 8, 2026
 
 ### Embeddings have somewhere to live

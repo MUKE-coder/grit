@@ -93,9 +93,16 @@ func (RunChange) TableName() string { return "grit_migration_changes" }
 
 // historyTables are not part of the schema the history describes, so they never
 // appear in a snapshot and a rollback can never drop them.
+// Built from the types rather than written out, because a bookkeeping table
+// missing from this list makes Snapshot count it as part of the application's
+// schema. That is how the baseline stopped being detected: v3.480.0 added
+// grit_sql_migrations, created before the first snapshot is taken, so a fresh
+// database no longer looked empty and no run was ever recorded as the one that
+// built it. grit migrate down then offered to roll that run back.
 var historyTables = map[string]bool{
-	"grit_migrations":        true,
-	"grit_migration_changes": true,
+	Run{}.TableName():                 true,
+	RunChange{}.TableName():           true,
+	AppliedSQLMigration{}.TableName(): true,
 }
 
 // internalTable reports tables the database keeps for itself.

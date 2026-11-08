@@ -72,6 +72,88 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.492.0 */}
+            <div className="mb-12" id="v3.492.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.492.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit migrate down would roll back the run that built your database</h3>
+                <p>
+                  A run is recorded as the <em>baseline</em>, the one that
+                  created the schema, when the snapshot taken before it was
+                  empty. Rolling that one back is not a rollback, it is dropping
+                  the database, so the command refuses it and points at{' '}
+                  <code>--fresh</code>.
+                </p>
+                <p>
+                  It had stopped refusing. <code>Snapshot</code> skips the
+                  migrate package&apos;s own bookkeeping tables, so they do not
+                  count as the application&apos;s schema. v3.480.0 added a third
+                  one, <code>grit_sql_migrations</code>, created before that
+                  snapshot is taken, and did not add it to the list. So a fresh
+                  database no longer looked empty, no run was ever marked as the
+                  baseline, and the first run on a new project was offered up
+                  for rollback like any other.
+                </p>
+                <p>
+                  Reproduced on a fresh project: the single recorded run had{' '}
+                  <code>baseline = 0</code>, and <code>grit migrate down --yes</code>{' '}
+                  dropped all 42 tables and reported success. Now:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`run 20261108-114137.302 is the baseline, the run that built this schema:
+rolling it back would drop the database. Use grit migrate --fresh to start over`}
+                />
+                <p>
+                  The exclusion list is built from the types&apos; own{' '}
+                  <code>TableName</code> methods now, rather than written out, so
+                  the next bookkeeping table cannot be forgotten. A test reads
+                  every <code>TableName</code> in the package and insists the
+                  list knows about it, which is the test that would have caught
+                  this in v3.480.0.
+                </p>
+                <p>
+                  Checked end to end on a real project: a generated field
+                  migrates, that run rolls back, the resource&apos;s own run
+                  rolls back, and the baseline is refused.{' '}
+                  <code>grit upgrade</code> delivers it, verified on a pre-fix
+                  project.
+                </p>
+
+                <h3>And the Scan workflow was red for the same reason a new project was</h3>
+                <p>
+                  v3.490.0 shipped the crewjam/saml allowlist entry into
+                  generated projects, which turned a new project&apos;s security
+                  gate green. This repository&apos;s own Scan workflow
+                  scaffolds a project and scans it against{' '}
+                  <strong>this repository&apos;s</strong>{' '}
+                  <code>.github/govulncheck-allow.txt</code>, which was still
+                  empty, so it kept failing on the identical advisory.
+                </p>
+                <p>
+                  Both lists carry it now, and a test holds the direction that
+                  matters: everything a generated project accepts must also be
+                  accepted here, because this job scans the thing the template
+                  produces. The reverse is not required.
+                </p>
+                <p>
+                  Neither of these was a regression from the release before it.
+                  Both were workflows that had been red long enough to stop
+                  being read, which is the same way the build failure in
+                  grit#190 survived 30 releases. The lesson is getting
+                  repetitive: a red workflow is either fixed or deleted, because
+                  a permanently red one is a test suite that has been turned off
+                  without anybody deciding to turn it off.
+                </p>
+              </div>
+            </div>
+
             {/* v3.491.0 */}
             <div className="mb-12" id="v3.491.0">
               <div className="flex items-center gap-3 mb-4">
