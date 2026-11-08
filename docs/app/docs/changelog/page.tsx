@@ -72,6 +72,108 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.486.0 */}
+            <div className="mb-12" id="v3.486.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.486.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Invitations, and an organization that belongs to its members</h3>
+                <p>
+                  Contributed by{' '}
+                  <a href="https://github.com/daljo25" className="text-accent hover:underline">
+                    daljo25
+                  </a>{' '}
+                  in grit#184. The multitenant plugin had organizations and
+                  query scoping. This is the lifecycle a tenant actually uses,
+                  and it moves management out of the platform panel: a tenant
+                  user never needs the console that also carries{' '}
+                  <code>/system</code>.
+                </p>
+                <h4>Invitations</h4>
+                <p>
+                  Email invitations with a single-use hashed token,{' '}
+                  <code>GRIT_ORG_INVITATION_TTL</code> bounded between 1 and 720
+                  hours, resend (which rotates the token) and revoke. One
+                  pending invitation per organization and email, enforced with a
+                  nullable unique key that is cleared on accept or revoke, so a
+                  later re-invite works. Accepting needs a verified address and
+                  is idempotent: a second click lands in the organization rather
+                  than on an &ldquo;invalid&rdquo; page.
+                </p>
+                <p>
+                  The accept page carries the whole flow: sign in, create the
+                  account for the invited address, verify with resend, accept,
+                  switch accounts, and explicit expired, revoked and accepted
+                  states.{' '}
+                  <code>GET /organization-invitations/preview</code> is public
+                  because the page has to answer before anybody signs in; the
+                  token is the credential and nothing but the invitation&apos;s
+                  own fields comes back.
+                </p>
+                <h4>What was checked, against a live API</h4>
+                <p>
+                  Reviewing 2,800 lines by reading is not reviewing, so a real
+                  project with a real organization answered the questions that
+                  matter:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`preview, no session at all            200, the invitation's own fields
+preview, a token that is not one      404 INVITATION_INVALID
+accept, invited + verified            200, member added
+accept, same token, same person       200 already_member
+accept, verified stranger, pending    403 EMAIL_MISMATCH
+accept, verified stranger, spent      403 EMAIL_MISMATCH, org list stayed []
+accept, unverified address            403 EMAIL_NOT_VERIFIED
+revoke then preview                   status: "revoked"`}
+                />
+                <p>
+                  The two leaked-link rows are the ones worth having, and the
+                  ordering is what makes them work: the address is compared
+                  before the already-accepted branch, so a spent token cannot be
+                  redeemed by anybody else. The accept update is conditional
+                  with a <code>RowsAffected == 0</code> refusal, so two
+                  concurrent accepts cannot both win.
+                </p>
+                <h4>Organization profile</h4>
+                <p>
+                  Legal name, tax id, country, website, an address block, and a
+                  logo stored through the project&apos;s own storage driver. An
+                  editable slug with a live availability check, so two
+                  organizations called Acme become <code>acme</code> and{' '}
+                  <code>acme-2</code> rather than a unique-constraint failure.
+                  Transfer ownership, leave, archive and restore, with the data
+                  kept. The management screen is at{' '}
+                  <code>/account/organization</code> in the web app for Next and
+                  TanStack, and a member sees a read-only view instead of
+                  controls that would answer 403.
+                </p>
+                <h4>And the seeded accounts arrive verified</h4>
+                <p>
+                  Found trying the new flow on a fresh project.{' '}
+                  <code>grit seed</code> left{' '}
+                  <code>email_verified_at</code> null on every account it
+                  created, and accepting an invitation needs a confirmed
+                  address, so the first thing anybody tries locally answered{' '}
+                  <code>EMAIL_NOT_VERIFIED</code> with no obvious way forward. I
+                  had to send and spend a verification token by hand to test the
+                  feature at all.
+                </p>
+                <p>
+                  These addresses are not real and nobody can click a link sent
+                  to them, so they are now seeded as confirmed. Registration
+                  still sends a link and still waits for it: this is the seeder
+                  taking the same licence it already takes with{' '}
+                  <code>admin123</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.485.0 */}
             <div className="mb-12" id="v3.485.0">
               <div className="flex items-center gap-3 mb-4">

@@ -951,6 +951,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"{{MODULE}}/internal/models"
 	"gorm.io/gorm"
@@ -978,13 +979,25 @@ func seedAdminUser(db *gorm.DB) error {
 	}
 
 ` + seedAdminPasswordNew + `
+	// Verified, because these addresses are not real and nobody can click a
+	// link sent to them. A seeded account with email_verified_at null cannot
+	// accept an organization invitation, change its email, or do anything else
+	// gated on a confirmed address, so the first thing somebody tries on a
+	// fresh project answers EMAIL_NOT_VERIFIED and offers no way forward.
+	// Found trying the invitation flow from grit#184.
+	//
+	// Only seeded accounts. Registration still sends a link and still waits for
+	// it: this is the seeder saying "pretend these were confirmed", which is
+	// the same licence it already takes with "admin123".
+	verifiedAt := time.Now()
 	admin := models.User{
-		FirstName: "Admin",
-		LastName:  "User",
-		Email:     "admin@example.com",
-		Password:  password,
-		Role:      "ADMIN",
-		Active:    true,
+		FirstName:       "Admin",
+		LastName:        "User",
+		Email:           "admin@example.com",
+		Password:        password,
+		Role:            "ADMIN",
+		Active:          true,
+		EmailVerifiedAt: &verifiedAt,
 	}
 
 	if err := db.Create(&admin).Error; err != nil {
@@ -1011,12 +1024,16 @@ func seedDemoUsers(db *gorm.DB) error {
 		{FirstName: "Michael", LastName: "Chen", Email: "michael@example.com", Password: "admin123", Role: "USER", Active: false},
 	}
 
+	verifiedAt := time.Now()
 	for _, u := range users {
 		var count int64
 		db.Model(&models.User{}).Where("email = ?", u.Email).Count(&count)
 		if count > 0 {
 			continue
 		}
+		// See seedAdminUser: a seeded address cannot receive a link, so it
+		// arrives confirmed.
+		u.EmailVerifiedAt = &verifiedAt
 
 		if err := db.Create(&u).Error; err != nil {
 			log.Printf("Warning: failed to create user %s: %v", u.Email, err)

@@ -23,6 +23,46 @@ Also worth knowing:
 ---
 
 
+## v3.486.0 - November 8, 2026
+
+### Invitations, and an organization that belongs to its members
+
+Contributed by [daljo25](https://github.com/daljo25) in grit#184. The multitenant plugin had organizations and query scoping. This is the lifecycle a tenant actually uses, and it moves management out of the platform panel: a tenant user never needs the console that also carries `/system`.
+
+#### Invitations
+
+Email invitations with a single-use hashed token, `GRIT_ORG_INVITATION_TTL` bounded between 1 and 720 hours, resend (which rotates the token) and revoke. One pending invitation per organization and email, enforced with a nullable unique key that is cleared on accept or revoke, so a later re-invite works. Accepting needs a verified address and is idempotent: a second click lands in the organization rather than on an &ldquo;invalid&rdquo; page.
+
+The accept page carries the whole flow: sign in, create the account for the invited address, verify with resend, accept, switch accounts, and explicit expired, revoked and accepted states. `GET /organization-invitations/preview` is public because the page has to answer before anybody signs in; the token is the credential and nothing but the invitation's own fields comes back.
+
+#### What was checked, against a live API
+
+Reviewing 2,800 lines by reading is not reviewing, so a real project with a real organization answered the questions that matter:
+
+```text
+preview, no session at all            200, the invitation's own fields
+preview, a token that is not one      404 INVITATION_INVALID
+accept, invited + verified            200, member added
+accept, same token, same person       200 already_member
+accept, verified stranger, pending    403 EMAIL_MISMATCH
+accept, verified stranger, spent      403 EMAIL_MISMATCH, org list stayed []
+accept, unverified address            403 EMAIL_NOT_VERIFIED
+revoke then preview                   status: "revoked"
+```
+
+The two leaked-link rows are the ones worth having, and the ordering is what makes them work: the address is compared before the already-accepted branch, so a spent token cannot be redeemed by anybody else. The accept update is conditional with a `RowsAffected == 0` refusal, so two concurrent accepts cannot both win.
+
+#### Organization profile
+
+Legal name, tax id, country, website, an address block, and a logo stored through the project's own storage driver. An editable slug with a live availability check, so two organizations called Acme become `acme` and `acme-2` rather than a unique-constraint failure. Transfer ownership, leave, archive and restore, with the data kept. The management screen is at `/account/organization` in the web app for Next and TanStack, and a member sees a read-only view instead of controls that would answer 403.
+
+#### And the seeded accounts arrive verified
+
+Found trying the new flow on a fresh project. `grit seed` left `email_verified_at` null on every account it created, and accepting an invitation needs a confirmed address, so the first thing anybody tries locally answered `EMAIL_NOT_VERIFIED` with no obvious way forward. I had to send and spend a verification token by hand to test the feature at all.
+
+These addresses are not real and nobody can click a link sent to them, so they are now seeded as confirmed. Registration still sends a link and still waits for it: this is the seeder taking the same licence it already takes with `admin123`.
+
+
 ## v3.485.0 - November 8, 2026
 
 ### The Vite admin could not build, for five releases
