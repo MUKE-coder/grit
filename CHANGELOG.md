@@ -23,6 +23,42 @@ Also worth knowing:
 ---
 
 
+## v3.484.0 - November 8, 2026
+
+### A page that said EOF when it meant &ldquo;sign in&rdquo;
+
+Three fixes, contributed by [daljo25](https://github.com/daljo25) in grit#183 and found by building an invitation page on top of the multitenant plugin. Each one was verified here before merging, against a running project rather than from the description.
+
+#### The refresh that answered 422
+
+`AuthHandler.Refresh` read the refresh cookie first and bound a JSON body only when there was none. A browser with no session sent neither, so the decoder returned `io.EOF` and the handler reported it as a validation failure:
+
+```text
+POST /api/v1/auth/refresh      (no cookie, no body)
+  422 {"error": {"code": "VALIDATION_ERROR", "message": "EOF"}}
+```
+
+The web client's 401 interceptor then surfaced that instead of the 401 underneath it, so a page could not offer a sign-in: it showed `EOF`. It answers `401 INVALID_TOKEN` now, and the client rethrows the request's own error when the refresh fails, because &ldquo;no refresh token&rdquo; is not the caller's story.
+
+The generated web client posts that route with no body at all, which is what makes this land where the symptom was. A garbage body still answers 422, because that one really is a validation error.
+
+#### /system rendered for a tenant user with one grant
+
+`AdminLayout` redirected a `USER` who held no grants. One gated on `permissions.length > 0` does not cover a tenant member holding a single resource grant: the API refused every request on `/system/jobs` and the shell rendered anyway.
+
+The new guard is its own component rendered by the dashboard layouts, and the reasoning for that is the part worth repeating: plugins inject into `admin-layout.tsx`, the upgrade then reads that file as edited and leaves it alone, so a guard written there would reach no project with a plugin installed. The dashboard layouts are framework-owned and no plugin touches them.
+
+#### Email verification spent its token twice
+
+React 18 StrictMode mounts an effect twice in development. The first request verified the address and the second answered &ldquo;invalid or expired&rdquo;, which is the screen the reader saw for a verification that had worked. A ref sends it once, and a spent token belonging to an already-verified session is treated as success.
+
+#### The repair half, which is where this could have gone wrong
+
+A new check added inside an existing repair usually reaches new projects and nobody else, and this one would have: the repair returned early on `GenerateSessionTokenPair(`, which every project repaired since v3.244.0 carries. The PR gave the two fixes separate conditions and a test that feeds it an already-repaired handler, which is exactly the test to write.
+
+Verified on a real project from v3.474.0: the fix arrives, `io` lands in the import block, `go vet ./...` is clean, a second upgrade reports nothing, and the admin type-checks with its 82 tests passing.
+
+
 ## v3.483.0 - November 6, 2026
 
 ### The precondition nothing was sending

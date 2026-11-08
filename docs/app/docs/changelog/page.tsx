@@ -72,6 +72,100 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.484.0 */}
+            <div className="mb-12" id="v3.484.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.484.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A page that said EOF when it meant &ldquo;sign in&rdquo;</h3>
+                <p>
+                  Three fixes, contributed by{' '}
+                  <a href="https://github.com/daljo25" className="text-accent hover:underline">
+                    daljo25
+                  </a>{' '}
+                  in grit#183 and found by building an invitation page on top of
+                  the multitenant plugin. Each one was verified here before
+                  merging, against a running project rather than from the
+                  description.
+                </p>
+                <h4>The refresh that answered 422</h4>
+                <p>
+                  <code>AuthHandler.Refresh</code> read the refresh cookie
+                  first and bound a JSON body only when there was none. A
+                  browser with no session sent neither, so the decoder returned{' '}
+                  <code>io.EOF</code> and the handler reported it as a
+                  validation failure:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`POST /api/v1/auth/refresh      (no cookie, no body)
+  422 {"error": {"code": "VALIDATION_ERROR", "message": "EOF"}}`}
+                />
+                <p>
+                  The web client&apos;s 401 interceptor then surfaced that
+                  instead of the 401 underneath it, so a page could not offer a
+                  sign-in: it showed <code>EOF</code>. It answers{' '}
+                  <code>401 INVALID_TOKEN</code> now, and the client rethrows
+                  the request&apos;s own error when the refresh fails, because
+                  &ldquo;no refresh token&rdquo; is not the caller&apos;s story.
+                </p>
+                <p>
+                  The generated web client posts that route with no body at all,
+                  which is what makes this land where the symptom was. A garbage
+                  body still answers 422, because that one really is a
+                  validation error.
+                </p>
+                <h4>/system rendered for a tenant user with one grant</h4>
+                <p>
+                  <code>AdminLayout</code> redirected a <code>USER</code> who
+                  held no grants. One gated on{' '}
+                  <code>permissions.length &gt; 0</code> does not cover a tenant
+                  member holding a single resource grant: the API refused every
+                  request on <code>/system/jobs</code> and the shell rendered
+                  anyway.
+                </p>
+                <p>
+                  The new guard is its own component rendered by the dashboard
+                  layouts, and the reasoning for that is the part worth
+                  repeating: plugins inject into <code>admin-layout.tsx</code>,
+                  the upgrade then reads that file as edited and leaves it
+                  alone, so a guard written there would reach no project with a
+                  plugin installed. The dashboard layouts are framework-owned
+                  and no plugin touches them.
+                </p>
+                <h4>Email verification spent its token twice</h4>
+                <p>
+                  React 18 StrictMode mounts an effect twice in development. The
+                  first request verified the address and the second answered
+                  &ldquo;invalid or expired&rdquo;, which is the screen the
+                  reader saw for a verification that had worked. A ref sends it
+                  once, and a spent token belonging to an already-verified
+                  session is treated as success.
+                </p>
+                <h4>The repair half, which is where this could have gone wrong</h4>
+                <p>
+                  A new check added inside an existing repair usually reaches
+                  new projects and nobody else, and this one would have: the
+                  repair returned early on{' '}
+                  <code>GenerateSessionTokenPair(</code>, which every project
+                  repaired since v3.244.0 carries. The PR gave the two fixes
+                  separate conditions and a test that feeds it an
+                  already-repaired handler, which is exactly the test to write.
+                </p>
+                <p>
+                  Verified on a real project from v3.474.0: the fix arrives,{' '}
+                  <code>io</code> lands in the import block,{' '}
+                  <code>go vet ./...</code> is clean, a second upgrade reports
+                  nothing, and the admin type-checks with its 82 tests passing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.483.0 */}
             <div className="mb-12" id="v3.483.0">
               <div className="flex items-center gap-3 mb-4">
