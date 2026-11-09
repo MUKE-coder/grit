@@ -23,6 +23,58 @@ Also worth knowing:
 ---
 
 
+## v3.498.0 - November 9, 2026
+
+### A constraint test that passed without a constraint
+
+grit#198, and the third instance of one shape: the test schema is built by AutoMigrate, and AutoMigrate is not what `grit migrate` does. v3.494.0 added the append-only triggers. This adds the checked-in SQL pairs, which is everything a project expresses that AutoMigrate cannot: a CHECK, a partial index, a trigger, a backfill, an extension.
+
+The reporter's argument for why this instance is the worst of the three is the one that decided the design. A missing trigger fails loudly, because a test for it asserts that an UPDATE is *refused* and gets an accepted UPDATE. A missing CHECK fails silently, because a test for it can just as naturally assert that a valid row is *accepted*, and that goes green against a schema with no constraint in it at all.
+
+```go
+// Without the constraint in the schema this passes, having proved nothing.
+db.Create(&models.Reference{Doi: "10.1000/abc"})
+```
+
+#### Applied on Postgres, and declared on SQLite
+
+The pairs run on the Postgres path only, because most of what a pair is for cannot run on SQLite: no `ADD CONSTRAINT`, no `CONCURRENTLY`, no extensions. So a test whose subject is something a pair creates says so, and `RequireSQLMigrations` fails rather than skips:
+
+```go
+func TestAReferenceNeedsAStableIdentifier(t *testing.T) {
+	testkit.RequireSQLMigrations(t)
+	db := testkit.DB(t)
+	// ...
+}
+```
+
+Failing rather than skipping is the reporter's point again: a skipped guarantee reads in a CI log exactly like a guarantee that held, and SQLite is the default, so a full-suite run would skip quietly for ever. They had added a CI step to fail the job on a skip, which should not be necessary.
+
+On cost, which they also raised, the default goes the other way from their suggestion: applied unless turned off, not opt-in. `CREATE INDEX CONCURRENTLY` per test is genuinely not free, but the default has to be the one that cannot lie, and the cost is measurable while the silence is not. `GRIT_TEST_SKIP_SQL_MIGRATIONS=true` turns them off, and the guard then catches every test that needed them.
+
+The testing docs now say what the suite covers on each database, because the reporter is right that it changes silently with one environment variable and that was written down nowhere.
+
+#### One mistake of mine worth recording
+
+The first version of the guard read a package-level flag that `testkit.DB` set. That is wrong twice: a guard placed first, which is where a guard belongs and where the reporter put it, always failed because the flag is only set once the database exists; and a global mutated by `DB` is not safe under `t.Parallel`. It reads the environment instead, which is answerable before any database is built, and the same predicate decides the behaviour so the two cannot disagree.
+
+### And --force wrote a second copy of the index migration
+
+grit#197, mine from v3.491.0. The existence check asked whether *this run's* timestamped filename was there, and the timestamp is new every run, so it only ever caught a collision inside the same second. Regenerating wrote another pair; regenerating three times wrote three.
+
+The up side was harmless, being `CREATE INDEX CONCURRENTLY IF NOT EXISTS`. The down side was not: both pairs record as applied and either one's down drops the index they share, so `grit migrate down --sql` leaves the history saying the older pair is applied while the index is gone. On a table big enough to want an hnsw index, that is a retrieval path quietly becoming a sequential scan rather than an error anybody sees.
+
+An existing pair is now found by its derived name whatever timestamp it carries. And the generator says which of the two things happened, because `--force` promises to rewrite this resource's files and the migrations directory is not one of them:
+
+```text
+• apps/api/migrations/20261109032626_index_source_chunks_embedding.{up,down}.sql exists, left alone
+    the hnsw index for embedding is already a migration. Edit that pair
+    rather than regenerating: a second copy would drop the shared index on rollback
+```
+
+Both verified against a real Postgres, including each counterfactual: the reporter's constraint test passes in both directions with the pairs applied and fails loudly without them, and reverting the duplicate fix produces four migration files where there should be two.
+
+
 ## v3.497.0 - November 8, 2026
 
 ### A HIGH in x/net, and the last red workflow

@@ -20,19 +20,22 @@ package generate
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
 // writeVectorIndexMigration writes the pair for one embedding column.
 //
-// Returns the file name it wrote, or "" when there was nothing to write.
-func (g *Generator) writeVectorIndexMigration(names Names, f Field) (string, error) {
+// Returns the pair's name and whether this call wrote it. A name with
+// wrote=false is a pair an earlier run left, which is the --force case.
+func (g *Generator) writeVectorIndexMigration(names Names, f Field) (name string, wrote bool, err error) {
 	if !f.IsVector() {
-		return "", nil
+		return "", false, nil
 	}
 	if projectDBProvider(g.Root) != "postgres" {
-		return "", nil
+		return "", false, nil
 	}
 
 	table := names.PluralSnake
@@ -40,25 +43,39 @@ func (g *Generator) writeVectorIndexMigration(names Names, f Field) (string, err
 	slug := migrationSlug(fmt.Sprintf("index_%s_%s", table, column))
 
 	dir := filepath.Join(g.APIRoot(), "migrations")
+
+	// Already there, from an earlier run of this generator, under whatever
+	// timestamp that run used.
+	//
+	// Asking whether <this run's version>_<slug>.up.sql exists is not the same
+	// question and was the bug: the version is new every run, so it only ever
+	// caught a collision inside the same second, and `--force` wrote a second
+	// copy of the same pair. Both then record as applied and either one's down
+	// drops the shared index, leaving the history and the database disagreeing
+	// with nothing to say so (grit#197).
+	existing, err := existingMigrationFor(dir, slug)
+	if err != nil {
+		return "", false, err
+	}
+	if existing != "" {
+		return existing + "_" + slug, false, nil
+	}
+
 	version, err := freeVersion(dir, time.Now())
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	up := filepath.Join(dir, version+"_"+slug+".up.sql")
 	down := filepath.Join(dir, version+"_"+slug+".down.sql")
-	// Already there, from an earlier run of this generator.
-	if fileExists(up) {
-		return "", nil
-	}
 
 	indexName := fmt.Sprintf("idx_%s_%s", table, column)
 	if err := writeFileWithDirs(up, vectorIndexUpSQL(version, slug, table, column, indexName, f.VectorDim())); err != nil {
-		return "", fmt.Errorf("writing the vector index migration: %w", err)
+		return "", false, fmt.Errorf("writing the vector index migration: %w", err)
 	}
 	if err := writeFileWithDirs(down, vectorIndexDownSQL(version, slug, indexName)); err != nil {
-		return "", fmt.Errorf("writing the vector index rollback: %w", err)
+		return "", false, fmt.Errorf("writing the vector index rollback: %w", err)
 	}
-	return version + "_" + slug, nil
+	return version + "_" + slug, true, nil
 }
 
 // vectorIndexUpSQL builds the index, or explains why it cannot.
@@ -127,3 +144,29 @@ DROP INDEX CONCURRENTLY IF EXISTS %s;
 // vectorIndexMaxDimension is the ceiling for an hnsw or ivfflat index, which is
 // lower than the column's own limit of 16000.
 const vectorIndexMaxDimension = 2000
+
+// existingMigrationFor finds a pair already written for this slug, whatever
+// timestamp it carries, and returns its version or "".
+//
+// By suffix rather than by parsing the SQL: the slug is derived from the table
+// and the column, so two pairs for the same index always share it.
+func existingMigrationFor(dir, slug string) (string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// No migrations directory yet, so nothing to collide with.
+			return "", nil
+		}
+		return "", fmt.Errorf("reading %s: %w", dir, err)
+	}
+	suffix := "_" + slug + ".up.sql"
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		if strings.HasSuffix(e.Name(), suffix) {
+			return strings.TrimSuffix(e.Name(), suffix), nil
+		}
+	}
+	return "", nil
+}

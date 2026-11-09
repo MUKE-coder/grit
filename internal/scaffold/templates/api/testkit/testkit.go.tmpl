@@ -43,12 +43,42 @@ import (
 
 	"{{MODULE}}/internal/appendonly"
 	"{{MODULE}}/internal/config"
+	"{{MODULE}}/internal/migrate"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/migrations"
 )
 
 // DatabaseURLEnv names the variable that points the suite at a real database.
 const DatabaseURLEnv = "GRIT_TEST_DATABASE_URL"
+
+// SkipSQLMigrationsEnv turns off applying the checked-in SQL pairs to a test
+// schema.
+//
+// They are applied by default, because the alternative cannot be detected from
+// inside a test: a CHECK that is not there lets every insert through, so a test
+// asserting that a valid row is accepted passes having proved nothing. The cost
+// is real though, since a pair building an hnsw index runs per test, so a
+// project that measures a problem can turn them off. RequireSQLMigrations then
+// fails any test that depended on one, rather than letting it pass vacuously.
+const SkipSQLMigrationsEnv = "GRIT_TEST_SKIP_SQL_MIGRATIONS"
+
+// sqlMigrationsEnabled reports whether a schema built by DB will carry the
+// checked-in pairs.
+//
+// Read from the environment rather than recorded by DB, so a test can ask
+// before it builds a database, which is where a guard belongs. A package-level
+// flag set by DB was the first version of this and was wrong twice: a guard
+// placed first always failed, and a global mutated by DB is not safe under
+// t.Parallel.
+func sqlMigrationsEnabled() bool {
+	if strings.TrimSpace(os.Getenv(DatabaseURLEnv)) == "" {
+		// SQLite, which cannot run most pairs: no ADD CONSTRAINT, no
+		// CONCURRENTLY, no extensions.
+		return false
+	}
+	return !strings.EqualFold(strings.TrimSpace(os.Getenv(SkipSQLMigrationsEnv)), "true")
+}
 
 // schemaCounter makes each schema name unique within a process. The test name
 // alone is not enough: subtests repeat names, and a table-driven test that runs
@@ -186,7 +216,68 @@ func postgresDB(tb testing.TB, url string) *gorm.DB {
 		tb.Fatalf("migrating schema %s: %v", schema, err)
 	}
 	installTriggers(tb, db)
+	applySQLMigrations(tb, db)
 	return db
+}
+
+// applySQLMigrations runs the checked-in pairs against the test schema.
+//
+// AutoMigrate adds tables and columns. Everything a project expresses in a
+// pair, which is everything AutoMigrate cannot express, is absent without
+// this: a CHECK, a trigger, a backfill, an extension, a partial or concurrent
+// index. A test written against a missing constraint does not fail, it passes
+// having proved nothing (grit#198).
+//
+// They land in the test's own schema because a pair names tables unqualified
+// and search_path puts that schema first, which is only true because of the
+// ", public" on the path above.
+func applySQLMigrations(tb testing.TB, db *gorm.DB) {
+	tb.Helper()
+	if !sqlMigrationsEnabled() {
+		return
+	}
+
+	all, err := migrate.LoadSQLMigrations(migrations.FS)
+	if err != nil {
+		tb.Fatalf("reading the checked-in SQL migrations: %v", err)
+	}
+	if len(all) == 0 {
+		// No pairs in this project, so there is nothing to apply.
+		return
+	}
+	if err := migrate.EnsureSQLHistory(db); err != nil {
+		tb.Fatalf("preparing the SQL migration history on the test schema: %v", err)
+	}
+	if _, err := migrate.ApplySQL(db, all); err != nil {
+		tb.Fatalf("applying the checked-in SQL migrations to the test schema: %v\n\n"+
+			"A pair that cannot run here is a pair the suite cannot test against. If it is "+
+			"deliberately for production only, set %s=true and guard the tests that need it "+
+			"with testkit.RequireSQLMigrations.", err, SkipSQLMigrationsEnv)
+	}
+}
+
+// RequireSQLMigrations fails the test when the checked-in pairs are not in the
+// schema it was given.
+//
+// Put it at the top of any test whose subject is something a pair creates: a
+// CHECK constraint, a trigger, a partial index. The failure mode this exists
+// for is the quiet one. A missing constraint does not make such a test fail;
+// it makes it pass, and the guarantee it claims to cover is not in the
+// database.
+//
+// It fails rather than skips on purpose. A skipped guarantee reads as a
+// guarantee that held, and the default fall back to SQLite makes that easy to
+// miss in a full-suite run.
+func RequireSQLMigrations(tb testing.TB) {
+	tb.Helper()
+	if sqlMigrationsEnabled() {
+		return
+	}
+	tb.Fatalf("this test depends on the checked-in SQL migrations and they are not in "+
+		"the test schema, so it would pass without testing anything.\n\n"+
+		"    Set %s to a real Postgres, and leave %s unset.\n"+
+		"    SQLite cannot run most pairs (it has no ADD CONSTRAINT), so they are applied "+
+		"on Postgres only.", DatabaseURLEnv, SkipSQLMigrationsEnv)
 }
 
 // sanitize reduces a test name to something usable as an SQL identifier.

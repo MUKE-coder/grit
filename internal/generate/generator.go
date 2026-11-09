@@ -409,13 +409,24 @@ func (g *Generator) Run() error {
 	// The index an embedding needs, as a checked-in pair. Postgres only, and
 	// only for a resource that has one: see internal/generate/vector_index.go.
 	for _, f := range g.Definition.Fields {
-		name, err := g.writeVectorIndexMigration(names, f)
+		name, wrote, err := g.writeVectorIndexMigration(names, f)
 		if err != nil {
 			return err
 		}
-		if name != "" {
+		switch {
+		case name == "":
+		case wrote:
 			fmt.Printf("  ✓ %smigrations/%s.{up,down}.sql\n", apiPrefix, name)
 			fmt.Printf("      the hnsw index for %s. Run grit migrate to build it\n", toSnakeCase(f.Name))
+		default:
+			// Said out loud because --force promises to rewrite this
+			// resource's files, and the migration directory is not one of
+			// them: a second copy of this pair would record as applied
+			// alongside the first, and either one's down would drop the index
+			// they share (grit#197).
+			fmt.Printf("  • %smigrations/%s.{up,down}.sql exists, left alone\n", apiPrefix, name)
+			fmt.Printf("      the hnsw index for %s is already a migration. Edit that pair\n", toSnakeCase(f.Name))
+			fmt.Printf("      rather than regenerating: a second copy would drop the shared index on rollback\n")
 		}
 	}
 

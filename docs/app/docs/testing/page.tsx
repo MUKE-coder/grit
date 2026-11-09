@@ -397,6 +397,67 @@ curl -I http://localhost:8080/api/health | grep -iE 'x-frame|x-content|content-s
                 <li><strong>Remediation tracking</strong> — every finding flows from discovery → ticket (severity + owner + SLA) → fix → re-test. That documented loop is what SOC 2 / ISO 27001 auditors ask to see.</li>
               </ul>
 
+              <h2 id="two-databases" className="mt-10">
+                The suite covers different ground on SQLite and on Postgres
+              </h2>
+              <p>
+                <code>testkit.DB(t)</code> gives a test an in-memory SQLite
+                database, unless <code>GRIT_TEST_DATABASE_URL</code> points at a
+                real Postgres, in which case it gives the test its own schema
+                there. That is a convenience with a consequence worth knowing:
+                the two schemas are not the same, so the same suite proves
+                different things depending on one environment variable.
+              </p>
+              <p>
+                On Postgres the schema is built the way{' '}
+                <code>grit migrate</code> builds it: AutoMigrate, then the
+                append-only triggers, then every checked-in SQL pair in{' '}
+                <code>apps/api/migrations/</code>. On SQLite it is AutoMigrate
+                and the triggers, and the pairs are skipped, because most of
+                what a pair is for cannot run there: SQLite has no{' '}
+                <code>ADD CONSTRAINT</code>, no <code>CONCURRENTLY</code> and no
+                extensions.
+              </p>
+              <p>
+                So anything a project expresses in a pair, a CHECK constraint, a
+                partial index, a trigger, a backfill, is absent from a SQLite
+                run. The dangerous half of that is the quiet half:
+              </p>
+              <CodeBlock
+                language="go"
+                code={`// Without the constraint in the schema this passes, having proved nothing.
+func TestAValidReferenceIsAccepted(t *testing.T) {
+	db := testkit.DB(t)
+	if err := db.Create(&models.Reference{Doi: "10.1000/abc"}).Error; err != nil {
+		t.Fatal(err)
+	}
+}`}
+              />
+              <p>
+                A test asserting that something is <em>refused</em> fails loudly
+                when the constraint is missing. A test asserting that something
+                is <em>accepted</em> goes green. So a test whose subject is
+                something a pair creates says so:
+              </p>
+              <CodeBlock
+                language="go"
+                code={`func TestAReferenceNeedsAStableIdentifier(t *testing.T) {
+	testkit.RequireSQLMigrations(t)   // fails, loudly, on a schema without them
+	db := testkit.DB(t)
+	// ...
+}`}
+              />
+              <p>
+                It fails rather than skipping, deliberately. A skipped guarantee
+                reads in a CI log exactly like a guarantee that held, and the
+                fall back to SQLite is the default, so a full-suite run on a
+                developer machine would skip quietly for ever. If a project
+                measures the cost of applying its pairs per test, which is real
+                when one of them builds an hnsw index,{' '}
+                <code>GRIT_TEST_SKIP_SQL_MIGRATIONS=true</code> turns them off
+                and this guard then catches every test that needed them.
+              </p>
+
               <h2 id="what-ships" className="mt-10">What ships in your project</h2>
               <p>
                 A scaffolded project arrives with a populated suite, not just the

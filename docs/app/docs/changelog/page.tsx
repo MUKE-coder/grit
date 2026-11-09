@@ -72,6 +72,136 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.498.0 */}
+            <div className="mb-12" id="v3.498.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.498.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A constraint test that passed without a constraint</h3>
+                <p>
+                  grit#198, and the third instance of one shape: the test schema
+                  is built by AutoMigrate, and AutoMigrate is not what{' '}
+                  <code>grit migrate</code> does. v3.494.0 added the append-only
+                  triggers. This adds the checked-in SQL pairs, which is
+                  everything a project expresses that AutoMigrate cannot: a
+                  CHECK, a partial index, a trigger, a backfill, an extension.
+                </p>
+                <p>
+                  The reporter&apos;s argument for why this instance is the
+                  worst of the three is the one that decided the design. A
+                  missing trigger fails loudly, because a test for it asserts
+                  that an UPDATE is <em>refused</em> and gets an accepted
+                  UPDATE. A missing CHECK fails silently, because a test for it
+                  can just as naturally assert that a valid row is{' '}
+                  <em>accepted</em>, and that goes green against a schema with
+                  no constraint in it at all.
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`// Without the constraint in the schema this passes, having proved nothing.
+db.Create(&models.Reference{Doi: "10.1000/abc"})`}
+                />
+                <h4>Applied on Postgres, and declared on SQLite</h4>
+                <p>
+                  The pairs run on the Postgres path only, because most of what
+                  a pair is for cannot run on SQLite: no{' '}
+                  <code>ADD CONSTRAINT</code>, no <code>CONCURRENTLY</code>, no
+                  extensions. So a test whose subject is something a pair
+                  creates says so, and <code>RequireSQLMigrations</code> fails
+                  rather than skips:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`func TestAReferenceNeedsAStableIdentifier(t *testing.T) {
+	testkit.RequireSQLMigrations(t)
+	db := testkit.DB(t)
+	// ...
+}`}
+                />
+                <p>
+                  Failing rather than skipping is the reporter&apos;s point
+                  again: a skipped guarantee reads in a CI log exactly like a
+                  guarantee that held, and SQLite is the default, so a
+                  full-suite run would skip quietly for ever. They had added a
+                  CI step to fail the job on a skip, which should not be
+                  necessary.
+                </p>
+                <p>
+                  On cost, which they also raised, the default goes the other
+                  way from their suggestion: applied unless turned off, not
+                  opt-in. <code>CREATE INDEX CONCURRENTLY</code> per test is
+                  genuinely not free, but the default has to be the one that
+                  cannot lie, and the cost is measurable while the silence is
+                  not. <code>GRIT_TEST_SKIP_SQL_MIGRATIONS=true</code> turns
+                  them off, and the guard then catches every test that needed
+                  them.
+                </p>
+                <p>
+                  The testing docs now say what the suite covers on each
+                  database, because the reporter is right that it changes
+                  silently with one environment variable and that was written
+                  down nowhere.
+                </p>
+                <h4>One mistake of mine worth recording</h4>
+                <p>
+                  The first version of the guard read a package-level flag that{' '}
+                  <code>testkit.DB</code> set. That is wrong twice: a guard
+                  placed first, which is where a guard belongs and where the
+                  reporter put it, always failed because the flag is only set
+                  once the database exists; and a global mutated by{' '}
+                  <code>DB</code> is not safe under <code>t.Parallel</code>. It
+                  reads the environment instead, which is answerable before any
+                  database is built, and the same predicate decides the
+                  behaviour so the two cannot disagree.
+                </p>
+
+                <h3>And --force wrote a second copy of the index migration</h3>
+                <p>
+                  grit#197, mine from v3.491.0. The existence check asked
+                  whether <em>this run&apos;s</em> timestamped filename was
+                  there, and the timestamp is new every run, so it only ever
+                  caught a collision inside the same second. Regenerating wrote
+                  another pair; regenerating three times wrote three.
+                </p>
+                <p>
+                  The up side was harmless, being{' '}
+                  <code>CREATE INDEX CONCURRENTLY IF NOT EXISTS</code>. The down
+                  side was not: both pairs record as applied and either
+                  one&apos;s down drops the index they share, so{' '}
+                  <code>grit migrate down --sql</code> leaves the history saying
+                  the older pair is applied while the index is gone. On a table
+                  big enough to want an hnsw index, that is a retrieval path
+                  quietly becoming a sequential scan rather than an error
+                  anybody sees.
+                </p>
+                <p>
+                  An existing pair is now found by its derived name whatever
+                  timestamp it carries. And the generator says which of the two
+                  things happened, because <code>--force</code> promises to
+                  rewrite this resource&apos;s files and the migrations
+                  directory is not one of them:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`• apps/api/migrations/20261109032626_index_source_chunks_embedding.{up,down}.sql exists, left alone
+    the hnsw index for embedding is already a migration. Edit that pair
+    rather than regenerating: a second copy would drop the shared index on rollback`}
+                />
+                <p>
+                  Both verified against a real Postgres, including each
+                  counterfactual: the reporter&apos;s constraint test passes in
+                  both directions with the pairs applied and fails loudly
+                  without them, and reverting the duplicate fix produces four
+                  migration files where there should be two.
+                </p>
+              </div>
+            </div>
+
             {/* v3.497.0 */}
             <div className="mb-12" id="v3.497.0">
               <div className="flex items-center gap-3 mb-4">

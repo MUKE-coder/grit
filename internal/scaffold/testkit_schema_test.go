@@ -83,3 +83,80 @@ func TestTestkitSearchPathKeepsPublic(t *testing.T) {
 		t.Error("public is first on the path, so the test's tables land in the shared schema")
 	}
 }
+
+// grit#198: the checked-in SQL pairs reach the test schema, and a test can
+// insist on them.
+//
+// Third instance of the shape above, and the worst of the three. A missing
+// trigger fails loudly, in the refusal direction: a test asserting an UPDATE
+// is refused gets an accepted UPDATE and goes red. A missing CHECK fails
+// silently in the acceptance direction: a test asserting that a valid row is
+// accepted goes green while the constraint is not in the database at all.
+func TestTestkitAppliesTheCheckedInSQLMigrations(t *testing.T) {
+	src := apiTestKitGo()
+
+	for _, want := range []string{
+		"migrate.LoadSQLMigrations(migrations.FS)",
+		"migrate.EnsureSQLHistory(db)",
+		"migrate.ApplySQL(db, all)",
+		`"{{MODULE}}/migrations"`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("testkit does not %s, so anything a project expresses in a pair "+
+				"(a CHECK, a trigger, a backfill, a partial index) is absent from every test", want)
+		}
+	}
+
+	// After AutoMigrate: a pair alters tables AutoMigrate has to have made.
+	mig := strings.Index(src, "migrating schema %s")
+	apply := strings.Index(src, "applySQLMigrations(tb, db)")
+	if mig == -1 || apply == -1 {
+		t.Fatal("could not find the Postgres AutoMigrate and the apply call")
+	}
+	if apply < mig {
+		t.Error("the pairs are applied before AutoMigrate, so they alter tables that do not exist yet")
+	}
+}
+
+// The guard has to be answerable before a database exists, because that is
+// where a guard goes, and it must not be a package-level flag: DB mutating one
+// is not safe under t.Parallel, and a guard placed first would always fail.
+func TestRequireSQLMigrationsIsOrderIndependent(t *testing.T) {
+	src := apiTestKitGo()
+
+	if strings.Contains(src, "var sqlMigrationsApplied") {
+		t.Error("the guard reads a package-level flag that DB sets: a test calling it before " +
+			"DB always fails, and a global mutated by DB is not safe under t.Parallel")
+	}
+	if !strings.Contains(src, "func sqlMigrationsEnabled() bool") {
+		t.Error("there is no environment-only predicate for whether the pairs will be applied")
+	}
+	// One predicate, read by both the guard and the behaviour, or they drift.
+	if n := strings.Count(src, "sqlMigrationsEnabled()"); n < 2 {
+		t.Errorf("sqlMigrationsEnabled is read %d times; the guard and applySQLMigrations "+
+			"both have to ask it or they can disagree", n)
+	}
+
+	// It fails rather than skips. A skipped guarantee reads as one that held.
+	at := strings.Index(src, "func RequireSQLMigrations(")
+	if at == -1 {
+		t.Fatal("there is no RequireSQLMigrations")
+	}
+	body := src[at:]
+	if end := strings.Index(body, "\n}"); end != -1 {
+		body = body[:end]
+	}
+	// The call, not the word: the message names SkipSQLMigrationsEnv, which an
+	// unanchored search for "Skip" matched. Checking for the substring rather
+	// than the call is how this test first failed against correct code.
+	for _, call := range []string{"tb.Skip(", "tb.Skipf(", "tb.SkipNow("} {
+		if strings.Contains(body, call) {
+			t.Errorf("RequireSQLMigrations calls %s. A guarantee that skipped is not a "+
+				"guarantee that held, and the default fall back to SQLite makes that easy "+
+				"to miss:\n%s", call, body)
+		}
+	}
+	if !strings.Contains(body, "Fatalf") {
+		t.Errorf("RequireSQLMigrations does not fail:\n%s", body)
+	}
+}
