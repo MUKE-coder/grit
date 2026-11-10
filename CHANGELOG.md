@@ -23,6 +23,52 @@ Also worth knowing:
 ---
 
 
+## v3.499.0 - November 10, 2026
+
+### A twenty-seventh expert, which writes the tutorial
+
+The expert pack gains `grit-teacher`. It takes one feature that has shipped and writes the tutorial that would have let somebody build it themselves, one markdown file per lesson into `.grit/tutorials/`.
+
+It names its reader rather than imagining one: somebody who reads React without effort and has never written Go in anger. That single decision settles most of the others. The struct tag and the returned error get explained and the `useQuery` does not, every file it touches is named by full path because the reader has not opened most of the folders yet, and the words "simply" and "just" are banned, because a reader who is stuck reads those as evidence they are too slow for this.
+
+Two things are required rather than encouraged. The scenario comes before step one, names a product rather than a category, and says when *not* to use the feature: a technique nobody knows the occasion for is a technique nobody uses, and that section is the difference between teaching and documentation. And every step ends in a checkpoint saying what the reader will see and what it means if they see something else, because a reader who cannot tell whether step four worked stops learning at step four.
+
+The rule that keeps it honest is the same shape as the advocate's rule about numbers: every command in the file was actually run, in order, in a project built while writing it. A flag that does not exist is worse than no tutorial, because the reader cannot tell whether they typed it wrong or the document is wrong, and most beginners decide it was them and stop.
+
+`grit skills status` was also reporting five fewer skills than the pack ships. Its list is a copy, kept local so the command works with no network, and it had fallen four behind before anybody looked: `grit-adopt`, `grit-blueprints`, `grit-design-review` and `grit-plugins` were installed, working and invisible.
+
+### And the two things writing the first lesson found
+
+This is the part of the new skill that pays for it. Teaching a feature means following your own steps as if you had never seen it, and the steps that fail are the ones a reader would have failed at. The lesson was the vector field type from v3.491.0, and it found two.
+
+#### The package said that working code was broken
+
+`internal/vectors` told you to pass `Nearest` to `Clauses`, and gave as the reason that `Order()` "would compile and do nothing". The advice is right. The reason was wrong:
+
+```text
+Clauses(Nearest)         ORDER BY present: true   ... ORDER BY embedding <=> $1
+Order(Nearest)           ORDER BY present: true   ... ORDER BY embedding <=> $1
+Order(CosineDistance)    ORDER BY present: false  SELECT * FROM "support_tickets" WHERE ...
+```
+
+GORM's `Order` handles a `clause.OrderBy`, which is exactly what the three `Nearest` helpers return. What it drops without a word is a `clause.Expression`, which is what the three raw distance helpers return. So the trap is real and the comment was pointing at the wrong thing, which is worse than pointing at nothing: the first reader to check finds the framework lying about its own API, and the one who believes it learns a rule about `Order` when the rule is about the type.
+
+The generated project now asserts both halves, so the recommendation and its reason cannot drift apart again:
+
+```go
+func TestOrderDropsAnExpressionAndKeepsAnOrderBy(t *testing.T) {
+	// Order(Nearest) keeps the ordering. Order(CosineDistance) loses it.
+	// The recommendation to use Clauses only makes sense once both are pinned.
+}
+```
+
+#### A test that passed against a query with no ORDER BY
+
+The tutorial's own test, written the obvious way, was vacuous. Three tickets, nearest first, assert they come back nearest first. It passed. It also passed with the ordering removed from the query altogether, because rows with no `ORDER BY` arrive in scan order, scan order was insertion order, and insertion order was the answer.
+
+The fix is one line of fixture ordering and it is now part of what the lesson teaches: insert the rows in the reverse of the order they should come back in. The same test then fails loudly against a query that is not sorting. It is the third time this month a green test turned out to be green for a reason unconnected to the thing it named, and the cheapest defence remains asking what would have to break for this to go red.
+
+
 ## v3.498.0 - November 9, 2026
 
 ### A constraint test that passed without a constraint

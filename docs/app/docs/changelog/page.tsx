@@ -72,6 +72,130 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.499.0 */}
+            <div className="mb-12" id="v3.499.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.499.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A twenty-seventh expert, which writes the tutorial</h3>
+                <p>
+                  The expert pack gains <code>grit-teacher</code>. It takes one
+                  feature that has shipped and writes the tutorial that would
+                  have let somebody build it themselves, one markdown file per
+                  lesson into <code>.grit/tutorials/</code>.
+                </p>
+                <p>
+                  It names its reader rather than imagining one: somebody who
+                  reads React without effort and has never written Go in anger.
+                  That single decision settles most of the others. The struct
+                  tag and the returned error get explained and the{' '}
+                  <code>useQuery</code> does not, every file it touches is named
+                  by full path because the reader has not opened most of the
+                  folders yet, and the words &quot;simply&quot; and
+                  &quot;just&quot; are banned, because a reader who is stuck
+                  reads those as evidence they are too slow for this.
+                </p>
+                <p>
+                  Two things are required rather than encouraged. The scenario
+                  comes before step one, names a product rather than a category,
+                  and says when <em>not</em> to use the feature: a technique
+                  nobody knows the occasion for is a technique nobody uses, and
+                  that section is the difference between teaching and
+                  documentation. And every step ends in a checkpoint saying what
+                  the reader will see and what it means if they see something
+                  else, because a reader who cannot tell whether step four
+                  worked stops learning at step four.
+                </p>
+                <p>
+                  The rule that keeps it honest is the same shape as the
+                  advocate&apos;s rule about numbers: every command in the file
+                  was actually run, in order, in a project built while writing
+                  it. A flag that does not exist is worse than no tutorial,
+                  because the reader cannot tell whether they typed it wrong or
+                  the document is wrong, and most beginners decide it was them
+                  and stop.
+                </p>
+                <p>
+                  <code>grit skills status</code> was also reporting five fewer
+                  skills than the pack ships. Its list is a copy, kept local so
+                  the command works with no network, and it had fallen four
+                  behind before anybody looked:{' '}
+                  <code>grit-adopt</code>, <code>grit-blueprints</code>,{' '}
+                  <code>grit-design-review</code> and <code>grit-plugins</code>{' '}
+                  were installed, working and invisible.
+                </p>
+
+                <h3>And the two things writing the first lesson found</h3>
+                <p>
+                  This is the part of the new skill that pays for it. Teaching a
+                  feature means following your own steps as if you had never
+                  seen it, and the steps that fail are the ones a reader would
+                  have failed at. The lesson was the vector field type from
+                  v3.491.0, and it found two.
+                </p>
+                <h4>The package said that working code was broken</h4>
+                <p>
+                  <code>internal/vectors</code> told you to pass{' '}
+                  <code>Nearest</code> to <code>Clauses</code>, and gave as the
+                  reason that <code>Order()</code> &quot;would compile and do
+                  nothing&quot;. The advice is right. The reason was wrong:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`Clauses(Nearest)         ORDER BY present: true   ... ORDER BY embedding <=> $1
+Order(Nearest)           ORDER BY present: true   ... ORDER BY embedding <=> $1
+Order(CosineDistance)    ORDER BY present: false  SELECT * FROM "support_tickets" WHERE ...`}
+                />
+                <p>
+                  GORM&apos;s <code>Order</code> handles a{' '}
+                  <code>clause.OrderBy</code>, which is exactly what the three{' '}
+                  <code>Nearest</code> helpers return. What it drops without a
+                  word is a <code>clause.Expression</code>, which is what the
+                  three raw distance helpers return. So the trap is real and the
+                  comment was pointing at the wrong thing, which is worse than
+                  pointing at nothing: the first reader to check finds the
+                  framework lying about its own API, and the one who believes it
+                  learns a rule about <code>Order</code> when the rule is about
+                  the type.
+                </p>
+                <p>
+                  The generated project now asserts both halves, so the
+                  recommendation and its reason cannot drift apart again:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`func TestOrderDropsAnExpressionAndKeepsAnOrderBy(t *testing.T) {
+	// Order(Nearest) keeps the ordering. Order(CosineDistance) loses it.
+	// The recommendation to use Clauses only makes sense once both are pinned.
+}`}
+                />
+                <h4>A test that passed against a query with no ORDER BY</h4>
+                <p>
+                  The tutorial&apos;s own test, written the obvious way, was
+                  vacuous. Three tickets, nearest first, assert they come back
+                  nearest first. It passed. It also passed with the ordering
+                  removed from the query altogether, because rows with no{' '}
+                  <code>ORDER BY</code> arrive in scan order, scan order was
+                  insertion order, and insertion order was the answer.
+                </p>
+                <p>
+                  The fix is one line of fixture ordering and it is now part of
+                  what the lesson teaches: insert the rows in the reverse of the
+                  order they should come back in. The same test then fails
+                  loudly against a query that is not sorting. It is the third
+                  time this month a green test turned out to be green for a
+                  reason unconnected to the thing it named, and the cheapest
+                  defence remains asking what would have to break for this to go
+                  red.
+                </p>
+              </div>
+            </div>
+
             {/* v3.498.0 */}
             <div className="mb-12" id="v3.498.0">
               <div className="flex items-center gap-3 mb-4">

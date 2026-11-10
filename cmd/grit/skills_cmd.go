@@ -49,7 +49,8 @@ func skillsCmd() *cobra.Command {
 		Long: `The Grit expert skills: a router that reads your project and assigns the work,
 one expert per architecture, and specialists for resources, the admin panel,
 design, data, security, performance, deployment and review, plus one that reads
-what the work cost in tokens and one that writes up what was worth sharing.
+what the work cost in tokens, one that writes up what was worth sharing, and one
+that turns a shipped feature into a tutorial somebody new can follow.
 
 They read the docs out of this binary rather than from memory, interview you
 once and remember the answers, and file what Grit got wrong as an issue while
@@ -68,7 +69,7 @@ configuration directory.
 
 Three different things get called a Grit skill, and they do different jobs:
 
-  this pack                     seventeen expert skills, private, installed here
+  this pack                     twenty-seven expert skills, private, installed here
   skills/grit/SKILL.md          one general skill, public, in the Grit repository
   .claude/skills/grit/SKILL.md  written into your project by "grit new", and
                                 tailored to the architecture you chose
@@ -221,13 +222,23 @@ func skillsStatusCmd() *cobra.Command {
 }
 
 // expertSkillNames is the pack, for reporting. Kept here rather than fetched
-// so `status` works with no network.
+// so `status` works with no network, which is the whole reason it is a copy
+// and also the reason it drifts: the pack ships on its own cadence and nothing
+// here can check. It had fallen four behind before anybody noticed, and a
+// skill missing from this list is installed, working and invisible, because
+// `status` reports from here.
+//
+// When the pack gains a skill, add it. The list to compare against is the
+// roster table in the pack's README, or `ls skills/` in a checkout of
+// MUKE-coder/grit-expert-skills.
 var expertSkillNames = []string{
-	"grit-build", "grit-core", "grit-resource", "grit-data",
+	"grit-build", "grit-core", "grit-resource", "grit-data", "grit-plugins",
+	"grit-blueprints", "grit-adopt",
 	"grit-triple", "grit-double", "grit-single", "grit-desktop", "grit-mobile",
-	"grit-offline", "grit-admin", "grit-ui-ux", "grit-security", "grit-perf",
+	"grit-offline", "grit-admin", "grit-ui-ux", "grit-design-review",
+	"grit-security", "grit-perf",
 	"grit-deploy", "grit-reviewer", "grit-feedback", "grit-setup", "grit-report",
-	"grit-tokens", "grit-advocate", "grit-critic",
+	"grit-tokens", "grit-advocate", "grit-critic", "grit-teacher",
 	"grit-references",
 }
 

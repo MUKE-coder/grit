@@ -587,16 +587,18 @@ db.Model(&models.Document{}).
 	Find(&out)`}
                 />
                 <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
-                  <code>Order()</code> would compile and do nothing. GORM&apos;s{' '}
-                  <code>Order</code> switches on its argument&apos;s type and handles a string and
-                  a <code>clause.OrderByColumn</code>; anything else falls through, so the query
-                  runs with no <code>ORDER BY</code> and returns rows in scan order, which looks
-                  like a working search until the table grows.{' '}
                   <code>Nearest</code>, <code>NearestL2</code> and{' '}
-                  <code>NearestByInnerProduct</code> are the three distances;{' '}
-                  <code>CosineDistance</code> and its pair are the raw expressions, for a{' '}
-                  <code>Select</code> that returns the distance or a <code>Where</code> that puts a
-                  ceiling on it.
+                  <code>NearestByInnerProduct</code> are the three distances, and each returns a{' '}
+                  <code>clause.OrderBy</code>. <code>CosineDistance</code> and its pair are the raw
+                  expressions, for a <code>Select</code> that returns the distance or a{' '}
+                  <code>Where</code> that puts a ceiling on it.{' '}
+                  <code>Clauses</code> carries both; <code>Order</code> carries only the first
+                  kind. GORM&apos;s <code>Order</code> switches on its argument&apos;s type and
+                  drops a <code>clause.Expression</code> without a word, so{' '}
+                  <code>Order(vectors.CosineDistance(...))</code> compiles, runs with no{' '}
+                  <code>ORDER BY</code>, and returns rows in scan order, which for a few freshly
+                  inserted rows is insertion order and reads exactly like a working search. Use{' '}
+                  <code>Clauses</code> and the distinction never comes up.
                 </p>
 
                 <h3 className="text-lg font-semibold tracking-tight mt-6 mb-3">

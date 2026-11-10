@@ -53,10 +53,19 @@ func vectorsGo() string {
 //		Limit(10).
 //		Find(&out)
 //
-// Clauses, not Order. gorm's Order() switches on the type of its argument and
-// handles only a string and a clause.OrderByColumn: an expression falls
-// through and nothing is added, so the query runs with no ORDER BY and returns
-// rows in scan order. It looks like it worked.
+// Clauses, because Clauses carries every form of this and Order does not.
+//
+// gorm's Order switches on its argument's type. It handles a clause.OrderBy,
+// which is what the three Nearest helpers return, so Order works for those. It
+// drops a clause.Expression without a word, which is what the three raw
+// distance helpers return, so
+//
+//	db.Model(&Document{}).Order(vectors.CosineDistance("embedding", query))
+//
+// builds a query with no ORDER BY and returns rows in scan order. For a few
+// freshly inserted rows that is insertion order, and it reads exactly like a
+// working nearest-neighbour search. Use Clauses and the question does not come
+// up. TestOrderDropsAnExpressionAndKeepsAnOrderBy pins which is which.
 //
 // # The dimension is a schema decision
 //
@@ -250,7 +259,9 @@ var columnName = regexp.MustCompile(` + "`" + `^[a-z_][a-z0-9_]*$` + "`" + `)
 //
 //	db.Model(&Document{}).Clauses(vectors.Nearest("embedding", query)).Limit(10)
 //
-// Pass it to Clauses. Order() would ignore it: see the package comment.
+// This is a clause.OrderBy, which Clauses and Order both carry. Clauses is the
+// form used throughout, because CosineDistance and its pair are expressions and
+// Order drops one of those silently: see the package comment.
 func Nearest(column string, v Vector) clause.OrderBy {
 	return clause.OrderBy{Expression: CosineDistance(column, v)}
 }
@@ -593,6 +604,45 @@ func TestNearestReachesTheQuery(t *testing.T) {
 		if !strings.Contains(sql, "embedding "+c.operator) {
 			t.Errorf("%s did not order by %s:\n  %s", c.name, c.operator, sql)
 		}
+	}
+}
+
+// Which form of ordering survives, and which does not.
+//
+// The package comment used to say that Order ignores what Nearest returns.
+// That was wrong, and wrong in the direction that costs most: it told a
+// developer that working code was broken, so the first person to check found
+// the documentation lying about its own API. gorm handles a clause.OrderBy in
+// Order. What it drops is a clause.Expression.
+//
+// Both halves are asserted here, because the recommendation to use Clauses
+// only makes sense once it is clear what it is protecting against.
+func TestOrderDropsAnExpressionAndKeepsAnOrderBy(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("opening an in-memory database: %v", err)
+	}
+
+	q := Vector{1, 0, 0}
+	sql := func(build func(*gorm.DB) *gorm.DB) string {
+		var out []vectorRow
+		tx := db.Session(&gorm.Session{DryRun: true}).Model(&vectorRow{})
+		return build(tx).Find(&out).Statement.SQL.String()
+	}
+
+	ordered := func(s string) bool { return strings.Contains(strings.ToUpper(s), "ORDER BY") }
+
+	if s := sql(func(tx *gorm.DB) *gorm.DB { return tx.Clauses(Nearest("embedding", q)) }); !ordered(s) {
+		t.Errorf("Clauses(Nearest) lost the ordering, which is the documented form:\n  %s", s)
+	}
+	if s := sql(func(tx *gorm.DB) *gorm.DB { return tx.Order(Nearest("embedding", q)) }); !ordered(s) {
+		t.Errorf("Order(Nearest) lost the ordering. If gorm has stopped handling a "+
+			"clause.OrderBy in Order, the package comment needs to say so again:\n  %s", s)
+	}
+	if s := sql(func(tx *gorm.DB) *gorm.DB { return tx.Order(CosineDistance("embedding", q)) }); ordered(s) {
+		t.Errorf("Order(CosineDistance) now orders by something. That is the trap this "+
+			"package exists to route around, and if it has closed the comment should "+
+			"stop warning about it:\n  %s", s)
 	}
 }
 
