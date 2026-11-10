@@ -46,6 +46,23 @@ export default function WebAppPage() {
             </div>
 
             <div className="prose-grit">
+              <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-8">
+                <p className="text-sm text-foreground/80 mb-0">
+                  Two pages answer the questions that come up first once this app
+                  is running:{' '}
+                  <Link href="/docs/frontend/fetching-data" className="text-accent hover:underline">
+                    Fetching data in the web app
+                  </Link>{' '}
+                  takes a resource you created in the admin panel and renders it
+                  on a public home page and detail page, and{' '}
+                  <Link href="/docs/frontend/auth" className="text-accent hover:underline">
+                    Auth and protected pages
+                  </Link>{' '}
+                  adds sign-in, sign-up and a gate on the routes that are
+                  private.
+                </p>
+              </div>
+
               {/* Architecture Overview */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
@@ -164,8 +181,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
                   Authentication Pages
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Grit ships three pre-built auth pages with the dark theme, form validation via Zod schemas
-                  from the shared package, and API integration via the auth hooks. All pages are fully responsive.
+                  <strong className="text-foreground">These are patterns to write, not files you are given.</strong>{' '}
+                  A scaffolded <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/web</code> has
+                  no auth pages and no <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">hooks/use-auth.ts</code>:
+                  the admin panel ships its sign-in screens, the web app deliberately does not, because a
+                  storefront, a marketing site and a customer portal all want a different one and a generated
+                  version would be deleted. What you do get is the API, which already does all of
+                  authentication, and the client in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">lib/api.ts</code>,
+                  which already refreshes an expired session.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The three routes below are the conventional shape, and{' '}
+                  <Link href="/docs/frontend/auth" className="text-accent hover:underline">
+                    Auth and protected pages
+                  </Link>{' '}
+                  builds them: the hooks, the two forms, the marker cookie and the{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">proxy.ts</code> gate in
+                  front of a private route. The Zod schemas they validate against, including{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">LoginSchema</code>, are
+                  real and are in the shared package already.
                 </p>
 
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">

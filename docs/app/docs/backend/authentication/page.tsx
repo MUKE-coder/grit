@@ -546,6 +546,16 @@ const (
               {/* ── Token Storage (Frontend) ─────────────────────────────── */}
               <h2 id="token-storage">Token Storage on the Frontend</h2>
 
+              <p>
+                This section is about which client holds what. For the pages
+                themselves, the sign-in form, the sign-up form, the hook that
+                knows who is signed in and the gate in front of a private route,
+                see{' '}
+                <Link href="/docs/frontend/auth" className="text-accent hover:underline">
+                  Auth and protected pages
+                </Link>.
+              </p>
+
               <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5 mb-6">
                 <p className="text-sm text-foreground/85 mb-0">
                   <strong className="text-destructive">Do not store tokens in <code>localStorage</code> for the web client.</strong>{' '}

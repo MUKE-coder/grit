@@ -182,6 +182,8 @@ const navItems: NavItem[] = [
     icon: <Layers className="h-3.5 w-3.5" />,
     items: [
       { title: 'Web App (Next.js)', href: '/docs/frontend/web-app' },
+      { title: 'Fetching Data (Products)', href: '/docs/frontend/fetching-data' },
+      { title: 'Auth & Protected Pages', href: '/docs/frontend/auth' },
       { title: 'TanStack Router (Vite)', href: '/docs/frontend/tanstack-router' },
       { title: 'React Query Hooks', href: '/docs/frontend/hooks' },
       { title: 'Internationalisation', href: '/docs/frontend/i18n' },

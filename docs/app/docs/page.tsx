@@ -736,6 +736,8 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   { title: 'Philosophy', desc: 'Why Grit exists and the design principles behind it', href: '/docs/getting-started/philosophy' },
                   { title: 'Installation', desc: 'System requirements and CLI setup', href: '/docs/getting-started/installation' },
                   { title: 'Tutorials', desc: 'Step-by-step guides to build real apps', href: '/docs/tutorials/learn' },
+                  { title: 'Fetching Data in the Web App', desc: 'Create records in the admin, read them on a public page', href: '/docs/frontend/fetching-data' },
+                  { title: 'Auth & Protected Pages', desc: 'Sign-in, sign-up, and gating a private route properly', href: '/docs/frontend/auth' },
                 ].map((item) => (
                   <Link key={item.href} href={item.href}>
                     <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-accent/20 hover:bg-card/80 transition-all duration-200">

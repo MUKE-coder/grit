@@ -47,6 +47,19 @@ export default function HooksPage() {
             </div>
 
             <div className="prose-grit">
+              <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 mb-8">
+                <p className="text-sm text-foreground/80 mb-0">
+                  These hooks call the <strong>authenticated</strong> routes, so
+                  they answer <code>401</code> without a signed-in session. That
+                  is right for an admin screen or a customer portal and wrong for
+                  a public page. For a home page or a product page a stranger can
+                  open, read{' '}
+                  <Link href="/docs/frontend/fetching-data" className="text-accent hover:underline">
+                    Fetching data in the web app
+                  </Link>.
+                </p>
+              </div>
+
               {/* Auto-generated Hooks Pattern */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

@@ -423,6 +423,16 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   {
+                    title: "Show It on the Web App",
+                    desc: "Products in the admin, read publicly on the home and detail pages",
+                    href: "/docs/frontend/fetching-data",
+                  },
+                  {
+                    title: "Sign-In and Private Pages",
+                    desc: "Auth hooks, the edge gate, and protecting a page properly",
+                    href: "/docs/frontend/auth",
+                  },
+                  {
                     title: "Add Authentication",
                     desc: "Register, login, JWT, OAuth and 2FA, built in",
                     href: "/docs/backend/authentication",

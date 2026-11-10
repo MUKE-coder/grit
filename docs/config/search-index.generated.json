@@ -630,6 +630,18 @@
     "keywords": "docs extending"
   },
   {
+    "title": "Auth and Protected Pages",
+    "href": "/docs/frontend/auth",
+    "section": "Frontend (Next.js)",
+    "keywords": "sign up protected pages grit web app httponly session cookies auth hooks proxy ts edge gate not thing protects page docs frontend"
+  },
+  {
+    "title": "Fetching Data in the Web App",
+    "href": "/docs/frontend/fetching-data",
+    "section": "Frontend (Next.js)",
+    "keywords": "create products grit admin panel read them public home page product flag publishable api key server components pagination search money formatting docs frontend fetching data web app"
+  },
+  {
     "title": "React Hooks",
     "href": "/docs/frontend/hooks",
     "section": "Frontend (Next.js)",

@@ -72,6 +72,103 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.500.0 */}
+            <div className="mb-12" id="v3.500.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.500.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The two web-app pages the docs did not have</h3>
+                <p>
+                  Both were asked for in the same sentence, and both are the
+                  question somebody has about ten minutes after their first{' '}
+                  <code>grit generate resource</code>: I made the thing in the
+                  admin panel, now how does a stranger see it, and then how do I
+                  put a page behind a sign-in.
+                </p>
+                <p>
+                  <strong>
+                    <code>/docs/frontend/fetching-data</code>
+                  </strong>{' '}
+                  follows one real <code>Product</code> resource from{' '}
+                  <code>--public</code> to a rendered home page and product page:
+                  what the flag writes, the allowlist struct that makes a column
+                  added next month private by default, where the publishable API
+                  key comes from and why it is safe in a browser, the two server
+                  components, search and paging through{' '}
+                  <code>searchParams</code>, and the detail page&apos;s{' '}
+                  <code>generateMetadata</code> sharing one cached fetch with the
+                  page itself.
+                </p>
+                <p>
+                  <strong>
+                    <code>/docs/frontend/auth</code>
+                  </strong>{' '}
+                  builds the four files a web app needs: the marker cookie, the
+                  hooks, the two forms and the <code>proxy.ts</code> gate. Its
+                  argument is the one thing worth taking from it:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`# A marker cookie opens the gate, which is all it does.
+$ curl -s -o /dev/null -w "%{http_code}\n" -b "shop_session=1" localhost:3000/account
+200
+
+# And the API is not fooled by it.
+$ curl -s -o /dev/null -w "%{http_code}\n" -b "shop_session=1" localhost:8080/api/auth/me
+401`}
+                />
+                <p>
+                  The gate decides what HTML to send. The API decides what data
+                  to return. Only the second is a security boundary, and
+                  confusing the two produces a site that looks locked and is not.
+                </p>
+                <p>
+                  Both pages were written by building what they describe: a
+                  triple project, a seeded <code>Product</code> resource, the
+                  five components, <code>pnpm build</code>, and every{' '}
+                  <code>curl</code> in them run against it. The list page, the
+                  detail page, the 404 on an unknown slug, the redirect with its{' '}
+                  <code>?next=</code>, and <code>$36.74</code> rendered from{' '}
+                  <code>{'{"amount":3674,"currency":"USD"}'}</code>. There is a
+                  declared flow, <code>fresh-public-products</code>, so CI
+                  re-checks the commands against a real Postgres rather than
+                  taking the page&apos;s word for them.
+                </p>
+                <p>
+                  They are linked from the docs sidebar, the docs index, the
+                  quick start, the web app page, the hooks page and the backend
+                  authentication page, because a page nobody can find is a page
+                  nobody reads.
+                </p>
+
+                <h4>And a claim on the web app page that was never true</h4>
+                <p>
+                  That page said Grit &quot;ships three pre-built auth pages&quot;
+                  in <code>apps/web</code>, and listed <code>/login</code>,{' '}
+                  <code>/register</code> and <code>/forgot-password</code>. It
+                  does not and never did: only the admin panel gets an{' '}
+                  <code>(auth)</code> route group, and a freshly scaffolded web
+                  app has no login page and no{' '}
+                  <code>hooks/use-auth.ts</code>.
+                </p>
+                <p>
+                  Sending a reader to look for a file that is not there is the
+                  most expensive sort of documentation error, because they have no
+                  way to tell whether the file is missing or they are. The section
+                  now says these are patterns to write, says why the web app
+                  deliberately does not generate them when the admin does, and
+                  points at the page that builds them. The Zod schemas it
+                  mentioned, including <code>LoginSchema</code>, are real and were
+                  always in the shared package.
+                </p>
+              </div>
+            </div>
+
             {/* v3.499.0 */}
             <div className="mb-12" id="v3.499.0">
               <div className="flex items-center gap-3 mb-4">

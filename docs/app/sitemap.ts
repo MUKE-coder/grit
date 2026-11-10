@@ -112,6 +112,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/backend/pulse', priority: 0.7, changeFrequency: 'monthly' as const },
 
     // Frontend
+    { path: '/docs/frontend/fetching-data', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/docs/frontend/auth', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/docs/frontend/hooks', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/docs/frontend/shared-package', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/docs/frontend/web-app', priority: 0.6, changeFrequency: 'monthly' as const },

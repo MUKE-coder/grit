@@ -510,6 +510,16 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Frontend
+  '/docs/frontend/fetching-data': {
+    title: 'Fetching Data in the Web App',
+    description:
+      'Create products in the Grit admin panel and read them on a public home page and product page: the --public flag, the publishable API key, server components, pagination, search and money formatting.',
+  },
+  '/docs/frontend/auth': {
+    title: 'Auth and Protected Pages',
+    description:
+      'Sign-in, sign-up and protected pages in a Grit web app: the HttpOnly session cookies, the auth hooks, the proxy.ts edge gate, and why the gate is not the thing that protects a page.',
+  },
   '/docs/frontend/hooks': {
     title: 'React Hooks',
     description:

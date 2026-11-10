@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.500.0 - November 10, 2026
+
+### The two web-app pages the docs did not have
+
+Both were asked for in the same sentence, and both are the question somebody has about ten minutes after their first `grit generate resource`: I made the thing in the admin panel, now how does a stranger see it, and then how do I put a page behind a sign-in.
+
+** `/docs/frontend/fetching-data` ** follows one real `Product` resource from `--public` to a rendered home page and product page: what the flag writes, the allowlist struct that makes a column added next month private by default, where the publishable API key comes from and why it is safe in a browser, the two server components, search and paging through `searchParams`, and the detail page's `generateMetadata` sharing one cached fetch with the page itself.
+
+** `/docs/frontend/auth` ** builds the four files a web app needs: the marker cookie, the hooks, the two forms and the `proxy.ts` gate. Its argument is the one thing worth taking from it:
+
+```text
+# A marker cookie opens the gate, which is all it does.
+$ curl -s -o /dev/null -w "%{http_code}\n" -b "shop_session=1" localhost:3000/account
+200
+
+# And the API is not fooled by it.
+$ curl -s -o /dev/null -w "%{http_code}\n" -b "shop_session=1" localhost:8080/api/auth/me
+401
+```
+
+The gate decides what HTML to send. The API decides what data to return. Only the second is a security boundary, and confusing the two produces a site that looks locked and is not.
+
+Both pages were written by building what they describe: a triple project, a seeded `Product` resource, the five components, `pnpm build`, and every `curl` in them run against it. The list page, the detail page, the 404 on an unknown slug, the redirect with its `?next=`, and `$36.74` rendered from `{"amount":3674,"currency":"USD"}`. There is a declared flow, `fresh-public-products`, so CI re-checks the commands against a real Postgres rather than taking the page's word for them.
+
+They are linked from the docs sidebar, the docs index, the quick start, the web app page, the hooks page and the backend authentication page, because a page nobody can find is a page nobody reads.
+
+#### And a claim on the web app page that was never true
+
+That page said Grit "ships three pre-built auth pages" in `apps/web`, and listed `/login`, `/register` and `/forgot-password`. It does not and never did: only the admin panel gets an `(auth)` route group, and a freshly scaffolded web app has no login page and no `hooks/use-auth.ts`.
+
+Sending a reader to look for a file that is not there is the most expensive sort of documentation error, because they have no way to tell whether the file is missing or they are. The section now says these are patterns to write, says why the web app deliberately does not generate them when the admin does, and points at the page that builds them. The Zod schemas it mentioned, including `LoginSchema`, are real and were always in the shared package.
+
+
 ## v3.499.0 - November 10, 2026
 
 ### A twenty-seventh expert, which writes the tutorial
