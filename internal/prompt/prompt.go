@@ -22,6 +22,7 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	frontend := string(opts.Frontend)
 	theme := opts.Theme
 	db := opts.DBProvider
+	storage := opts.StorageDriver
 
 	// "full" is a sentinel, not an Architecture enum: it maps to opts.Full,
 	// which Normalize() expands to triple + web + admin + docs + expo + desktop.
@@ -107,6 +108,28 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 				Options(databaseOptions()...).
 				Value(&db),
 		).WithHideFunc(func() bool { return opts.DBProvider != "" }),
+
+		// Where uploads go. Asked of every architecture for the same reason as
+		// the database: the API is the one thing every shape has, and every
+		// shape can take an upload.
+		//
+		// minio stays the default and the first option, because it is what
+		// docker-compose.yml starts. local is second because it is the one
+		// that needs nothing: no Docker, no bucket, no credentials. It worked
+		// all along and was reachable only by reading a comment in .env after
+		// the project already existed.
+		//
+		// Options come from scaffold.StorageDrivers, so this list and the flag
+		// cannot drift. TestThePickerOffersEveryStorageDriver keeps them
+		// together.
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Key("storage").
+				Title("Select file storage").
+				Description("Written to .env as STORAGE_DRIVER. s3, r2 and b2 need credentials before uploads work.").
+				Options(storageOptions()...).
+				Value(&storage),
+		).WithHideFunc(func() bool { return opts.StorageDriver != "" }),
 	)
 
 	// One theme for every picker, from internal/ui: huh's default draws a
@@ -127,7 +150,32 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	opts.Frontend = scaffold.Frontend(frontend)
 	opts.Theme = theme
 	opts.DBProvider = db
+	opts.StorageDriver = storage
 	return nil
+}
+
+// storageOptions builds the picker's list from the providers the flag accepts.
+//
+// Labelled "<name> — <what it means>", with the description
+// scaffold.StorageDrivers already holds, so the two say the same thing in both
+// places.
+func storageOptions() []huh.Option[string] {
+	labels := map[string]string{
+		"minio": "MinIO",
+		"local": "Local disk",
+		"s3":    "AWS S3",
+		"r2":    "Cloudflare R2",
+		"b2":    "Backblaze B2",
+	}
+	options := make([]huh.Option[string], 0, len(scaffold.StorageDriverOrder))
+	for _, name := range scaffold.StorageDriverOrder {
+		label := labels[name]
+		if label == "" {
+			label = name
+		}
+		options = append(options, huh.NewOption(label+" — "+scaffold.StorageDrivers[name], name))
+	}
+	return options
 }
 
 // databaseOptions builds the picker's list from the engines the flag accepts.

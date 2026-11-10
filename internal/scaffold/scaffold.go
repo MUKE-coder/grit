@@ -50,7 +50,14 @@ type Options struct {
 	// of them for a long time; until v3.234.0 the only way to pick one was the
 	// prefix of DATABASE_URL, so .env had Postgres settings and no place for
 	// anybody else's.
-	DBProvider     string
+	DBProvider string
+	// StorageDriver is where uploads go, written into .env as STORAGE_DRIVER:
+	// minio (the default), local, s3, r2 or b2. Every driver has worked for a
+	// long time; until now the only way to pick one was to scaffold with minio
+	// and then find the comment in .env that says the others exist, which is
+	// the wrong order for the one most new projects want. local needs no
+	// Docker, no bucket and no credentials.
+	StorageDriver  string
 	InPlace        bool // Scaffold into current directory (grit new .)
 	Force          bool // Allow scaffolding into non-empty directory (--force)
 	IncludeDesktop bool // Add apps/desktop (Wails client that shares the monorepo API)
@@ -79,7 +86,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.500.0"
+const DefaultVersion = "3.501.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -183,6 +190,42 @@ func (o *Options) ValidateDBProvider() error {
 		return nil
 	}
 	return fmt.Errorf("--db %q is not a database Grit knows: use postgres, mysql, sqlite or memory", o.DBProvider)
+}
+
+// StorageDriverOrder is the order the picker offers the providers in. minio
+// first because it is the default and what docker-compose.yml starts, local
+// second because it is the one that needs nothing at all.
+var StorageDriverOrder = []string{"minio", "local", "s3", "r2", "b2"}
+
+// StorageDrivers are the providers .env can name, with what each one means.
+var StorageDrivers = map[string]string{
+	"minio": "the bucket docker-compose.yml starts for you, S3-compatible",
+	"local": "a folder on this machine, served from /files: no Docker, no bucket",
+	"s3":    "AWS S3, with an IAM role or a key",
+	"r2":    "Cloudflare R2, no egress fees",
+	"b2":    "Backblaze B2",
+}
+
+// ValidateStorageDriver checks the --storage value, and normalises the
+// spellings people reach for.
+func (o *Options) ValidateStorageDriver() error {
+	if o.StorageDriver == "" {
+		o.StorageDriver = "minio"
+		return nil
+	}
+	normalised := map[string]string{
+		"minio": "minio",
+		"local": "local", "disk": "local", "file": "local", "filesystem": "local",
+		"s3": "s3", "aws": "s3", "aws-s3": "s3",
+		"r2": "r2", "cloudflare": "r2", "cloudflare-r2": "r2",
+		"b2": "b2", "backblaze": "b2", "backblaze-b2": "b2",
+	}
+	want := strings.ToLower(strings.TrimSpace(o.StorageDriver))
+	if name, ok := normalised[want]; ok {
+		o.StorageDriver = name
+		return nil
+	}
+	return fmt.Errorf("--storage %q is not a provider Grit knows: use minio, local, s3, r2 or b2", o.StorageDriver)
 }
 
 // ValidateStyle checks that the Style field is a supported value.

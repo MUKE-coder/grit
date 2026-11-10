@@ -157,6 +157,7 @@ export function BulkEditGrid({ resource, rows, onSaved, onClose }: BulkEditGridP
         rows={grid}
         onChange={change}
         rowErrors={rowErrors}
+        onCellError={setError}
         disabled={saving}
       />
     </GridDialog>

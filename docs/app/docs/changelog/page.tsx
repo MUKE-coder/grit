@@ -72,6 +72,113 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.501.0 */}
+            <div className="mb-12" id="v3.501.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.501.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An upload that failed in the grid said nothing at all</h3>
+                <p>
+                  Reported as a silent failure when storage is not configured,
+                  and it is worse than that: <em>every</em> upload failure in
+                  the bulk grid was invisible, whatever the cause. The cell
+                  caught the error and rendered it into{' '}
+                  <code>&lt;span role=&quot;alert&quot; className=&quot;sr-only&quot;&gt;</code>,
+                  which announces to a screen reader and shows a sighted
+                  operator nothing. The spinner stopped, the button went back to
+                  saying &quot;Choose&quot;, and that was the whole of it.
+                </p>
+                <p>
+                  Reproduced against a real API answering 503 to the presign:
+                  the grid was pixel-identical before and after. It now marks
+                  the cell and puts the API&apos;s own sentence in the
+                  dialog&apos;s error bar, which is the sentence worth reading
+                  because it names the setting that is wrong:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`File storage is not configured. Set STORAGE_DRIVER=local in .env to keep
+uploads in a folder on this server, or point the bucket settings at a
+running object store.`}
+                />
+                <p>
+                  The first fix showed &quot;Request failed with status code
+                  503&quot;, which is what an axios rejection&apos;s{' '}
+                  <code>message</code> says. The admin already has{' '}
+                  <code>getApiErrorMessage</code> for exactly this and the cell
+                  was not using it.
+                </p>
+
+                <h3>And a column of integers had no thousands separators</h3>
+                <p>
+                  <code>unit_price:int</code> rendered as <code>1750000</code>.
+                  The cell was <code>&lt;input type=&quot;number&quot;&gt;</code>,
+                  and the spec requires that element&apos;s value to be a valid
+                  floating-point number, so a grouped string assigned to it is
+                  discarded and the field goes blank. No amount of formatting
+                  around the cell could have worked: the input type had to
+                  change. It is now a text input with{' '}
+                  <code>inputMode=&quot;decimal&quot;</code>, grouped when the
+                  cell is not being edited and raw while it is, because a
+                  separator appearing under the caret moves the caret and this
+                  grid exists to be typed in quickly. Money had the same input
+                  type and the same problem.
+                </p>
+                <p>
+                  Looking at it turned up the half that was losing data rather
+                  than only looking wrong. Pasting a column out of a
+                  spreadsheet, which is the likeliest way anybody fills this
+                  grid, ran <code>Number(&quot;1,250,000&quot;)</code>. That is{' '}
+                  <code>NaN</code>, and <code>JSON.stringify</code> writes{' '}
+                  <code>NaN</code> as <code>null</code>, so every pasted value
+                  over 999 was silently emptied on the way to the server.
+                </p>
+                <p>
+                  One mistake of mine in the first version: the replacement cell
+                  carried <code>role=&quot;spinbutton&quot;</code> to keep the
+                  old semantics, and the accessibility tree then reported{' '}
+                  <code>aria-valuenow 0</code> for every empty cell. A text
+                  input with a label is honest; a text input claiming to be a
+                  spinbutton announces a number that is not there.
+                </p>
+
+                <h3>grit new asks where uploads go</h3>
+                <p>
+                  Every project was scaffolded with{' '}
+                  <code>STORAGE_DRIVER=minio</code>, and the only way to learn
+                  there were five drivers was to scaffold one and then read a
+                  comment in <code>.env</code>. The one most new projects
+                  actually want needs no Docker, no bucket and no credentials,
+                  and it was the hardest to find:
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit new myapp --storage local`}
+                />
+                <p>
+                  <code>minio</code> (the default), <code>local</code>,{' '}
+                  <code>s3</code>, <code>r2</code> or <code>b2</code>, with the
+                  usual spellings accepted (<code>aws</code>,{' '}
+                  <code>cloudflare</code>, <code>backblaze</code>,{' '}
+                  <code>disk</code>). <code>grit new</code> with no flags asks
+                  for one, in a picker built from the same list the flag
+                  validates against, so the two cannot drift: that is how every
+                  driver but minio came to be invisible to the people who use
+                  the prompt.
+                </p>
+                <p>
+                  A project scaffolded without the flag gets exactly the{' '}
+                  <code>.env</code> it got before, which is what{' '}
+                  <code>TestNoStorageChoiceKeepsMinio</code> is for.
+                </p>
+              </div>
+            </div>
+
             {/* v3.500.0 */}
             <div className="mb-12" id="v3.500.0">
               <div className="flex items-center gap-3 mb-4">

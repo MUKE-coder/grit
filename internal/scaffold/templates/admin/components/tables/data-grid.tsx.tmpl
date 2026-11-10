@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FieldDefinition } from "@/lib/resource";
 import { useRelationshipOptions } from "@/hooks/use-resource";
 import { uploadFile } from "@/lib/api-client";
-import { ChevronDown, Image as ImageIcon, Loader2, Trash2, X } from "@/lib/icons";
+import { getApiErrorMessage } from "@/lib/api-core";
+import { AlertTriangle, ChevronDown, Image as ImageIcon, Loader2, Trash2, X } from "@/lib/icons";
 
 /*
  * A spreadsheet, for entering or correcting many rows at once.
@@ -51,6 +52,15 @@ export interface DataGridProps {
   onRemoveRow?: (rowKey: string) => void;
   /** Keyed by row key: the message the server gave for that row. */
   rowErrors?: Record<string, string>;
+  /*
+   * Something inside a cell failed, with a message too long for the cell.
+   *
+   * An upload is the only thing a cell does that can fail on its own, and it
+   * fails with the API's own sentence, which is the one worth reading: it
+   * names the setting to change. The cell marks itself and this carries the
+   * text up to the dialog's error bar.
+   */
+  onCellError?: (message: string) => void;
   disabled?: boolean;
 }
 
@@ -109,6 +119,7 @@ export function DataGrid({
   onAddRow,
   onRemoveRow,
   rowErrors,
+  onCellError,
   disabled,
 }: DataGridProps) {
   const columns = useMemo(() => griddableFields(fields), [fields]);
@@ -247,6 +258,7 @@ export function DataGrid({
                       row={rowIndex}
                       col={colIndex}
                       invalid={Boolean(error)}
+                      onCellError={onCellError}
                     />
                   </td>
                 ))}
@@ -312,6 +324,7 @@ interface GridCellProps {
   row: number;
   col: number;
   invalid?: boolean;
+  onCellError?: (message: string) => void;
 }
 
 /** The classes every cell editor shares: no border of its own, because the
@@ -322,7 +335,7 @@ const CELL =
   "focus:bg-accent/5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent " +
   "disabled:opacity-50";
 
-function GridCell({ field, value, onChange, disabled, row, col, invalid }: GridCellProps) {
+function GridCell({ field, value, onChange, disabled, row, col, invalid, onCellError }: GridCellProps) {
   // Every editor carries these: the position for Enter and paste, and a name a
   // screen reader can read, since a grid has no room for a visible label on
   // each cell.
@@ -375,6 +388,11 @@ function GridCell({ field, value, onChange, disabled, row, col, invalid }: GridC
       return <MoneyCell value={value} onChange={onChange} anchor={anchor} />;
 
     case "number":
+      return <NumberCell value={value} onChange={onChange} anchor={anchor} />;
+
+    // percent and rating stay native. They are bounded at 100 and at the
+    // field's star count, so there is nothing to group, and the browser's own
+    // min/max is worth more than a separator nobody needs.
     case "percent":
     case "rating":
       return (
@@ -417,12 +435,23 @@ function GridCell({ field, value, onChange, disabled, row, col, invalid }: GridC
     case "image":
     case "file":
     case "video":
-      return <UploadCell field={field} value={value} onChange={onChange} anchor={anchor} />;
+      return (
+        <UploadCell field={field} value={value} onChange={onChange} anchor={anchor} onCellError={onCellError} />
+      );
 
     case "images":
     case "files":
     case "videos":
-      return <UploadCell field={field} value={value} onChange={onChange} anchor={anchor} multiple />;
+      return (
+        <UploadCell
+          field={field}
+          value={value}
+          onChange={onChange}
+          anchor={anchor}
+          onCellError={onCellError}
+          multiple
+        />
+      );
 
     case "email":
     case "url":
@@ -458,6 +487,74 @@ function GridCell({ field, value, onChange, disabled, row, col, invalid }: GridC
 type Anchor = Record<string, unknown>;
 
 /*
+ * Thousands separators, which <input type="number"> cannot have.
+ *
+ * The spec requires a number input's value to be a valid floating-point
+ * number, so assigning "1,750,000" leaves the field empty. A column of
+ * unseparated integers is the result, and 1750000 beside 175000 is a
+ * difference nobody reads at a glance. Reported against `price:int`.
+ *
+ * Grouped when the cell is not being edited, raw while it is: a separator that
+ * appears under the caret as you type moves the caret, and this grid is for
+ * typing fast.
+ */
+function groupDigits(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  return value.toLocaleString(undefined, { maximumFractionDigits: 20 });
+}
+
+/*
+ * What a person meant by what they typed.
+ *
+ * Separators come off, because they go back on as soon as the cell loses
+ * focus and because a pasted "1,250,000" is the common case. Anything still
+ * not a number is empty rather than NaN: NaN serialises to null anyway, so
+ * returning it only delays the same answer past the point where the row
+ * can be read.
+ */
+function toNumber(text: string): number | null {
+  const cleaned = text.replace(/[\s,_]/g, "");
+  if (cleaned === "" || cleaned === "-" || cleaned === "." || cleaned === "-.") return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+function NumberCell({
+  value,
+  onChange,
+  anchor,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+  anchor: Anchor;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+
+  const shown =
+    draft !== null
+      ? draft
+      : value === null || value === undefined || value === ""
+        ? ""
+        : groupDigits(Number(value));
+
+  return (
+    <input
+      {...anchor}
+      type="text"
+      inputMode="decimal"
+      value={shown}
+      onFocus={() => setDraft(value === null || value === undefined ? "" : String(value))}
+      onBlur={() => setDraft(null)}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        onChange(toNumber(e.target.value));
+      }}
+      className={CELL + " text-right font-mono"}
+    />
+  );
+}
+
+/*
  * Money, typed the way a person types it.
  *
  * The column holds { amount, currency } with the amount in minor units, and
@@ -475,22 +572,32 @@ function MoneyCell({
 }) {
   const money = (value ?? {}) as { amount?: number; currency?: string };
   const currency = money.currency || "USD";
-  const major = typeof money.amount === "number" ? money.amount / 100 : "";
+  const major = typeof money.amount === "number" ? money.amount / 100 : null;
+  const [draft, setDraft] = useState<string | null>(null);
+
+  // An amount is the field most worth grouping and the one that was hardest to
+  // read: 1750000 in a price column is a number people have to count digits on.
+  const shown =
+    draft !== null
+      ? draft
+      : major === null
+        ? ""
+        : major.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <div className="flex items-center">
       <input
         {...anchor}
-        type="number"
-        step="0.01"
-        value={major === "" ? "" : String(major)}
-        onChange={(e) =>
-          onChange(
-            e.target.value === ""
-              ? null
-              : { amount: Math.round(Number(e.target.value) * 100), currency },
-          )
-        }
+        type="text"
+        inputMode="decimal"
+        value={shown}
+        onFocus={() => setDraft(major === null ? "" : String(major))}
+        onBlur={() => setDraft(null)}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          const next = toNumber(e.target.value);
+          onChange(next === null ? null : { amount: Math.round(next * 100), currency });
+        }}
         className={CELL + " text-right font-mono"}
       />
       <span className="pr-2 font-mono text-xs text-text-muted">{currency}</span>
@@ -544,12 +651,14 @@ function UploadCell({
   value,
   onChange,
   anchor,
+  onCellError,
   multiple,
 }: {
   field: FieldDefinition;
   value: unknown;
   onChange: (value: unknown) => void;
   anchor: Anchor;
+  onCellError?: (message: string) => void;
   multiple?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
@@ -575,7 +684,16 @@ function UploadCell({
       }
       onChange(multiple ? [...refs, ...uploaded] : uploaded[0]);
     } catch (err) {
-      setFailed(err instanceof Error ? err.message : "Upload failed");
+      // getApiErrorMessage, not err.message. An axios rejection says "Request
+      // failed with status code 503", and the sentence worth reading is in the
+      // body: it names the setting that is wrong. The generic one tells an
+      // operator nothing they can act on.
+      const message = getApiErrorMessage(err, "Upload failed");
+      setFailed(message);
+      // The cell has 112 pixels and the message that matters is a sentence
+      // naming the setting to change. The cell marks itself; the dialog's
+      // error bar carries the words.
+      onCellError?.(message);
     } finally {
       setBusy(false);
       // So choosing the same file twice in a row fires change again.
@@ -615,6 +733,8 @@ function UploadCell({
       >
         {busy ? (
           <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
+        ) : failed ? (
+          <AlertTriangle className="h-3 w-3 shrink-0 text-danger" aria-hidden="true" />
         ) : (
           <ImageIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
         )}
@@ -635,8 +755,12 @@ function UploadCell({
       )}
 
       {failed && (
-        <span role="alert" className="sr-only">
-          {failed}
+        <span
+          role="alert"
+          title={failed}
+          className="shrink-0 text-xs font-medium text-danger"
+        >
+          Failed
         </span>
       )}
     </div>
@@ -679,10 +803,13 @@ function parseCell(field: FieldDefinition, text: string): unknown {
     case "number":
     case "percent":
     case "rating":
-      return trimmed === "" ? null : Number(trimmed);
+      // toNumber, not Number: a column copied out of a spreadsheet arrives
+      // formatted, and Number("1,250,000") is NaN, which JSON writes as null.
+      // Every pasted value over 999 was being silently dropped.
+      return toNumber(trimmed);
     case "money": {
-      const major = Number(trimmed.replace(/[^0-9.-]/g, ""));
-      return Number.isNaN(major) ? null : { amount: Math.round(major * 100), currency: "USD" };
+      const major = toNumber(trimmed.replace(/[^0-9.,_\s-]/g, ""));
+      return major === null ? null : { amount: Math.round(major * 100), currency: "USD" };
     }
     case "toggle":
     case "checkbox":

@@ -326,7 +326,7 @@ CSRF_COOKIE_DOMAIN=
 #
 # Empty means no native sign-in, which is the right default for a project with
 # no mobile app. The entry below is the scheme apps/expo/app.json registers.
-OAUTH_NATIVE_REDIRECTS=` + opts.ProjectName + `://callback
+OAUTH_NATIVE_REDIRECTS=`+opts.ProjectName+`://callback
 
 # API keys are created from the admin at /system/api-keys — there is no env
 # var for them. A key is sent as "X-API-Key: grit_..." or
@@ -557,7 +557,7 @@ TOTP_ISSUER=%s
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
 PULSE_PASSWORD=%s
-` + envPulseProfiling + `
+`+envPulseProfiling+`
 # Security — Sentinel WAF, rate limiting, threat detection
 # Same as Pulse: Sentinel refuses to mount in production with default
 # credentials. SECRET_KEY needs at least 32 bytes of entropy — both values
@@ -640,6 +640,14 @@ SOCIAL_AUTH_ENABLED=false
 			"# No Redis, because --db "+provider+" scaffolds a project that needs no servers.\n"+
 				"# Delete this line and start one for caching, background jobs and cron.\n"+
 				"REDIS_URL=", 1)
+	}
+
+	// Where uploads go. The template carries the default, so only a different
+	// choice is a replacement: envStorageHeadNew is shared with the repair that
+	// fixes an existing project's .env, which has no Options to read, so the
+	// chosen driver cannot live in the const itself.
+	if driver := opts.StorageDriver; driver != "" && driver != "minio" {
+		out = strings.Replace(out, "\nSTORAGE_DRIVER=minio\n", "\nSTORAGE_DRIVER="+driver+"\n", 1)
 	}
 
 	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
@@ -787,7 +795,7 @@ TOTP_ISSUER=%s
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
 PULSE_PASSWORD=change-me-in-production
-` + envPulseProfiling + `
+`+envPulseProfiling+`
 # ─── Security (Sentinel) ─────────────────────────────
 SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin

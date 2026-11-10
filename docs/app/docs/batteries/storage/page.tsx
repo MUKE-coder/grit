@@ -98,6 +98,20 @@ export default function StoragePage() {
             <div className="prose-grit">
               <Section title="Drivers">
                 <P>
+                  Pick one when the project is created, which is the cheapest
+                  moment to decide:
+                </P>
+                <CodeBlock language="bash" code={`grit new myapp --storage local`} />
+                <P>
+                  <code className={code}>--storage</code> takes{' '}
+                  <code className={code}>minio</code> (the default),{' '}
+                  <code className={code}>local</code>, <code className={code}>s3</code>,{' '}
+                  <code className={code}>r2</code> or <code className={code}>b2</code>, and{' '}
+                  <code className={code}>grit new</code> with no flags asks for one.
+                  It writes the line below, so changing your mind later is
+                  editing that line rather than anything else.
+                </P>
+                <P>
                   <code className={code}>STORAGE_DRIVER</code> picks the driver, and only that driver&apos;s settings are
                   read. Every driver passes the same test suite in{' '}
                   <code className={code}>internal/storage/disk_test.go</code>: put, get, exists, stat, copy, move, list,

@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.500.0"
+var version = "3.501.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -189,7 +189,7 @@ marked section yet gets the block appended below what is already there.
 
 func newCmd() *cobra.Command {
 	// New architecture/frontend flags
-	var archFlag, frontendFlag, style, theme, dbProvider string
+	var archFlag, frontendFlag, style, theme, dbProvider, storageDriver string
 	var inPlace, force, includeDesktop, withI18n, withMultitenant bool
 
 	// Legacy flags (backward compatibility)
@@ -225,6 +225,7 @@ func newCmd() *cobra.Command {
 				Style:          style,
 				Theme:          theme,
 				DBProvider:     dbProvider,
+				StorageDriver:  storageDriver,
 				InPlace:        inPlace,
 				Force:          force,
 				IncludeDesktop: includeDesktop,
@@ -294,6 +295,9 @@ func newCmd() *cobra.Command {
 			opts.Normalize()
 
 			if err := opts.ValidateDBProvider(); err != nil {
+				return err
+			}
+			if err := opts.ValidateStorageDriver(); err != nil {
 				return err
 			}
 			if err := opts.ValidateStyle(); err != nil {
@@ -376,6 +380,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().StringVar(&frontendFlag, "frontend", "", "Frontend framework: next, vite (tanstack)")
 	cmd.Flags().StringVar(&style, "style", "", "Admin panel style variant (default, modern, minimal, glass)")
 	cmd.Flags().StringVar(&dbProvider, "db", "", "Database engine: postgres (default), mysql, sqlite, memory. Writes DB_PROVIDER in .env; sqlite and memory need no database server at all")
+	cmd.Flags().StringVar(&storageDriver, "storage", "", "Where uploads go: minio (default), local, s3, r2, b2. Writes STORAGE_DRIVER in .env; local keeps files in a folder and needs no Docker and no bucket")
 	cmd.Flags().StringVar(&theme, "theme", "", "Full theme: atlas (default), aurora, pulse, coral, amber, sky, mono, emerald. Controls the sign-in layout, dashboard, fonts and brand colours. Can also be overridden at runtime via THEME=<name> in .env.")
 
 	// Shorthand architecture flags

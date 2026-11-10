@@ -1435,6 +1435,10 @@ export default function CLICheatsheetPage() {
                     desc="Pick the engine at scaffold time: postgres (default), mysql, sqlite, memory"
                   />
                   <TerminalCard
+                    cmd="grit new myapp --storage local"
+                    desc="Pick where uploads go: minio (default), local, s3, r2, b2. local needs no Docker and no bucket"
+                  />
+                  <TerminalCard
                     cmd="grit migrate status"
                     desc="What each recorded run added, newest first"
                   />

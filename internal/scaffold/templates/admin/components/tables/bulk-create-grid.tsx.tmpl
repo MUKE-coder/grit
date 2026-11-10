@@ -158,6 +158,7 @@ export function BulkCreateGrid({ resource, onCreated, onClose }: BulkCreateGridP
         onAddRow={() => setGrid((prev) => [...prev, ...blankRows(fields, 1, prev.length)])}
         onRemoveRow={(key) => setGrid((prev) => prev.filter((row) => row.key !== key))}
         rowErrors={rowErrors}
+        onCellError={setError}
         disabled={saving}
       />
     </GridDialog>

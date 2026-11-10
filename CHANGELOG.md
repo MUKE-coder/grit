@@ -23,6 +23,43 @@ Also worth knowing:
 ---
 
 
+## v3.501.0 - November 10, 2026
+
+### An upload that failed in the grid said nothing at all
+
+Reported as a silent failure when storage is not configured, and it is worse than that: *every* upload failure in the bulk grid was invisible, whatever the cause. The cell caught the error and rendered it into `<span role="alert" className="sr-only">`, which announces to a screen reader and shows a sighted operator nothing. The spinner stopped, the button went back to saying "Choose", and that was the whole of it.
+
+Reproduced against a real API answering 503 to the presign: the grid was pixel-identical before and after. It now marks the cell and puts the API's own sentence in the dialog's error bar, which is the sentence worth reading because it names the setting that is wrong:
+
+```text
+File storage is not configured. Set STORAGE_DRIVER=local in .env to keep
+uploads in a folder on this server, or point the bucket settings at a
+running object store.
+```
+
+The first fix showed "Request failed with status code 503", which is what an axios rejection's `message` says. The admin already has `getApiErrorMessage` for exactly this and the cell was not using it.
+
+### And a column of integers had no thousands separators
+
+`unit_price:int` rendered as `1750000`. The cell was `<input type="number">`, and the spec requires that element's value to be a valid floating-point number, so a grouped string assigned to it is discarded and the field goes blank. No amount of formatting around the cell could have worked: the input type had to change. It is now a text input with `inputMode="decimal"`, grouped when the cell is not being edited and raw while it is, because a separator appearing under the caret moves the caret and this grid exists to be typed in quickly. Money had the same input type and the same problem.
+
+Looking at it turned up the half that was losing data rather than only looking wrong. Pasting a column out of a spreadsheet, which is the likeliest way anybody fills this grid, ran `Number("1,250,000")`. That is `NaN`, and `JSON.stringify` writes `NaN` as `null`, so every pasted value over 999 was silently emptied on the way to the server.
+
+One mistake of mine in the first version: the replacement cell carried `role="spinbutton"` to keep the old semantics, and the accessibility tree then reported `aria-valuenow 0` for every empty cell. A text input with a label is honest; a text input claiming to be a spinbutton announces a number that is not there.
+
+### grit new asks where uploads go
+
+Every project was scaffolded with `STORAGE_DRIVER=minio`, and the only way to learn there were five drivers was to scaffold one and then read a comment in `.env`. The one most new projects actually want needs no Docker, no bucket and no credentials, and it was the hardest to find:
+
+```bash
+grit new myapp --storage local
+```
+
+`minio` (the default), `local`, `s3`, `r2` or `b2`, with the usual spellings accepted (`aws`, `cloudflare`, `backblaze`, `disk`). `grit new` with no flags asks for one, in a picker built from the same list the flag validates against, so the two cannot drift: that is how every driver but minio came to be invisible to the people who use the prompt.
+
+A project scaffolded without the flag gets exactly the `.env` it got before, which is what `TestNoStorageChoiceKeepsMinio` is for.
+
+
 ## v3.500.0 - November 10, 2026
 
 ### The two web-app pages the docs did not have
