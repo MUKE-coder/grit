@@ -54,7 +54,14 @@ func writeErasureFiles(root string, opts Options) error {
 func apiErasableModelsGo() string {
 	return `package models
 
-import "{{MODULE}}/internal/erasure"
+import (
+	"context"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/erasure"
+	"{{MODULE}}/internal/storage"
+)
 
 // The framework's own tables whose rows exist only to serve a user and carry no
 // independent compliance value: hard-deleted when that user is erased.
@@ -65,12 +72,55 @@ import "{{MODULE}}/internal/erasure"
 // anonymizes them, and deleting them would break the audit hash chain.
 func init() {
 	for _, m := range []interface{}{
-		&Upload{}, &Session{}, &PasswordResetToken{}, &UserRole{},
+		&Session{}, &PasswordResetToken{}, &UserRole{},
 		&TwoFactorConfig{}, &TrustedDevice{}, &TOTPPendingToken{},
 		&DashboardLayout{}, &Notification{},
 	} {
 		erasure.Register(m, "user_id")
 	}
+
+	// Uploads own files, and deleting the row that names a file is not
+	// deleting the file. An erasure that reports success while the documents
+	// are still in the bucket is the one outcome the feature exists to prevent
+	// (grit#202), and the objects are unreferenced afterwards, so nothing can
+	// find them to clean up later either.
+	//
+	// This covers Grit's own uploads table. A file column on one of YOUR
+	// models is yours to register the same way: see the GDPR docs.
+	erasure.RegisterWithCleanup(&Upload{}, "user_id", deleteUploadObjects)
+}
+
+// deleteUploadObjects removes the stored objects of the uploads about to be
+// erased, inside the erasure transaction and before the rows go.
+//
+// Keys are read in batches rather than all at once: an account with ten
+// thousand files should not be a ten-thousand-row slice in memory during a
+// transaction.
+//
+// A storage disk that is not configured is not an error here. The rows still
+// name keys, but there is no bucket they could be in, and failing the erasure
+// would leave personal data in the database over an object store that was
+// never set up.
+func deleteUploadObjects(tx *gorm.DB, ownerColumn, userID string) error {
+	disk := storage.Disks.Default()
+	if disk == nil {
+		return nil
+	}
+
+	ctx := context.Background()
+	var batch []string
+	rows := tx.Unscoped().Model(&Upload{}).
+		Where(ownerColumn+" = ?", userID).
+		Where("path <> ''")
+
+	return rows.Select("path").FindInBatches(&batch, 500, func(_ *gorm.DB, _ int) error {
+		// batch is the destination slice: read it, not the tx, which carries
+		// no query of its own inside the callback.
+		if len(batch) == 0 {
+			return nil
+		}
+		return disk.DeleteMany(ctx, batch)
+	}).Error
 }
 `
 }
@@ -96,9 +146,23 @@ import (
 )
 
 type target struct {
-	model  interface{}
-	column string
+	model   interface{}
+	column  string
+	cleanup Cleanup
 }
+
+// Cleanup disposes of whatever a row owns outside the database, and runs
+// inside the erasure transaction BEFORE those rows are deleted, because what
+// it needs is written on them.
+//
+// It is given the owner column and the user, not the rows, so it can decide
+// for itself what to read: a table with a thousand files wants to stream them
+// rather than load them.
+//
+// An error fails the whole erasure, and that is deliberate. A right-to-erasure
+// request that reports success while the files are still in the bucket is the
+// one outcome the feature exists to prevent (grit#202).
+type Cleanup func(tx *gorm.DB, ownerColumn, userID string) error
 
 var (
 	mu      sync.RWMutex
@@ -112,9 +176,21 @@ var (
 // Register marks rows of model as belonging to the user named in ownerColumn,
 // so erasing that user deletes them. Call it from the model file's init().
 func Register(model interface{}, ownerColumn string) {
+	RegisterWithCleanup(model, ownerColumn, nil)
+}
+
+// RegisterWithCleanup is Register for a model whose rows own something outside
+// the database: a stored object, a row in another system, a scheduled job.
+//
+//	erasure.RegisterWithCleanup(&Upload{}, "user_id", deleteStoredObjects)
+//
+// Without this, erasing a user deletes the row that names a file and leaves
+// the file, which is both a failed erasure and an object nothing can find
+// again to clean up later.
+func RegisterWithCleanup(model interface{}, ownerColumn string, cleanup Cleanup) {
 	mu.Lock()
 	defer mu.Unlock()
-	targets = append(targets, target{model: model, column: ownerColumn})
+	targets = append(targets, target{model: model, column: ownerColumn, cleanup: cleanup})
 }
 
 // Scrub hard-deletes every registered row belonging to userID and anonymizes
@@ -148,6 +224,13 @@ func Scrub(tx *gorm.DB, userID string) (map[string]int64, int, error) {
 			return nil, 0, fmt.Errorf("counting %s: %w", table, err)
 		}
 		if n > 0 {
+			// Before the delete: a cleanup reads the rows to learn what they
+			// own, and after the delete there is nothing left to read.
+			if t.cleanup != nil {
+				if err := t.cleanup(tx, t.column, userID); err != nil {
+					return nil, 0, fmt.Errorf("cleaning up %s: %w", table, err)
+				}
+			}
 			if err := tx.Unscoped().Where(t.column+" = ?", userID).Delete(t.model).Error; err != nil {
 				return nil, 0, fmt.Errorf("deleting %s: %w", table, err)
 			}

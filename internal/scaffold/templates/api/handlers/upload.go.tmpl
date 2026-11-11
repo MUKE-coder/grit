@@ -73,9 +73,17 @@ var defaultAllowedMIME = map[string]bool{
 	"application/json": true,
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": true,
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
-	// Legacy Office, still what "doc"/"excel" resolve to for older files.
-	"application/msword":     true,
-	"application/vnd.ms-excel": true,
+	// PowerPoint, which was missing while Word and Excel were here. An
+	// oversight rather than a decision, and an expensive one: a project could
+	// accept a RAR archive and not a deck (grit#201).
+	"application/vnd.openxmlformats-officedocument.presentationml.presentation": true,
+	// Legacy Office, still what "doc"/"excel"/"ppt" resolve to for older files.
+	"application/msword":            true,
+	"application/vnd.ms-excel":      true,
+	"application/vnd.ms-powerpoint": true,
+	// TIFF, which scanners and document pipelines produce and which the
+	// "image" accept group already offers.
+	"image/tiff": true,
 	// Archives. The accept-aliases "zip" and "archive" have always resolved to
 	// these; leaving them out of the fallback made those fields impossible to
 	// upload through the admin, which presigns before it knows the field.
@@ -93,23 +101,52 @@ var defaultAllowedMIME = map[string]bool{
 //
 //	UPLOAD_ALLOWED_MIME=audio/flac,image/avif,model/gltf+json
 //
-// It extends rather than replaces, because the list above is a safety baseline
-// and the request people actually have is for one more type, not for a smaller
-// set. Narrow a particular field with its accepts instead.
+// It extends, because the usual request is for one more type and the list above
+// is a safety baseline. A project that wants a smaller set says so with an
+// only: prefix, and then the baseline is not used at all:
 //
-// It exists so a type nobody anticipated does not require editing framework
-// code inside a scaffolded project, which is an edit the manifest guard may
-// hold back the next time you upgrade. It is built once, at startup, into a new
-// map: the environment is read by config.Load, not when this package loads.
+//	UPLOAD_ALLOWED_MIME=only:application/pdf,image/png,image/jpeg
+//
+// That exists because the baseline is wide on purpose, and a project whose
+// uploads are four document types had no way to refuse the other thirty
+// (grit#201). It accepted a RAR archive whatever it wanted, and the only
+// alternative was editing the line in routes.go that builds this, which means
+// owning 1600 lines of central routing for the sake of an allowlist.
+//
+// The prefix rather than a second environment variable: a second one needs a
+// second config field, a second load line and a second constructor argument,
+// and the repair that adds the first is gated on it being absent, so an
+// existing project would never receive the second.
+//
+// It is built once, at startup, into a new map: the environment is read by
+// config.Load, not when this package loads.
 func UploadMIMEAllowlist(extra []string) map[string]bool {
-	allowed := make(map[string]bool, len(defaultAllowedMIME)+len(extra))
-	for m := range defaultAllowedMIME {
-		allowed[m] = true
-	}
+	// only: on any entry, because "only:" on its own line reads naturally in
+	// .env and a leading one is what people will write. It is not a MIME type
+	// and cannot collide with one: every type has a slash in it.
+	exact := false
+	cleaned := make([]string, 0, len(extra))
 	for _, m := range extra {
-		if m = strings.ToLower(strings.TrimSpace(m)); m != "" {
+		m = strings.ToLower(strings.TrimSpace(m))
+		if rest, found := strings.CutPrefix(m, "only:"); found {
+			exact = true
+			m = strings.TrimSpace(rest)
+		}
+		if m != "" {
+			cleaned = append(cleaned, m)
+		}
+	}
+
+	allowed := make(map[string]bool, len(defaultAllowedMIME)+len(cleaned))
+	// An only: with nothing after it would refuse every upload, which is
+	// never what somebody meant to type. Fall back to the baseline.
+	if !exact || len(cleaned) == 0 {
+		for m := range defaultAllowedMIME {
 			allowed[m] = true
 		}
+	}
+	for _, m := range cleaned {
+		allowed[m] = true
 	}
 	return allowed
 }

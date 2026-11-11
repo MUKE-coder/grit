@@ -82,13 +82,13 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):             apiActivityMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):   apiActivityReadTestGo(),
 		filepath.Join(apiRoot, "internal", "password", "password.go"):               apiPasswordRulesGo(),
-		filepath.Join(apiRoot, "internal", "password", "breach.go"):               apiPasswordBreachGo(),
-		filepath.Join(apiRoot, "internal", "services", "jwtkeys.go"):               apiJWTKeysGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "jwks.go"):               apiJWKSHandlerGo(),
+		filepath.Join(apiRoot, "internal", "password", "breach.go"):                 apiPasswordBreachGo(),
+		filepath.Join(apiRoot, "internal", "services", "jwtkeys.go"):                apiJWTKeysGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jwks.go"):                   apiJWKSHandlerGo(),
 		filepath.Join(apiRoot, "internal", "password", "password_test.go"):          apiPasswordRulesTestGo(),
 		filepath.Join(apiRoot, "internal", "password", "breach_test.go"):            apiPasswordBreachTestGo(),
-		filepath.Join(apiRoot, "internal", "services", "jwtkeys_test.go"):            apiJWTKeysTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "jwks_test.go"):            apiJWKSHandlerTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "jwtkeys_test.go"):           apiJWTKeysTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jwks_test.go"):              apiJWKSHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                     apiAuditGo(),
 		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):                apiAuditChainTestGo(),
 		filepath.Join(apiRoot, "internal", "cluster", "cluster.go"):                 apiClusterGo(),
@@ -266,7 +266,7 @@ func apiGoMod(opts Options) string {
 
 // The toolchain, from internal/scaffold/go_toolchain.go, which grit doctor
 // reads too: see GoToolchainPin for why this patch and not an earlier one.
-go ` + GoToolchainPin + `
+go `+GoToolchainPin+`
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
@@ -384,7 +384,7 @@ require (
 	// HTTP/2 again, and reached from the API's own server: GO-2026-6617 is the
 	// HPACK encoder race that go1.26.10 fixes in the standard library's copy,
 	// and this module carries its own. Raising the toolchain does not raise it.
-	golang.org/x/net ` + XNetVersion + ` // GO-2026-6617, -6612, -6611, -6603, CVE-2026-78661
+	golang.org/x/net `+XNetVersion+` // GO-2026-6617, -6612, -6611, -6603, CVE-2026-78661
 	golang.org/x/oauth2 v0.27.0 // CVE-2025-22868
 	golang.org/x/text v0.39.0 // GO-2026-5970
 	// Pulled in by the MySQL driver; govulncheck flags releases before v1.1.1.
@@ -2484,6 +2484,22 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 			c.Set("user_roles", names)
 		}
 
+		// The caller, on the request context, once.
+		//
+		// A generated resource handler built its own context with
+		// authz.WithActor and the framework handlers passed c.Request.Context()
+		// straight through, so anything reading authz.ActorFrom below the
+		// handler saw an actor for generated resources and nothing for uploads,
+		// notifications or any other framework table. A project guarding reads
+		// in a GORM callback got a guard that worked everywhere except the one
+		// table holding the files (grit#203).
+		//
+		// Standing aside for a context with no actor is right, because that is
+		// a job or a migration acting as the server. The bug was that a
+		// request-scoped call was indistinguishable from one. Set here, after
+		// the role and grants are resolved, because ActorOf reads them.
+		c.Request = c.Request.WithContext(authz.WithActor(c.Request.Context(), authz.ActorOf(c)))
+
 		c.Next()
 	}
 }
@@ -2572,6 +2588,22 @@ func Identify(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 			c.Set("user_role", names[0])
 			c.Set("user_roles", names)
 		}
+
+		// The caller, on the request context, once.
+		//
+		// A generated resource handler built its own context with
+		// authz.WithActor and the framework handlers passed c.Request.Context()
+		// straight through, so anything reading authz.ActorFrom below the
+		// handler saw an actor for generated resources and nothing for uploads,
+		// notifications or any other framework table. A project guarding reads
+		// in a GORM callback got a guard that worked everywhere except the one
+		// table holding the files (grit#203).
+		//
+		// Standing aside for a context with no actor is right, because that is
+		// a job or a migration acting as the server. The bug was that a
+		// request-scoped call was indistinguishable from one. Set here, after
+		// the role and grants are resolved, because ActorOf reads them.
+		c.Request = c.Request.WithContext(authz.WithActor(c.Request.Context(), authz.ActorOf(c)))
 
 		c.Next()
 	}

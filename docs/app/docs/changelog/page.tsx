@@ -72,6 +72,116 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.503.0 */}
+            <div className="mb-12" id="v3.503.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.503.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Erasure deleted the rows and left the files</h3>
+                <p>
+                  grit#202. <code>erasure.Scrub</code> hard-deletes every
+                  registered row and anonymises the user, and had no awareness
+                  of storage at all. So a right-to-erasure request removed the{' '}
+                  <code>uploads</code> rows, left the objects they pointed at in
+                  the bucket, and the audit trail recorded a successful
+                  erasure. The objects were unreferenced by then, so nothing
+                  could find them to clean up later either.
+                </p>
+                <p>
+                  For most projects that is an avatar. For the reporter it is a
+                  student&apos;s uploaded PDFs under Uganda&apos;s Data
+                  Protection and Privacy Act, which is why the endpoint exists
+                  at all. Deleted that leaves the documents on disk is the one
+                  outcome the feature exists to prevent.
+                </p>
+                <p>
+                  A model that owns something outside the database now says so
+                  once, and the cleanup runs inside the transaction and before
+                  the rows go, because what it needs is written on them:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`erasure.RegisterWithCleanup(&Upload{}, "user_id", deleteUploadObjects)`}
+                />
+                <p>
+                  Grit&apos;s own <code>uploads</code> table uses it, so the
+                  common case needs no project code. A file column on one of
+                  your models is still yours to register the same way. An error
+                  fails the whole erasure deliberately: a request that reports
+                  success while the files are there is worse than one that
+                  fails.
+                </p>
+
+                <h3>The upload allowlist could only ever grow</h3>
+                <p>
+                  grit#201. <code>UPLOAD_ALLOWED_MIME</code> added to the
+                  baseline, so a project could accept more types than Grit chose
+                  and never fewer. The reporter accepts exactly four things and
+                  could not say so, while the baseline took RAR archives, seven
+                  audio types and three video ones. The alternative was editing
+                  the line in <code>routes.go</code> that builds the list, which
+                  means owning 1600 lines of central routing for an allowlist.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`UPLOAD_ALLOWED_MIME=only:application/pdf,image/png,image/jpeg`}
+                />
+                <p>
+                  A prefix rather than a second environment variable, because a
+                  second one needs a second config field, a second load line and
+                  a second constructor argument, and the repair that adds the
+                  first is gated on it being absent, so an existing project
+                  would never receive the second. An <code>only:</code> with
+                  nothing after it falls back to the baseline rather than
+                  refusing every upload, which is not what anybody meant to
+                  type.
+                </p>
+                <p>
+                  And PowerPoint is in the baseline, which Word and Excel
+                  already were. That reads as an oversight rather than a
+                  decision, and it was an expensive one: the reporter&apos;s
+                  product exports a deck as PPTX and could not accept one back,
+                  while it could accept a RAR archive. Legacy{' '}
+                  <code>.ppt</code> and <code>image/tiff</code> went in beside
+                  it.
+                </p>
+
+                <h3>Framework handlers attached no actor</h3>
+                <p>
+                  grit#203. A generated resource handler builds its context with{' '}
+                  <code>authz.WithActor</code>. The framework handlers passed{' '}
+                  <code>c.Request.Context()</code> through untouched, so
+                  anything reading <code>authz.ActorFrom</code> below the
+                  handler saw a caller for generated resources and nothing for
+                  uploads. The reporter&apos;s GORM callback, which removes the
+                  admin exemption on tables holding customer content, worked for
+                  every generated resource and stood silently aside for the one
+                  table holding the actual files.
+                </p>
+                <p>
+                  Standing aside for a context with no actor is right, because
+                  that is a job or a migration acting as the server. The bug was
+                  that a request-scoped call was indistinguishable from one. The
+                  actor is attached in the auth middleware now, once, after the
+                  role is resolved because that is what decides whether the
+                  caller is an admin. In <code>Identify</code> as well as{' '}
+                  <code>Auth</code>: fixing only the guarded routes would leave
+                  every signed-in reader of a public page invisible to the same
+                  check.
+                </p>
+                <p>
+                  The second half of that issue, uploads carrying their own
+                  ownership logic with its own ADMIN exemption rather than
+                  sharing <code>--owned-by</code>, is still open.
+                </p>
+              </div>
+            </div>
+
             {/* v3.502.0 */}
             <div className="mb-12" id="v3.502.0">
               <div className="flex items-center gap-3 mb-4">
