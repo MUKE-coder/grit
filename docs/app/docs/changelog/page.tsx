@@ -72,6 +72,36 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.503.1 */}
+            <div className="mb-12" id="v3.503.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.503.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The Go floor moves to 1.26.11 for an HTTP/1 server crash</h3>
+                <p>
+                  GO-2026-6859: a race in <code>net/http</code>&apos;s{' '}
+                  <code>MaxBytesReader</code> header handling crashes an HTTP/1
+                  server, fixed in Go 1.26.11. Reachable rather than
+                  theoretical: govulncheck named six traces through the CLI and
+                  failed both the repository scan and the scan of a freshly
+                  generated app.
+                </p>
+                <p>
+                  A standard library advisory moves the toolchain pin rather
+                  than a module version, and that pin is mirrored in every
+                  workflow, both Dockerfiles, the desktop templates and the lint
+                  workflow the scaffold writes: twenty-six places. A new project
+                  pins <code>go 1.26.11</code>, and <code>grit upgrade</code>
+                  raises an older <code>go.mod</code> to it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.503.0 */}
             <div className="mb-12" id="v3.503.0">
               <div className="flex items-center gap-3 mb-4">

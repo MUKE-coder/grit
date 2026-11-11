@@ -11,7 +11,7 @@ package scaffold
 
 // GoToolchainPin is the go directive a generated go.mod carries.
 //
-// 1.26.10, and not an earlier patch. Earlier ones carry standard library
+// 1.26.11, and not an earlier patch. Earlier ones carry standard library
 // vulnerabilities this code reaches before anyone has signed in: Go 1.26.4 and
 // below, eight of them, among them net/http and the encoding/xml behind the
 // SAML sign-in path; Go 1.26.8 and below, GO-2026-6617, an HPACK encoder race
@@ -19,7 +19,7 @@ package scaffold
 //
 // It is also what CI, setup-go and the release workflow install, and an older
 // Go downloads this one, so raising it here raises it everywhere.
-const GoToolchainPin = "1.26.10"
+const GoToolchainPin = "1.26.11"
 
 // GoPatchFloors is the lowest patch of each Go minor that is free of the
 // standard-library advisories a generated project is exposed to.
@@ -38,7 +38,7 @@ const GoToolchainPin = "1.26.10"
 var GoPatchFloors = map[string]int{
 	// go1.25.14, 2026. The oldest minor still receiving security fixes.
 	"1.25": 14,
-	// go1.26.10, which is GoToolchainPin above.
+	// go1.26.11, which is GoToolchainPin above.
 	"1.26": 10,
 	// go1.27.3 fixes GO-2026-6809 in crypto/x509, which 1.27.2 and below carry.
 	"1.27": 3,

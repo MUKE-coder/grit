@@ -1,7 +1,7 @@
 """Does the documentation ask for a toolchain older than Grit accepts?
 
 A requirement is a promise: "Go 1.21 or newer" tells a reader that 1.21 will
-work. Grit's toolchain floor is 1.26.10 and `grit upgrade` rewrites a go.mod
+work. Grit's toolchain floor is 1.26.11 and `grit upgrade` rewrites a go.mod
 below it, so that promise has been false for a long time, on a page somebody
 reads before they install anything. The same for Next: the scaffold pins
 16.3.8 and three pages still say 14 or 15.

@@ -23,6 +23,15 @@ Also worth knowing:
 ---
 
 
+## v3.503.1 - November 11, 2026
+
+### The Go floor moves to 1.26.11 for an HTTP/1 server crash
+
+GO-2026-6859: a race in `net/http`'s `MaxBytesReader` header handling crashes an HTTP/1 server, fixed in Go 1.26.11. Reachable rather than theoretical: govulncheck named six traces through the CLI and failed both the repository scan and the scan of a freshly generated app.
+
+A standard library advisory moves the toolchain pin rather than a module version, and that pin is mirrored in every workflow, both Dockerfiles, the desktop templates and the lint workflow the scaffold writes: twenty-six places. A new project pins `go 1.26.11`, and `grit upgrade` raises an older `go.mod` to it.
+
+
 ## v3.503.0 - November 11, 2026
 
 ### Erasure deleted the rows and left the files
