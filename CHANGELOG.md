@@ -23,6 +23,30 @@ Also worth knowing:
 ---
 
 
+## v3.505.7 - November 11, 2026
+
+### The .custom file can take a button away
+
+grit#211. `ResourceCustomisation` exists so a project's overrides outlive the generator, and it could patch `columns`, `fields`, `components` and `bulkActions`. It could not patch `table.actions`, so the one override a project genuinely needs, which buttons a resource offers, was the one that had to be edited in the generated file and was therefore lost on every `grit generate resource --force`. The reporter lost the same edit three times.
+
+```tsx
+// resources/audit-entries/audit-entries.custom.tsx
+const custom: ResourceCustomisation<AuditEntry> = {
+  // The server authors these rows: a create callback refuses clients, so the
+  // generated New button could only ever 403.
+  actions: ["view"],
+}
+```
+
+Of the two fixes offered, this is the one the reporter called the honest one, and they were right: the framework cannot know about a project's own create callback. `--append-only` correctly drops `edit` and `delete` and keeps `create`, because appending to an append-only table is the point. A project whose own rules refuse that create is the only thing that knows, and a button that always fails teaches an operator the admin is broken.
+
+Replaced rather than merged, unlike `columns` and `fields`: the point of setting it is almost always to take something away, and a patch that could only add would not do that.
+
+Everything gated on an action follows from the one list, so nothing else had to change: `can()` is derived from it, which carries the override to the detail page's Edit and Delete and to the bulk toolbar. There is a test that it stays derived, because the failure mode if it stops is each surface being told separately and each one forgetting differently.
+
+Verified against a real admin rather than the generated text alone: the three tiers resolving in order `["create", "view"]`, `["view"]` and the four defaults; the admin type-checking with the override set; and the override still in place after `grit generate resource --force` had rewritten the definition beside it.
+
+
 ## v3.505.6 - November 11, 2026
 
 ### A sync mode for rows the server authors

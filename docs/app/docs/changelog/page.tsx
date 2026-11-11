@@ -72,6 +72,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.7 */}
+            <div className="mb-12" id="v3.505.7">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.7
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The .custom file can take a button away</h3>
+                <p>
+                  grit#211. <code>ResourceCustomisation</code> exists so a
+                  project&apos;s overrides outlive the generator, and it could
+                  patch <code>columns</code>, <code>fields</code>,{' '}
+                  <code>components</code> and <code>bulkActions</code>. It
+                  could not patch <code>table.actions</code>, so the one
+                  override a project genuinely needs, which buttons a resource
+                  offers, was the one that had to be edited in the generated
+                  file and was therefore lost on every{' '}
+                  <code>grit generate resource --force</code>. The reporter
+                  lost the same edit three times.
+                </p>
+                <CodeBlock
+                  language="tsx"
+                  code={`// resources/audit-entries/audit-entries.custom.tsx
+const custom: ResourceCustomisation<AuditEntry> = {
+  // The server authors these rows: a create callback refuses clients, so the
+  // generated New button could only ever 403.
+  actions: ["view"],
+}`}
+                />
+                <p>
+                  Of the two fixes offered, this is the one the reporter called
+                  the honest one, and they were right: the framework cannot
+                  know about a project&apos;s own create callback.{' '}
+                  <code>--append-only</code> correctly drops{' '}
+                  <code>edit</code> and <code>delete</code> and keeps{' '}
+                  <code>create</code>, because appending to an append-only
+                  table is the point. A project whose own rules refuse that
+                  create is the only thing that knows, and a button that always
+                  fails teaches an operator the admin is broken.
+                </p>
+                <p>
+                  Replaced rather than merged, unlike <code>columns</code> and{' '}
+                  <code>fields</code>: the point of setting it is almost always
+                  to take something away, and a patch that could only add would
+                  not do that.
+                </p>
+                <p>
+                  Everything gated on an action follows from the one list, so
+                  nothing else had to change: <code>can()</code> is derived
+                  from it, which carries the override to the detail page&apos;s
+                  Edit and Delete and to the bulk toolbar. There is a test that
+                  it stays derived, because the failure mode if it stops is
+                  each surface being told separately and each one forgetting
+                  differently.
+                </p>
+                <p>
+                  Verified against a real admin rather than the generated text
+                  alone: the three tiers resolving in order{' '}
+                  <code>[&quot;create&quot;, &quot;view&quot;]</code>,{' '}
+                  <code>[&quot;view&quot;]</code> and the four defaults; the
+                  admin type-checking with the override set; and the override
+                  still in place after{' '}
+                  <code>grit generate resource --force</code> had rewritten the
+                  definition beside it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.6 */}
             <div className="mb-12" id="v3.505.6">
               <div className="flex items-center gap-3 mb-4">

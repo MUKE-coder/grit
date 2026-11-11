@@ -376,6 +376,47 @@ components: {
                 <code>c.activeTab</code> / <code>c.setActiveTab</code> from the controller.
               </p>
 
+              <h2 id="which-buttons">Which buttons a resource offers</h2>
+              <p>
+                A resource&apos;s definition declares its actions, and the generator picks a
+                sensible set: four for an ordinary resource, and{' '}
+                <code>[&quot;create&quot;, &quot;view&quot;]</code> for one generated with{' '}
+                <code>--append-only</code>, since an append-only row cannot be edited or deleted.
+              </p>
+              <p>
+                Sometimes that set is still wrong, and only your project can know it. A resource
+                whose rows the server authors on a user&apos;s behalf, refused to clients by a
+                create callback of your own, gets a &ldquo;New&rdquo; button that can only ever
+                answer 403. A button that always fails teaches an operator that the admin is
+                broken.
+              </p>
+              <CodeBlock
+                language="tsx"
+                code={`// resources/audit-entries/audit-entries.custom.tsx
+const custom: ResourceCustomisation<AuditEntry> = {
+  // The server authors these rows: a create callback refuses clients, so the
+  // generated New button could only ever 403.
+  actions: ["view"],
+}`}
+              />
+              <p>
+                In the <code>.custom.tsx</code> file, so it survives{' '}
+                <code>grit generate resource --force</code>. Setting it in the generated
+                definition works until the next regeneration, and then it is gone, which is
+                the kind of loss that is noticed three regenerations later.
+              </p>
+              <p>
+                Replaced rather than merged, unlike <code>columns</code> and{' '}
+                <code>fields</code>: the point of setting it is almost always to take something
+                away, and a patch that could only add would not do that.
+              </p>
+              <p>
+                Everything gated on an action follows from the one list. <code>can()</code> is
+                derived from it, so the detail page&apos;s Edit and Delete and the bulk
+                toolbar&apos;s delete go with it rather than each needing to be told
+                separately.
+              </p>
+
               <h2 id="bulk-actions">Bulk actions</h2>
               <p>
                 Tick some rows and a bar appears at the foot of the table. Five actions are built

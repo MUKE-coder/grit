@@ -698,6 +698,26 @@ export interface ResourceCustomisation<T = Record<string, unknown>> {
    * and the definition is a .ts file the generator rewrites in full.
    */
   bulkActions?: CustomBulkAction<T>[];
+  /**
+   * Which buttons this resource offers, replacing the generated list.
+   *
+   *   actions: ["view"]
+   *
+   * Replaced rather than merged, unlike columns and fields: the point of
+   * setting it is almost always to take something away, and a patch that can
+   * only add would not do that.
+   *
+   * Here because the framework cannot know a project's own rules. A resource
+   * whose rows the server authors, refused to clients by a create callback of
+   * yours, still generates a "New" button that can only ever 403, and a
+   * button that always fails teaches an operator the admin is broken. Only
+   * the project knows (grit#211).
+   *
+   * Everything gated on an action follows: can() is derived from this list,
+   * so the detail page's Edit and Delete and the bulk toolbar's delete go
+   * with it.
+   */
+  actions?: TableAction[];
 }
 
 // ─── Resource Definition ────────────────────────────────────────────
@@ -861,7 +881,11 @@ export function defineResource<T = Record<string, unknown>>(
       ...config.table,
       columns,
       pageSize: config.table.pageSize ?? 20,
-      actions: config.table.actions ?? ["create", "view", "edit", "delete"],
+      // The .custom file first, then the generated config, then everything.
+      // Before grit#211 the custom file had no say, so taking a button away
+      // meant editing the generated file and losing it to the next
+      // regeneration.
+      actions: custom?.actions ?? config.table.actions ?? ["create", "view", "edit", "delete"],
       searchable: config.table.searchable ?? true,
     },
     form: {
@@ -905,7 +929,7 @@ func AdminResourceCustomStub(pascal, typeName string) string {
  *
  * %s
  *
- * Three things you can do:
+ * Four things you can do:
  *
  *   1. Override a single cell, keeping everything else
  *
@@ -913,14 +937,21 @@ func AdminResourceCustomStub(pascal, typeName string) string {
  *        status: { cell: (row) => <StatusPill value={String(row.status)} /> },
  *      }
  *
- *   2. Replace the table, keeping the header, toolbar, filters and pagination.
+ *   2. Take a button away, when your own rules refuse what the generated
+ *      actions allow. A resource whose rows the server authors still gets a
+ *      "New" button, and a button that always fails teaches an operator the
+ *      admin is broken. Replaced, not merged, since the point is to remove:
+ *
+ *      actions: ["view"]
+ *
+ *   3. Replace the table, keeping the header, toolbar, filters and pagination.
  *      The props are the same ones DataTable takes, so you can also wrap it:
  *
  *      components: {
  *        Table: (props) => <MyTemplateTable rows={props.data} onSort={props.onSort} />,
  *      }
  *
- *   3. Replace the whole page. Call useResourceController(resource) inside to
+ *   4. Replace the whole page. Call useResourceController(resource) inside to
  *      get rows, sorting, paging, filters, selection and the CRUD actions:
  *
  *      components: { Page: MyProductsPage }
