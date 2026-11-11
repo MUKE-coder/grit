@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.505.2"
+var version = "3.505.3"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1221,12 +1221,7 @@ func generateResourceCmd() *cobra.Command {
 			// adds its parent: making somebody write both --owned-by user and
 			// --fields "user:belongs_to:User" is asking for one fact twice,
 			// with a spelling that silently generates an unscoped resource.
-			if def.OwnedBy != "" && def.OwnerField() == nil {
-				def.Fields = append(def.Fields, generate.Field{
-					Name:         def.OwnedBy,
-					Type:         "belongs_to",
-					RelatedModel: "User",
-				})
+			if def.EnsureOwnerField() {
 				fmt.Println("  • --owned-by added " + def.OwnedBy + ":belongs_to:User")
 			}
 

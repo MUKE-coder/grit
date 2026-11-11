@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.505.3 - November 11, 2026
+
+### A confidential resource with a parent generated a test package that did not compile
+
+```text
+vet.exe: internal/handlers/record_test.go:99:2: declared and not used: folder
+```
+
+grit#207, in this morning's v3.505.0. The two tests that flag added, `AnAdminSeesNothing` and `AGrantHolderSeesEveryRow`, create a row that belongs to somebody neither caller is. For a resource with a `belongs_to` they created the parent and then never pointed the row at it, so the parent was a declared and unused variable and the whole handlers package stopped building. Fifteen resources at once for the reporter, since every one of theirs has a parent.
+
+The function that points a fixture row at the signed-in user works by replacing the owner's assignment, and it was called twice on one resource: the second call ran over the first call's output, could not find the assignment it was looking for, and fell into a branch that rebuilt the override from nothing. That branch discarded every other `belongs_to` assignment while leaving the lines that created those parents.
+
+Both halves are fixed: each variant is now derived from what the fixture builder returned rather than from another variant, and the fallback adds the owner to an existing override instead of replacing it, so it cannot silently drop assignments again. The row is fully formed, which is what the reporter preferred: a test asserting an administrator sees nothing is more convincing when the row it cannot see is a real one, and on Postgres a row missing a required foreign key does not insert at all.
+
+#### Why the tests that shipped with it did not catch this
+
+Every fixture in them was a confidential resource whose only relation was the owner, and with one relation there is nothing to drop. The new ones take the two-parent shape, and they are built by running the words the reporter typed through the same parser the CLI uses rather than by writing a definition out by hand. The first attempt did write one by hand, left the parent relation optional, and so asserted the absence of an assignment the generator was never asked to make.
+
+One of them parses the generated file and one checks that every variable it declares is read, which is the class of fault rather than this instance of it: an unused local is a type error, not a syntax error, so parsing alone does not see it.
+
+For that fixture to be the real thing, `--owned-by` adding its own relation moved out of the CLI and into the resource definition as `EnsureOwnerField`. It was six lines in `cmd/grit`, which meant a definition assembled anywhere else was a different definition, and a test wanting the real shape had to copy them.
+
+
 ## v3.505.2 - November 11, 2026
 
 ### Upgrade past v3.505.1: it fixed one direction and broke a worse one

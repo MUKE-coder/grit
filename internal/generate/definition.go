@@ -1130,3 +1130,25 @@ func parseFileAccepts(s string) ([]string, error) {
 	}
 	return out, nil
 }
+
+// EnsureOwnerField adds the --owned-by relation when the fields do not already
+// declare it, reporting whether it added one.
+//
+// --owned-by user without user:belongs_to:User in the fields is asking for one
+// fact twice, with a spelling mistake silently producing an unscoped resource.
+//
+// Here rather than in cmd/grit, where it was until v3.505.3, because a
+// definition assembled anywhere else is a different definition: a test that
+// wanted the real shape had to copy these six lines, and a copy of the thing
+// under test is not a test of it (grit#207).
+func (d *ResourceDefinition) EnsureOwnerField() bool {
+	if d.OwnedBy == "" || d.OwnerField() != nil {
+		return false
+	}
+	d.Fields = append(d.Fields, Field{
+		Name:         d.OwnedBy,
+		Type:         "belongs_to",
+		RelatedModel: "User",
+	})
+	return true
+}

@@ -72,6 +72,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.3 */}
+            <div className="mb-12" id="v3.505.3">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.3
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A confidential resource with a parent generated a test package that did not compile</h3>
+                <CodeBlock
+                  language="text"
+                  code={`vet.exe: internal/handlers/record_test.go:99:2: declared and not used: folder`}
+                />
+                <p>
+                  grit#207, in this morning&apos;s v3.505.0. The two tests that
+                  flag added, <code>AnAdminSeesNothing</code> and{' '}
+                  <code>AGrantHolderSeesEveryRow</code>, create a row that
+                  belongs to somebody neither caller is. For a resource with a{' '}
+                  <code>belongs_to</code> they created the parent and then
+                  never pointed the row at it, so the parent was a declared and
+                  unused variable and the whole handlers package stopped
+                  building. Fifteen resources at once for the reporter, since
+                  every one of theirs has a parent.
+                </p>
+                <p>
+                  The function that points a fixture row at the signed-in user
+                  works by replacing the owner&apos;s assignment, and it was
+                  called twice on one resource: the second call ran over the
+                  first call&apos;s output, could not find the assignment it
+                  was looking for, and fell into a branch that rebuilt the
+                  override from nothing. That branch discarded every other{' '}
+                  <code>belongs_to</code> assignment while leaving the lines
+                  that created those parents.
+                </p>
+                <p>
+                  Both halves are fixed: each variant is now derived from what
+                  the fixture builder returned rather than from another
+                  variant, and the fallback adds the owner to an existing
+                  override instead of replacing it, so it cannot silently drop
+                  assignments again. The row is fully formed, which is what the
+                  reporter preferred: a test asserting an administrator sees
+                  nothing is more convincing when the row it cannot see is a
+                  real one, and on Postgres a row missing a required foreign
+                  key does not insert at all.
+                </p>
+
+                <h4>Why the tests that shipped with it did not catch this</h4>
+                <p>
+                  Every fixture in them was a confidential resource whose only
+                  relation was the owner, and with one relation there is
+                  nothing to drop. The new ones take the two-parent shape, and
+                  they are built by running the words the reporter typed
+                  through the same parser the CLI uses rather than by writing a
+                  definition out by hand. The first attempt did write one by
+                  hand, left the parent relation optional, and so asserted the
+                  absence of an assignment the generator was never asked to
+                  make.
+                </p>
+                <p>
+                  One of them parses the generated file and one checks that
+                  every variable it declares is read, which is the class of
+                  fault rather than this instance of it: an unused local is a
+                  type error, not a syntax error, so parsing alone does not see
+                  it.
+                </p>
+                <p>
+                  For that fixture to be the real thing,{' '}
+                  <code>--owned-by</code> adding its own relation moved out of
+                  the CLI and into the resource definition as{' '}
+                  <code>EnsureOwnerField</code>. It was six lines in{' '}
+                  <code>cmd/grit</code>, which meant a definition assembled
+                  anywhere else was a different definition, and a test wanting
+                  the real shape had to copy them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.2 */}
             <div className="mb-12" id="v3.505.2">
               <div className="flex items-center gap-3 mb-4">

@@ -66,9 +66,29 @@ func (g *Generator) resourceTestSource(names Names) string {
 		return fixture
 	}
 	writerVar := actorVar
+
+	// For a --confidential resource, the fixture row has to belong to the user
+	// signing in, or the owner-sees-their-own-rows test reads as an empty list
+	// either way and asserts nothing.
+	//
+	// Each variant is derived from what parentFixtures returned, never from
+	// another variant: confidentialOwnerOverride looks for the owner
+	// assignment parentFixtures wrote, and a second pass over its own output
+	// cannot find it. v3.505.0 did exactly that and the fallback branch
+	// rebuilt the override from nothing, dropping every other belongs_to
+	// assignment while leaving the lines that created those parents, so the
+	// test package did not compile (grit#207).
+	confidentialFixtures := func(ownerVar string) (string, string) {
+		rawFixtures, rawOverride, _ := g.parentFixtures(names)
+		if !g.Definition.Confidential {
+			return rawFixtures, rawOverride
+		}
+		return g.confidentialOwnerOverride(names, rawFixtures, rawOverride, ownerVar)
+	}
 	if g.Definition.Confidential {
-		parentFixtures, parentOverride = g.confidentialOwnerOverride(names, parentFixtures, parentOverride, actorVar)
-		_, secondRowOverride = g.confidentialOwnerOverride(names, "", secondRowOverride, actorVar)
+		parentFixtures, parentOverride = confidentialFixtures(actorVar)
+		_, _, rawSecond := g.parentFixtures(names)
+		_, secondRowOverride = g.confidentialOwnerOverride(names, "", rawSecond, actorVar)
 	}
 
 	fmt.Fprintf(&b, `package handlers
@@ -188,8 +208,7 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 	// at rowOwner rather than at the signed-in user, which is the difference
 	// between asserting the rule and asserting an empty table.
 	if g.Definition.Confidential {
-		hiddenFixtures, hiddenOverride := g.confidentialOwnerOverride(
-			names, parentFixtures, parentOverride, "rowOwner")
+		hiddenFixtures, hiddenOverride := confidentialFixtures("rowOwner")
 		fmt.Fprintf(&b, confidentialTiersTest,
 			// An ADMIN sees nothing.
 			names.Pascal, names.Pascal,
@@ -509,6 +528,22 @@ func (g *Generator) confidentialOwnerOverride(names Names, fixtures, override, o
 	mine := fmt.Sprintf("\t\tm.%s = %s.ID\n", field, ownerVar)
 	if strings.Contains(override, assignment) {
 		return fixtures, strings.Replace(override, assignment, mine, 1)
+	}
+	if override != "" {
+		// An override that does not point at the owner: add the owner to it
+		// rather than replacing it.
+		//
+		// Replacing it is what v3.505.0 did, and it discarded every other
+		// belongs_to assignment while leaving the fixture lines that created
+		// those parents, so a confidential resource with a parent generated a
+		// test package that did not compile: "declared and not used: folder"
+		// (grit#207). Called twice on one resource, the second call could not
+		// find its anchor, because the first had already rewritten it.
+		closing := "\t}"
+		if strings.HasSuffix(override, closing) {
+			return fixtures, strings.TrimSuffix(override, closing) + mine + closing
+		}
+		return fixtures, override
 	}
 	// No belongs_to override at all, which is a resource whose only relation
 	// is the owner and it was skipped as optional. Build one.
