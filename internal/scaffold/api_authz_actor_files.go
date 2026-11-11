@@ -23,6 +23,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/confidential"
 )
 
 // Actor is who a query runs for: the signed-in user, and whether ownership
@@ -30,13 +32,37 @@ import (
 type Actor struct {
 	UserID string
 	Admin  bool
+
+	// Grants are the permission keys this caller holds, resolved once by the
+	// auth middleware. They are carried here rather than read per query
+	// because ScopeConfidential runs inside a query builder, where a database
+	// read would be a second round trip on every list.
+	Grants []string
+}
+
+// Holds reports whether the actor was granted permission.
+func (a Actor) Holds(permission string) bool {
+	for _, g := range a.Grants {
+		if g == permission {
+			return true
+		}
+	}
+	return false
 }
 
 type actorKey struct{}
 
 // ActorOf is the caller of a request, as the auth middleware identified them.
 func ActorOf(c *gin.Context) Actor {
-	return Actor{UserID: CurrentUserID(c), Admin: IsAdmin(c)}
+	a := Actor{UserID: CurrentUserID(c), Admin: IsAdmin(c)}
+	// Resolved once per request by the auth middleware, so this reads what is
+	// already there rather than making a second trip to the database.
+	if grants, ok := c.Get("user_grants"); ok {
+		if list, ok := grants.([]string); ok {
+			a.Grants = list
+		}
+	}
+	return a
 }
 
 // WithActor returns ctx carrying a.
@@ -79,6 +105,70 @@ func ScopeOwned(ctx context.Context, q *gorm.DB, column string) *gorm.DB {
 	return q.Where(column+" = ?", a.UserID)
 }
 
+// ScopeConfidential narrows a query to rows the actor owns, and does NOT let
+// an ADMIN through.
+//
+// That is the whole difference from ScopeOwned, and it is the point. A product
+// whose rows are customer documents, medical records, legal files, coursework,
+// wants an operator who can run the system without reading what is in it.
+// Being an administrator is not a reason to read somebody's medical record,
+// and until now it was the only answer the framework had (grit#203).
+//
+// Three ways through, and no fourth:
+//
+//	the owner                      their own rows
+//	a holder of permission         everything, and the caller audits the read
+//	anything else, ADMIN included  nothing
+//
+// The system actor is not exempt either. A job that must read confidential
+// rows holds the permission like anything else, because "it is a job" is not a
+// property anybody can check afterwards and the audit trail should name
+// something.
+//
+// column and permission are fixed strings from the generator, never input.
+func ScopeConfidential(ctx context.Context, q *gorm.DB, column, permission string) *gorm.DB {
+	a, ok := ActorFrom(ctx)
+	switch {
+	case !ok:
+		// No actor at all: a migration, or a handler that forgot. Nothing,
+		// which is the direction a guard has to fail in.
+		return q.Where("1 = 0")
+	case a.Holds(permission):
+		return q
+	case a.UserID == "":
+		return q.Where("1 = 0")
+	}
+	return q.Where(column+" = ?", a.UserID)
+}
+
+// MayReadEveryConfidentialTable reports whether the actor on ctx holds the
+// permission for every table registered as confidential, and names the first
+// one they do not.
+//
+// Every, not any. A whole-database archive contains all of them, so a caller
+// who may read patient records and not payroll must not be handed a file with
+// payroll in it.
+//
+// The registry is in internal/confidential rather than here, because the
+// models register themselves and this package imports models: a model file
+// importing authz is an import cycle.
+func MayReadEveryConfidentialTable(ctx context.Context) (string, bool) {
+	for table, permission := range confidential.Tables() {
+		if !MayReadConfidential(ctx, permission) {
+			return table, false
+		}
+	}
+	return "", true
+}
+
+// MayReadConfidential reports whether the actor on ctx holds permission, for
+// the places that are a yes or a no rather than a query: a file download, an
+// export, a backup archive.
+func MayReadConfidential(ctx context.Context, permission string) bool {
+	a, ok := ActorFrom(ctx)
+	return ok && a.Holds(permission)
+}
+
 // Owns reports whether the actor on ctx may see row: an ADMIN, the system, or
 // the row's owner.
 func Owns(ctx context.Context, row Ownable) bool {
@@ -87,6 +177,16 @@ func Owns(ctx context.Context, row Ownable) bool {
 		return false
 	}
 	return a.Admin || (a.UserID != "" && row.GetOwnerID() == a.UserID)
+}
+
+// OwnsConfidential is Owns without the ADMIN exemption: the owner, or a
+// holder of permission, and nobody else.
+func OwnsConfidential(ctx context.Context, row Ownable, permission string) bool {
+	a, ok := ActorFrom(ctx)
+	if !ok {
+		return false
+	}
+	return a.Holds(permission) || (a.UserID != "" && row.GetOwnerID() == a.UserID)
 }
 `
 }

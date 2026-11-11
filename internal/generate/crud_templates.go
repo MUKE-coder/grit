@@ -45,24 +45,26 @@ type crudParts struct {
 	datatypesImport string
 
 	// Service: the queries.
-	preloads       string
-	searchCols     string
-	sortCols       string
-	filterCols     string
-	writable       string // body of the writable-columns map, one tab in
-	expandEmbedded string // the whole expand<Name>Embedded helper, or a no-op
-	linksType      string
-	linksParam     string
-	linksApply     string // inside a transaction on tx
-	itemsParam     string
-	itemsReplace   string // inside a transaction on tx
-	patchM2M       string
-	single         bool // one statement: RETURNING, no transaction
-	hasFiles       bool
-	owned          bool
-	ownerCol       string
-	ownerField     string
-	ownerName      string
+	preloads         string
+	searchCols       string
+	sortCols         string
+	filterCols       string
+	writable         string // body of the writable-columns map, one tab in
+	expandEmbedded   string // the whole expand<Name>Embedded helper, or a no-op
+	linksType        string
+	linksParam       string
+	linksApply       string // inside a transaction on tx
+	itemsParam       string
+	itemsReplace     string // inside a transaction on tx
+	patchM2M         string
+	single           bool // one statement: RETURNING, no transaction
+	hasFiles         bool
+	owned            bool
+	ownerCol         string
+	ownerField       string
+	ownerName        string
+	confidential     bool
+	confidentialPerm string
 
 	// relations are the belongs_to rows a write reads after RETURNING, when
 	// they are all the resource has. Empty otherwise.
@@ -84,6 +86,8 @@ func (g *Generator) crud(names Names) crudParts {
 		p.ownerName = owner.Name
 		p.ownerCol = toSnakeCase(owner.Name) + "_id"
 		p.ownerField = toPascalCase(owner.Name) + "ID"
+		p.confidential = g.Definition.Confidential
+		p.confidentialPerm = g.Definition.ConfidentialPermission()
 	}
 
 	var linkFields, linkCreate, linkUpdate string
@@ -1084,18 +1088,32 @@ func (g *Generator) serviceSource(names Names) string {
 	// --owned-by: scope, guard and stamp, from the actor on the context.
 	ownerScope, ownerExportScope, ownerBulkScope, ownerGuard, ownerStamp := "", "", "", "", ""
 	if p.owned {
+		// --confidential swaps the scope for the one that does not exempt an
+		// ADMIN. Everything else about ownership is unchanged, which is why
+		// this is two words rather than a second code path: the difference
+		// between the two resources is exactly who is let through.
+		scopeCall := "authz.ScopeOwned(ctx, query, \"" + p.ownerCol + "\")"
+		bulkCall := "authz.ScopeOwned(ctx, scope, \"" + p.ownerCol + "\")"
+		guardCall := "authz.Owns(ctx, &item)"
+		exempt := "ADMIN, and the system, are exempt."
+		if p.confidential {
+			scopeCall = "authz.ScopeConfidential(ctx, query, \"" + p.ownerCol + "\", \"" + p.confidentialPerm + "\")"
+			bulkCall = "authz.ScopeConfidential(ctx, scope, \"" + p.ownerCol + "\", \"" + p.confidentialPerm + "\")"
+			guardCall = "authz.OwnsConfidential(ctx, &item, \"" + p.confidentialPerm + "\")"
+			exempt = "--confidential: an ADMIN is NOT exempt. Only the owner, or a\n\t// holder of " + p.confidentialPerm + ", reads these rows."
+		}
 		ownerScope = "\n\t// --owned-by " + p.ownerName + ": a caller sees only their own rows. Without this" +
 			"\n\t// the list hands over every row, and the ids below stop being worth" +
-			"\n\t// protecting. ADMIN, and the system, are exempt." +
-			"\n\tquery = authz.ScopeOwned(ctx, query, \"" + p.ownerCol + "\")\n"
+			"\n\t// protecting. " + exempt +
+			"\n\tquery = " + scopeCall + "\n"
 		ownerExportScope = "\n\t// --owned-by " + p.ownerName + ": an export is the list without pages, scoped the same way." +
-			"\n\tquery = authz.ScopeOwned(ctx, query, \"" + p.ownerCol + "\")\n"
+			"\n\tquery = " + scopeCall + "\n"
 		ownerBulkScope = "\t// --owned-by " + p.ownerName + ": only the caller's own rows are acted on, and" +
 			"\n\t// somebody else's id drops out as if it did not exist." +
-			"\n\tscope = authz.ScopeOwned(ctx, scope, \"" + p.ownerCol + "\")\n"
+			"\n\tscope = " + bulkCall + "\n"
 		ownerGuard = "\t// --owned-by " + p.ownerName + ": somebody else's row is not found rather than" +
 			"\n\t// forbidden, so a wrong guess cannot be told from a right one." +
-			"\n\tif !authz.Owns(ctx, &item) {" +
+			"\n\tif !" + guardCall + " {" +
 			"\n\t\treturn nil, gorm.ErrRecordNotFound" +
 			"\n\t}\n"
 		ownerStamp = "\t// --owned-by " + p.ownerName + ": the owner is whoever is signed in, never the body." +

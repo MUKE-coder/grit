@@ -1100,6 +1100,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/backup"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/storage"
@@ -1172,6 +1173,23 @@ func (h *BackupHandler) Generate(c *gin.Context) {
 // Download mints a short-lived pre-signed URL so the client pulls the archive
 // straight from object storage — no proxying a multi-hundred-MB file through the API.
 func (h *BackupHandler) Download(c *gin.Context) {
+	// An archive holds every table, confidential ones included, because a
+	// backup that omits them does not restore the application and nobody
+	// finds that out until the worst possible moment. So the control is here,
+	// on taking the file off the server, rather than on what goes into it.
+	//
+	// Every confidential table, not any: a caller who may read patient
+	// records and not payroll must not be handed a file containing payroll.
+	// Without this, a --confidential resource is decorative, since an
+	// administrator could download the whole database and open it locally.
+	if table, ok := authz.MayReadEveryConfidentialTable(c.Request.Context()); !ok {
+		respond.Fail(c, respond.CodeForbidden,
+			"This archive contains confidential tables ("+table+" among them) and you do not "+
+				"hold the permission to read them. A backup still runs and still restores; "+
+				"downloading one requires the confidential grant for every such table.")
+		return
+	}
+
 	if h.svc().Store() == nil {
 		respond.Fail(c, respond.CodeStorageUnavailable, "Object storage is not configured")
 		return

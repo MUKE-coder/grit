@@ -72,6 +72,137 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.504.0 */}
+            <div className="mb-12" id="v3.504.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.504.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An administrator who cannot read customer content</h3>
+                <p>
+                  The second half of grit#203, and the harder half. Until now
+                  ADMIN was exempt from ownership scoping everywhere, so a
+                  product whose rows are medical records, legal files, tax
+                  papers or coursework had an operator who could read all of
+                  them, and the only way to change that was hand-editing
+                  framework files.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit generate resource MedicalRecord \\
+  --fields "patient:belongs_to[User],notes:text,scan:file[pdf]" \\
+  --owned-by patient --confidential`}
+                />
+                <p>Three tiers, where there used to be two:</p>
+                <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/30 bg-accent/20">
+                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Who</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Sees</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5">The owner</td>
+                        <td className="px-4 py-2.5">Their own rows, as before</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5">A holder of <code>medical_records.confidential</code></td>
+                        <td className="px-4 py-2.5">Everything, and every read is written to the activity log</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 text-foreground">Everyone else, ADMIN included</td>
+                        <td className="px-4 py-2.5">Nothing: an empty list and a 404</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>
+                  Opt in, per resource. Nothing changes for an existing
+                  resource, and an administrator keeps full reach over Users,
+                  Roles and Settings, which they need to do the job at all.
+                </p>
+
+                <h4>It holds on every path out of the database, not just the table</h4>
+                <p>
+                  A guarantee that covers the admin list and not the export is
+                  not a guarantee, so each way out was closed:
+                </p>
+                <ul>
+                  <li>
+                    <strong>The service layer</strong>, which is where the rule
+                    lives, so every route, job, command and test inherits it
+                    rather than only the routes somebody remembered.
+                  </li>
+                  <li>
+                    <strong>Exports</strong> fall out of that: the CSV is the
+                    list without pages, scoped the same way.
+                  </li>
+                  <li>
+                    <strong>GORM Studio</strong> browses tables directly, below
+                    the service layer, so a confidential model is never added
+                    to its list. In every environment, not only production: a
+                    development-only exemption is the kind that reaches
+                    production by accident.
+                  </li>
+                  <li>
+                    <strong>Backup downloads.</strong> An archive still holds
+                    every table, because a backup that omits them does not
+                    restore the application and nobody discovers that until the
+                    worst possible moment. So the control is on taking the file
+                    off the server, and it needs the grant for{' '}
+                    <em>every</em> confidential table: a caller who may read
+                    patient records and not payroll must not be handed a file
+                    containing payroll.
+                  </li>
+                </ul>
+                <p>
+                  Two combinations are refused rather than generated, because
+                  both produce a resource nobody can read or one published to
+                  the internet: <code>--confidential</code> without{' '}
+                  <code>--owned-by</code>, and <code>--confidential</code> with{' '}
+                  <code>--public</code>. It implies <code>--audit-reads</code>,
+                  since the reason the grant goes to a named person rather than
+                  a role is that somebody can be asked afterwards who read what.
+                </p>
+
+                <h4>And the uploads table, which is where this started</h4>
+                <CodeBlock language="bash" code={`UPLOADS_CONFIDENTIAL=true`} />
+                <p>
+                  Uploads are Grit&apos;s own table rather than a generated
+                  resource, so there is no flag to attach. One setting covers
+                  it, because a project with private files usually has only
+                  private files.
+                </p>
+                <p>
+                  It also removes <code>uploads/</code> from the public storage
+                  prefixes, and that coupling is enforced in code rather than
+                  left to whoever edits <code>.env</code>. The default prefixes
+                  are <code>uploads/,thumbnails/</code>, which means a stored
+                  file is readable by anyone holding its URL with no signature.
+                  Hiding the rows from an administrator while leaving that on
+                  would have been no protection at all, and the person turning
+                  the setting on has no reason to know the two are connected.
+                </p>
+
+                <h4>One thing the compiler found that reading would not have</h4>
+                <p>
+                  The registry of confidential tables started in{' '}
+                  <code>internal/authz</code>, which is where the scoping lives
+                  and looked like the obvious home. A model file registering
+                  itself from its own <code>init()</code> then imports authz,
+                  authz imports models, and the project does not build. It has
+                  its own leaf package now, for exactly the reason{' '}
+                  <code>internal/erasure</code> has one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.503.1 */}
             <div className="mb-12" id="v3.503.1">
               <div className="flex items-center gap-3 mb-4">

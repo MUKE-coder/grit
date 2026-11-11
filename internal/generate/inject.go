@@ -36,13 +36,24 @@ func (g *Generator) injectAll(names Names) error {
 	}
 
 	// 2. Inject model into GORM Studio (inline, before the marker)
+	//
+	// Except a --confidential resource. Studio browses tables directly, below
+	// the service layer, so it would hand an administrator exactly the rows
+	// the flag exists to withhold, through a URL the admin panel links to.
+	//
+	// In every environment, not only production: a development-only exemption
+	// is the kind that reaches production by accident. The cost is that
+	// debugging this table means psql, which is a fair price for a guarantee
+	// somebody is relying on.
 	routesFile := filepath.Join(apiRoot, "internal", "routes", "routes.go")
-	if fileExists(routesFile) {
+	if fileExists(routesFile) && !g.Definition.Confidential {
 		if err := injectInline(routesFile, "/* grit:studio */",
 			fmt.Sprintf("&models.%s{}, ", names.Pascal)); err != nil {
 			return fmt.Errorf("injecting studio model: %w", err)
 		}
 		fmt.Println("  ✓ Injected model into GORM Studio")
+	} else if g.Definition.Confidential {
+		fmt.Println("  · GORM Studio skipped: --confidential keeps these rows out of the table browser")
 	}
 
 	// 2b. Register the model with the sync registry so desktop clients
@@ -377,6 +388,13 @@ func (g *Generator) injectAll(names Names) error {
 	// automatically, because grants are stored unexpanded.
 	permsFile := filepath.Join(apiRoot, "internal", "authz", "permissions.go")
 	if fileExists(permsFile) {
+		// A confidential resource gains the one action that reads rows the
+		// holder does not own, so it is grantable in the roles UI like any
+		// other permission rather than needing a hand-edit.
+		actions := "AllActions"
+		if g.Definition.Confidential {
+			actions = "AllActionsConfidential"
+		}
 		permBlock := fmt.Sprintf(`		{
 			Key:  %q,
 			Name: %q,
@@ -385,7 +403,7 @@ func (g *Generator) injectAll(names Names) error {
 					Key:  %q,
 					Name: %q,
 					Features: []Feature{
-						{Key: %q, Name: %q, Actions: AllActions},
+						{Key: %q, Name: %q, Actions: %s},
 					},
 				},
 			},
@@ -393,7 +411,7 @@ func (g *Generator) injectAll(names Names) error {
 `,
 			names.Plural, names.PluralPascal,
 			names.Plural, names.PluralPascal,
-			names.Plural, names.PluralPascal,
+			names.Plural, names.PluralPascal, actions,
 		)
 		// Anchored on the END marker: injectBefore inserts above its anchor, so
 		// using the start marker would place entries outside the machine-written

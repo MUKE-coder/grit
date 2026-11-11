@@ -50,8 +50,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -96,7 +98,57 @@ func SetPublicPrefixes(prefixes []string) {
 	if len(cleaned) > 0 {
 		PublicPrefixes = cleaned
 	}
+
+	// UPLOADS_CONFIDENTIAL and a public uploads/ prefix contradict each other,
+	// and the contradiction is silent: the admin panel would hide the rows
+	// while the files stayed readable to anyone holding a URL. Enforced here
+	// rather than left to whoever edits .env, because the person who turns on
+	// the setting is relying on it and has no reason to know the two are
+	// connected.
+	if !UploadsConfidential() {
+		return
+	}
+	kept := PublicPrefixes[:0]
+	dropped := false
+	for _, prefix := range PublicPrefixes {
+		if prefix == "uploads/" {
+			dropped = true
+			continue
+		}
+		kept = append(kept, prefix)
+	}
+	PublicPrefixes = kept
+	if dropped {
+		log.Println("UPLOADS_CONFIDENTIAL is on, so uploads/ is no longer a public prefix: " +
+			"stored files are reached through a signed URL. Leaving it public would have " +
+			"hidden the rows and served the files.")
+	}
 }
+
+// UploadsConfidential reports whether uploaded files are customer content:
+// an administrator reads none of them, the owner reads their own, and a
+// holder of uploads.confidential reads all of them, audited.
+//
+// Read from the environment here, once, rather than through config.Load as
+// everything else is. That is deliberate. The setting has to reach projects
+// that already exist, and the places it must affect, this file and the upload
+// handler, are framework-owned and rewritten by grit upgrade, while routes.go
+// and config.go are not restructured by it. A setting that only ever worked on
+// newly scaffolded projects would be no use to anybody who has one.
+//
+// Safe to read lazily: godotenv loads .env in main before anything serves.
+func UploadsConfidential() bool {
+	uploadsConfidentialOnce.Do(func() {
+		uploadsConfidential = strings.EqualFold(
+			strings.TrimSpace(os.Getenv("UPLOADS_CONFIDENTIAL")), "true")
+	})
+	return uploadsConfidential
+}
+
+var (
+	uploadsConfidentialOnce sync.Once
+	uploadsConfidential     bool
+)
 
 // IsPublicKey reports whether key is under one of PublicPrefixes.
 func IsPublicKey(key string) bool {

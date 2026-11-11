@@ -102,6 +102,27 @@ type ResourceDefinition struct {
 	// where. For health records, and anything else where access itself has to
 	// be accountable. Off by default, because reads are most of all traffic.
 	AuditReads bool `yaml:"audit_reads,omitempty"`
+
+	// Confidential removes the ADMIN exemption from this resource's ownership
+	// scoping, set by --confidential. The owner reads their rows; a holder of
+	// <resource>.read.confidential reads everything and every read is audited;
+	// everybody else, administrators included, gets an empty list and a 404.
+	//
+	// For a product whose rows are customer documents: medical records, legal
+	// files, coursework, tax papers. Being an administrator is not a reason to
+	// read one, and until this existed it was the only answer the framework
+	// had (grit#203).
+	//
+	// It requires OwnedBy, because a confidential resource with no owner
+	// column is readable by nobody, which is never what anybody meant.
+	Confidential bool `yaml:"confidential,omitempty"`
+}
+
+// ConfidentialPermission is the grant that reads this resource despite the
+// ADMIN exemption being gone. One per resource, so a project can hand out
+// access to patient records without handing out access to payroll.
+func (d *ResourceDefinition) ConfidentialPermission() string {
+	return toSnakeCase(Pluralize(d.Name)) + ".confidential"
 }
 
 // OwnerField returns the field ownership is checked against, or nil when the
@@ -130,7 +151,7 @@ func (d *ResourceDefinition) IsOwned() bool { return d.OwnerField() != nil }
 // default erased the file's value: owned_by: user in a YAML file generated a
 // resource every signed-in account could read and edit, with no warning, and
 // tree, public, tenant_owned and append_only were dropped the same way.
-func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenantOwned, appendOnly, auditReads bool) {
+func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenantOwned, appendOnly, auditReads, confidential bool) {
 	d.Public = d.Public || public
 	d.Tree = d.Tree || tree
 	if ownedBy != "" {
@@ -139,6 +160,15 @@ func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenan
 	d.TenantOwned = d.TenantOwned || tenantOwned
 	d.AppendOnly = d.AppendOnly || appendOnly
 	d.AuditReads = d.AuditReads || auditReads
+	d.Confidential = d.Confidential || confidential
+	// Confidential access is access that has to be accountable: the whole
+	// reason a grant exists rather than a role is that somebody can be asked
+	// afterwards who read what. Implied rather than required, because a person
+	// who typed --confidential and not --audit-reads did not mean "and keep no
+	// record".
+	if d.Confidential {
+		d.AuditReads = true
+	}
 }
 
 // TreeParentField returns the field the tree hangs from, adding it if --tree was

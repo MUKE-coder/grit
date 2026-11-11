@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.503.1"
+var version = "3.504.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1105,6 +1105,7 @@ func generateResourceCmd() *cobra.Command {
 	var tenantOwned bool
 	var appendOnly bool
 	var auditReads bool
+	var confidential bool
 	var unique string
 
 	cmd := &cobra.Command{
@@ -1201,7 +1202,7 @@ func generateResourceCmd() *cobra.Command {
 			gen.Force = force
 			// Merged, not assigned: a flag left at its default must not erase
 			// what a --from file declared.
-			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly, auditReads)
+			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly, auditReads, confidential)
 			def = gen.Definition
 
 			// The flag only helps somebody who knows it exists. When the
@@ -1289,6 +1290,8 @@ func generateResourceCmd() *cobra.Command {
 		"Rows are created and read, never changed or deleted: no update or delete routes, a GORM guard, and a database trigger installed by grit migrate. For ledgers, audit trails and consent records")
 	cmd.Flags().BoolVar(&auditReads, "audit-reads", false,
 		"Record every read of this resource in the tamper-evident activity log: who read which rows, when, from where. For health records and other data where access itself must be accountable")
+	cmd.Flags().BoolVar(&confidential, "confidential", false,
+		"Administrators cannot read this resource. The owner sees their own rows; a holder of <resource>.read.confidential sees everything and every read is audited; everyone else gets an empty list and a 404. Needs --owned-by. For customer documents: medical records, legal files, coursework")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 

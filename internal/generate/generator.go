@@ -1077,5 +1077,21 @@ func (g *Generator) checkFlagCombinations() error {
 		return fmt.Errorf("--audit-reads and --tree cannot be combined yet: the tree " +
 			"endpoints return the whole hierarchy without recording who read it")
 	}
+	// A confidential resource with no owner column is readable by nobody: the
+	// scope has no column to compare against, so every caller but a grant
+	// holder matches nothing. That is never what somebody meant to type, and
+	// finding out costs a generate, a migrate and a confused afternoon.
+	if g.Definition.Confidential && !g.Definition.IsOwned() {
+		return fmt.Errorf("--confidential needs --owned-by: without an owner column there "+
+			"is nobody the rows belong to, so nobody but a holder of %s could read them. "+
+			"Add --owned-by <user field>", g.Definition.ConfidentialPermission())
+	}
+	// Public reads are anonymous, so there is no actor to scope by and the
+	// rows would be served to the internet, which is the opposite of the flag.
+	if g.Definition.Confidential && g.Definition.Public {
+		return fmt.Errorf("--confidential and --public cannot be combined: public reads are " +
+			"anonymous and unscoped, so marking a resource confidential and then publishing " +
+			"it hands every row to the internet")
+	}
 	return nil
 }

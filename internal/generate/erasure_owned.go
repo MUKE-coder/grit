@@ -39,11 +39,36 @@ func init() { erasure.Register(&%[1]s{}, %[2]q) }
 `, names.Pascal, owner.FKColumnName())
 }
 
+// confidentialModelInit marks the model confidential from its own file, so
+// the places that read below the service layer, a backup archive above all,
+// can ask whether this caller may see the table at all.
+//
+// In the model file rather than a central list, for the same reason the
+// erasure registration is: removing the resource removes the registration
+// with it, and a central list is a thing to forget.
+func (g *Generator) confidentialModelInit(names Names) string {
+	if !g.Definition.Confidential {
+		return ""
+	}
+	return fmt.Sprintf(`
+// init marks %[1]s confidential: an administrator reads nothing here. Only
+// the owner, or a holder of %[3]s, and every such read is
+// audited. See internal/authz.ScopeConfidential.
+func init() { confidential.Register(%[2]q, %[3]q) }
+`, names.Pascal, names.PluralSnake, g.Definition.ConfidentialPermission())
+}
+
 // prepareErasure makes sure the erasure package is there for the model to
 // import, and says so when the project's GDPR service is too old to use it.
 func (g *Generator) prepareErasure() error {
 	api := g.APIRoot()
 	if err := scaffold.WriteErasurePackage(api, g.Module, false); err != nil {
+		return err
+	}
+	// The confidential registry too, for the same reason and on the same
+	// terms: a project generated before it existed has no such package, and
+	// a --confidential model would not compile without one.
+	if err := scaffold.WriteConfidentialPackage(api, g.Module, false); err != nil {
 		return err
 	}
 	gdpr := filepath.Join(api, "internal", "services", "gdpr.go")

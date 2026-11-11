@@ -314,7 +314,13 @@ const (
 		"# BUCKET, ENDPOINT, ACCESS_KEY, SECRET_KEY, REGION, PUBLIC_URL, ROOT), and\n" +
 		"# anything unset comes from that driver's settings below.\n" +
 		"# STORAGE_DISKS=backups\n" +
-		"# STORAGE_DISK_BACKUPS_BUCKET=\n"
+		"# STORAGE_DISK_BACKUPS_BUCKET=\n" +
+		"# Uploaded files are customer content: an administrator reads none of them,\n" +
+		"# the owner reads their own, and a holder of uploads.confidential reads all\n" +
+		"# of them with every read recorded in the activity log. Turning this on also\n" +
+		"# removes uploads/ from the public prefixes, because hiding the rows while\n" +
+		"# the files stayed readable by URL would be no protection at all.\n" +
+		"# UPLOADS_CONFIDENTIAL=true\n"
 
 	// routes.go serves the local driver's files.
 	routesLocalFilesAnchor = "\t// Health check\n\t// /api/health probes every infrastructure dependency"

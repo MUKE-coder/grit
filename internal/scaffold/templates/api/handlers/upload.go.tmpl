@@ -179,6 +179,28 @@ func (h *UploadHandler) uploads() *services.UploadService {
 // Reading the request is the handler's job, which is why the decision is here and
 // the query is the service's.
 func (h *UploadHandler) uploadOwner(c *gin.Context, action string) string {
+	// UPLOADS_CONFIDENTIAL: the files are customer content, so being an
+	// administrator is not a reason to read them (grit#203).
+	//
+	// Checked before the ADMIN branch, because the whole point is that the
+	// ADMIN branch stops applying. The grant is the only way through, and the
+	// read is audited like any other confidential read.
+	if storage.UploadsConfidential() {
+		if grants, ok := c.Get("user_grants"); ok {
+			if list, ok := grants.([]string); ok && authz.Granted(list, uploadsConfidentialPermission) {
+				return ""
+			}
+		}
+		// Not "" : an empty owner means every upload. A caller with no user
+		// id would then see the whole table, which is the failure direction a
+		// guard must never take. A id that matches nothing is the right
+		// answer for a request that cannot say who it is.
+		if id := c.GetString("user_id"); id != "" {
+			return id
+		}
+		return "\x00-no-such-owner"
+	}
+
 	if role, _ := c.Get("user_role"); role == "ADMIN" {
 		return ""
 	}
@@ -189,6 +211,16 @@ func (h *UploadHandler) uploadOwner(c *gin.Context, action string) string {
 	}
 	return c.GetString("user_id")
 }
+
+// uploadsConfidentialPermission is the grant that reads other people's
+// uploads when UPLOADS_CONFIDENTIAL is on.
+//
+// The predicate itself lives in the storage package, because that package
+// also drops uploads/ from the public prefixes when the setting is on: hiding
+// the rows from an administrator while the files stayed readable to anyone
+// holding a URL would be no protection at all, and the two have to be decided
+// in one place or they drift apart.
+const uploadsConfidentialPermission = "uploads.confidential"
 
 // MaxUploadSize is the maximum file size (50 MB).
 const MaxUploadSize = 50 << 20

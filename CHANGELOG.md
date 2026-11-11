@@ -23,6 +23,48 @@ Also worth knowing:
 ---
 
 
+## v3.504.0 - November 11, 2026
+
+### An administrator who cannot read customer content
+
+The second half of grit#203, and the harder half. Until now ADMIN was exempt from ownership scoping everywhere, so a product whose rows are medical records, legal files, tax papers or coursework had an operator who could read all of them, and the only way to change that was hand-editing framework files.
+
+```bash
+grit generate resource MedicalRecord \
+  --fields "patient:belongs_to[User],notes:text,scan:file[pdf]" \
+  --owned-by patient --confidential
+```
+
+Three tiers, where there used to be two:
+
+Opt in, per resource. Nothing changes for an existing resource, and an administrator keeps full reach over Users, Roles and Settings, which they need to do the job at all.
+
+#### It holds on every path out of the database, not just the table
+
+A guarantee that covers the admin list and not the export is not a guarantee, so each way out was closed:
+
+- **The service layer**, which is where the rule lives, so every route, job, command and test inherits it rather than only the routes somebody remembered.
+- **Exports** fall out of that: the CSV is the list without pages, scoped the same way.
+- **GORM Studio** browses tables directly, below the service layer, so a confidential model is never added to its list. In every environment, not only production: a development-only exemption is the kind that reaches production by accident.
+- **Backup downloads.** An archive still holds every table, because a backup that omits them does not restore the application and nobody discovers that until the worst possible moment. So the control is on taking the file off the server, and it needs the grant for *every* confidential table: a caller who may read patient records and not payroll must not be handed a file containing payroll.
+
+Two combinations are refused rather than generated, because both produce a resource nobody can read or one published to the internet: `--confidential` without `--owned-by`, and `--confidential` with `--public`. It implies `--audit-reads`, since the reason the grant goes to a named person rather than a role is that somebody can be asked afterwards who read what.
+
+#### And the uploads table, which is where this started
+
+```bash
+UPLOADS_CONFIDENTIAL=true
+```
+
+Uploads are Grit's own table rather than a generated resource, so there is no flag to attach. One setting covers it, because a project with private files usually has only private files.
+
+It also removes `uploads/` from the public storage prefixes, and that coupling is enforced in code rather than left to whoever edits `.env`. The default prefixes are `uploads/,thumbnails/`, which means a stored file is readable by anyone holding its URL with no signature. Hiding the rows from an administrator while leaving that on would have been no protection at all, and the person turning the setting on has no reason to know the two are connected.
+
+#### One thing the compiler found that reading would not have
+
+The registry of confidential tables started in `internal/authz`, which is where the scoping lives and looked like the obvious home. A model file registering itself from its own `init()` then imports authz, authz imports models, and the project does not build. It has its own leaf package now, for exactly the reason `internal/erasure` has one.
+
+
 ## v3.503.1 - November 11, 2026
 
 ### The Go floor moves to 1.26.11 for an HTTP/1 server crash

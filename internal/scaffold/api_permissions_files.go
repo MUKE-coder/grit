@@ -37,6 +37,13 @@ const (
 	ActionView   Action = "view"
 	ActionEdit   Action = "edit"
 	ActionDelete Action = "delete"
+
+	// ActionConfidential reads the rows of a --confidential resource that the
+	// holder does not own. On such a resource an administrator sees nothing,
+	// deliberately, and this is the only way through: not a role, so granting
+	// it is a deliberate act against a named person, and every read it allows
+	// is written to the tamper-evident activity log.
+	ActionConfidential Action = "confidential"
 )
 
 // Action sets, so a catalog entry can declare which verbs are meaningful.
@@ -45,6 +52,12 @@ var (
 	AllActions = []Action{ActionCreate, ActionView, ActionEdit, ActionDelete}
 	ViewOnly   = []Action{ActionView}
 	ViewEdit   = []Action{ActionView, ActionEdit}
+
+	// For a --confidential resource. A role already holding "<resource>.*"
+	// picks this up, because grants are stored unexpanded: a wildcard is a
+	// statement about the resource, not about the list of verbs that happened
+	// to exist on the day it was granted. Worth knowing before granting one.
+	AllActionsConfidential = []Action{ActionCreate, ActionView, ActionEdit, ActionDelete, ActionConfidential}
 )
 
 // Feature is one permissionable thing — usually a resource.
