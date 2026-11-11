@@ -60,6 +60,55 @@ func TestRelResolvesARelativePathAgainstTheWorkingDirectory(t *testing.T) {
 	}
 }
 
+// The other direction, which the first fix broke.
+//
+// `grit new app` starts the recording with the relative directory it was given
+// and then writes absolute paths, so here it is the ROOT that is relative.
+// v3.505.1 resolved only the path, so this pair failed instead and a freshly
+// scaffolded project recorded nothing at all: 441 entries became 0. One
+// direction was traded for the other, which is why this test takes all four
+// combinations rather than the one that was broken at the time.
+func TestRelTakesEitherSideRelative(t *testing.T) {
+	root := t.TempDir()
+	before, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(before) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const want = "apps/api/internal/services/memo.go"
+	relRoot := "app"
+	absRoot := filepath.Join(cwd, "app")
+	relPath := filepath.Join("app", "apps", "api", "internal", "services", "memo.go")
+	absPath := filepath.Join(absRoot, "apps", "api", "internal", "services", "memo.go")
+
+	for _, c := range []struct {
+		name, root, path string
+	}{
+		{"both absolute", absRoot, absPath},
+		{"both relative", relRoot, relPath},
+		{"relative path, absolute root: every grit upgrade repair", absRoot, relPath},
+		{"absolute path, relative root: grit new", relRoot, absPath},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			key, inside := Rel(c.root, c.path)
+			if !inside {
+				t.Fatalf("reported as outside the project, so the record is dropped silently")
+			}
+			if key != want {
+				t.Errorf("key = %q, want %q", key, want)
+			}
+		})
+	}
+}
+
 // Refresh over a relative path updates the recorded hash, which is the whole
 // point of the call.
 func TestRefreshWorksOnTheRelativePathsRepairsUse(t *testing.T) {

@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.505.1"
+var version = "3.505.2"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and

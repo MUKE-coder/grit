@@ -72,6 +72,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.2 */}
+            <div className="mb-12" id="v3.505.2">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.2
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Upgrade past v3.505.1: it fixed one direction and broke a worse one</h3>
+                <p>
+                  v3.505.1 made <code>manifest.Rel</code> resolve a relative
+                  path against the working directory, because{' '}
+                  <code>grit upgrade</code> hands its repairs{' '}
+                  <code>apps/api/...</code> and <code>filepath.Rel</code>
+                  errors on one absolute path and one relative one.
+                </p>
+                <p>
+                  That resolved the path and left the root alone, and{' '}
+                  <code>grit new app</code> is the other way round: it opens
+                  the recording session with the relative directory it was
+                  given and then writes absolute paths. So the pair failed in
+                  the opposite direction and a freshly scaffolded project
+                  recorded nothing at all.
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`grit new probe --api      # v3.505.0:  441 manifest entries
+grit new probe --api      # v3.505.1:    0 manifest entries
+grit new probe --api      # v3.505.2:  441 manifest entries`}
+                />
+                <p>
+                  An empty manifest means every later{' '}
+                  <code>grit upgrade</code> has no record of what Grit wrote,
+                  so it cannot tell its own files from yours. Both sides are
+                  normalised now, and the test takes all four combinations
+                  rather than the one that happened to be broken at the time:
+                  that is what trading one for the other earns.
+                </p>
+                <p>
+                  <strong>If you scaffolded a project with v3.505.1</strong>,
+                  run <code>grit upgrade</code> on this version. It rewrites
+                  the framework-owned files and records them as it goes, which
+                  took a probe project from 10 entries back to 329 and left it
+                  building. Files of your own were never in the manifest and
+                  are unaffected either way.
+                </p>
+                <p>
+                  Worth saying plainly: v3.505.1 was green on all six
+                  workflows with this in it. Every test in the manifest
+                  package built its manifest by hand rather than through a
+                  session the way the commands do, so nothing exercised the
+                  path that broke. There is now a test that opens a session
+                  the way <code>grit new</code> opens one and counts what came
+                  back, and it fails against both v3.505.1 and the version
+                  before it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.1 */}
             <div className="mb-12" id="v3.505.1">
               <div className="flex items-center gap-3 mb-4">

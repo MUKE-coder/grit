@@ -204,22 +204,24 @@ func Key(rel string) string {
 // the project at all. A generator writing outside the root (a global config, a
 // temp file) is simply not recorded.
 //
-// A relative path is resolved against the working directory first. Without
-// that, filepath.Rel is handed one absolute path and one relative one, which
-// is an error, which reads here as "outside the project" and drops the record
-// silently. Every repair `grit upgrade` runs afterwards passes
-// filepath.Join("apps", "api"), so every one of them was calling Refresh into
-// the void: the file kept its pre-repair hash and read as hand-edited from
-// then on, which is the exact failure review 2.5 was about and which the
-// convention's test could not see, because it checks that Refresh is called
-// and not that the call lands.
+// BOTH arguments are resolved against the working directory first, and that
+// is the whole subtlety. filepath.Rel errors when one path is absolute and the
+// other is not, and the error reads here as "outside the project", so the
+// record is dropped with no output.
+//
+// Mixed pairs arrive from both directions. `grit upgrade` calls its repairs
+// with filepath.Join("apps", "api"), so a relative path meets an absolute
+// root, and every one of those repairs was refreshing nothing: the file kept
+// its pre-repair hash and read as hand-edited from then on (v3.505.1).
+// `grit new` starts the recording with the relative project directory it was
+// given, so an absolute path meets a relative root, and resolving only the
+// path broke that direction instead: a scaffolded project recorded nothing at
+// all, which is worse, and is why this normalises the pair rather than one
+// side (v3.505.2).
 func Rel(root, abs string) (string, bool) {
-	if !filepath.IsAbs(abs) {
-		resolved, err := filepath.Abs(abs)
-		if err != nil {
-			return "", false
-		}
-		abs = resolved
+	root, abs = absolute(root), absolute(abs)
+	if root == "" || abs == "" {
+		return "", false
 	}
 	rel, err := filepath.Rel(root, abs)
 	if err != nil {
@@ -229,6 +231,20 @@ func Rel(root, abs string) (string, bool) {
 		return "", false
 	}
 	return Key(rel), true
+}
+
+// absolute is path resolved against the working directory, or "" when it
+// cannot be. Already-absolute paths are returned unchanged, so the common case
+// does no work and cannot be affected by where the process happens to be.
+func absolute(path string) string {
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+	resolved, err := filepath.Abs(path)
+	if err != nil {
+		return ""
+	}
+	return resolved
 }
 
 // Hash is the SHA-256 of the content with line endings normalised.
