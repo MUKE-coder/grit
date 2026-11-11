@@ -14,8 +14,19 @@ import { cn } from '@/lib/utils'
 import { GRIT_VERSION, RELEASE_CHANNEL_LABEL, releaseChannel } from '@/config/site'
 
 /* The docs sections that have a nav entry of their own, so "Guides" knows
-   which /docs pages are not its own. */
-const DOCS_SECTIONS = ['/docs/cli', '/docs/systems', '/docs/plugins', '/docs/changelog']
+   which /docs pages are not its own.
+
+   Every entry in the in-docs nav below, apart from Guides itself, belongs
+   here. One missing means its pages light up Guides as well as their own
+   entry, which is two active underlines at once. check-nav.py keeps the two
+   lists together. */
+const DOCS_SECTIONS = [
+  '/docs/cli',
+  '/docs/systems',
+  '/docs/plugins',
+  '/docs/blueprints',
+  '/docs/changelog',
+]
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme()
@@ -99,11 +110,15 @@ export function SiteHeader() {
                 { label: 'CLI', href: '/docs/cli' },
                 { label: 'Systems', href: '/docs/systems' },
                 { label: 'Plugins', href: '/docs/plugins/marketplace' },
-                // The one link here that leaves the docs, because a blueprint
-                // is a product rather than a section. It was reachable from
-                // the marketing header and from nowhere inside /docs, which
-                // is where a reader actually is.
-                { label: 'Blueprints', href: '/blueprints' },
+                // /docs/blueprints, not /blueprints. Blueprints belong in this
+                // nav because a reader inside the docs has no other way to
+                // reach them, but pointing at the marketing catalogue made
+                // this the one link in the set that left /docs, and the header
+                // swapped to the product nav underneath whoever clicked it.
+                // The docs page explains what a blueprint is and links to the
+                // catalogue, which is the order somebody arriving from here
+                // wants.
+                { label: 'Blueprints', href: '/docs/blueprints' },
                 { label: 'Changelog', href: '/docs/changelog' },
               ]
             : [

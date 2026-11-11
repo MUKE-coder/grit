@@ -328,15 +328,15 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
 
 		// Lib
-		filepath.Join(adminRoot, "lib", "api-core.ts"):          apiCoreTS(opts),
-		filepath.Join(adminRoot, "lib", "active-org.ts"):        activeOrgTS(),
+		filepath.Join(adminRoot, "lib", "api-core.ts"):    apiCoreTS(opts),
+		filepath.Join(adminRoot, "lib", "active-org.ts"):  activeOrgTS(),
 		filepath.Join(adminRoot, "lib", "detail-href.ts"): adminDetailHrefTS(opts),
-		filepath.Join(adminRoot, "lib", "api-client.ts"):        adminAPIClient(),
+		filepath.Join(adminRoot, "lib", "api-client.ts"):  adminAPIClient(),
 		// The session marker and the edge gate that reads it (review 2.15).
 		// proxy.ts is skipped for the embedded panel: the web app it lives inside
 		// has a proxy of its own, carrying adminGate.
-		filepath.Join(adminRoot, "lib", "admin-session.ts"): adminSessionLib(),
-		filepath.Join(adminRoot, "proxy.ts"):                adminProxyTS(),
+		filepath.Join(adminRoot, "lib", "admin-session.ts"):     adminSessionLib(),
+		filepath.Join(adminRoot, "proxy.ts"):                    adminProxyTS(),
 		filepath.Join(adminRoot, "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"):      adminQueryClient(),
 		filepath.Join(adminRoot, "lib", "utils.ts"):             adminUtils(),
@@ -462,16 +462,16 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "settings", "dashboard", "page.tsx"): adminDashboardSettingsPageTS(),
 
 		// Dashboard pages — (dashboard) route group (style variant)
-		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):                  adminDashboardPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):                    adminCaptivatingProfile(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"):         adminUsersPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):                                    adminDashboardPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):                                      adminCaptivatingProfile(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"):                           adminUsersPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", adminDetailSegment(opts), "page.tsx"): adminResourceDetailRoute("users", "users", "Users", opts),
 		// The Blog resource runs on <ResourcePage> like every other resource
 		// (contact-app review M42). Its content field is a richtext field, which
 		// renders the Word-style editor below.
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):         adminBlogsPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):                           adminBlogsPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", adminDetailSegment(opts), "page.tsx"): adminResourceDetailRoute("blogs", "blogs", "Blogs", opts),
-		filepath.Join(adminRoot, "components", "forms", "word-editor.tsx"):                       adminWordEditor(),
+		filepath.Join(adminRoot, "components", "forms", "word-editor.tsx"):                                         adminWordEditor(),
 
 		// System pages — under (dashboard) route group
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):   adminJobsPage(),
@@ -491,8 +491,8 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "public", ".gitkeep"):                                        "",
 
 		// v3.30 — activity dashboard + ticket system pages
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):        adminWalkieActivityPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "page.tsx"):         adminSupportListPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):                          adminWalkieActivityPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "page.tsx"):                           adminSupportListPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", adminDetailSegment(opts), "page.tsx"): adminTicketThreadPage(opts),
 	}
 
@@ -584,7 +584,7 @@ func adminPackageJSON(opts Options) string {
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.468.0",
-    "next": "` + nextVersion + `",
+    "next": "`+nextVersion+`",
     "react": "`+reactVersionFor(opts)+`",
     "react-dom": "`+reactVersionFor(opts)+`",
 `+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",
@@ -2179,8 +2179,50 @@ export default function ForgotPasswordPage() {
 func adminErrorPage() string {
 	return `"use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { buttonClasses } from "@/components/ui/button";
+
+/*
+ * A stale chunk, which is what a deploy does to a tab that was already open.
+ *
+ * Next splits the app into hashed files. A deploy replaces them, so this tab
+ * asks for a name that is gone, gets a 404 and throws. Nothing is wrong with
+ * the app, and reset() cannot help: it re-renders the same tree, which asks
+ * for the same missing file. Only a reload fetches the new names.
+ *
+ * Matched on the message rather than the class, because the error has been
+ * through a minifier and the name has not survived: webpack says "Loading
+ * chunk N failed", native ESM says "Failed to fetch dynamically imported
+ * module", Safari says "Importing a module script failed".
+ */
+function isStaleChunk(error: Error): boolean {
+  const text = (error.name + " " + error.message).toLowerCase();
+  return (
+    text.includes("chunkloaderror") ||
+    text.includes("loading chunk") ||
+    text.includes("loading css chunk") ||
+    text.includes("failed to fetch dynamically imported module") ||
+    text.includes("importing a module script failed")
+  );
+}
+
+// One automatic reload per tab, ever. Without the guard, an error this
+// misidentifies becomes an infinite refresh, which is worse than the error.
+const RELOAD_GUARD = "grit:reloaded-after-stale-chunk";
+
+function reloadOnceForStaleChunk(error: Error): boolean {
+  if (!isStaleChunk(error)) return false;
+  try {
+    if (window.sessionStorage.getItem(RELOAD_GUARD) !== "1") {
+      window.sessionStorage.setItem(RELOAD_GUARD, "1");
+      window.location.reload();
+    }
+  } catch {
+    // Storage disabled or private mode. Do not reload without a guard; the
+    // button still works.
+  }
+  return true;
+}
 
 export default function ErrorPage({
   error,
@@ -2189,8 +2231,11 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [stale, setStale] = useState(false);
+
   useEffect(() => {
     console.error(error);
+    setStale(reloadOnceForStaleChunk(error));
   }, [error]);
 
   return (
@@ -2201,9 +2246,13 @@ export default function ErrorPage({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <h2 className="mb-2 text-2xl font-bold text-foreground">Something went wrong</h2>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">
+          {stale ? "A new version was deployed" : "Something went wrong"}
+        </h2>
         <p className="mb-6 text-text-secondary">
-          An unexpected error occurred. You can try again or go back.
+          {stale
+            ? "This tab was open while the panel was updated, so part of it is no longer where this page expects. Reloading fixes it."
+            : "An unexpected error occurred. You can try again or go back."}
         </p>
         {error.digest && (
           <p className="mb-4 text-xs text-text-muted font-mono">Error ID: {error.digest}</p>
@@ -2216,10 +2265,10 @@ export default function ErrorPage({
             Go Back
           </button>
           <button
-            onClick={reset}
+            onClick={() => (stale ? window.location.reload() : reset())}
             className={buttonClasses()}
           >
-            Try Again
+            {stale ? "Reload" : "Try Again"}
           </button>
         </div>
       </div>

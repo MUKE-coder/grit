@@ -23,6 +23,45 @@ Also worth knowing:
 ---
 
 
+## v3.502.0 - November 11, 2026
+
+### An error page that can fix the error
+
+Reported from this site: a black screen and one line of unstyled text, "Application error: a client-side exception has occurred while loading gritframework.dev". That is Next's own fallback, and it appears when an app has no `error.tsx`. Every project `grit new` scaffolds ships one, and a `global-error.tsx` beside it. The site that generates them had neither.
+
+Both exist now, in the site's own dark styling rather than the browser's default. But the interesting half is what put somebody there, because three releases went out that day.
+
+#### A deploy breaks every tab that was already open
+
+Next splits an app into hashed chunks and a deploy replaces them. A tab open across one asks for a filename that no longer exists, gets a 404, and throws. Nothing is wrong with the app: the page is simply built by a version that is gone.
+
+The generated error page already handled this badly, and the reason is worth stating because it looked fine. Its one button called `reset()`, and `reset` re-renders the same tree, which asks for the same missing file. The only action on the page could not fix the likeliest reason for seeing it. Only a reload fetches the new filenames.
+
+```ts
+// Matched on the message, not the class: it has been through a minifier,
+// and three runtimes word it three ways.
+function isStaleChunk(error: Error): boolean {
+  const text = (error.name + " " + error.message).toLowerCase();
+  return (
+    text.includes("chunkloaderror") ||
+    text.includes("loading chunk") ||
+    text.includes("failed to fetch dynamically imported module") ||
+    text.includes("importing a module script failed")
+  );
+}
+```
+
+When it matches, the page reloads itself once and says what happened rather than calling it an unexpected error, because nothing was unexpected: the app was updated. Once, and guarded in `sessionStorage`, because an automatic reload with no guard turns any error this misidentifies into an infinite refresh, which is worse than the error. And "Try again" is not offered on that branch at all: a button that cannot work is worse than no button.
+
+This landed in `apps/web` and `apps/admin` as well as on this site, from one copy of the check shared by both templates, because two lists of substrings drift and the drift is silent. Both paths were verified in a browser: a generic throw renders the page, and a chunk-shaped throw reloads once and then stops.
+
+### And the docs nav stopped changing under you
+
+The header shows the docs' own sections inside `/docs` and the product nav everywhere else, which is deliberate. One link in the docs set pointed at `/blueprints`, the marketing catalogue, so clicking it left the docs and swapped the whole header. Every other link in that set keeps you inside, so the one that did not read as a second navbar appearing from nowhere, which is exactly how it was reported.
+
+It points at `/docs/blueprints` now, which already existed, is already in the sidebar, and links to the catalogue from a page that first explains what a blueprint is. `check-nav.py` fails CI on any docs-nav link that leaves `/docs`, and on a section missing from `DOCS_SECTIONS`, which would underline two entries at once.
+
+
 ## v3.501.0 - November 10, 2026
 
 ### An upload that failed in the grid said nothing at all

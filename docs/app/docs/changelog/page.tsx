@@ -72,6 +72,104 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.502.0 */}
+            <div className="mb-12" id="v3.502.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.502.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An error page that can fix the error</h3>
+                <p>
+                  Reported from this site: a black screen and one line of
+                  unstyled text, &quot;Application error: a client-side
+                  exception has occurred while loading gritframework.dev&quot;.
+                  That is Next&apos;s own fallback, and it appears when an app
+                  has no <code>error.tsx</code>. Every project{' '}
+                  <code>grit new</code> scaffolds ships one, and a{' '}
+                  <code>global-error.tsx</code> beside it. The site that
+                  generates them had neither.
+                </p>
+                <p>
+                  Both exist now, in the site&apos;s own dark styling rather
+                  than the browser&apos;s default. But the interesting half is
+                  what put somebody there, because three releases went out that
+                  day.
+                </p>
+                <h4>A deploy breaks every tab that was already open</h4>
+                <p>
+                  Next splits an app into hashed chunks and a deploy replaces
+                  them. A tab open across one asks for a filename that no longer
+                  exists, gets a 404, and throws. Nothing is wrong with the app:
+                  the page is simply built by a version that is gone.
+                </p>
+                <p>
+                  The generated error page already handled this badly, and the
+                  reason is worth stating because it looked fine. Its one button
+                  called <code>reset()</code>, and <code>reset</code> re-renders
+                  the same tree, which asks for the same missing file. The only
+                  action on the page could not fix the likeliest reason for
+                  seeing it. Only a reload fetches the new filenames.
+                </p>
+                <CodeBlock
+                  language="ts"
+                  code={`// Matched on the message, not the class: it has been through a minifier,
+// and three runtimes word it three ways.
+function isStaleChunk(error: Error): boolean {
+  const text = (error.name + " " + error.message).toLowerCase();
+  return (
+    text.includes("chunkloaderror") ||
+    text.includes("loading chunk") ||
+    text.includes("failed to fetch dynamically imported module") ||
+    text.includes("importing a module script failed")
+  );
+}`}
+                />
+                <p>
+                  When it matches, the page reloads itself once and says what
+                  happened rather than calling it an unexpected error, because
+                  nothing was unexpected: the app was updated. Once, and
+                  guarded in <code>sessionStorage</code>, because an automatic
+                  reload with no guard turns any error this misidentifies into
+                  an infinite refresh, which is worse than the error. And
+                  &quot;Try again&quot; is not offered on that branch at all: a
+                  button that cannot work is worse than no button.
+                </p>
+                <p>
+                  This landed in <code>apps/web</code> and{' '}
+                  <code>apps/admin</code> as well as on this site, from one
+                  copy of the check shared by both templates, because two lists
+                  of substrings drift and the drift is silent. Both paths were
+                  verified in a browser: a generic throw renders the page, and a
+                  chunk-shaped throw reloads once and then stops.
+                </p>
+
+                <h3>And the docs nav stopped changing under you</h3>
+                <p>
+                  The header shows the docs&apos; own sections inside{' '}
+                  <code>/docs</code> and the product nav everywhere else, which
+                  is deliberate. One link in the docs set pointed at{' '}
+                  <code>/blueprints</code>, the marketing catalogue, so clicking
+                  it left the docs and swapped the whole header. Every other
+                  link in that set keeps you inside, so the one that did not
+                  read as a second navbar appearing from nowhere, which is
+                  exactly how it was reported.
+                </p>
+                <p>
+                  It points at <code>/docs/blueprints</code> now, which already
+                  existed, is already in the sidebar, and links to the catalogue
+                  from a page that first explains what a blueprint is.{' '}
+                  <code>check-nav.py</code> fails CI on any docs-nav link that
+                  leaves <code>/docs</code>, and on a section missing from{' '}
+                  <code>DOCS_SECTIONS</code>, which would underline two entries
+                  at once.
+                </p>
+              </div>
+            </div>
+
             {/* v3.501.0 */}
             <div className="mb-12" id="v3.501.0">
               <div className="flex items-center gap-3 mb-4">

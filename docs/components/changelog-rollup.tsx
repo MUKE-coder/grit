@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 9 to 15, 2026",
-    count: 4,
+    count: 5,
     entries: [
+      { version: "3.502.0", title: "An error page that can fix the error" },
       { version: "3.501.0", title: "An upload that failed in the grid said nothing at all" },
       { version: "3.500.0", title: "The two web-app pages the docs did not have" },
       { version: "3.499.0", title: "A twenty-seventh expert, which writes the tutorial" },

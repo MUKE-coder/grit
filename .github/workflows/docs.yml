@@ -113,6 +113,21 @@ jobs:
         run: python3 scripts/check-em-dashes.py
         working-directory: docs
 
+      # The header shows the docs' own sections inside /docs and the product
+      # nav everywhere else. A link in the docs set that points outside /docs
+      # swaps the whole header underneath whoever clicks it, which is what got
+      # reported as two different navbars.
+      - name: The docs nav stays in the docs
+        run: python3 scripts/check-nav.py
+        working-directory: docs
+
+      # The site ships the three fallbacks it tells people to ship. It did not:
+      # an exception anywhere fell through to Next's unstyled one-liner, which
+      # is the worst possible answer on a framework's own site.
+      - name: The site has its own error boundaries
+        run: python3 scripts/check-error-boundaries.py
+        working-directory: docs
+
   flows:
     name: the runnable blocks run
     runs-on: ubuntu-latest

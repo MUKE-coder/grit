@@ -68,9 +68,9 @@ func webFileMap(root string, opts Options) map[string]string {
 		// UserMenu, web-session marker, auth pages, useAuth, auth shells, the
 		// auth-aware navbar and the customer area are opt-in via
 		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
-		filepath.Join(webRoot, "lib", "api-core.ts"):                     apiCoreTS(opts),
-		filepath.Join(webRoot, "lib", "active-org.ts"):                   activeOrgTS(),
-		filepath.Join(webRoot, "lib", "api.ts"):                          webAPIClient(),
+		filepath.Join(webRoot, "lib", "api-core.ts"):   apiCoreTS(opts),
+		filepath.Join(webRoot, "lib", "active-org.ts"): activeOrgTS(),
+		filepath.Join(webRoot, "lib", "api.ts"):        webAPIClient(),
 		// The generic every generated resource hook is three lines over.
 		// grit#146: the generator used to write ninety-two lines per resource,
 		// with Record<string, unknown> inputs, while the typed ones were being
@@ -1446,7 +1446,49 @@ export const useBlog = usePublicBlog;
 func webErrorPage() string {
 	return `"use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+/*
+ * A stale chunk, which is what a deploy does to a tab that was already open.
+ *
+ * Next splits the app into hashed files. A deploy replaces them, so this tab
+ * asks for a name that is gone, gets a 404 and throws. Nothing is wrong with
+ * the app, and reset() cannot help: it re-renders the same tree, which asks
+ * for the same missing file. Only a reload fetches the new names.
+ *
+ * Matched on the message rather than the class, because the error has been
+ * through a minifier and the name has not survived: webpack says "Loading
+ * chunk N failed", native ESM says "Failed to fetch dynamically imported
+ * module", Safari says "Importing a module script failed".
+ */
+function isStaleChunk(error: Error): boolean {
+  const text = (error.name + " " + error.message).toLowerCase();
+  return (
+    text.includes("chunkloaderror") ||
+    text.includes("loading chunk") ||
+    text.includes("loading css chunk") ||
+    text.includes("failed to fetch dynamically imported module") ||
+    text.includes("importing a module script failed")
+  );
+}
+
+// One automatic reload per tab, ever. Without the guard, an error this
+// misidentifies becomes an infinite refresh, which is worse than the error.
+const RELOAD_GUARD = "grit:reloaded-after-stale-chunk";
+
+function reloadOnceForStaleChunk(error: Error): boolean {
+  if (!isStaleChunk(error)) return false;
+  try {
+    if (window.sessionStorage.getItem(RELOAD_GUARD) !== "1") {
+      window.sessionStorage.setItem(RELOAD_GUARD, "1");
+      window.location.reload();
+    }
+  } catch {
+    // Storage disabled or private mode. Do not reload without a guard; the
+    // button still works.
+  }
+  return true;
+}
 
 export default function ErrorPage({
   error,
@@ -1455,8 +1497,11 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [stale, setStale] = useState(false);
+
   useEffect(() => {
     console.error(error);
+    setStale(reloadOnceForStaleChunk(error));
   }, [error]);
 
   return (
@@ -1467,9 +1512,13 @@ export default function ErrorPage({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <h2 className="mb-2 text-2xl font-bold text-foreground">Something went wrong</h2>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">
+          {stale ? "A new version was deployed" : "Something went wrong"}
+        </h2>
         <p className="mb-6 text-text-muted">
-          An unexpected error occurred. You can try again or go back.
+          {stale
+            ? "This tab was open while the app was updated, so part of it is no longer where this page expects. Reloading fixes it."
+            : "An unexpected error occurred. You can try again or go back."}
         </p>
         {error.digest && (
           <p className="mb-4 text-xs text-text-muted/60 font-mono">Error ID: {error.digest}</p>
@@ -1482,10 +1531,10 @@ export default function ErrorPage({
             Go Back
           </button>
           <button
-            onClick={reset}
+            onClick={() => (stale ? window.location.reload() : reset())}
             className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg hover:bg-accent-hover transition-colors"
           >
-            Try Again
+            {stale ? "Reload" : "Try Again"}
           </button>
         </div>
       </div>
