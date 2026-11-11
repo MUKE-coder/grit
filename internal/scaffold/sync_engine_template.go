@@ -85,6 +85,19 @@ export class SyncEngine {
   }
 
   /**
+   * Whether a client may write this model. False for read_only, where the
+   * server authors the rows, and for online_only, which is not mirrored.
+   *
+   * A method rather than something a screen derives from policyFor, so the
+   * list of unwritable modes lives in one place and the server's Writable()
+   * has exactly one counterpart here.
+   */
+  writable(model: string): boolean {
+    const mode = this.policyFor(model).mode;
+    return mode !== "read_only" && mode !== "online_only";
+  }
+
+  /**
    * Loads the policies the server declares.
    *
    * Failure is not fatal. A client that cannot reach the server is the case
@@ -325,11 +338,30 @@ export class SyncEngine {
    * not render with blanks until the first pull. The server stays
    * authoritative and overwrites both on the next sync.
    */
+  /**
+   * Refuses a write to a model the server authors.
+   *
+   * Called before the local mirror is touched, not just before the outbox:
+   * writing the row locally and then refusing to queue it would leave a row
+   * on the device that never reaches the server and never will, which is a
+   * worse lie than the one this replaces (grit#210).
+   */
+  private assertWritable(model: string, op: SyncOp): void {
+    if (this.writable(model)) return;
+    throw new Error(
+      "sync: cannot " + op + " " + model + ": it is registered " +
+        this.policyFor(model).mode +
+        ". The server writes these rows. Read them with useOfflineResource and " +
+        "call the API directly for anything that changes them.",
+    );
+  }
+
   async create(
     model: string,
     data: Record<string, unknown>,
     id?: string,
   ): Promise<string> {
+    this.assertWritable(model, "create");
     const rowId = id ?? newId();
     const now = new Date().toISOString();
     const payload: Record<string, unknown> = { ...data, id: rowId };
@@ -361,6 +393,7 @@ export class SyncEngine {
     id: string,
     data: Record<string, unknown>,
   ): Promise<void> {
+    this.assertWritable(model, "update");
     const record = await this.adapter.getRecord(model, id);
     if (!record) {
       throw new Error("local update: " + model + "/" + id + " not found");
@@ -376,6 +409,7 @@ export class SyncEngine {
 
   /** Removes the local row and queues a delete. */
   async remove(model: string, id: string): Promise<void> {
+    this.assertWritable(model, "delete");
     const record = await this.adapter.getRecord(model, id);
     const knownVersion = record ? record.version : 0;
     if (record) await this.adapter.deleteRecord(model, id);
@@ -398,6 +432,10 @@ export class SyncEngine {
     data: Record<string, unknown> | null,
     version: number,
   ): Promise<void> {
+    // The backstop. The three callers above check first so nothing is written
+    // locally either, and this is here so a fourth caller cannot slip a write
+    // for a read_only model into the queue.
+    this.assertWritable(model, op);
     const existing = await this.adapter.getOutbox(model, id);
 
     if (existing) {

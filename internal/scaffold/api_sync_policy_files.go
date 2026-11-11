@@ -60,6 +60,25 @@ const (
 	// so it can be named, and so a client asking for it gets a clear answer
 	// rather than an empty list.
 	ModeOnlineOnly = "online_only"
+	// ModeReadOnly mirrors the model locally and never accepts a push. For
+	// records the server authors on a user's behalf: an append-only ledger, an
+	// audit trail, a provenance stamp, a result computed by a job.
+	//
+	// Neither of the other two fits such a model, and that is the gap this
+	// fills (grit#210). online_only means she cannot read her own report on a
+	// train. offline_first declares the rows a client's to create, so the
+	// outbox enqueues a write that is guaranteed to fail and parks it in front
+	// of her with whatever the server said.
+	//
+	// Conflict: server_wins is not the same thing. It decides what happens
+	// when VERSIONS disagree, and a client-minted create has no version to
+	// disagree about, so it never runs.
+	//
+	// The client refuses to enqueue rather than the server refusing to accept.
+	// Both are implemented, because an old client build still has to be told,
+	// but the client half is the valuable one: every queued-and-failed write
+	// is a row somebody has to look at and dismiss.
+	ModeReadOnly = "read_only"
 )
 
 // Policy is how one model behaves offline.
@@ -95,6 +114,15 @@ type Policy struct {
 	MaxOfflineAgeSeconds int ` + "`" + `json:"max_offline_age_seconds,omitempty"` + "`" + `
 }
 
+// Writable reports whether a client may push changes for this model.
+//
+// False for read_only, and for online_only, which is not mirrored at all: a
+// push for a table the client was never given rows from is a bug in the
+// client whichever way it is phrased.
+func (p Policy) Writable() bool {
+	return p.Mode != ModeReadOnly && p.Mode != ModeOnlineOnly
+}
+
 // DefaultPolicy is what a model registered without one gets.
 func DefaultPolicy() Policy {
 	return Policy{Mode: ModeOfflineFirst, Conflict: ConflictManual}
@@ -125,10 +153,10 @@ func (p *Policy) Normalise(table string) error {
 	}
 
 	switch p.Mode {
-	case ModeOfflineFirst, ModeOnlineOnly:
+	case ModeOfflineFirst, ModeOnlineOnly, ModeReadOnly:
 	default:
-		return fmt.Errorf("sync: %s has unknown mode %q (want %s or %s)",
-			table, p.Mode, ModeOfflineFirst, ModeOnlineOnly)
+		return fmt.Errorf("sync: %s has unknown mode %q (want %s, %s or %s)",
+			table, p.Mode, ModeOfflineFirst, ModeOnlineOnly, ModeReadOnly)
 	}
 
 	switch p.Conflict {

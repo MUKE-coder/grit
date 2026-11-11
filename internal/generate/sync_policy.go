@@ -20,7 +20,7 @@ import (
 //	  - name: total
 //	    type: float
 //	sync:
-//	  mode: offline_first
+//	  mode: offline_first   # or online_only, or read_only
 //	  conflict: server_wins
 //	  fields: [total, payment_method]
 //	  local_only: [draft_note]
@@ -39,7 +39,7 @@ type SyncPolicy struct {
 // Valid values, kept as strings so the generator does not have to import the
 // scaffolded project's sync package to validate a definition.
 var (
-	validSyncModes     = []string{"offline_first", "online_only"}
+	validSyncModes     = []string{"offline_first", "online_only", "read_only"}
 	validSyncConflicts = []string{"manual", "server_wins", "client_wins"}
 )
 
@@ -166,6 +166,8 @@ func goConst(value string) string {
 		return "ModeOfflineFirst"
 	case "online_only":
 		return "ModeOnlineOnly"
+	case "read_only":
+		return "ModeReadOnly"
 	case "manual":
 		return "ConflictManual"
 	case "server_wins":

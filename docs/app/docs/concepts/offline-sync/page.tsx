@@ -136,12 +136,85 @@ fields:
     type: text
 
 sync:
-  mode: offline_first          # or online_only, to keep it off devices entirely
+  mode: offline_first          # offline_first | online_only | read_only
   conflict: server_wins        # manual (default) | server_wins | client_wins
   fields: [reference, total, payment_method]
   local_only: [draft_note]     # never leaves the device
   max_offline_age: 72h`} />
               <CodeBlock language="bash" code={`grit generate resource Sale --from sale.yaml`} />
+              <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden my-6 not-prose">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/30 bg-accent/20">
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Mode</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Mirrored locally</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Client may write</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">offline_first</td>
+                      <td className="px-4 py-2.5">Yes</td>
+                      <td className="px-4 py-2.5">Yes, through the outbox. The default.</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">read_only</td>
+                      <td className="px-4 py-2.5">Yes</td>
+                      <td className="px-4 py-2.5">No. The outbox refuses to accept one and the server refuses the push.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-xs">online_only</td>
+                      <td className="px-4 py-2.5">No</td>
+                      <td className="px-4 py-2.5">No. A pull for it is rejected rather than answered empty.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                <code>read_only</code> is for records the server authors on a user&apos;s
+                behalf: an append-only ledger, an audit or provenance row, a result
+                computed by a job, anything written through a hook a client cannot
+                reproduce. It is a common shape rather than an exotic one, and neither
+                of the other two modes fits it.
+              </p>
+              <p>
+                <code>online_only</code> means she cannot read a record{' '}
+                <em>about her own work</em> offline, which is the wrong answer for a
+                report she should be able to open on a train.{' '}
+                <code>offline_first</code> declares the rows a client&apos;s to create,
+                so the outbox queues a write that is guaranteed to fail and then parks
+                it in front of her with whatever the server said. Every
+                queued-and-failed write is a row somebody has to look at and dismiss.
+              </p>
+              <p>
+                <code>conflict: server_wins</code> is not the same thing, and that is
+                worth being clear about because it is the nearest available-looking
+                answer. It decides what happens when <strong>versions</strong>
+                disagree, and a client-minted create has no version to disagree about,
+                so it never runs.
+              </p>
+              <CodeBlock language="tsx" code={`const { data, readOnly } = useOfflineResource<CostLedger>("cost_ledgers")
+
+// readOnly is true, so hide the button rather than offering an action that throws.
+{!readOnly && <Button onClick={() => create({ amount: 5 })}>Add</Button>}`} />
+              <p>
+                The three mutations stay on the returned object for a{' '}
+                <code>read_only</code> resource rather than disappearing: their absence
+                would only be knowable at runtime, so every call site would need a
+                null check to satisfy TypeScript for a case most of them cannot be in.
+                They reject with a message naming the mode, and{' '}
+                <code>readOnly</code> is what a screen branches on.
+              </p>
+              <p>
+                <code>grit sync doctor</code> warns when a resource generated with{' '}
+                <code>--append-only</code> is declared <code>offline_first</code>,
+                because its updates and deletes are refused by the GORM guard and by a
+                database trigger under that. Nothing is broken in such a project; the
+                declaration simply reads as though it took effect. Creates are still
+                legal on an append-only model, which is why it is a warning rather than
+                an error.
+              </p>
+
               <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden my-6 not-prose">
                 <table className="w-full text-sm">
                   <thead>

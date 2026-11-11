@@ -81,6 +81,7 @@ func SyncDoctor(root string) (*SyncReport, error) {
 
 	modelsDir := filepath.Join(filepath.Dir(filepath.Dir(routesPath)), "models")
 	columns, structs := readModelColumns(modelsDir)
+	appendOnly := readAppendOnlyModels(modelsDir)
 	for name := range structs {
 		report.Models = append(report.Models, name)
 	}
@@ -136,7 +137,7 @@ func SyncDoctor(root string) (*SyncReport, error) {
 			})
 		}
 
-		report.Findings = append(report.Findings, checkPolicyLiteral(table, tail, known)...)
+		report.Findings = append(report.Findings, checkPolicyLiteral(table, tail, known, appendOnly[model])...)
 	}
 
 	// A policy nothing enforces is worse than no policy: routes.go says
@@ -176,7 +177,7 @@ func SyncDoctor(root string) (*SyncReport, error) {
 
 // checkPolicyLiteral validates the sync.Policy literal on one registration
 // against the model's real columns.
-func checkPolicyLiteral(table, literal string, known map[string]bool) []SyncFinding {
+func checkPolicyLiteral(table, literal string, known map[string]bool, appendOnly bool) []SyncFinding {
 	var findings []SyncFinding
 
 	for _, m := range syncPolicyFieldsRe.FindAllStringSubmatch(literal, -1) {
@@ -224,16 +225,79 @@ func checkPolicyLiteral(table, literal string, known map[string]bool) []SyncFind
 		}
 	}
 
-	if m := syncPolicyModeRe.FindStringSubmatch(literal); m != nil && m[1] == "ModeOnlineOnly" {
+	mode := "ModeOfflineFirst"
+	if m := syncPolicyModeRe.FindStringSubmatch(literal); m != nil {
+		mode = m[1]
+	}
+	switch mode {
+	case "ModeOnlineOnly":
 		findings = append(findings, SyncFinding{
 			Level:   "info",
 			Model:   table,
 			Message: "online_only: not mirrored, and a pull for it is rejected",
 			Fix:     "Screens reading it will be empty offline. Intended, but worth confirming.",
 		})
+	case "ModeReadOnly":
+		findings = append(findings, SyncFinding{
+			Level:   "info",
+			Model:   table,
+			Message: "read_only: mirrored for reads, and a push for it is refused",
+			Fix:     "The client will not queue a write. Screens read useOfflineResource().readOnly to hide the buttons.",
+		})
+	}
+
+	// An append-only model a client may queue updates and deletes for.
+	//
+	// The first check here that is about what the SERVER will accept rather
+	// than whether the policy is internally coherent, which is the gap
+	// grit#210 named: the GORM guard refuses the write and the database
+	// trigger refuses it under that, so nothing is broken, but the
+	// declaration reads as though it took effect and sync doctor said
+	// everything checked out.
+	//
+	// A warning rather than an error, because create is legal on an
+	// append-only model: a client minting a ledger row is a real design, and
+	// only its updates and deletes are certain to fail.
+	if appendOnly && mode == "ModeOfflineFirst" {
+		findings = append(findings, SyncFinding{
+			Level: "warning",
+			Model: table,
+			Message: "is append-only and declared offline_first, so the outbox will queue updates " +
+				"and deletes the server and the database both refuse",
+			Fix: "Declare `sync: {mode: read_only}` if the server authors these rows. Every " +
+				"queued-and-failed write is a row somebody has to look at and dismiss.",
+		})
 	}
 
 	return findings
+}
+
+// readAppendOnlyModels is the struct names registered as append-only, by
+// reading the registration the generator writes into the model file.
+//
+// Read from the models rather than taken from a resource definition because
+// doctor runs against a project on disk, where the definition that produced it
+// is long gone.
+func readAppendOnlyModels(dir string) map[string]bool {
+	out := map[string]bool{}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return out
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			continue
+		}
+		for _, m := range appendOnlyRegisterRe.FindAllStringSubmatch(string(raw), -1) {
+			out[m[1]] = true
+		}
+	}
+	return out
 }
 
 // readModelColumns maps each model struct to the JSON column names it carries.
@@ -309,3 +373,7 @@ func findSyncRoutesFile(root string) string {
 	}
 	return ""
 }
+
+// appendOnlyRegisterRe is the registration the --append-only generator writes
+// into a model file: func init() { appendonly.Register(&AuditEntry{}) }.
+var appendOnlyRegisterRe = regexp.MustCompile(`appendonly\.Register\(&(\w+)\{\}\)`)

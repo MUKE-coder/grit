@@ -105,7 +105,25 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// projects only: every sync update left the row's version unchanged,
 		// which made conflict detection inert, and no existing project would
 		// ever have got the fix. The tests beside it are the regression.
-		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):              apiSyncHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sync.go"): apiSyncHandlerGo(),
+
+		// The sync package the handler above calls into, in the same set and
+		// for that reason alone.
+		//
+		// It was written to new projects only. The handler travels, so adding
+		// Policy.Writable() for read_only would have delivered a handler
+		// calling a method the project's own package does not declare, and
+		// every upgraded project with offline sync would have stopped
+		// compiling (grit#210). The policy constants and the handler that
+		// reads them are one cluster.
+		//
+		// TestEveryOwnedImportIsDeliveredToo did not catch it, because
+		// "internal/sync" was on its allowlist as a package every project
+		// already has. True, and not the question: an owned file calling into
+		// a package needs that package REFRESHED, not merely present.
+		filepath.Join(apiRoot, "internal", "sync", "registry.go"):              apiSyncRegistryGo(),
+		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                apiSyncPolicyGo(),
+		filepath.Join(apiRoot, "internal", "sync", "softdelete.go"):            syncSoftDeleteGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sync_version_test.go"): apiSyncVersionTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sync_pull_test.go"):    apiSyncPullTestGo(),
 

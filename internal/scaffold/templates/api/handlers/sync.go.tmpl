@@ -176,6 +176,16 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 		return PushResult{OK: false, Code: "UNKNOWN_MODEL", Message: err.Error()}
 	}
 	policy := h.Registry.PolicyFor(ch.Model)
+	// A model the server authors: the client is told rather than the write
+	// being attempted and refused by a callback or a trigger, which is the
+	// same outcome reached with less said (grit#210).
+	//
+	// Before the ownership and permission checks below, because the answer
+	// does not depend on who is asking: nobody pushes to a read_only model.
+	if !policy.Writable() {
+		return PushResult{OK: false, Code: "READ_ONLY",
+			Message: ch.Model + " is registered " + policy.Mode + ": the server writes these rows, a client does not"}
+	}
 	// Enforced before the payload reaches a decoder: a field declared
 	// local_only is a promise it never leaves the device, and a promise kept
 	// only by well-behaved clients is not one.

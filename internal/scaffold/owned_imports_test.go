@@ -58,9 +58,19 @@ var deliveredElsewhere = map[string]bool{
 	"sms":        true, // writeRecoveryFiles
 
 	// Older than the problem. No project that can be upgraded lacks these.
+	//
+	// "Lacks" is the whole claim, and it is narrower than it reads: this says
+	// the directory is THERE, not that it is up to date. An owned file that
+	// calls a function the framework added to one of these packages needs it
+	// refreshed, and this test cannot tell the difference.
+	//
+	// internal/sync was on this list until v3.505.6 and is the reason the
+	// distinction is written down: Policy gained a method, the owned sync
+	// handler called it, and every upgraded project would have stopped
+	// compiling. It is in the owned map now. When in doubt, put the package
+	// in the map rather than here.
 	"config": true,
 	"mail":   true,
-	"sync":   true,
 }
 
 func TestEveryOwnedImportIsDeliveredToo(t *testing.T) {

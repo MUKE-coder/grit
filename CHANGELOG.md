@@ -23,6 +23,53 @@ Also worth knowing:
 ---
 
 
+## v3.505.6 - November 11, 2026
+
+### A sync mode for rows the server authors
+
+grit#210. Sync had two modes and needed a third. Anything the server writes on a user's behalf wants to be mirrored for reading and never written by a client: an append-only ledger, an audit or provenance row, a result computed by a job, anything written through a hook a client cannot reproduce. On the project that reported it, seven of twenty resources want exactly that.
+
+```yaml
+sync:
+  mode: read_only
+```
+
+Neither existing mode fits. `online_only` means she cannot read a record about her own work offline, which is the wrong answer for a report she should be able to open on a train. `offline_first` declares the rows a client's to create, so the outbox queues a write that is guaranteed to fail and parks it in front of her with whatever the server said.
+
+`conflict: server_wins` is the nearest available-looking answer and is not the same thing: it decides what happens when **versions** disagree, and a client-minted create has no version to disagree about, so it never runs.
+
+Both halves, and the client half is the one that matters: the outbox refuses to accept the write rather than the server refusing to accept the push, because every queued-and-failed write is a row somebody has to look at and dismiss. The server refuses it too, with a `READ_ONLY` code, so an old client build is still told.
+
+```text
+sync: cannot create cost_ledgers: it is registered read_only. The server
+writes these rows. Read them with useOfflineResource and call the API
+directly for anything that changes them.
+
+outbox entries after the refusal = 0
+local rows written anyway        = 0
+```
+
+Checked before the local mirror is touched, not only before the queue: writing the row locally and then refusing to queue it would leave a row on the device that never reaches the server and never will, which is a worse lie than the one this replaces. `useOfflineResource` exposes `readOnly` so a screen hides the button rather than offering an action that throws.
+
+#### And grit sync doctor has something real to check
+
+```text
+warning  audit_entries: is append-only and declared offline_first, so the outbox
+         will queue updates and deletes the server and the database both refuse
+         Declare `sync: {mode: read_only}` if the server authors these rows.
+```
+
+Its first check about what the server will actually accept, rather than whether a policy is internally coherent. That distinction is the reporter's, and it is the one that matters: in their project nothing was broken, because a GORM guard refused the push and a trigger refused the write under it, and `sync doctor` said everything checked out. A declaration that reads as though it took effect is the state the sync docs themselves call the worst one.
+
+A warning rather than an error, because create is still legal on an append-only model: a client minting a ledger row is a real design, and only its updates and deletes are certain to fail.
+
+#### One thing this nearly shipped broken
+
+`internal/sync/policy.go` was written to new projects only, while `internal/handlers/sync.go` travels on upgrade. So giving `Policy` a `Writable()` method and calling it from the handler would have delivered, to every upgraded project with offline sync, a handler calling a method that project's own package does not declare. The package and its handler are one cluster now and travel together.
+
+The test added in v3.505.0 for exactly this class did not catch it, because `internal/sync` was on its allowlist as a package every project already has. True, and not the question: an owned file calling into a package needs that package *refreshed*, not merely present. The allowlist now says so, and there is a test that the sync handler and the sync package arrive together.
+
+
 ## v3.505.5 - November 11, 2026
 
 ### Two relations to the same model named one variable twice

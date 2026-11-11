@@ -103,6 +103,12 @@ export interface OfflineResource<T> {
   data: T[];
   loading: boolean;
   error: Error | null;
+  /**
+   * True when the server authors these rows and a client may not write them:
+   * a model registered read_only or online_only. Hide the buttons rather than
+   * offering an action that rejects.
+   */
+  readOnly: boolean;
   create: (values: Partial<T>) => Promise<string>;
   update: (id: string, values: Partial<T>) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -159,6 +165,16 @@ export function useOfflineResource<T extends { id: string }>(
     });
   }, [engine, refresh]);
 
+  // Whether this model accepts writes at all. A screen reads it to hide the
+   // buttons rather than offering an action that throws (grit#210).
+  //
+  // The three mutations stay on the returned object rather than disappearing
+  // for a read_only model: their absence would only be knowable at runtime,
+  // so every call site would need a non-null check to satisfy TypeScript for
+  // a case most of them cannot be in. They reject instead, with a message
+  // naming the mode.
+  const readOnly = !engine.writable(model);
+
   const create = useCallback(
     (values: Partial<T>) =>
       engine.create(model, values as Record<string, unknown>),
@@ -177,8 +193,8 @@ export function useOfflineResource<T extends { id: string }>(
   );
 
   return useMemo(
-    () => ({ data, loading, error, create, update, remove, refresh }),
-    [data, loading, error, create, update, remove, refresh],
+    () => ({ data, loading, error, readOnly, create, update, remove, refresh }),
+    [data, loading, error, readOnly, create, update, remove, refresh],
   );
 }
 

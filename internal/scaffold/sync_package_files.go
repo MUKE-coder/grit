@@ -174,7 +174,13 @@ export interface OutboxEntry {
  * month's conflict rules is the exact silent failure this prevents.
  */
 export interface SyncPolicy {
-  mode: "offline_first" | "online_only";
+  /**
+   * offline_first mirrors and queues writes. online_only is not mirrored at
+   * all. read_only is mirrored for reads and never accepts a push: for rows
+   * the server authors on the user's behalf, such as an audit trail or a job
+   * result.
+   */
+  mode: "offline_first" | "online_only" | "read_only";
   conflict: "manual" | "server_wins" | "client_wins";
   fields?: string[];
   local_only?: string[];

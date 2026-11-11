@@ -72,6 +72,123 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.6 */}
+            <div className="mb-12" id="v3.505.6">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.6
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A sync mode for rows the server authors</h3>
+                <p>
+                  grit#210. Sync had two modes and needed a third. Anything the
+                  server writes on a user&apos;s behalf wants to be mirrored
+                  for reading and never written by a client: an append-only
+                  ledger, an audit or provenance row, a result computed by a
+                  job, anything written through a hook a client cannot
+                  reproduce. On the project that reported it, seven of twenty
+                  resources want exactly that.
+                </p>
+                <CodeBlock
+                  language="yaml"
+                  code={`sync:
+  mode: read_only`}
+                />
+                <p>
+                  Neither existing mode fits.{' '}
+                  <code>online_only</code> means she cannot read a record about
+                  her own work offline, which is the wrong answer for a report
+                  she should be able to open on a train.{' '}
+                  <code>offline_first</code> declares the rows a client&apos;s
+                  to create, so the outbox queues a write that is guaranteed to
+                  fail and parks it in front of her with whatever the server
+                  said.
+                </p>
+                <p>
+                  <code>conflict: server_wins</code> is the nearest
+                  available-looking answer and is not the same thing: it
+                  decides what happens when <strong>versions</strong> disagree,
+                  and a client-minted create has no version to disagree about,
+                  so it never runs.
+                </p>
+                <p>
+                  Both halves, and the client half is the one that matters: the
+                  outbox refuses to accept the write rather than the server
+                  refusing to accept the push, because every queued-and-failed
+                  write is a row somebody has to look at and dismiss. The
+                  server refuses it too, with a <code>READ_ONLY</code> code, so
+                  an old client build is still told.
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`sync: cannot create cost_ledgers: it is registered read_only. The server
+writes these rows. Read them with useOfflineResource and call the API
+directly for anything that changes them.
+
+outbox entries after the refusal = 0
+local rows written anyway        = 0`}
+                />
+                <p>
+                  Checked before the local mirror is touched, not only before
+                  the queue: writing the row locally and then refusing to queue
+                  it would leave a row on the device that never reaches the
+                  server and never will, which is a worse lie than the one this
+                  replaces. <code>useOfflineResource</code> exposes{' '}
+                  <code>readOnly</code> so a screen hides the button rather
+                  than offering an action that throws.
+                </p>
+
+                <h4>And grit sync doctor has something real to check</h4>
+                <CodeBlock
+                  language="text"
+                  code={`warning  audit_entries: is append-only and declared offline_first, so the outbox
+         will queue updates and deletes the server and the database both refuse
+         Declare \`sync: {mode: read_only}\` if the server authors these rows.`}
+                />
+                <p>
+                  Its first check about what the server will actually accept,
+                  rather than whether a policy is internally coherent. That
+                  distinction is the reporter&apos;s, and it is the one that
+                  matters: in their project nothing was broken, because a GORM
+                  guard refused the push and a trigger refused the write under
+                  it, and <code>sync doctor</code> said everything checked out.
+                  A declaration that reads as though it took effect is the
+                  state the sync docs themselves call the worst one.
+                </p>
+                <p>
+                  A warning rather than an error, because create is still legal
+                  on an append-only model: a client minting a ledger row is a
+                  real design, and only its updates and deletes are certain to
+                  fail.
+                </p>
+
+                <h4>One thing this nearly shipped broken</h4>
+                <p>
+                  <code>internal/sync/policy.go</code> was written to new
+                  projects only, while{' '}
+                  <code>internal/handlers/sync.go</code> travels on upgrade. So
+                  giving <code>Policy</code> a <code>Writable()</code> method
+                  and calling it from the handler would have delivered, to
+                  every upgraded project with offline sync, a handler calling a
+                  method that project&apos;s own package does not declare. The
+                  package and its handler are one cluster now and travel
+                  together.
+                </p>
+                <p>
+                  The test added in v3.505.0 for exactly this class did not
+                  catch it, because <code>internal/sync</code> was on its
+                  allowlist as a package every project already has. True, and
+                  not the question: an owned file calling into a package needs
+                  that package <em>refreshed</em>, not merely present. The
+                  allowlist now says so, and there is a test that the sync
+                  handler and the sync package arrive together.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.5 */}
             <div className="mb-12" id="v3.505.5">
               <div className="flex items-center gap-3 mb-4">
