@@ -112,7 +112,7 @@ func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 		// the admin panel brings, could not resolve.
 		filepath.Join(shared, "schemas", "money.ts"): sharedMoneySchema(),
 		filepath.Join(shared, "types", "money.ts"):   sharedMoneyTypes(),
-		filepath.Join(shared, "types", "errors.ts"):  sharedErrorsTS(),
+		filepath.Join(shared, "types", "errors.ts"):  sharedErrorsTS(projectErrorCodes(root)),
 		filepath.Join(shared, "types", "user.ts"):    sharedUserTypes(),
 		filepath.Join(shared, "types", "api.ts"):     sharedAPITypes(),
 		filepath.Join(shared, "types", "index.ts"):   sharedTypesIndex(),

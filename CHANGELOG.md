@@ -23,6 +23,58 @@ Also worth knowing:
 ---
 
 
+## v3.505.4 - November 11, 2026
+
+### A project can declare its own error codes
+
+grit#208. The catalogue had 123 codes and no way to add a 124th. `internal/respond/codes.go` is generated and says DO NOT EDIT, so an entry added there was lost on the next upgrade, and nothing said where to put one instead.
+
+```yaml
+# .grit/error-codes.yaml
+codes:
+  - code: PLAN_LIMIT_REACHED
+    status: 402
+    category: limit
+    area: billing
+    meaning: The account has used all three of its similarity checks.
+    client: Show the upgrade prompt. Retrying will not help.
+```
+
+```bash
+grit sync
+```
+
+Folded into the same two generated files the built-in codes come from, which is the property worth having: the typed Go constant and the `ApiErrorCode` union come from one list, so a switch over error codes in the frontend stays exhaustive for the errors the product actually raises. A Go-only extension file would have given the API its code and left the frontend unable to type a case for the one error the product most needs to handle well.
+
+The file is refused rather than half-applied when it is wrong, and each refusal names the file and the code: a code that is not SHOUTING_SNAKE_CASE, a status that is not a 4xx or 5xx, a category that does not exist, a missing meaning or client line, the same code twice, or one that shadows a built-in:
+
+```text
+.grit/error-codes.yaml: VALIDATION_ERROR is already one of Grit's codes, at 422.
+Pick another name: two entries for one code means its status depends on which
+of them wins
+```
+
+`grit sync` refuses outright, since applying that file is its whole job. `grit new` and `grit upgrade` report it and carry on, because aborting an upgrade over a typo in a file the upgrade does not own is worse, and it is not silent in practice: the constant the handler wanted is then absent and the build fails right after the warning says why.
+
+#### And the bug inside the gap
+
+The workaround that suggests itself compiles:
+
+```go
+respond.Fail(c, respond.Code("PLAN_LIMIT_REACHED"), "You have used all 3 checks")
+```
+
+`Code` is a string type, so that is legal Go. `StatusOf` did not know the code, so the answer was **500**: every caller who reached their plan limit was told a server fault, the on-call was paged for it, and nothing in the response or the log said which code had done it. It still answers 500, because a code nothing documents is a bug in the handler, and now it says so once, by name, with what to do about it.
+
+There is also the signal there was none of. Every project gets `internal/respond/codes_project_test.go`, which fails on any `respond.Code("...")` in the project that is not declared, so `go test ./...` finds it rather than production doing.
+
+#### PLAN_LIMIT_REACHED, at 402
+
+Shipped in the catalogue, because nearly every SaaS needs exactly it and the substitutes are each wrong in a way a client can feel. `RATE_LIMITED` is a 429, which means &ldquo;retry shortly&rdquo;: a client with backoff retries against a wall and the person is told the wrong thing. `FORBIDDEN` is indistinguishable from a permission failure, so a UI can only tell them apart by matching on the message string. There was no 402 in the catalogue at all, and 402 is what Stripe and GitHub answer for the same situation.
+
+Which turned up a smaller thing: the map from a status to its Go constant was fifteen entries kept by hand, and 402 was not among them, so the new code came out as a bare `402` in a file whose stated point is to read like something a person wrote. It is now every 4xx and 5xx `net/http` declares, read out of `net/http`'s own source rather than typed: 418 is `StatusTeapot` and not StatusImATeapot, so a name derived from `http.StatusText` would have been wrong for it and the generated file would not have compiled.
+
+
 ## v3.505.3 - November 11, 2026
 
 ### A confidential resource with a parent generated a test package that did not compile

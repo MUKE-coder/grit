@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/errorcodes"
@@ -26,8 +27,15 @@ func goConstName(code string) string {
 }
 
 // apiRespondCodesGo returns internal/respond/codes.go: the catalogue as Go.
-func apiRespondCodesGo() string {
-	entries := errorcodes.All()
+// projectCodes is .grit/error-codes.yaml, already validated, or nil.
+//
+// Merged into the same sorted list rather than emitted as a second map: a
+// handler asks StatusOf one question and must get one answer, and two maps is
+// how a code acquires two statuses depending on which is consulted. The
+// comment on each entry says which list it came from, so it is still obvious
+// what is yours.
+func apiRespondCodesGo(projectCodes []errorcodes.Entry) string {
+	entries := mergeCodes(errorcodes.All(), projectCodes)
 
 	var b strings.Builder
 	b.WriteString(`// Code generated from Grit's error catalogue. DO NOT EDIT.
@@ -40,12 +48,19 @@ func apiRespondCodesGo() string {
 // The same catalogue generates packages/shared/types/errors.ts, so a TypeScript
 // switch over these codes can be exhaustive, and the table at /docs/backend/errors.
 //
-// Regenerate with: grit upgrade
+// Your own codes go in .grit/error-codes.yaml, NOT here: this file is
+// regenerated and an entry added to it is lost on the next upgrade. Codes
+// declared there are folded into the catalogue below and into the TypeScript,
+// so the API and the frontend stay one list.
+//
+// Regenerate with: grit sync (or grit upgrade, which also does it)
 package respond
 
 import (
+	"log"
 	"net/http"
 	"sort"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -137,8 +152,7 @@ func Codes() []Code {
 // Fail writes a documented error, at the status the catalogue gives it.
 //
 // Prefer this to writing c.JSON with a status and a code side by side: that is
-// how one code ends up with two statuses. An unknown code is written as a 500,
-// because a code nothing documents is a bug in the handler, not in the request.
+// how one code ends up with two statuses.
 //
 //	respond.Fail(c, respond.CodeForbidden, "Only an owner can archive an invoice")
 //
@@ -146,9 +160,23 @@ func Codes() []Code {
 //
 //	respond.Fail(c, respond.CodeValidationError, "Check the highlighted fields",
 //	    map[string]string{"email": "That address is already in use"})
+//
+// # An unknown code
+//
+// Code is a string type, so respond.Code("WHATEVER") compiles. It is still a
+// bug: nothing documents the code, the frontend cannot branch on it, and the
+// status has to be guessed. So it is answered 500 and reported once, by name,
+// with what to do about it.
+//
+// The 500 is deliberate and the report is the new part. Before it, a product
+// whose handler refused a request with an undeclared code answered every one
+// of those callers a 500 and the on-call was paged for what was a client
+// error (grit#208). Nothing in the response or the log said which code, and
+// it reads as correct in review.
 func Fail(c *gin.Context, code Code, message string, details ...map[string]string) {
 	status := StatusOf(code)
 	if status == 0 {
+		reportUndeclaredCode(code)
 		status = http.StatusInternalServerError
 	}
 	body := Error{Code: string(code), Message: message}
@@ -157,6 +185,20 @@ func Fail(c *gin.Context, code Code, message string, details ...map[string]strin
 	}
 	c.AbortWithStatusJSON(status, gin.H{"error": body})
 }
+
+// reported is the codes already complained about. Once each: a handler on a
+// hot path would otherwise write the same line on every request, which buries
+// it in the noise it is competing with.
+var reported sync.Map
+
+func reportUndeclaredCode(code Code) {
+	if _, already := reported.LoadOrStore(code, true); already {
+		return
+	}
+	log.Printf("respond: %q is not a declared error code, so this answered 500. "+
+		"Declare it in .grit/error-codes.yaml and run grit sync, or use one of the "+
+		"codes in this file. respond.Code(%q) compiles and is still a bug.", code, code)
+}
 `)
 	return b.String()
 }
@@ -164,26 +206,62 @@ func Fail(c *gin.Context, code Code, message string, details ...map[string]strin
 // goStatusName turns 422 into http.StatusUnprocessableEntity, so the generated
 // file reads like something a person wrote.
 func goStatusName(status int) string {
+	// Every 4xx and 5xx constant net/http declares, read out of net/http's own
+	// source rather than typed: 418 is StatusTeapot and not StatusImATeapot,
+	// and 414 is StatusRequestURITooLong, so a name derived from
+	// http.StatusText is wrong for both and the generated file would not
+	// compile.
+	//
+	// A hand-kept list of fifteen until v3.505.4, and 402 was not among them,
+	// so PLAN_LIMIT_REACHED and any project code with an unusual status came
+	// out as a bare number: valid Go, and the odd one out in a file whose
+	// stated point is to read like something a person wrote.
 	names := map[int]string{
 		400: "http.StatusBadRequest",
 		401: "http.StatusUnauthorized",
+		402: "http.StatusPaymentRequired",
 		403: "http.StatusForbidden",
 		404: "http.StatusNotFound",
 		405: "http.StatusMethodNotAllowed",
+		406: "http.StatusNotAcceptable",
+		407: "http.StatusProxyAuthRequired",
+		408: "http.StatusRequestTimeout",
 		409: "http.StatusConflict",
 		410: "http.StatusGone",
+		411: "http.StatusLengthRequired",
+		412: "http.StatusPreconditionFailed",
 		413: "http.StatusRequestEntityTooLarge",
+		414: "http.StatusRequestURITooLong",
 		415: "http.StatusUnsupportedMediaType",
+		416: "http.StatusRequestedRangeNotSatisfiable",
+		417: "http.StatusExpectationFailed",
+		418: "http.StatusTeapot",
+		421: "http.StatusMisdirectedRequest",
 		422: "http.StatusUnprocessableEntity",
+		423: "http.StatusLocked",
+		424: "http.StatusFailedDependency",
+		425: "http.StatusTooEarly",
+		426: "http.StatusUpgradeRequired",
+		428: "http.StatusPreconditionRequired",
 		429: "http.StatusTooManyRequests",
+		431: "http.StatusRequestHeaderFieldsTooLarge",
+		451: "http.StatusUnavailableForLegalReasons",
 		500: "http.StatusInternalServerError",
 		501: "http.StatusNotImplemented",
 		502: "http.StatusBadGateway",
 		503: "http.StatusServiceUnavailable",
+		504: "http.StatusGatewayTimeout",
+		505: "http.StatusHTTPVersionNotSupported",
+		506: "http.StatusVariantAlsoNegotiates",
+		507: "http.StatusInsufficientStorage",
+		508: "http.StatusLoopDetected",
+		510: "http.StatusNotExtended",
+		511: "http.StatusNetworkAuthenticationRequired",
 	}
 	if name, ok := names[status]; ok {
 		return name
 	}
+	// A status outside the standard set. Numeric, which compiles.
 	return fmt.Sprintf("%d", status)
 }
 
@@ -216,8 +294,8 @@ func goCategoryName(category string) string {
 // The point of generating this is the exhaustive switch: with a union type, a
 // frontend that handles five codes and forgets the sixth fails to compile rather
 // than falling through to "Something went wrong".
-func sharedErrorsTS() string {
-	entries := errorcodes.All()
+func sharedErrorsTS(projectCodes []errorcodes.Entry) string {
+	entries := mergeCodes(errorcodes.All(), projectCodes)
 
 	var b strings.Builder
 	b.WriteString(`// Code generated from Grit's error catalogue. DO NOT EDIT.
@@ -232,7 +310,11 @@ func sharedErrorsTS() string {
 //     return API_ERRORS[code].client   // what the person should do about it
 //   }
 //
-// Regenerate with: grit upgrade
+// This project's own codes are declared in .grit/error-codes.yaml and appear
+// here with the rest, which is what keeps a switch over ApiErrorCode
+// exhaustive for the errors the product actually raises.
+//
+// Regenerate with: grit sync (or grit upgrade, which also does it)
 
 export type ApiErrorCategory =
   | 'request'
@@ -333,4 +415,52 @@ func tsString(value string) string {
 	escaped := strings.ReplaceAll(value, `\`, `\\`)
 	escaped = strings.ReplaceAll(escaped, "'", `\'`)
 	return "'" + escaped + "'"
+}
+
+// mergeCodes is Grit's catalogue plus the project's own, sorted by code.
+//
+// One list, because StatusOf asks one question. A second map consulted after
+// the first is how a code acquires two statuses depending on which is read,
+// which is the inconsistency the catalogue was built to end.
+//
+// A project code that shadows a built-in never reaches here: LoadProject
+// refuses the file and says which code and what Grit answers it with. If one
+// somehow did, the built-in wins, so the framework's own handlers cannot have
+// their status changed under them.
+func mergeCodes(built, project []errorcodes.Entry) []errorcodes.Entry {
+	if len(project) == 0 {
+		return built
+	}
+	known := make(map[string]bool, len(built))
+	for _, e := range built {
+		known[e.Code] = true
+	}
+	out := make([]errorcodes.Entry, 0, len(built)+len(project))
+	out = append(out, built...)
+	for _, e := range project {
+		if known[e.Code] {
+			continue
+		}
+		out = append(out, e)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Code < out[j].Code })
+	return out
+}
+
+// projectErrorCodes is .grit/error-codes.yaml for the project at root.
+//
+// A malformed file is reported and skipped rather than aborting. Aborting
+// would block an upgrade over a typo in a file the upgrade does not own, and
+// skipping is not silent in practice: the constant a handler uses is then
+// absent from the generated file, so the build fails right after this warning
+// says why. `grit sync` refuses outright, which is the command whose whole job
+// this is.
+func projectErrorCodes(root string) []errorcodes.Entry {
+	codes, err := errorcodes.LoadProject(root)
+	if err != nil {
+		fmt.Printf("  ⚠ %v\n", err)
+		fmt.Printf("    The codes in that file are not in this build. Fix it and run grit sync.\n")
+		return nil
+	}
+	return codes
 }

@@ -980,7 +980,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 			filepath.Join(root, "packages", "shared", "tsconfig.json"): sharedTSConfig(),
 			// Generated, not edited: a frontend switching on a stale list of error
 			// codes is the drift the catalogue exists to end.
-			filepath.Join(root, "packages", "shared", "types", "errors.ts"): sharedErrorsTS(),
+			filepath.Join(root, "packages", "shared", "types", "errors.ts"): sharedErrorsTS(projectErrorCodes(root)),
 			// The design tokens the admin's components are typed against.
 			// apps/admin/components/auth is refreshed on every upgrade, and
 			// without these two travelling with it a project ends up with

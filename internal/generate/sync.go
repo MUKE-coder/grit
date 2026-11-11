@@ -121,6 +121,23 @@ func Sync() error {
 		printClientUIDrift(uiDrift)
 	}
 
+	// The error catalogue, which is the other thing packages/shared holds that
+	// is generated rather than written.
+	//
+	// Here because .grit/error-codes.yaml had nowhere to be applied from: the
+	// only command that rewrote codes.go was grit upgrade, and nobody runs an
+	// upgrade to add an error code (grit#208). The failure is returned rather
+	// than warned about, because applying that file is the whole reason this
+	// runs.
+	written, err := scaffold.WriteErrorCodeFiles(root)
+	if err != nil {
+		return err
+	}
+	for _, line := range written {
+		fmt.Println("  ✅ " + line)
+	}
+	fmt.Println()
+
 	return nil
 }
 

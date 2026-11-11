@@ -44,7 +44,10 @@ const (
 	CategoryConflict Category = "conflict"
 	// CategoryState: the thing exists but is not in a state that allows this.
 	CategoryState Category = "state"
-	// CategoryLimit: too much, too fast.
+	// CategoryLimit: too much, too fast, or more than this account is allowed.
+	// A client that reads this as "retry shortly" is right for RATE_LIMITED and
+	// wrong for PLAN_LIMIT_REACHED, which is why the status differs: 429 means
+	// wait, 402 means the limit is the plan's and waiting changes nothing.
 	CategoryLimit Category = "limit"
 	// CategoryServer: a fault on our side. The client did nothing wrong.
 	CategoryServer Category = "server"
@@ -120,6 +123,10 @@ var catalog = []Entry{
 	{"RATE_LIMITED", http.StatusTooManyRequests, CategoryLimit, "core",
 		"Too many requests from this caller.",
 		"Back off. Honour Retry-After if it is present rather than retrying immediately."},
+	{"PLAN_LIMIT_REACHED", http.StatusPaymentRequired, CategoryLimit, "core",
+		"The account has used everything its plan allows of something it is entitled to.",
+		"Show what the plan allows and how to raise it. Retrying will not help, and nor will " +
+			"waiting unless details carries a reset time."},
 	{"INTERNAL_ERROR", http.StatusInternalServerError, CategoryServer, "core",
 		"A fault on the server. The message is deliberately vague; the detail is in the server log.",
 		"Retry once, then report it. Nothing the client changes will help."},

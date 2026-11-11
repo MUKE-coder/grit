@@ -2,8 +2,11 @@ package scaffold
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/errorcodes"
 )
 
 // writeRespondFiles writes internal/respond.
@@ -26,12 +29,29 @@ func writeRespondFiles(root string, opts Options) error {
 		// Generated from Grit's error catalogue: the typed codes, the status each
 		// one always carries, and respond.Fail, which takes the status from the
 		// catalogue so a handler cannot pair a code with the wrong one.
-		filepath.Join(apiRoot, "internal", "respond", "codes.go"): apiRespondCodesGo(),
+		filepath.Join(apiRoot, "internal", "respond", "codes.go"): apiRespondCodesGo(projectErrorCodes(root)),
 		// The binding: tags, runnable from code that did not bind a request
 		// body. Bulk create decodes its rows itself, so without this the
 		// model's own required and min never fired on that path.
 		filepath.Join(apiRoot, "internal", "respond", "validation.go"):      tmpl("api/respond/validation.go"),
 		filepath.Join(apiRoot, "internal", "respond", "validation_test.go"): tmpl("api/respond/validation_test.go"),
+		// The signal there was none of: a code used and not declared is caught
+		// by a test run rather than by a 500 in production (grit#208).
+		filepath.Join(apiRoot, "internal", "respond", "codes_project_test.go"): tmpl("api/respond/codes_project_test.go"),
+	}
+
+	// Where this project declares error codes of its own, commented out.
+	//
+	// A file in the project rather than a line in the docs, because the
+	// extension point has to be findable from the thing it extends: codes.go
+	// says DO NOT EDIT and now says where to go instead, and this is what is
+	// there when somebody goes (grit#208). Written only when absent: it is the
+	// project's file from the moment it exists.
+	starter := filepath.Join(root, ".grit", "error-codes.yaml")
+	if _, err := os.Stat(starter); os.IsNotExist(err) {
+		if err := writeFile(starter, errorcodes.StarterProjectFile()); err != nil {
+			return fmt.Errorf("writing %s: %w", errorcodes.ProjectFile, err)
+		}
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)

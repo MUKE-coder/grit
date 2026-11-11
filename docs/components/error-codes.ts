@@ -143,6 +143,13 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         client: 'Back off. Honour Retry-After if it is present rather than retrying immediately.',
       },
       {
+        code: 'PLAN_LIMIT_REACHED',
+        status: 402,
+        category: 'limit',
+        meaning: 'The account has used everything its plan allows of something it is entitled to.',
+        client: 'Show what the plan allows and how to raise it. Retrying will not help, and nor will waiting unless details carries a reset time.',
+      },
+      {
         code: 'INTERNAL_ERROR',
         status: 500,
         category: 'server',
@@ -1052,7 +1059,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 123
+export const errorCodeCount = 124
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

@@ -10,7 +10,11 @@
 //     return API_ERRORS[code].client   // what the person should do about it
 //   }
 //
-// Regenerate with: grit upgrade
+// This project's own codes are declared in .grit/error-codes.yaml and appear
+// here with the rest, which is what keeps a switch over ApiErrorCode
+// exhaustive for the errors the product actually raises.
+//
+// Regenerate with: grit sync (or grit upgrade, which also does it)
 
 export type ApiErrorCategory =
   | 'request'
@@ -44,6 +48,7 @@ export type ApiErrorCode =
   | 'CSRF_INVALID'
   | 'DB_ERROR'
   | 'EMAIL_EXISTS'
+  | 'EMAIL_MISMATCH'
   | 'EMAIL_NOT_VERIFIED'
   | 'ENDPOINT_NOT_ALLOWED'
   | 'ERASE_FAILED'
@@ -75,9 +80,11 @@ export type ApiErrorCode =
   | 'INVALID_TOKEN'
   | 'INVALID_TOTP_CODE'
   | 'INVALID_TRANSITION'
+  | 'INVITATION_INVALID'
   | 'ITEM_LOCKED'
   | 'JOB_ERROR'
   | 'MAIL_FAILED'
+  | 'MAIL_UNAVAILABLE'
   | 'MAINTENANCE'
   | 'MISSING_MODEL'
   | 'MISSING_TOKEN'
@@ -89,6 +96,7 @@ export type ApiErrorCode =
   | 'NO_SCOPE'
   | 'OPTION_IN_USE'
   | 'ORIGIN_NOT_ALLOWED'
+  | 'OWNER_TRANSFER_REQUIRED'
   | 'PASSKEYS_NOT_CONFIGURED'
   | 'PASSKEY_REJECTED'
   | 'PASSWORD_REQUIRED'
@@ -97,6 +105,7 @@ export type ApiErrorCode =
   | 'PAYMENT_PROVIDER_ERROR'
   | 'PDF_ERROR'
   | 'PERSIST_FAILED'
+  | 'PLAN_LIMIT_REACHED'
   | 'PRESIGN_FAILED'
   | 'PUBLISHABLE_KEY_NOT_ALLOWED'
   | 'PULSE_OFF'
@@ -116,12 +125,14 @@ export type ApiErrorCode =
   | 'SESSION_REVOKED'
   | 'SETTINGS_UNAVAILABLE'
   | 'SETTING_REJECTED'
+  | 'SLUG_TAKEN'
   | 'SMS_FAILED'
   | 'SMS_NOT_CONFIGURED'
   | 'SOCIAL_AUTH_ONLY'
   | 'STATS_FAILED'
   | 'STORAGE_UNAVAILABLE'
   | 'SUBMISSION_FAILED'
+  | 'TAX_ID_TAKEN'
   | 'TEMP_ERROR'
   | 'TOKEN_ERROR'
   | 'TOO_MANY_CHANGES'
@@ -288,6 +299,13 @@ export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {
     area: 'auth',
     meaning: 'An account already has that address.',
     client: 'Offer sign-in or password reset rather than registration.',
+  },
+  EMAIL_MISMATCH: {
+    status: 403,
+    category: 'permission',
+    area: 'tenancy',
+    meaning: 'The invitation is valid, and the signed-in account is not the address it was sent to.',
+    client: 'Offer to sign in with the invited address, or sign out and back in. Do not try the link with another account.',
   },
   EMAIL_NOT_VERIFIED: {
     status: 403,
@@ -506,6 +524,13 @@ export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {
     meaning: 'That move is not declared in the workflow for this status.',
     client: 'Offer only the transitions the API lists for the current status.',
   },
+  INVITATION_INVALID: {
+    status: 404,
+    category: 'notfound',
+    area: 'tenancy',
+    meaning: 'The invitation token is unknown, expired, revoked, already used, or the signed-in address does not match the invited one.',
+    client: 'Do not reveal which of those it was. Offer to ask for a new invitation.',
+  },
   ITEM_LOCKED: {
     status: 400,
     category: 'state',
@@ -526,6 +551,13 @@ export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {
     area: 'recovery',
     meaning: 'The mail driver refused or failed to send the verification code.',
     client: 'Retry once. If it keeps failing, the address may be unreachable or mail is misconfigured.',
+  },
+  MAIL_UNAVAILABLE: {
+    status: 503,
+    category: 'disabled',
+    area: 'tenancy',
+    meaning: 'Email delivery is not configured, so an invitation cannot be sent.',
+    client: 'Tell the operator to configure the mail driver. Nothing the recipient can change will help.',
   },
   MAINTENANCE: {
     status: 503,
@@ -604,6 +636,13 @@ export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {
     meaning: 'The request\'s Origin is not on the key\'s allowlist.',
     client: 'Add the origin to the key, rather than relaxing CORS for everybody.',
   },
+  OWNER_TRANSFER_REQUIRED: {
+    status: 409,
+    category: 'conflict',
+    area: 'tenancy',
+    meaning: 'The owner tried to leave the organization, which would leave it with nobody able to administer it.',
+    client: 'Transfer ownership to another member first, then leave.',
+  },
   PASSKEYS_NOT_CONFIGURED: {
     status: 501,
     category: 'disabled',
@@ -659,6 +698,13 @@ export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {
     area: 'core',
     meaning: 'The change was accepted and could not be written.',
     client: 'Retry once. Treat the write as not having happened.',
+  },
+  PLAN_LIMIT_REACHED: {
+    status: 402,
+    category: 'limit',
+    area: 'core',
+    meaning: 'The account has used everything its plan allows of something it is entitled to.',
+    client: 'Show what the plan allows and how to raise it. Retrying will not help, and nor will waiting unless details carries a reset time.',
   },
   PRESIGN_FAILED: {
     status: 500,
@@ -793,6 +839,13 @@ export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {
     meaning: 'The value did not pass the setting\'s own validation.',
     client: 'Show the message against the field: it comes from the setting\'s rule.',
   },
+  SLUG_TAKEN: {
+    status: 409,
+    category: 'conflict',
+    area: 'tenancy',
+    meaning: 'Another organization already uses that URL slug.',
+    client: 'Offer a free variant. The slug-availability endpoint answers the same question before the form is submitted.',
+  },
   SMS_FAILED: {
     status: 502,
     category: 'upstream',
@@ -834,6 +887,13 @@ export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {
     area: 'forms',
     meaning: 'The submission was refused: a field, a file or the form\'s own rules.',
     client: 'Show the message. It is written for the person filling the form in.',
+  },
+  TAX_ID_TAKEN: {
+    status: 409,
+    category: 'conflict',
+    area: 'tenancy',
+    meaning: 'Another organization already claims that tax id. One company is one tenant here.',
+    client: 'Show which organization holds it to an operator. Do not retry with the same value.',
   },
   TEMP_ERROR: {
     status: 500,

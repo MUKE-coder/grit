@@ -164,13 +164,81 @@ respond.Fail(c, respond.CodeForbidden, "Only an owner can archive an invoice")`}
             <div className="prose-grit">
               <h2 id="your-own">Your own codes</h2>
               <p>
-                Nothing stops a handler you wrote from returning a code of its own, and the
-                envelope is the same either way. Two things to know. The catalogue test only
-                covers the framework&apos;s and the generator&apos;s handlers, so your codes are
-                yours to document. And <code>documentedErrorCode()</code> returns null for a code
-                it does not know, while <code>apiErrorCode()</code> from{' '}
-                <code>@shared/types</code> returns the raw string: use the second one when you
-                branch on your own.
+                Grit&apos;s catalogue cannot hold every code a product needs. A plan limit, a
+                thesis that has already been submitted, a licence that does not cover this
+                region: those are domain facts, and the nearest built-in codes are wrong in
+                ways a client can feel. <code>RATE_LIMITED</code> says &ldquo;retry
+                shortly&rdquo;, so a client with backoff retries against a wall.{' '}
+                <code>FORBIDDEN</code> is indistinguishable from a permission failure, so the UI
+                can only tell them apart by matching on the message string.
+              </p>
+              <p>
+                Declare your own in <code>.grit/error-codes.yaml</code>. Not in{' '}
+                <code>internal/respond/codes.go</code>: that file is generated and an entry added
+                to it is lost on the next upgrade.
+              </p>
+              <CodeBlock
+                language="yaml"
+                code={`# .grit/error-codes.yaml
+codes:
+  - code: PLAN_LIMIT_REACHED          # SHOUTING_SNAKE_CASE
+    status: 402                       # a 4xx or a 5xx
+    category: limit
+    area: billing                     # groups it in the table above
+    meaning: The account has used all three of its similarity checks.
+    client: Show the upgrade prompt. Retrying will not help.`}
+              />
+              <CodeBlock language="bash" code={`grit sync`} />
+              <p>
+                That folds them into the same two generated files the built-in codes come from,
+                which is the property worth having: the typed Go constant and the{' '}
+                <code>ApiErrorCode</code> union come from one list, so a switch over error codes
+                in the frontend stays exhaustive for the errors your product actually raises. A
+                Go-only extension would give the API its code and leave the frontend unable to
+                type a case for it.
+              </p>
+              <CodeBlock
+                language="go"
+                code={`// apps/api/internal/handlers/check.go
+if used >= plan.Checks {
+    respond.Fail(c, respond.CodePlanLimitReached,
+        "You have used all 3 checks on the Student plan",
+        map[string]string{"used": "3", "limit": "3", "plan": "student"})
+    return
+}`}
+              />
+              <p>
+                <code>PLAN_LIMIT_REACHED</code> is in the catalogue already, at 402, because
+                nearly every SaaS needs it and 402 is what Stripe and GitHub answer for the same
+                situation. A code of your own gets a constant the same way:{' '}
+                <code>THESIS_ALREADY_SUBMITTED</code> becomes{' '}
+                <code>respond.CodeThesisAlreadySubmitted</code>.
+              </p>
+
+              <h3 className="mt-8">A code that is not declared</h3>
+              <p>
+                <code>respond.Code</code> is a string type, so this compiles:
+              </p>
+              <CodeBlock
+                language="go"
+                code={`respond.Fail(c, respond.Code("PLAN_LIMIT_REACHED"), "...")   // a bug`}
+              />
+              <p>
+                It is still a bug. <code>StatusOf</code> does not know the code, so the caller is
+                answered <strong>500</strong>: a client error reported as a server fault, which
+                is the most expensive kind to find. Two things catch it. The generated{' '}
+                <code>internal/respond/codes_project_test.go</code> fails on any{' '}
+                <code>respond.Code(&quot;...&quot;)</code> in your project that is not declared,
+                so <code>go test ./...</code> finds it before a deploy does. And if one reaches
+                production anyway, <code>respond.Fail</code> logs it once by name with what to do
+                about it, rather than answering 500 in silence.
+              </p>
+              <p>
+                Two helpers to know when you branch on codes in TypeScript:{' '}
+                <code>documentedErrorCode()</code> returns null for a code it does not know,
+                while <code>apiErrorCode()</code> from <code>@shared/types</code> returns the raw
+                string. After <code>grit sync</code> your codes are documented, so the first one
+                works for them too.
               </p>
             </div>
 

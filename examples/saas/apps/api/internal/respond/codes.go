@@ -8,12 +8,19 @@
 // The same catalogue generates packages/shared/types/errors.ts, so a TypeScript
 // switch over these codes can be exhaustive, and the table at /docs/backend/errors.
 //
-// Regenerate with: grit upgrade
+// Your own codes go in .grit/error-codes.yaml, NOT here: this file is
+// regenerated and an entry added to it is lost on the next upgrade. Codes
+// declared there are folded into the catalogue below and into the TypeScript,
+// so the API and the frontend stay one list.
+//
+// Regenerate with: grit sync (or grit upgrade, which also does it)
 package respond
 
 import (
+	"log"
 	"net/http"
 	"sort"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -78,6 +85,8 @@ const (
 	CodeDBError Code = "DB_ERROR"
 	// EMAIL_EXISTS — An account already has that address.
 	CodeEmailExists Code = "EMAIL_EXISTS"
+	// EMAIL_MISMATCH — The invitation is valid, and the signed-in account is not the address it was sent to.
+	CodeEmailMismatch Code = "EMAIL_MISMATCH"
 	// EMAIL_NOT_VERIFIED — The account exists and its address has not been confirmed.
 	CodeEmailNotVerified Code = "EMAIL_NOT_VERIFIED"
 	// ENDPOINT_NOT_ALLOWED — The key is valid and is not allowed to call this endpoint.
@@ -140,12 +149,16 @@ const (
 	CodeInvalidTOTPCode Code = "INVALID_TOTP_CODE"
 	// INVALID_TRANSITION — That move is not declared in the workflow for this status.
 	CodeInvalidTransition Code = "INVALID_TRANSITION"
+	// INVITATION_INVALID — The invitation token is unknown, expired, revoked, already used, or the signed-in address does not match the invited one.
+	CodeInvitationInvalid Code = "INVITATION_INVALID"
 	// ITEM_LOCKED — That item already has a decision and will not take another.
 	CodeItemLocked Code = "ITEM_LOCKED"
 	// JOB_ERROR — The import job could not be started.
 	CodeJobError Code = "JOB_ERROR"
 	// MAIL_FAILED — The mail driver refused or failed to send the verification code.
 	CodeMailFailed Code = "MAIL_FAILED"
+	// MAIL_UNAVAILABLE — Email delivery is not configured, so an invitation cannot be sent.
+	CodeMailUnavailable Code = "MAIL_UNAVAILABLE"
 	// MAINTENANCE — The API is in maintenance mode and is refusing everything.
 	CodeMaintenance Code = "MAINTENANCE"
 	// MISSING_MODEL — The request did not name a model to sync.
@@ -168,6 +181,8 @@ const (
 	CodeOptionInUse Code = "OPTION_IN_USE"
 	// ORIGIN_NOT_ALLOWED — The request's Origin is not on the key's allowlist.
 	CodeOriginNotAllowed Code = "ORIGIN_NOT_ALLOWED"
+	// OWNER_TRANSFER_REQUIRED — The owner tried to leave the organization, which would leave it with nobody able to administer it.
+	CodeOwnerTransferRequired Code = "OWNER_TRANSFER_REQUIRED"
 	// PASSKEYS_NOT_CONFIGURED — This deployment has no passkey configuration, so the endpoints are inert.
 	CodePasskeysNotConfigured Code = "PASSKEYS_NOT_CONFIGURED"
 	// PASSKEY_REJECTED — The challenge no longer exists: it expired, or it was already answered.
@@ -184,6 +199,8 @@ const (
 	CodePDFError Code = "PDF_ERROR"
 	// PERSIST_FAILED — The change was accepted and could not be written.
 	CodePersistFailed Code = "PERSIST_FAILED"
+	// PLAN_LIMIT_REACHED — The account has used everything its plan allows of something it is entitled to.
+	CodePlanLimitReached Code = "PLAN_LIMIT_REACHED"
 	// PRESIGN_FAILED — A presigned upload URL could not be produced.
 	CodePresignFailed Code = "PRESIGN_FAILED"
 	// PUBLISHABLE_KEY_NOT_ALLOWED — A publishable key was used where only a secret key is accepted.
@@ -222,6 +239,8 @@ const (
 	CodeSettingsUnavailable Code = "SETTINGS_UNAVAILABLE"
 	// SETTING_REJECTED — The value did not pass the setting's own validation.
 	CodeSettingRejected Code = "SETTING_REJECTED"
+	// SLUG_TAKEN — Another organization already uses that URL slug.
+	CodeSlugTaken Code = "SLUG_TAKEN"
 	// SMS_FAILED — The SMS provider refused or failed to send.
 	CodeSMSFailed Code = "SMS_FAILED"
 	// SMS_NOT_CONFIGURED — No SMS provider is configured, so phone recovery cannot run here.
@@ -234,6 +253,8 @@ const (
 	CodeStorageUnavailable Code = "STORAGE_UNAVAILABLE"
 	// SUBMISSION_FAILED — The submission was refused: a field, a file or the form's own rules.
 	CodeSubmissionFailed Code = "SUBMISSION_FAILED"
+	// TAX_ID_TAKEN — Another organization already claims that tax id. One company is one tenant here.
+	CodeTaxIDTaken Code = "TAX_ID_TAKEN"
 	// TEMP_ERROR — The upload could not be buffered to disk before importing.
 	CodeTempError Code = "TEMP_ERROR"
 	// TOKEN_ERROR — The access and refresh tokens could not be issued.
@@ -347,6 +368,9 @@ var catalogue = map[Code]Meaning{
 	CodeEmailExists: {Status: http.StatusConflict, Category: CategoryConflict, Area: "auth",
 		Meaning: "An account already has that address.",
 		Client:  "Offer sign-in or password reset rather than registration."},
+	CodeEmailMismatch: {Status: http.StatusForbidden, Category: CategoryPermission, Area: "tenancy",
+		Meaning: "The invitation is valid, and the signed-in account is not the address it was sent to.",
+		Client:  "Offer to sign in with the invited address, or sign out and back in. Do not try the link with another account."},
 	CodeEmailNotVerified: {Status: http.StatusForbidden, Category: CategoryPermission, Area: "auth",
 		Meaning: "The account exists and its address has not been confirmed.",
 		Client:  "Send them to the verification flow, and offer to resend the link."},
@@ -440,6 +464,9 @@ var catalogue = map[Code]Meaning{
 	CodeInvalidTransition: {Status: http.StatusUnprocessableEntity, Category: CategoryState, Area: "workflow",
 		Meaning: "That move is not declared in the workflow for this status.",
 		Client:  "Offer only the transitions the API lists for the current status."},
+	CodeInvitationInvalid: {Status: http.StatusNotFound, Category: CategoryNotFound, Area: "tenancy",
+		Meaning: "The invitation token is unknown, expired, revoked, already used, or the signed-in address does not match the invited one.",
+		Client:  "Do not reveal which of those it was. Offer to ask for a new invitation."},
 	CodeItemLocked: {Status: http.StatusBadRequest, Category: CategoryState, Area: "review",
 		Meaning: "That item already has a decision and will not take another.",
 		Client:  "Re-read the review before submitting again."},
@@ -449,6 +476,9 @@ var catalogue = map[Code]Meaning{
 	CodeMailFailed: {Status: http.StatusBadGateway, Category: CategoryUpstream, Area: "recovery",
 		Meaning: "The mail driver refused or failed to send the verification code.",
 		Client:  "Retry once. If it keeps failing, the address may be unreachable or mail is misconfigured."},
+	CodeMailUnavailable: {Status: http.StatusServiceUnavailable, Category: CategoryDisabled, Area: "tenancy",
+		Meaning: "Email delivery is not configured, so an invitation cannot be sent.",
+		Client:  "Tell the operator to configure the mail driver. Nothing the recipient can change will help."},
 	CodeMaintenance: {Status: http.StatusServiceUnavailable, Category: CategoryDisabled, Area: "core",
 		Meaning: "The API is in maintenance mode and is refusing everything.",
 		Client:  "Retry later. Show a maintenance state rather than an error."},
@@ -482,6 +512,9 @@ var catalogue = map[Code]Meaning{
 	CodeOriginNotAllowed: {Status: http.StatusForbidden, Category: CategoryPermission, Area: "apikeys",
 		Meaning: "The request's Origin is not on the key's allowlist.",
 		Client:  "Add the origin to the key, rather than relaxing CORS for everybody."},
+	CodeOwnerTransferRequired: {Status: http.StatusConflict, Category: CategoryConflict, Area: "tenancy",
+		Meaning: "The owner tried to leave the organization, which would leave it with nobody able to administer it.",
+		Client:  "Transfer ownership to another member first, then leave."},
 	CodePasskeysNotConfigured: {Status: http.StatusNotImplemented, Category: CategoryDisabled, Area: "passkeys",
 		Meaning: "This deployment has no passkey configuration, so the endpoints are inert.",
 		Client:  "Hide passkey buttons unless the API reports the feature as available."},
@@ -506,6 +539,9 @@ var catalogue = map[Code]Meaning{
 	CodePersistFailed: {Status: http.StatusInternalServerError, Category: CategoryServer, Area: "core",
 		Meaning: "The change was accepted and could not be written.",
 		Client:  "Retry once. Treat the write as not having happened."},
+	CodePlanLimitReached: {Status: http.StatusPaymentRequired, Category: CategoryLimit, Area: "core",
+		Meaning: "The account has used everything its plan allows of something it is entitled to.",
+		Client:  "Show what the plan allows and how to raise it. Retrying will not help, and nor will waiting unless details carries a reset time."},
 	CodePresignFailed: {Status: http.StatusInternalServerError, Category: CategoryServer, Area: "uploads",
 		Meaning: "A presigned upload URL could not be produced.",
 		Client:  "Retry once, then fall back to uploading through the API."},
@@ -521,7 +557,7 @@ var catalogue = map[Code]Meaning{
 	CodeQueryFailed: {Status: http.StatusInternalServerError, Category: CategoryServer, Area: "gdpr",
 		Meaning: "The audit query failed.",
 		Client:  "Retry once, then report it."},
-	CodeRangeNotSatisfiable: {Status: 416, Category: CategoryRequest, Area: "uploads",
+	CodeRangeNotSatisfiable: {Status: http.StatusRequestedRangeNotSatisfiable, Category: CategoryRequest, Area: "uploads",
 		Meaning: "The Range header asks for bytes outside the file. The Content-Range header gives the real size.",
 		Client:  "Read the size from Content-Range and request a range inside it, or drop the Range header to get the whole file."},
 	CodeRateLimited: {Status: http.StatusTooManyRequests, Category: CategoryLimit, Area: "core",
@@ -563,6 +599,9 @@ var catalogue = map[Code]Meaning{
 	CodeSettingRejected: {Status: http.StatusUnprocessableEntity, Category: CategoryRequest, Area: "settings",
 		Meaning: "The value did not pass the setting's own validation.",
 		Client:  "Show the message against the field: it comes from the setting's rule."},
+	CodeSlugTaken: {Status: http.StatusConflict, Category: CategoryConflict, Area: "tenancy",
+		Meaning: "Another organization already uses that URL slug.",
+		Client:  "Offer a free variant. The slug-availability endpoint answers the same question before the form is submitted."},
 	CodeSMSFailed: {Status: http.StatusBadGateway, Category: CategoryUpstream, Area: "recovery",
 		Meaning: "The SMS provider refused or failed to send.",
 		Client:  "Retry once, then offer email. The number may be unreachable."},
@@ -581,6 +620,9 @@ var catalogue = map[Code]Meaning{
 	CodeSubmissionFailed: {Status: http.StatusBadRequest, Category: CategoryRequest, Area: "forms",
 		Meaning: "The submission was refused: a field, a file or the form's own rules.",
 		Client:  "Show the message. It is written for the person filling the form in."},
+	CodeTaxIDTaken: {Status: http.StatusConflict, Category: CategoryConflict, Area: "tenancy",
+		Meaning: "Another organization already claims that tax id. One company is one tenant here.",
+		Client:  "Show which organization holds it to an operator. Do not retry with the same value."},
 	CodeTempError: {Status: http.StatusInternalServerError, Category: CategoryServer, Area: "import",
 		Meaning: "The upload could not be buffered to disk before importing.",
 		Client:  "Retry once. Check free disk on the server if it repeats."},
@@ -669,8 +711,7 @@ func Codes() []Code {
 // Fail writes a documented error, at the status the catalogue gives it.
 //
 // Prefer this to writing c.JSON with a status and a code side by side: that is
-// how one code ends up with two statuses. An unknown code is written as a 500,
-// because a code nothing documents is a bug in the handler, not in the request.
+// how one code ends up with two statuses.
 //
 //	respond.Fail(c, respond.CodeForbidden, "Only an owner can archive an invoice")
 //
@@ -678,9 +719,23 @@ func Codes() []Code {
 //
 //	respond.Fail(c, respond.CodeValidationError, "Check the highlighted fields",
 //	    map[string]string{"email": "That address is already in use"})
+//
+// # An unknown code
+//
+// Code is a string type, so respond.Code("WHATEVER") compiles. It is still a
+// bug: nothing documents the code, the frontend cannot branch on it, and the
+// status has to be guessed. So it is answered 500 and reported once, by name,
+// with what to do about it.
+//
+// The 500 is deliberate and the report is the new part. Before it, a product
+// whose handler refused a request with an undeclared code answered every one
+// of those callers a 500 and the on-call was paged for what was a client
+// error (grit#208). Nothing in the response or the log said which code, and
+// it reads as correct in review.
 func Fail(c *gin.Context, code Code, message string, details ...map[string]string) {
 	status := StatusOf(code)
 	if status == 0 {
+		reportUndeclaredCode(code)
 		status = http.StatusInternalServerError
 	}
 	body := Error{Code: string(code), Message: message}
@@ -688,4 +743,18 @@ func Fail(c *gin.Context, code Code, message string, details ...map[string]strin
 		body.Details = details[0]
 	}
 	c.AbortWithStatusJSON(status, gin.H{"error": body})
+}
+
+// reported is the codes already complained about. Once each: a handler on a
+// hot path would otherwise write the same line on every request, which buries
+// it in the noise it is competing with.
+var reported sync.Map
+
+func reportUndeclaredCode(code Code) {
+	if _, already := reported.LoadOrStore(code, true); already {
+		return
+	}
+	log.Printf("respond: %q is not a declared error code, so this answered 500. "+
+		"Declare it in .grit/error-codes.yaml and run grit sync, or use one of the "+
+		"codes in this file. respond.Code(%q) compiles and is still a bug.", code, code)
 }

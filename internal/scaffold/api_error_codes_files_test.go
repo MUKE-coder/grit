@@ -16,8 +16,8 @@ import (
 // that both files carry every code, that the Go one compiles, and that they reach
 // an existing project.
 func TestGeneratedCodesCarryTheWholeCatalogue(t *testing.T) {
-	goSrc := apiRespondCodesGo()
-	tsSrc := sharedErrorsTS()
+	goSrc := apiRespondCodesGo(nil)
+	tsSrc := sharedErrorsTS(nil)
 	durableMustFormat(t, "internal/respond/codes.go", goSrc)
 
 	for _, entry := range errorcodes.All() {
@@ -52,7 +52,7 @@ func TestGeneratedCodesCarryTheWholeCatalogue(t *testing.T) {
 // A handler gets the status from the catalogue rather than pairing one with a code
 // by hand, which is how the same code ended up with two statuses.
 func TestGeneratedCodesTakeTheStatusFromTheCatalogue(t *testing.T) {
-	goSrc := apiRespondCodesGo()
+	goSrc := apiRespondCodesGo(nil)
 	durableMustContain(t, "internal/respond/codes.go", goSrc,
 		"func Fail(c *gin.Context, code Code, message string, details ...map[string]string)",
 		"status := StatusOf(code)",
@@ -64,7 +64,7 @@ func TestGeneratedCodesTakeTheStatusFromTheCatalogue(t *testing.T) {
 		"CodeVersionConflict: {Status: http.StatusConflict",
 	)
 
-	ts := sharedErrorsTS()
+	ts := sharedErrorsTS(nil)
 	durableMustContain(t, "packages/shared/types/errors.ts", ts,
 		"export type ApiErrorCode =",
 		"export const API_ERRORS: Record<ApiErrorCode, ApiErrorInfo> = {",

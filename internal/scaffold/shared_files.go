@@ -17,7 +17,7 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "types", "api.ts"):     sharedAPITypes(),
 		// The error catalogue as a union type, generated from the same source as
 		// the API's own codes, so a switch over them can be exhaustive.
-		filepath.Join(sharedRoot, "types", "errors.ts"):    sharedErrorsTS(),
+		filepath.Join(sharedRoot, "types", "errors.ts"):    sharedErrorsTS(projectErrorCodes(root)),
 		filepath.Join(sharedRoot, "types", "index.ts"):     sharedTypesIndex(),
 		filepath.Join(sharedRoot, "constants", "index.ts"): sharedConstants(),
 		// schemas/blog.ts comes from SharedModelTypes too: it was the last file
