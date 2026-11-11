@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.505.1 - November 11, 2026
+
+### A repair told the manifest nothing, so the file it fixed read as hand-edited
+
+Found by following v3.505.0's own advice. The grid repair fixed a service, and `grit generate resource` then refused to touch that resource:
+
+```text
+Note has 1 file(s) you have edited since Grit wrote them:
+
+  apps/api/internal/services/note.go
+```
+
+Nobody had edited it. The repair had, and the repair is Grit. Two things stacked up to produce that.
+
+A repair writes through a helper that calls `manifest.Refresh`, so the file keeps reading as Grit's and keeps receiving later framework fixes. That call resolves the path against the project root, and every repair `grit upgrade` runs after the main pass hands it a relative path: `apps/api/...`. One absolute path and one relative path is an error from `filepath.Rel`, and the error read as &ldquo;this file is outside the project&rdquo;, so the record was dropped without a word. Underneath that, the recording session those refreshes needed was opened and closed inside the main pass, which had already returned.
+
+So the file kept the hash it had before the repair. From then on the next upgrade skipped it as somebody's own work, and the generator declined to regenerate it. That is the exact failure the convention exists to prevent, and it has been true of every post-upgrade repair, not only the new one: the test that enforces the convention checks that `Refresh` is called, which they all did.
+
+Relative paths resolve now, and the session is open while the repairs run. Verified by upgrading a real v3.504.0 project: the repair fires, the manifest entry moves to the new version and hash, regenerating the resource is allowed, its tests pass and `grit doctor` is clean.
+
+Also, for an existing `--confidential` resource: its generated tests are the project's own files, so an upgrade does not rewrite them and they keep signing in as an administrator. `grit upgrade` now names those files and says to regenerate the resource, rather than leaving the tests red with nothing explaining why.
+
+
 ## v3.505.0 - November 11, 2026
 
 ### The grid was the one way into an owned table that ignored ownership

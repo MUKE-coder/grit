@@ -147,3 +147,64 @@ func repairGridOwnerSource(src, pascal, lower string) (string, string) {
 func ownerNameOf(column string) string {
 	return strings.TrimSuffix(column, "_id")
 }
+
+// ConfidentialTestsNeedingRegeneration names the generated test files that
+// still sign in as an ADMIN on a --confidential resource.
+//
+// Those tests assert the opposite of the flag: an administrator is meant to
+// see no rows, and they expect to see one. v3.505.0 generates them acting as
+// the owner, which fixes a resource generated from now on and nothing on disk,
+// because a _test.go file is the project's own and an upgrade does not rewrite
+// it. Without this the reporter of grit#205 would upgrade, get the services
+// fixed, and still have 45 red tests with nothing saying why.
+//
+// Reported rather than repaired: a test file is the first thing people edit,
+// and rewriting one would throw away whatever they added to it. Regenerating
+// the resource is one command and is theirs to run.
+func ConfidentialTestsNeedingRegeneration(apiRoot string) []string {
+	servicesDir := filepath.Join(apiRoot, "internal", "services")
+	entries, err := os.ReadDir(servicesDir)
+	if err != nil {
+		return nil
+	}
+
+	var out []string
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		service := readFileOrEmptyString(filepath.Join(servicesDir, name))
+		if !strings.Contains(service, "authz.ScopeConfidential(") {
+			continue
+		}
+		m := writableDecl.FindStringSubmatch(service)
+		if m == nil {
+			continue
+		}
+		pascal := m[1]
+
+		testPath := filepath.Join(apiRoot, "internal", "handlers", strings.TrimSuffix(name, ".go")+"_test.go")
+		test := readFileOrEmptyString(testPath)
+		if test == "" {
+			continue
+		}
+		// The shape v3.504.0 wrote: an ADMIN, expecting to see the row.
+		if !strings.Contains(test, "Test"+pascal+"_AdminSeesWhatWasCreated") {
+			continue
+		}
+		out = append(out, "internal/handlers/"+strings.TrimSuffix(name, ".go")+"_test.go"+
+			" signs in as an ADMIN on a --confidential resource, so its tests assert the "+
+			"opposite of the flag (grit#205). Regenerate "+pascal+" to get tests that act as "+
+			"the owner, or change the actor by hand.")
+	}
+	return out
+}
+
+func readFileOrEmptyString(path string) string {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return strings.ReplaceAll(string(raw), "\r\n", "\n")
+}

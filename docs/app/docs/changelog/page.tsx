@@ -72,6 +72,74 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.1 */}
+            <div className="mb-12" id="v3.505.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A repair told the manifest nothing, so the file it fixed read as hand-edited</h3>
+                <p>
+                  Found by following v3.505.0&apos;s own advice. The grid
+                  repair fixed a service, and{' '}
+                  <code>grit generate resource</code> then refused to touch
+                  that resource:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`Note has 1 file(s) you have edited since Grit wrote them:
+
+  apps/api/internal/services/note.go`}
+                />
+                <p>
+                  Nobody had edited it. The repair had, and the repair is
+                  Grit. Two things stacked up to produce that.
+                </p>
+                <p>
+                  A repair writes through a helper that calls{' '}
+                  <code>manifest.Refresh</code>, so the file keeps reading as
+                  Grit&apos;s and keeps receiving later framework fixes. That
+                  call resolves the path against the project root, and every
+                  repair <code>grit upgrade</code> runs after the main pass
+                  hands it a relative path: <code>apps/api/...</code>. One
+                  absolute path and one relative path is an error from{' '}
+                  <code>filepath.Rel</code>, and the error read as &ldquo;this
+                  file is outside the project&rdquo;, so the record was
+                  dropped without a word. Underneath that, the recording
+                  session those refreshes needed was opened and closed inside
+                  the main pass, which had already returned.
+                </p>
+                <p>
+                  So the file kept the hash it had before the repair. From
+                  then on the next upgrade skipped it as somebody&apos;s own
+                  work, and the generator declined to regenerate it. That is
+                  the exact failure the convention exists to prevent, and it
+                  has been true of every post-upgrade repair, not only the new
+                  one: the test that enforces the convention checks that{' '}
+                  <code>Refresh</code> is called, which they all did.
+                </p>
+                <p>
+                  Relative paths resolve now, and the session is open while the
+                  repairs run. Verified by upgrading a real v3.504.0 project:
+                  the repair fires, the manifest entry moves to the new
+                  version and hash, regenerating the resource is allowed, its
+                  tests pass and <code>grit doctor</code> is clean.
+                </p>
+                <p>
+                  Also, for an existing <code>--confidential</code> resource:
+                  its generated tests are the project&apos;s own files, so an
+                  upgrade does not rewrite them and they keep signing in as an
+                  administrator.{' '}<code>grit upgrade</code> now names those
+                  files and says to regenerate the resource, rather than
+                  leaving the tests red with nothing explaining why.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.0 */}
             <div className="mb-12" id="v3.505.0">
               <div className="flex items-center gap-3 mb-4">

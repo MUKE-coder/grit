@@ -27,6 +27,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/expose"
 	"github.com/MUKE-coder/grit/v3/internal/generate"
 	"github.com/MUKE-coder/grit/v3/internal/maintenance"
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 	"github.com/MUKE-coder/grit/v3/internal/plugin"
 	"github.com/MUKE-coder/grit/v3/internal/project"
 	"github.com/MUKE-coder/grit/v3/internal/prompt"
@@ -36,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.505.0"
+var version = "3.505.1"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1800,6 +1801,27 @@ func upgradeCmd() *cobra.Command {
 				return err
 			}
 
+			// The repairs below write through writeRepaired, which calls
+			// manifest.Refresh so that a file a repair fixed still reads as
+			// Grit's and keeps receiving later fixes (review 2.5).
+			//
+			// Refresh is a no-op unless a recording session is open, and the
+			// only one was inside scaffold.Upgrade, which has returned by
+			// now. So every repair here was refreshing into the void: the
+			// file kept its pre-repair hash, and from then on `grit upgrade`
+			// treated it as hand-edited and `grit generate resource` refused
+			// to regenerate it. The convention had a test enforcing the call
+			// and nothing checking the call did anything.
+			//
+			// Opened here rather than moved into Upgrade: these repairs are
+			// deliberately after it, because one of them adds methods that
+			// another then edits.
+			if root, err := os.Getwd(); err == nil {
+				if release, err := manifest.Start(root, scaffold.DefaultVersion, "repair"); err == nil {
+					defer func() { _ = release() }()
+				}
+			}
+
 			// The generated services, which scaffold.Upgrade deliberately does
 			// not touch: they are the project's code. A fix that only the
 			// generator carries reaches new resources and leaves every
@@ -1833,6 +1855,14 @@ func upgradeCmd() *cobra.Command {
 				for _, line := range blocked {
 					color.New(color.FgYellow).Printf("  ⚠ %s\n", line)
 				}
+			}
+
+			// The generated tests a --confidential resource already has, which
+			// are the project's own files and so are reported rather than
+			// rewritten. Before v3.505.0 they signed in as an ADMIN and
+			// expected to see the row, which is what the flag removes.
+			for _, line := range generate.ConfidentialTestsNeedingRegeneration(filepath.Join("apps", "api")) {
+				color.New(color.FgYellow).Printf("  ⚠ %s\n", line)
 			}
 
 			// And what they read. Export carried its own copy of the paginate

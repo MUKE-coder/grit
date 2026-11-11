@@ -200,10 +200,27 @@ func Key(rel string) string {
 	return k
 }
 
-// Rel turns an absolute path into a manifest key, reporting whether the path is
-// inside the project at all. A generator writing outside the root (a global
-// config, a temp file) is simply not recorded.
+// Rel turns a path into a manifest key, reporting whether the path is inside
+// the project at all. A generator writing outside the root (a global config, a
+// temp file) is simply not recorded.
+//
+// A relative path is resolved against the working directory first. Without
+// that, filepath.Rel is handed one absolute path and one relative one, which
+// is an error, which reads here as "outside the project" and drops the record
+// silently. Every repair `grit upgrade` runs afterwards passes
+// filepath.Join("apps", "api"), so every one of them was calling Refresh into
+// the void: the file kept its pre-repair hash and read as hand-edited from
+// then on, which is the exact failure review 2.5 was about and which the
+// convention's test could not see, because it checks that Refresh is called
+// and not that the call lands.
 func Rel(root, abs string) (string, bool) {
+	if !filepath.IsAbs(abs) {
+		resolved, err := filepath.Abs(abs)
+		if err != nil {
+			return "", false
+		}
+		abs = resolved
+	}
 	rel, err := filepath.Rel(root, abs)
 	if err != nil {
 		return "", false
