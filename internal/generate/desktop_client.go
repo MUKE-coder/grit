@@ -197,7 +197,18 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 			fk := f.FKColumnName()
 			fkCamel := lowerCamel(fk)
 			fkSetter := "set" + toPascalCase(fk)
-			optsVar := lowerCamel(rel.Plural) + "Opts"
+			// Named after the FIELD, not the target model. Two belongs_to
+			// fields pointing at the same model declared the same variable
+			// twice, which is TS2451 and fails pnpm type-check for the whole
+			// monorepo: "a credit granted to one user by another" is enough,
+			// and --owned-by user makes it three (grit#209).
+			//
+			// Not deduplicated by target, which would also compile: both
+			// selects would then share one hook result, right for User today
+			// and silently wrong the moment the two relations want different
+			// filtering. It also reads better below, where two selects reading
+			// usersOpts said nothing about which was which.
+			optsVar := lowerCamel(f.Name) + "Opts"
 			if !seenRelImport[hook] {
 				imp.WriteString("import { " + hook + " } from \"@/hooks/use-" + rel.PluralKebab + "\";\n")
 				seenRelImport[hook] = true

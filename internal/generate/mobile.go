@@ -846,6 +846,14 @@ __DETAIL_ROWS__
 // or (later) a bottom sheet. Fields: text/number/textarea/toggle for scalars,
 // image upload for file fields, chip picker for belongs_to.
 func (g *Generator) writeMobileFormComponent(names Names) error {
+	path := filepath.Join(g.mobileRoot(), "components", "resource-forms", names.PluralKebab+"-form.tsx")
+	return writeFileWithDirs(path, g.mobileFormSource(names))
+}
+
+// mobileFormSource is the form's text, split from the write so a test can read
+// it. The desktop generator has had this shape all along, which is why its
+// twin of grit#209 was reachable by a unit test and this one was not.
+func (g *Generator) mobileFormSource(names Names) string {
 	var (
 		extraImports strings.Builder
 		stateLines   strings.Builder
@@ -885,8 +893,11 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			fk := f.FKColumnName()
 			fkCamel := lowerCamel(fk)
 			fkSetter := "set" + toPascalCase(fk)
-			optsVar := lowerCamel(relNames.Plural) + "Opts"
-			queryVar := lowerCamel(relNames.Plural) + "Query"
+			// After the field, not the target model: see the same fix in
+			// desktop_client.go. Two relations to one model collided here
+			// twice over, on both the query and the options (grit#209).
+			optsVar := lowerCamel(f.Name) + "Opts"
+			queryVar := lowerCamel(f.Name) + "Query"
 			stateLines.WriteString("  const [" + fkCamel + ", " + fkSetter + "] = useState(i." + fk + " ?? \"\");\n")
 			// Load a large first page so the picker isn't silently capped at the
 			// list default (20). Covers the overwhelming majority of belongs_to
@@ -1115,8 +1126,7 @@ __PICK_SHEET__    </View>
 	content = strings.ReplaceAll(content, "__PAYLOAD__", payload.String())
 	content = strings.ReplaceAll(content, "__FIELDS__", strings.TrimRight(fieldsJSX.String(), "\n"))
 
-	path := filepath.Join(g.mobileRoot(), "components", "resource-forms", names.PluralKebab+"-form.tsx")
-	return writeFileWithDirs(path, content)
+	return content
 }
 
 func (g *Generator) writeMobileCreateScreen(names Names) error {

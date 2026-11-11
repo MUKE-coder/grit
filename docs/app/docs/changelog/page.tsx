@@ -72,6 +72,80 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.5 */}
+            <div className="mb-12" id="v3.505.5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.5
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two relations to the same model named one variable twice</h3>
+                <CodeBlock
+                  language="text"
+                  code={`grants-form.tsx(25,9): error TS2451: Cannot redeclare block-scoped variable 'usersOpts'.
+grants-form.tsx(26,9): error TS2451: Cannot redeclare block-scoped variable 'usersOpts'.`}
+                />
+                <p>
+                  grit#209. The desktop form builder declared the options hook
+                  once per relation and named the variable after the{' '}
+                  <em>target</em> model, so a resource with two{' '}
+                  <code>belongs_to</code> fields pointing at the same model
+                  produced a form that did not compile, and{' '}
+                  <code>pnpm type-check</code> failed for the whole monorepo.
+                </p>
+                <p>
+                  Not an exotic shape. &ldquo;A credit granted to one user by
+                  another&rdquo; is enough, and <code>--owned-by user</code>
+                  makes it three relations to one model, so the likeliest way
+                  to meet it is by accident.
+                </p>
+                <CodeBlock
+                  language="diff"
+                  code={`- const usersOpts = useUsers().data ?? [];
+- const usersOpts = useUsers().data ?? [];
++ const approvedByOpts = useUsers().data ?? [];
++ const requestedByOpts = useUsers().data ?? [];`}
+                />
+                <p>
+                  Named after the field, which is the reporter&apos;s preferred
+                  fix and the readable one: two selects both reading{' '}
+                  <code>usersOpts</code> said nothing about which was which.
+                  Deduplicating by target model would also have compiled and is
+                  the wrong fix, because both selects would then share one hook
+                  result, right for User today and silently wrong the moment
+                  the two relations want different filtering.
+                </p>
+
+                <h4>The Expo form had it twice over</h4>
+                <p>
+                  Not in the report: found by grepping for the pattern the
+                  desktop bug was an instance of. The mobile form builder
+                  declares two variables per relation, the query and the
+                  options, and both were named after the target. The admin and
+                  the web app are unaffected, as the reporter said: the admin
+                  resource files are declarative and have no local variable to
+                  collide.
+                </p>
+                <p>
+                  The mobile half needed the form&apos;s text split from its
+                  write, which is the shape the desktop generator has always
+                  had. That is why one of the two was reachable by a unit test
+                  and the other was not.
+                </p>
+                <p>
+                  Verified against the real toolchain rather than the
+                  generator&apos;s output alone: the reporter&apos;s exact
+                  command on a fresh triple-plus-desktop project, then{' '}
+                  <code>tsc</code> with zero errors, and the two old names put
+                  back by hand to confirm the same file still produces their
+                  TS2451 without the fix.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.4 */}
             <div className="mb-12" id="v3.505.4">
               <div className="flex items-center gap-3 mb-4">

@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.505.5 - November 11, 2026
+
+### Two relations to the same model named one variable twice
+
+```text
+grants-form.tsx(25,9): error TS2451: Cannot redeclare block-scoped variable 'usersOpts'.
+grants-form.tsx(26,9): error TS2451: Cannot redeclare block-scoped variable 'usersOpts'.
+```
+
+grit#209. The desktop form builder declared the options hook once per relation and named the variable after the *target* model, so a resource with two `belongs_to` fields pointing at the same model produced a form that did not compile, and `pnpm type-check` failed for the whole monorepo.
+
+Not an exotic shape. &ldquo;A credit granted to one user by another&rdquo; is enough, and `--owned-by user` makes it three relations to one model, so the likeliest way to meet it is by accident.
+
+```diff
+- const usersOpts = useUsers().data ?? [];
+- const usersOpts = useUsers().data ?? [];
++ const approvedByOpts = useUsers().data ?? [];
++ const requestedByOpts = useUsers().data ?? [];
+```
+
+Named after the field, which is the reporter's preferred fix and the readable one: two selects both reading `usersOpts` said nothing about which was which. Deduplicating by target model would also have compiled and is the wrong fix, because both selects would then share one hook result, right for User today and silently wrong the moment the two relations want different filtering.
+
+#### The Expo form had it twice over
+
+Not in the report: found by grepping for the pattern the desktop bug was an instance of. The mobile form builder declares two variables per relation, the query and the options, and both were named after the target. The admin and the web app are unaffected, as the reporter said: the admin resource files are declarative and have no local variable to collide.
+
+The mobile half needed the form's text split from its write, which is the shape the desktop generator has always had. That is why one of the two was reachable by a unit test and the other was not.
+
+Verified against the real toolchain rather than the generator's output alone: the reporter's exact command on a fresh triple-plus-desktop project, then `tsc` with zero errors, and the two old names put back by hand to confirm the same file still produces their TS2451 without the fix.
+
+
 ## v3.505.4 - November 11, 2026
 
 ### A project can declare its own error codes
