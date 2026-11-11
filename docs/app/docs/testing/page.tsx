@@ -458,6 +458,42 @@ func TestAValidReferenceIsAccepted(t *testing.T) {
                 and this guard then catches every test that needed them.
               </p>
 
+              <h2 id="a-caller-who-is-not-an-admin" className="mt-10">
+                A caller who holds a permission and is not an administrator
+              </h2>
+              <p>
+                <code>testkit.User(t, db, email, models.RoleUser)</code> makes
+                somebody with no permissions at all, and{' '}
+                <code>models.RoleAdmin</code> makes somebody with all of them.
+                For a long time those were the only two, which is fine until the
+                thing under test is what sits between them.
+              </p>
+              <p>
+                An ADMIN is exempt from ownership scoping. So a test that signs
+                in as one and reads a row proves the handler works, and proves
+                nothing about who may read it. On a{' '}
+                <code>--confidential</code> resource it is worse than nothing:
+                an administrator is meant to see no rows there, so the test
+                asserts the opposite of the rule and fails on a resource that is
+                behaving correctly.
+              </p>
+              <CodeBlock
+                language="go"
+                code={`// A caller holding exactly these keys, on a role of their own.
+owner := testkit.Granted(t, db, "owner@example.com", "records.view", "records.edit")
+
+// And the third tier of a --confidential resource: reads rows they do not own.
+reader := testkit.Granted(t, db, "reader@example.com", "records.view", "records.confidential")`}
+              />
+              <p>
+                The grants go on a role created for that user, so two tests in
+                one package cannot widen each other&apos;s caller, and the grant
+                cache is invalidated before the call returns. Without that last
+                part the first lookup for a new user is cached as &ldquo;no
+                grants&rdquo; and the permission never takes effect, which reads
+                as a 403 from a caller who was granted the thing.
+              </p>
+
               <h2 id="what-ships" className="mt-10">What ships in your project</h2>
               <p>
                 A scaffolded project arrives with a populated suite, not just the

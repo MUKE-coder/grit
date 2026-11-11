@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/codefmt"
@@ -413,6 +415,23 @@ func (g *Generator) injectAll(names Names) error {
 			names.Plural, names.PluralPascal,
 			names.Plural, names.PluralPascal, actions,
 		)
+		// This resource's existing entry comes out first.
+		//
+		// injectBefore is idempotent on the text it is given, and the block
+		// differs between flags only in its Actions line, so regenerating a
+		// resource with a flag change appended a second entry rather than
+		// replacing the first: `grit generate resource X --owned-by user
+		// --confidential` over an existing X left X listed twice, with four
+		// actions and then five. Harmless to Granted, which is a linear scan,
+		// and it doubles the resource's rows in the admin's permission tree
+		// and doubles what Keys() returns (grit#205). Fifteen resources
+		// adopted the flag at once, so 75 duplicate keys.
+		//
+		// Inside the generated region only: a resource whose plural happens to
+		// equal a hand-written module key ("content", "system") must not have
+		// that module cut out from under it.
+		removeGeneratedPermissionModule(permsFile, names.Plural)
+
 		// Anchored on the END marker: injectBefore inserts above its anchor, so
 		// using the start marker would place entries outside the machine-written
 		// region and removal would not find them.
@@ -800,4 +819,39 @@ func guessLucideIcon(name string) string {
 		}
 	}
 	return "Database"
+}
+
+// removeGeneratedPermissionModule deletes one resource's entry from the
+// machine-written region of internal/authz/permissions.go, leaving a
+// hand-written entry with the same key alone.
+//
+// Between the two markers and nowhere else. coreModules() uses the same
+// "Key:  %q," line for its own modules, so a resource pluralising to "content"
+// or "system" would otherwise take a scaffold module with it.
+func removeGeneratedPermissionModule(path, plural string) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	src := string(raw)
+	start := strings.Index(src, "// grit:perms:auto-start")
+	end := strings.Index(src, "// grit:perms:auto-end")
+	if start < 0 || end < 0 || end < start {
+		return
+	}
+
+	region := src[start:end]
+	// The block as the injection writes it: a module literal at two tabs,
+	// opening on its own line, whose first field is the key. Non-greedy to the
+	// first closing brace at that same indentation, which is its own: every
+	// brace inside it is deeper.
+	re := regexp.MustCompile(`(?s)\t\t\{\n\t\t\tKey:  ` + regexp.QuoteMeta(strconv.Quote(plural)) + `,\n.*?\n\t\t\},\n`)
+	trimmed := re.ReplaceAllString(region, "")
+	if trimmed == region {
+		return
+	}
+	if err := writeRepairedGo(path, src[:start]+trimmed+src[end:]); err != nil {
+		// Not fatal: the generate carries on and the duplicate is cosmetic.
+		fmt.Println("  ⚠ could not remove the old permissions entry: " + err.Error())
+	}
 }

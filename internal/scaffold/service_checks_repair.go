@@ -47,6 +47,11 @@ func RepairGeneratedServiceChecks(src, module string) (string, bool) {
 	// append and the statement, all of which the precondition pass edits. Run
 	// first, it would move the anchors out from under the pass that has to run
 	// on a pre-grid service.
+	// The comment that was wrong, wherever it is. Independent of everything
+	// below, and run on an already-repaired service for the same reason the
+	// precondition pass is: the projects that need it most are the oldest.
+	src = dropTheGridOwnershipClaim(src)
+
 	alreadyChecked := strings.Contains(src, "func (s *"+pascal+"Service) checked(")
 	if alreadyChecked {
 		out := checkBulkEditVersion(src, pascal)
@@ -90,6 +95,23 @@ func RepairGeneratedServiceChecks(src, module string) (string, bool) {
 // Repaired twice, the second run has to change nothing. checkBulkEditVersion
 // is the one pass that can run on an already-repaired service, so it is also
 // the one that could report a change on every upgrade for ever.
+
+// dropTheGridOwnershipClaim removes BulkEdit's claim to scope an owned
+// resource, which it did not.
+//
+// The sentence is why nobody looked: it reads as the reassurance that the
+// question has been considered, directly above the one query in the service
+// that had no scope on it. RepairGridOwnerScoping adds the scope; this takes
+// away the sentence that said it was already there. Both halves, because a
+// project that is repaired and still carries the claim tells the next reader
+// the same lie.
+func dropTheGridOwnershipClaim(src string) string {
+	return strings.Replace(src,
+		"\t// Only rows this caller may touch. An owned resource scopes to the caller,\n"+
+			"\t// so a guessed id in the grid changes nothing rather than somebody else's\n"+
+			"\t// row.\n",
+		"\t// Only rows this caller may touch.\n", 1)
+}
 
 // addAuthzImport brings in internal/authz if nothing else has.
 func addAuthzImport(src, module string) (string, bool) {

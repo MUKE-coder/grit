@@ -72,6 +72,150 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.0 */}
+            <div className="mb-12" id="v3.505.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The grid was the one way into an owned table that ignored ownership</h3>
+                <p>
+                  Found by reading the three tests grit#205 reported as
+                  failing, which turned out to be reporting something larger
+                  than a test bug. On every <code>--owned-by</code> resource,
+                  the bulk-edit grid took a list of row ids and loaded exactly
+                  those rows with no scope on the query at all.
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`POST /api/v1/memos/bulk-edit    # the ids belong to another user
+200 OK  {"data":{"affected":1},"message":"1 memo updated"}`}
+                />
+                <p>
+                  The list refused those rows. The detail route answered 404.
+                  Patch refused the write. This one did it and reported
+                  success, so a caller holding nothing but{' '}
+                  <code>memos.edit</code> could rewrite any other
+                  account&apos;s row by putting its id in the grid. Nothing in
+                  a project would have noticed, because the response says how
+                  many rows were affected and not whose.
+                </p>
+                <p>
+                  <code>BulkCreate</code> had the matching hole pointing the
+                  other way: it decoded the row it was handed, owner column
+                  included, and believed it, so the grid could file rows under
+                  somebody else&apos;s account. A single create has stamped the
+                  owner from the session since ownership shipped.
+                </p>
+                <p>
+                  Both arrived with the grid in v3.372.0, and both were
+                  unchecked: <code>grit doctor</code> looked at List, Export,
+                  Bulk, GetByID and load, and not at the two newest methods in
+                  the file. It looks at all seven now.
+                </p>
+                <p>
+                  There was also a comment directly above the unscoped query
+                  saying an owned resource is scoped to the caller here. That
+                  sentence is most of why nobody looked, so it is removed from
+                  existing projects too and not only from the generator.
+                </p>
+
+                <h4>It reaches projects that already exist</h4>
+                <CodeBlock language="bash" code={`grit upgrade`} />
+                <p>
+                  A generator fix reaches resources generated from here on and
+                  nothing that exists, and a project with twenty owned
+                  resources is not going to regenerate twenty resources. So{' '}
+                  <code>grit upgrade</code> scopes the grid in every generated
+                  service it finds, reading the owner column out of the
+                  service&apos;s own List, and prints the name of any service
+                  it could not read so that one can be checked by hand. A
+                  repaired service is byte-identical to a generated one, which
+                  a test compares rather than trusts.
+                </p>
+
+                <h4>And three bugs in --confidential, one release old</h4>
+                <ul>
+                  <li>
+                    <strong>grit#204:</strong> <code>grit upgrade</code> wrote
+                    an <code>internal/authz/actor.go</code> that imports{' '}
+                    <code>internal/confidential</code> and never wrote the
+                    package, so an upgraded project did not compile: exactly
+                    one file referenced it and nothing provided it. A fresh{' '}
+                    <code>grit new</code> was fine, which is the shape of
+                    divergence that goes unnoticed. A test now reads every
+                    internal import in the set of files that travels on
+                    upgrade and fails if the set does not also write the
+                    package.
+                  </li>
+                  <li>
+                    <strong>grit#205:</strong> a{' '}
+                    <code>--confidential</code> resource generated three tests
+                    that sign in as an ADMIN and expect to see the row, which
+                    is exactly what the flag removes. So the generator wrote
+                    the contract into the resource and the opposite of the
+                    contract into its tests, and the flag was red on first use:
+                    fifteen resources adopted at once meant 45 failing tests.
+                    They act as the row&apos;s owner now, and two tests the
+                    flag always needed are generated beside them: an
+                    administrator gets an empty list and a 404, and a holder of{' '}
+                    <code>&lt;resource&gt;.confidential</code> sees every row.
+                    Both of those were asserted nowhere in a generated project.
+                  </li>
+                  <li>
+                    <strong>grit#206:</strong> the{' '}
+                    <code>owned-resource-unscoped</code> check knew{' '}
+                    <code>authz.ScopeOwned</code> and not{' '}
+                    <code>authz.ScopeConfidential</code>, so it reported every
+                    correctly scoped confidential resource as wide open. The
+                    check is an error and the docs present{' '}
+                    <code>grit doctor</code> as a CI gate, which made the
+                    quickest route to a green pipeline dropping the flag.
+                  </li>
+                </ul>
+
+                <h4>The part of grit#206 that was not about --confidential</h4>
+                <p>
+                  The same report noticed <code>grit doctor</code> saying
+                  &ldquo;27 checks over 9 resource(s)&rdquo; on a project with
+                  nineteen. Every per-resource check was skipping every
+                  resource whose name is more than one word.
+                </p>
+                <p>
+                  The handler and service maps dropped any file with an
+                  underscore in its name, on the reasoning that those are the
+                  generator&apos;s extra handlers:{' '}
+                  <code>product_import.go</code>, <code>page_tree.go</code>.
+                  It is also where a two-word resource lives.{' '}
+                  <code>CartItem</code> is <code>cart_item.go</code>, so it was
+                  discarded, and with it every ownership, PII, tenancy and
+                  append-only check that resource would have had. Which
+                  resources got checked depended on how they happened to be
+                  named, which is why the result looked arbitrary.
+                </p>
+                <p>
+                  They are keyed by file name now and looked up by the
+                  resource&apos;s own, so an extra handler is still not
+                  mistaken for a resource and a two-word resource is no longer
+                  invisible. <code>grit doctor</code> on{' '}
+                  <code>examples/commerce</code> went from four resources to
+                  five.
+                </p>
+                <p>
+                  Smaller, from the same report: adopting{' '}
+                  <code>--confidential</code> on an existing resource left two
+                  entries for it in the permission catalogue, because the
+                  injection is idempotent on the whole block and the block
+                  differs between flags only in its list of actions. The old
+                  entry is removed before the new one goes in.
+                </p>
+              </div>
+            </div>
+
             {/* v3.504.0 */}
             <div className="mb-12" id="v3.504.0">
               <div className="flex items-center gap-3 mb-4">

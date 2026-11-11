@@ -513,7 +513,7 @@
     "title": "Triple Tech Kit"
   },
   "/docs/testing": {
-    "keywords": "testing k6 load test smoke average stress spike soak breakpoint pentest penetration test methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm audit codeql ptes owasp wstg",
+    "keywords": "testing k6 load test smoke average stress spike soak breakpoint pentest penetration test methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm audit codeql ptes owasp wstg testkit granted permission non-admin owner sign in as",
     "section": "Security & Testing",
     "title": "Performance & Pentest Testing"
   },

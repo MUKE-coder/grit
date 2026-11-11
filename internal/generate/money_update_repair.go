@@ -240,6 +240,73 @@ func moneyFieldsOf(apiRoot, pascal string) ([]string, error) {
 	return moneyFieldsIn(string(raw)), nil
 }
 
+// ownerGridStringsFor reads a service's ownership scoping and returns the two
+// strings the grid methods need: the scope for BulkEdit's load, and the owner
+// stamp for BulkCreate's rows.
+//
+// It reads them off the service rather than taking them as arguments because
+// this is a repair: the caller has a file and a model name, and the resource
+// definition that produced them is long gone. The service's own List is the
+// record of what --owned-by it was generated with, and if it is not scoped
+// then neither are the grid methods, which is correct.
+//
+// Returns "", "" for a shared resource, and for one whose List has been
+// hand-edited past recognition: adding an unscoped method to an unscoped
+// service changes nothing, while guessing a column name would produce a file
+// that does not compile.
+func ownerGridStringsFor(serviceSrc, lower string) (scope, stamp string) {
+	col, perm := ownerScopeOf(serviceSrc)
+	if col == "" {
+		return "", ""
+	}
+	field := pascalFromSnake(col)
+	call := "authz.ScopeOwned(ctx, rows, \"" + col + "\")"
+	if perm != "" {
+		call = "authz.ScopeConfidential(ctx, rows, \"" + col + "\", \"" + perm + "\")"
+	}
+	scope = "\t// --owned-by: a row the caller does not own drops out here and is\n" +
+		"\t// reported as \"no such " + lower + "\" below, so a guessed id in the grid\n" +
+		"\t// changes nothing and cannot be told from a wrong one.\n" +
+		"\trows = " + call + "\n"
+	stamp = "\t\t// --owned-by: the owner is the caller here too, never the row.\n" +
+		"\t\titem." + field + " = authz.UserIDFrom(ctx)\n"
+	return scope, stamp
+}
+
+// ownerScopeOf is the owner column a service scopes its list by, and the
+// permission when it is --confidential. "", "" when nothing scopes it.
+func ownerScopeOf(serviceSrc string) (column, permission string) {
+	if m := confidentialScopeRe.FindStringSubmatch(serviceSrc); m != nil {
+		return m[1], m[2]
+	}
+	if m := ownedScopeRe.FindStringSubmatch(serviceSrc); m != nil {
+		return m[1], ""
+	}
+	return "", ""
+}
+
+var (
+	confidentialScopeRe = regexp.MustCompile(`authz\.ScopeConfidential\(ctx, query, "([a-z0-9_]+)", "([a-z0-9_.]+)"\)`)
+	ownedScopeRe        = regexp.MustCompile(`authz\.ScopeOwned\(ctx, query, "([a-z0-9_]+)"\)`)
+)
+
+// pascalFromSnake is user_id -> UserID, which is the Go field name the
+// generator gave the owner column.
+func pascalFromSnake(col string) string {
+	parts := strings.Split(col, "_")
+	out := ""
+	for _, p := range parts {
+		switch p {
+		case "id":
+			out += "ID"
+		case "":
+		default:
+			out += strings.ToUpper(p[:1]) + p[1:]
+		}
+	}
+	return out
+}
+
 // repairMoneyUpdateSource inserts the helper and its four call sites, and
 // returns the reason when it cannot.
 func repairMoneyUpdateSource(src, pascal string, fields []string) (string, string) {
@@ -305,7 +372,12 @@ func repairMoneyUpdateSource(src, pascal string, fields []string) (string, strin
 	if !strings.Contains(out, "func (s *"+pascal+"Service) BulkCreate(") {
 		lower := strings.ToLower(pascal)
 		plural := Pluralize(toSnakeCase(pascal))
-		out = strings.TrimRight(out, "\n") + "\n\n" + gridServiceMethodsSource(pascal, lower, plural)
+		// Scoped the same way this service's own List is. Written without
+		// them, the two grid methods would be the one way into the table that
+		// ignores ownership, delivered by an upgrade whose whole purpose is
+		// to close that.
+		gridScope, gridStamp := ownerGridStringsFor(out, lower)
+		out = strings.TrimRight(out, "\n") + "\n\n" + gridServiceMethodsSource(pascal, lower, plural, gridScope, gridStamp)
 	}
 
 	if len(fields) > 0 && !strings.Contains(out, "/internal/money\"") {

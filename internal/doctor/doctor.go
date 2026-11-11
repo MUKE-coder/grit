@@ -218,20 +218,29 @@ func loadProject(root string) (*project, error) {
 			p.snake[m.Name] = strings.TrimSuffix(name, ".go")
 		}
 	}
+	// Every handler and service, keyed by its file name.
+	//
+	// These are read only as p.handlers[snake] and p.services[snake], where
+	// snake is the resource's own model file, so an exact name is all the
+	// discrimination needed: product_import.go is keyed "product_import" and
+	// nothing ever looks that up.
+	//
+	// Until v3.505.0 this skipped every file whose name contained an
+	// underscore, on the reasoning that those are the generator's extra
+	// handlers (_import, _tree, _variant). It is also every resource whose
+	// name is more than one word: CartItem lives in cart_item.go, so it was
+	// dropped, and with it every per-resource check. A project reported
+	// "9 resource(s)" while having 19, and which nine depended on how the
+	// resources happened to be named (grit#206).
 	for name, src := range goFiles(filepath.Join(internal, "handlers")) {
-		switch {
-		case strings.HasSuffix(name, "_public.go"):
+		if strings.HasSuffix(name, "_public.go") {
 			p.publics[strings.TrimSuffix(name, "_public.go")] = src
-		case strings.Contains(name, "_"):
-			// _import.go, _tree.go, _variant.go: not the resource's own handler.
-		default:
-			p.handlers[strings.TrimSuffix(name, ".go")] = src
+			continue
 		}
+		p.handlers[strings.TrimSuffix(name, ".go")] = src
 	}
 	for name, src := range goFiles(filepath.Join(internal, "services")) {
-		if !strings.Contains(name, "_") {
-			p.services[strings.TrimSuffix(name, ".go")] = src
-		}
+		p.services[strings.TrimSuffix(name, ".go")] = src
 	}
 	// Every Go file in the API, for the checks that are not about one resource.
 	// An application's own outbox relay can be anywhere: a service, a command, a
@@ -391,7 +400,18 @@ func checkOwnedScoping(p *project) []Finding {
 		}
 		service, handler := p.services[p.snake[name]], p.handlers[p.snake[name]]
 		// Since v3.224.0 the service scopes; before it, the handler did.
-		newShape := strings.Contains(service, "authz.ScopeOwned(") || strings.Contains(service, "authz.Owns(")
+		//
+		// ScopeConfidential and OwnsConfidential count. They are what
+		// --confidential generates in place of ScopeOwned and Owns, and they
+		// are stricter, not absent: an ADMIN is not exempt from them. Looking
+		// only for the plain names reported seven correctly scoped resources
+		// as wide open and, because this check is an error and grit doctor is
+		// documented as a CI gate, made the quickest route to a green
+		// pipeline dropping the flag (grit#206).
+		newShape := strings.Contains(service, "authz.ScopeOwned(") ||
+			strings.Contains(service, "authz.Owns(") ||
+			strings.Contains(service, "authz.ScopeConfidential(") ||
+			strings.Contains(service, "authz.OwnsConfidential(")
 		oldShape := strings.Contains(handler, "authz.ScopeToOwner(") || strings.Contains(handler, "authz.OwnsOr404(")
 		if !newShape && !oldShape {
 			out = append(out, Finding{
@@ -405,12 +425,26 @@ func checkOwnedScoping(p *project) []Finding {
 		if !newShape {
 			continue // an older project, guarded the way its generation did
 		}
+		// A --confidential resource scopes with the stricter pair. Asking for
+		// the plain names reported every method of every such resource as
+		// unscoped, which is the opposite of true (grit#206).
+		scope, owns := "authz.ScopeOwned(", "authz.Owns("
+		if strings.Contains(service, "authz.ScopeConfidential(") {
+			scope, owns = "authz.ScopeConfidential(", "authz.OwnsConfidential("
+		}
 		for _, want := range []struct{ method, call string }{
-			{"List", "authz.ScopeOwned("},
-			{"Export", "authz.ScopeOwned("},
-			{"Bulk", "authz.ScopeOwned("},
-			{"GetByID", "authz.Owns("},
-			{"load", "authz.Owns("},
+			{"List", scope},
+			{"Export", scope},
+			{"Bulk", scope},
+			{"GetByID", owns},
+			{"load", owns},
+			// The grid, added in v3.505.0. BulkEdit names its rows by id and
+			// loaded them with no scope at all, so a caller holding the edit
+			// permission could rewrite any other user's row; BulkCreate read
+			// the owner out of the row it was given. Both shipped in v3.372.0
+			// and were not checked here, which is most of why they lasted.
+			{"BulkEdit", scope},
+			{"BulkCreate", "authz.UserIDFrom("},
 		} {
 			body, found := goMethod(service, name+"Service) "+want.method+"(")
 			if !found || strings.Contains(body, want.call) {

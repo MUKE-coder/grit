@@ -118,6 +118,20 @@ func (s *InvoiceService) Bulk(ctx context.Context, action string, ids []string, 
 	scope = authz.ScopeOwned(ctx, scope, "user_id")
 	return InvoiceBulkResult{}, nil
 }
+
+func (s *InvoiceService) BulkEdit(ctx context.Context, edits []InvoiceGridEdit) ([]string, []InvoiceRowError, error) {
+	var allowed []models.Invoice
+	rows := s.db(ctx).Model(&models.Invoice{}).Where("id IN ?", ids)
+	rows = authz.ScopeOwned(ctx, rows, "user_id")
+	return nil, nil, rows.Find(&allowed).Error
+}
+
+func (s *InvoiceService) BulkCreate(ctx context.Context, rows []map[string]interface{}) ([]models.Invoice, []InvoiceRowError, error) {
+	for i := range items {
+		item.UserID = authz.UserIDFrom(ctx)
+	}
+	return nil, nil, nil
+}
 `,
 		"apps/api/internal/handlers/invoice.go": "package handlers\n\n" +
 			"type CreateInvoiceRequest struct {\n" +
@@ -692,5 +706,136 @@ func TestScoutProperlyConfiguredIsSilent(t *testing.T) {
 		if f.Resource == "SCOUT_PASSWORD" {
 			t.Fatalf("a configured Scout still reported: %s", f.Message)
 		}
+	}
+}
+
+// grit#206, first half: --confidential generates the stricter scope, and the
+// check only knew the plain one, so seven correctly scoped resources were
+// reported as wide open. grit doctor exits non-zero and is documented as a CI
+// gate, which made the quickest route to a green pipeline dropping the flag.
+func TestAConfidentialResourceIsNotReportedAsUnscoped(t *testing.T) {
+	src := cleanProject()["apps/api/internal/services/invoice.go"]
+	src = strings.ReplaceAll(src, `authz.ScopeOwned(ctx, query, "user_id")`,
+		`authz.ScopeConfidential(ctx, query, "user_id", "invoices.confidential")`)
+	src = strings.ReplaceAll(src, `authz.ScopeOwned(ctx, scope, "user_id")`,
+		`authz.ScopeConfidential(ctx, scope, "user_id", "invoices.confidential")`)
+	src = strings.ReplaceAll(src, `authz.ScopeOwned(ctx, rows, "user_id")`,
+		`authz.ScopeConfidential(ctx, rows, "user_id", "invoices.confidential")`)
+	src = strings.ReplaceAll(src, "authz.Owns(ctx, &item)",
+		`authz.OwnsConfidential(ctx, &item, "invoices.confidential")`)
+
+	report := run(t, map[string]string{"apps/api/internal/services/invoice.go": src})
+	if found := fired(report, "owned-resource-unscoped"); len(found) > 0 {
+		for _, f := range found {
+			t.Errorf("%s: %s", f.Resource, f.Message)
+		}
+		t.Fatalf("a --confidential resource was reported as unscoped %d time(s); it is scoped "+
+			"more strictly, not less, and this check exits non-zero", len(found))
+	}
+}
+
+// grit#206, second half: every per-resource check skipped every resource whose
+// name is more than one word.
+//
+// The handler map dropped any file with an underscore in it, on the reasoning
+// that those are the generator's extra handlers. CartItem lives in
+// cart_item.go. A project reported "9 resource(s)" while having 19, and which
+// nine depended on how they happened to be named.
+func TestAResourceWhoseNameIsTwoWordsIsSeen(t *testing.T) {
+	files := map[string]string{
+		"apps/api/internal/models/cart_item.go": `package models
+
+type CartItem struct {
+	ID       string ` + "`" + `json:"id"` + "`" + `
+	UserID   string ` + "`" + `json:"user_id" owner:"true"` + "`" + `
+	Quantity int    ` + "`" + `json:"quantity"` + "`" + `
+}
+
+func (c *CartItem) GetOwnerID() string { return c.UserID }
+`,
+		"apps/api/internal/handlers/cart_item.go": `package handlers
+
+type BulkCartItemRequest struct {
+	IDs []string ` + "`" + `json:"ids"` + "`" + `
+}
+`,
+		// Unscoped, so this also proves the resource is not merely counted but
+		// actually checked.
+		"apps/api/internal/services/cart_item.go": `package services
+
+var cartItemListConfig = paginate.Config{Searchable: []string{"quantity"}}
+
+func (s *CartItemService) List(ctx context.Context, p paginate.Params, archived string) error {
+	return nil
+}
+`,
+	}
+	report := run(t, files)
+
+	var seen bool
+	for _, r := range report.Resources {
+		if r == "CartItem" {
+			seen = true
+		}
+	}
+	if !seen {
+		t.Fatalf("CartItem is not in %v, so every check that walks the resources skipped it", report.Resources)
+	}
+
+	found := fired(report, "owned-resource-unscoped")
+	var forCartItem int
+	for _, f := range found {
+		if strings.Contains(f.Resource, "CartItem") {
+			forCartItem++
+		}
+	}
+	if forCartItem == 0 {
+		t.Errorf("CartItem is owned and nothing scopes it, and no check said so: %+v", found)
+	}
+}
+
+// A sub-handler is still not mistaken for a resource's own. cart_item.go is
+// the CartItem handler; product_import.go is not the ProductImport handler,
+// because there is no such model.
+func TestASubHandlerIsNotAResource(t *testing.T) {
+	report := run(t, map[string]string{
+		"apps/api/internal/handlers/invoice_import.go": `package handlers
+
+type BulkInvoiceImportRequest struct{}
+`,
+	})
+	for _, r := range report.Resources {
+		if r == "InvoiceImport" {
+			t.Error("an import handler was counted as a resource of its own")
+		}
+	}
+	if len(report.Resources) != 1 || report.Resources[0] != "Invoice" {
+		t.Errorf("resources=%v, want [Invoice]", report.Resources)
+	}
+}
+
+// The grid, which was not checked at all and was the one way into an owned
+// table that ignored ownership (grit#205).
+func TestTheGridIsCheckedForOwnership(t *testing.T) {
+	src := cleanProject()["apps/api/internal/services/invoice.go"]
+	src = strings.Replace(src, `	rows = authz.ScopeOwned(ctx, rows, "user_id")
+`, "", 1)
+
+	report := run(t, map[string]string{"apps/api/internal/services/invoice.go": src})
+	found := fired(report, "owned-resource-unscoped")
+	if len(found) != 1 || found[0].Resource != "InvoiceService.BulkEdit" {
+		t.Fatalf("want one finding for BulkEdit, got %+v", found)
+	}
+}
+
+func TestBulkCreateIsCheckedForTheOwnerStamp(t *testing.T) {
+	src := cleanProject()["apps/api/internal/services/invoice.go"]
+	src = strings.Replace(src, `		item.UserID = authz.UserIDFrom(ctx)
+`, "", 1)
+
+	report := run(t, map[string]string{"apps/api/internal/services/invoice.go": src})
+	found := fired(report, "owned-resource-unscoped")
+	if len(found) != 1 || found[0].Resource != "InvoiceService.BulkCreate" {
+		t.Fatalf("want one finding for BulkCreate, got %+v", found)
 	}
 }

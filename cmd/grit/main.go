@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.504.0"
+var version = "3.505.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1815,6 +1815,23 @@ func upgradeCmd() *cobra.Command {
 				}
 				for _, line := range blocked {
 					yellow.Printf("  ⚠ %s\n", line)
+				}
+			}
+
+			// And who the grid may write. BulkEdit loaded the rows the request
+			// named with no ownership scope, so a caller holding the edit
+			// permission could rewrite any other user's row by its id, and
+			// BulkCreate took the owner out of the row it was given. Both
+			// since v3.372.0 (grit#205). After the pass above, which is what
+			// adds the two methods to a service that predates them.
+			if changed, blocked, err := generate.RepairGridOwnerScoping(filepath.Join("apps", "api")); err != nil {
+				return err
+			} else {
+				for _, line := range changed {
+					color.New(color.FgGreen).Printf("  ✓ %s\n", line)
+				}
+				for _, line := range blocked {
+					color.New(color.FgYellow).Printf("  ⚠ %s\n", line)
 				}
 			}
 

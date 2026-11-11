@@ -42,6 +42,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"{{MODULE}}/internal/appendonly"
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/config"
 	"{{MODULE}}/internal/migrate"
 	"{{MODULE}}/internal/models"
@@ -372,3 +373,36 @@ func User(tb testing.TB, db *gorm.DB, email, role string) *models.User {
 // Password is what User sets, for a test that signs in over HTTP rather than
 // with SignIn.
 const Password = "password-for-testing"
+
+// Granted is a user who holds exactly these permission keys and no role.
+//
+// A route guarded by RequireRole("ADMIN", "perm:x.view") admits an ADMIN or a
+// caller holding the permission, and a test about the second case cannot use
+// the first: an ADMIN is exempt from ownership scoping, which is the thing
+// under test. There was no way to make such a user, so the generated tests all
+// signed in as an ADMIN, and a --confidential resource's tests asserted that
+// an administrator can read rows the flag exists to hide from them (grit#205).
+//
+// The grants go on a role of this user's own rather than on an existing one,
+// so two tests in the same package cannot widen each other's caller. The
+// grant cache is keyed by user and invalidated by a generation counter, which
+// Invalidate bumps: without it the first lookup for this user is cached as
+// "no grants" and the permission never takes effect.
+func Granted(tb testing.TB, db *gorm.DB, email string, grants ...string) *models.User {
+	tb.Helper()
+
+	user := User(tb, db, email, models.RoleUser)
+
+	role := &models.Role{Name: "test-grants-" + user.ID, Description: "granted by testkit.Granted"}
+	if err := role.SetGrants(grants); err != nil {
+		tb.Fatalf("encoding grants %v: %v", grants, err)
+	}
+	if err := db.Create(role).Error; err != nil {
+		tb.Fatalf("creating the role for %s: %v", email, err)
+	}
+	if err := db.Create(&models.UserRole{UserID: user.ID, RoleID: role.ID}).Error; err != nil {
+		tb.Fatalf("granting %v to %s: %v", grants, email, err)
+	}
+	authz.Invalidate()
+	return user
+}

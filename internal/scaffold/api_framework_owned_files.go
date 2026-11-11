@@ -216,6 +216,17 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "authz", "actor.go"):      authzActorGo(),
 		filepath.Join(apiRoot, "internal", "authz", "actor_test.go"): authzActorTestGo(),
 
+		// The registry actor.go imports, in the same set as actor.go and for
+		// that reason alone. In v3.504.0 it was written by the generator only,
+		// so `grit upgrade` delivered an actor.go importing a package the
+		// project had never been given and left it not compiling: exactly one
+		// file referenced it and nothing provided it (grit#204).
+		//
+		// TestEveryOwnedImportIsDeliveredToo keeps the pair together: a file
+		// in this map may not import an internal package this map does not
+		// also write.
+		filepath.Join(apiRoot, "internal", "confidential", "confidential.go"): apiConfidentialGo(),
+
 		// Feature flags: the rules model and the engine that reads it, a
 		// set like the webhook cluster. In the API map they were written once
 		// and never again, so no flag fix reached an existing project.

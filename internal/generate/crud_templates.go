@@ -705,6 +705,54 @@ func (h *{{Pascal}}Handler) BulkCreate(c *gin.Context) {
 `)
 }
 
+// ownerGridScopeSource and ownerGridStampSource are the two lines that close
+// the grid's ownership hole, as text.
+//
+// Here, beside gridRowsLoad and for the same reason: the generator writes them
+// into a new service and RepairGridOwnerScoping writes them into an existing
+// one, and an upgraded service that differs from a generated one by a comment
+// is a service nobody can reason about. Both callers pass ownerName derived
+// the same way, so the output is identical either way.
+func ownerGridScopeSource(ownerName, lower, call string) string {
+	return "\t// --owned-by " + ownerName + ": a row the caller does not own drops out\n" +
+		"\t// here and is reported as \"no such " + lower + "\" below, so a\n" +
+		"\t// guessed id in the grid changes nothing and cannot be told from a\n" +
+		"\t// wrong one.\n" +
+		"\trows = " + call + "\n"
+}
+
+func ownerGridStampSource(ownerName, column, field string) string {
+	return "\t\t// --owned-by " + ownerName + ": the owner is the caller here too.\n" +
+		"\t\t// Before the stamp, a row in the grid carried its own " + column + " and\n" +
+		"\t\t// the insert believed it, so the grid could file rows under\n" +
+		"\t\t// somebody else. Stamped before validation because the column is\n" +
+		"\t\t// binding:\"required\" and a grid has no business typing it.\n" +
+		"\t\titem." + field + " = authz.UserIDFrom(ctx)\n"
+}
+
+// gridRowsLoad is BulkEdit's load of the rows the request named.
+//
+// One function because two things write it: the generator, and the repair that
+// scopes a service generated before v3.505.0. They have to produce the same
+// bytes, and TestRepairedBulkEditIsTheGeneratedBulkEdit compares them, so a
+// second copy of this text is a test failure rather than a quiet divergence.
+//
+// scope is "" for a shared resource, and then this is exactly what every
+// release up to v3.504.0 emitted: an unowned resource's BulkEdit does not
+// change, which is what keeps the repair's anchor findable in a real project.
+func gridRowsLoad(pascal, plural, scope string) string {
+	model := "s.db(ctx).Model(&models." + pascal + `{}).Where("id IN ?", ids)`
+	load := "\tif err := " + model + ".Find(&allowed).Error; err != nil {\n"
+	if scope != "" {
+		load = "\trows := " + model + "\n" +
+			scope +
+			"\tif err := rows.Find(&allowed).Error; err != nil {\n"
+	}
+	return load +
+		"\t\treturn nil, nil, fmt.Errorf(\"loading " + plural + " to edit: %w\", err)\n" +
+		"\t}\n"
+}
+
 // gridServiceMethodsSource writes BulkEdit and BulkCreate: what the admin's
 // spreadsheet editors call.
 //
@@ -712,11 +760,19 @@ func (h *{{Pascal}}Handler) BulkCreate(c *gin.Context) {
 // them to a service generated before they existed, and an upgraded service that
 // differs from a generated one by so much as a comment is a service nobody can
 // reason about. One text, two callers.
-func gridServiceMethodsSource(pascal, lower, plural string) string {
+//
+// ownerGridScope and ownerGridStamp are passed in rather than left as
+// placeholders for serviceSource's own Replacer. That Replacer inserts this
+// whole function's output as {{GRID_METHODS}} and does not rescan what it
+// inserts, so a placeholder left in here reaches the generated file verbatim.
+// Both are "" for a resource that is not --owned-by.
+func gridServiceMethodsSource(pascal, lower, plural, ownerGridScope, ownerGridStamp string) string {
 	r := strings.NewReplacer(
 		"{{Pascal}}", pascal,
 		"{{lower}}", lower,
 		"{{plural}}", plural,
+		"{{GRID_ROWS}}", gridRowsLoad(pascal, plural, ownerGridScope),
+		"{{OWNER_GRID_STAMP}}", ownerGridStamp,
 	)
 	return r.Replace(`// {{Pascal}}RowError is one row of a grid that could not be saved, and why.
 //
@@ -793,18 +849,13 @@ func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}Grid
 		return nil, nil, nil
 	}
 
-	// Only rows this caller may touch. An owned resource scopes to the caller,
-	// so a guessed id in the grid changes nothing rather than somebody else's
-	// row.
+	// Only rows this caller may touch.
 	ids := make([]string, 0, len(writes))
 	for _, w := range writes {
 		ids = append(ids, w.id)
 	}
 	var allowed []models.{{Pascal}}
-	if err := s.db(ctx).Model(&models.{{Pascal}}{}).Where("id IN ?", ids).Find(&allowed).Error; err != nil {
-		return nil, nil, fmt.Errorf("loading {{plural}} to edit: %w", err)
-	}
-	// A policy rule narrows this further than the route's permission did.
+{{GRID_ROWS}}	// A policy rule narrows this further than the route's permission did.
 	// Without it, a rule in internal/policies was evadable by selecting the
 	// rows in the grid and editing them here: Patch consults the policy
 	// through s.load and this path did not (review 2.4).
@@ -943,7 +994,7 @@ func (s *{{Pascal}}Service) BulkCreate(ctx context.Context, rows []map[string]in
 		item.ID = ""
 		item.CreatedAt = time.Time{}
 		item.UpdatedAt = time.Time{}
-		// The binding: tags, which encoding/json does not know about.
+{{OWNER_GRID_STAMP}}		// The binding: tags, which encoding/json does not know about.
 		//
 		// A single create is bound by gin, so required and min are enforced
 		// before the handler runs. This path decodes the row itself, and
@@ -1087,6 +1138,7 @@ func (g *Generator) serviceSource(names Names) string {
 
 	// --owned-by: scope, guard and stamp, from the actor on the context.
 	ownerScope, ownerExportScope, ownerBulkScope, ownerGuard, ownerStamp := "", "", "", "", ""
+	ownerGridScope, ownerGridStamp := "", ""
 	if p.owned {
 		// --confidential swaps the scope for the one that does not exempt an
 		// ADMIN. Everything else about ownership is unchanged, which is why
@@ -1094,11 +1146,13 @@ func (g *Generator) serviceSource(names Names) string {
 		// between the two resources is exactly who is let through.
 		scopeCall := "authz.ScopeOwned(ctx, query, \"" + p.ownerCol + "\")"
 		bulkCall := "authz.ScopeOwned(ctx, scope, \"" + p.ownerCol + "\")"
+		gridCall := "authz.ScopeOwned(ctx, rows, \"" + p.ownerCol + "\")"
 		guardCall := "authz.Owns(ctx, &item)"
 		exempt := "ADMIN, and the system, are exempt."
 		if p.confidential {
 			scopeCall = "authz.ScopeConfidential(ctx, query, \"" + p.ownerCol + "\", \"" + p.confidentialPerm + "\")"
 			bulkCall = "authz.ScopeConfidential(ctx, scope, \"" + p.ownerCol + "\", \"" + p.confidentialPerm + "\")"
+			gridCall = "authz.ScopeConfidential(ctx, rows, \"" + p.ownerCol + "\", \"" + p.confidentialPerm + "\")"
 			guardCall = "authz.OwnsConfidential(ctx, &item, \"" + p.confidentialPerm + "\")"
 			exempt = "--confidential: an ADMIN is NOT exempt. Only the owner, or a\n\t// holder of " + p.confidentialPerm + ", reads these rows."
 		}
@@ -1118,6 +1172,18 @@ func (g *Generator) serviceSource(names Names) string {
 			"\n\t}\n"
 		ownerStamp = "\t// --owned-by " + p.ownerName + ": the owner is whoever is signed in, never the body." +
 			"\n\titem." + p.ownerField + " = authz.UserIDFrom(ctx)\n"
+		// The grid, which is a second way into the same table and was not
+		// scoped at all. BulkEdit named its rows by id and loaded them
+		// unscoped, so a caller holding the resource's edit permission could
+		// rewrite any other user's row by putting its id in the grid: List,
+		// GetByID and Patch all refused, and this one did it and reported
+		// success. Nothing in the project would have noticed, because the
+		// response says how many rows were affected and not whose.
+		//
+		// From the same two functions the repair calls, so a service an
+		// upgrade fixes is byte-identical to one generated today.
+		ownerGridScope = ownerGridScopeSource(p.ownerName, names.Lower, gridCall)
+		ownerGridStamp = ownerGridStampSource(p.ownerName, p.ownerCol, p.ownerField)
 	}
 
 	reload := "\tif err := db" + p.preloads + ".First(item, \"id = ?\", item.ID).Error; err != nil {\n\t\treturn %s\n\t}\n"
@@ -1215,7 +1281,7 @@ func (g *Generator) serviceSource(names Names) string {
 		"{{FILTER_COLS}}", p.filterCols,
 		"{{WRITABLE}}", p.writable,
 		"{{EXPAND_EMBEDDED}}", p.expandEmbedded,
-		"{{GRID_METHODS}}", gridServiceMethodsSource(names.Pascal, names.Lower, names.Plural),
+		"{{GRID_METHODS}}", gridServiceMethodsSource(names.Pascal, names.Lower, names.Plural, ownerGridScope, ownerGridStamp),
 		"{{LINKS_TYPE}}", p.linksType,
 		"{{LINKS_PARAM}}", p.linksParam,
 		"{{ITEMS_PARAM}}", p.itemsParam,

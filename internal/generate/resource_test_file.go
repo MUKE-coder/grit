@@ -53,6 +53,24 @@ func (g *Generator) resourceTestSource(names Names) string {
 	// See grit#137.
 	parentFixtures, parentOverride, secondRowOverride := g.parentFixtures(names)
 
+	// Who signs in. An ADMIN for every resource but a --confidential one,
+	// where an ADMIN sees nothing on purpose and a test written that way
+	// asserts the opposite of the flag (grit#205).
+	actorLabel, actorFixture, actorVar := g.actorFor(names, "", "view")
+	// Each test inserts its own user, so each needs its own email: two tests
+	// in one package creating the same address collide on the unique index.
+	// The variable name is the same in all of them, which is what lets one
+	// override line serve every fixture row.
+	writerFixture := func(suffix string) string {
+		_, fixture, _ := g.actorFor(names, suffix, "view", "edit")
+		return fixture
+	}
+	writerVar := actorVar
+	if g.Definition.Confidential {
+		parentFixtures, parentOverride = g.confidentialOwnerOverride(names, parentFixtures, parentOverride, actorVar)
+		_, secondRowOverride = g.confidentialOwnerOverride(names, "", secondRowOverride, actorVar)
+	}
+
 	fmt.Fprintf(&b, `package handlers
 
 import (
@@ -110,13 +128,12 @@ func Test%s_ListRefusesAUserWithoutThePermission(t *testing.T) {
 
 // The round trip through the model, the service, the handler and the
 // serialiser, which is where a wrong column name or a missing json tag shows up.
-func Test%s_AdminSeesWhatWasCreated(t *testing.T) {
+func Test%s_%sSeesWhatWasCreated(t *testing.T) {
 	client, db, auth := mount%s(t)
 
-	admin := testkit.User(t, db, "admin@example.com", models.RoleAdmin)
-%s	record := factory.Create%s(t, db%s)
+%s%s	record := factory.Create%s(t, db%s)
 
-	client.As(testkit.SignIn(t, db, auth, admin)).
+	client.As(testkit.SignIn(t, db, auth, %s)).
 		Get("/api/v1/%s").
 		AssertOK().
 		JSON().
@@ -152,14 +169,40 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 		// 13 to 15, 16 to 18: the two refusal tests.
 		names.Pascal, names.Pascal, names.PluralKebab,
 		names.Pascal, names.Pascal, names.PluralKebab,
-		// 19 to 24: the round-trip test, whose fixture line creates every
+		// 19 to 27: the round-trip test. Its caller is an ADMIN, or for a
+		// --confidential resource the row's owner, because an ADMIN sees
+		// nothing there on purpose (grit#205). Its fixture line creates every
 		// belongs_to parent first (grit#137).
-		names.Pascal, names.Pascal,
-		parentFixtures, names.Pascal, parentOverride,
+		names.Pascal, actorLabel, names.Pascal,
+		actorFixture, parentFixtures, names.Pascal, parentOverride, actorVar,
 		names.PluralKebab,
 		// 25 to 27: the 404 test.
 		names.Pascal, names.Pascal, names.PluralKebab,
 	)
+
+	// The two tiers the flag adds, which the tests above cannot cover: they
+	// sign in as the owner, and these are about everybody else.
+	//
+	// The row belongs to somebody neither caller is, so "the list is empty"
+	// means the scope refused it rather than that nothing was created. Pointed
+	// at rowOwner rather than at the signed-in user, which is the difference
+	// between asserting the rule and asserting an empty table.
+	if g.Definition.Confidential {
+		hiddenFixtures, hiddenOverride := g.confidentialOwnerOverride(
+			names, parentFixtures, parentOverride, "rowOwner")
+		fmt.Fprintf(&b, confidentialTiersTest,
+			// An ADMIN sees nothing.
+			names.Pascal, names.Pascal,
+			hiddenFixtures, names.Pascal, hiddenOverride,
+			names.PluralKebab, names.PluralKebab,
+			// A grant holder sees everything.
+			names.PluralSnake,
+			names.Pascal, names.Pascal,
+			hiddenFixtures, names.Pascal, hiddenOverride,
+			names.PluralSnake, names.PluralSnake,
+			names.PluralKebab,
+		)
+	}
 
 	// The grid test needs a patch with something in it. BulkEdit skips an edit
 	// whose writable columns are all unchanged, which is correct (touching a
@@ -183,7 +226,7 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 		// rather than emitted asserting a 422 it cannot cause.
 		fmt.Fprintf(&b, staleSaveTest,
 			names.Pascal, names.Pascal,
-			parentFixtures, names.Pascal, parentOverride,
+			writerFixture("version"), parentFixtures, names.Pascal, parentOverride, writerVar,
 			names.PluralKebab, names.PluralKebab, names.PluralKebab, names.PluralKebab,
 		)
 		return b.String()
@@ -194,17 +237,18 @@ func Test%s_UnknownIDIsNotFound(t *testing.T) {
 	// renumbers every comment that explains which is which.
 	fmt.Fprintf(&b, staleSaveTest,
 		names.Pascal, names.Pascal,
-		parentFixtures, names.Pascal, parentOverride,
+		writerFixture("version"), parentFixtures, names.Pascal, parentOverride, writerVar,
 		names.PluralKebab, names.PluralKebab, names.PluralKebab, names.PluralKebab,
 	)
 	fmt.Fprintf(&b, gridStaleRowTest,
 		names.Pascal, names.Pascal,
+		writerFixture("grid"),
 		// The parents are created once and both rows share them: two of them
 		// would redeclare the same variables, which is what v3.483.0 did.
 		// The second row drops any one_to_one, whose foreign key is unique and
 		// cannot be pointed at twice (grit#195).
 		parentFixtures, names.Pascal, parentOverride,
-		names.Pascal, secondRowOverride,
+		names.Pascal, secondRowOverride, writerVar,
 		names.PluralKebab,
 		names.PluralKebab, patchKey, patchValue, patchKey, patchValue,
 		names.PluralKebab,
@@ -316,9 +360,8 @@ const staleSaveTest = `
 func Test%s_StaleSaveIsRefused(t *testing.T) {
 	client, db, auth := mount%s(t)
 
-	admin := testkit.User(t, db, "admin-version@example.com", models.RoleAdmin)
-%s	record := factory.Create%s(t, db%s)
-	client = client.As(testkit.SignIn(t, db, auth, admin))
+%s%s	record := factory.Create%s(t, db%s)
+	client = client.As(testkit.SignIn(t, db, auth, %s))
 
 	// The version the record is at, and the ETag the client is meant to send
 	// back. Both, because a detail response missing the ETag is a client with
@@ -359,10 +402,9 @@ const gridStaleRowTest = `
 func Test%s_BulkEditRefusesAStaleRow(t *testing.T) {
 	client, db, auth := mount%s(t)
 
-	admin := testkit.User(t, db, "admin-grid@example.com", models.RoleAdmin)
-%s	first := factory.Create%s(t, db%s)
+%s%s	first := factory.Create%s(t, db%s)
 	second := factory.Create%s(t, db%s)
-	client = client.As(testkit.SignIn(t, db, auth, admin))
+	client = client.As(testkit.SignIn(t, db, auth, %s))
 
 	// Somebody else saves the second row, so the grid's copy of it is stale.
 	client.With("If-Match", ` + "`" + `W/"1"` + "`" + `).
@@ -394,5 +436,125 @@ func Test%s_BulkEditRefusesAStaleRow(t *testing.T) {
 			{"id": first.ID, "patch": map[string]any{%q: %q}},
 		},
 	}).AssertOK()
+}
+`
+
+// --------------------------------------------------------------- the actor
+//
+// Who the generated tests sign in as.
+//
+// For every resource but one it is an ADMIN, because an ADMIN can reach
+// everything and the tests are about the round trip rather than about
+// authorization. For a --confidential resource an ADMIN can reach nothing,
+// deliberately, so tests written that way assert the opposite of the flag's
+// contract: three of them failed on a freshly generated resource, and the
+// obvious reading was that the flag was broken (grit#205).
+//
+// So a confidential resource's tests act as the row's owner, holding the
+// permission the route names, and the row is created belonging to them.
+
+// actorFor is the caller of the tests that expect to succeed, and the one
+// fixture line that creates them.
+//
+// suffix distinguishes the users of tests that run in the same package: every
+// test here uses its own email, because testkit.User inserts a row and two
+// tests inserting "admin@example.com" collide on the unique index.
+func (g *Generator) actorFor(names Names, suffix string, abilities ...string) (label, fixture, variable string) {
+	email := "admin"
+	if suffix != "" {
+		email += "-" + suffix
+	}
+	if !g.Definition.Confidential {
+		return "Admin", fmt.Sprintf("\tadmin := testkit.User(t, db, %q, models.RoleAdmin)\n",
+			email+"@example.com"), "admin"
+	}
+
+	// A caller holding the route's permission and nothing else: not an ADMIN,
+	// whose exemption is the thing --confidential takes away.
+	var grants []string
+	for _, a := range abilities {
+		grants = append(grants, fmt.Sprintf("%q", names.PluralSnake+"."+a))
+	}
+	email = "owner"
+	if suffix != "" {
+		email += "-" + suffix
+	}
+	return "Owner", fmt.Sprintf("\towner := testkit.Granted(t, db, %q, %s)\n",
+		email+"@example.com", strings.Join(grants, ", ")), "owner"
+}
+
+// confidentialOwnerOverride points the fixture row at the signed-in owner.
+//
+// The owner is itself a belongs_to field, so parentFixtures already creates a
+// user for it and assigns it. That user is not the one signing in, which would
+// make the owner-sees-their-own-rows test assert nothing: it would read as an
+// empty list either way. This replaces that one assignment and drops the
+// parent fixture line that is now unused.
+func (g *Generator) confidentialOwnerOverride(names Names, fixtures, override, ownerVar string) (string, string) {
+	owner := g.Definition.OwnerField()
+	if owner == nil {
+		return fixtures, override
+	}
+	variable := toCamelCase(owner.Name)
+	field := toPascalCase(owner.FKColumnName())
+
+	// The parent the override pointed at, which nothing needs now.
+	fixtures = strings.Replace(fixtures,
+		fmt.Sprintf("\t%s := factory.Create%s(t, db)\n", variable, owner.RelatedModelName()), "", 1)
+	if strings.TrimSpace(fixtures) == "" {
+		fixtures = ""
+	}
+
+	assignment := fmt.Sprintf("\t\tm.%s = %s.ID\n", field, variable)
+	mine := fmt.Sprintf("\t\tm.%s = %s.ID\n", field, ownerVar)
+	if strings.Contains(override, assignment) {
+		return fixtures, strings.Replace(override, assignment, mine, 1)
+	}
+	// No belongs_to override at all, which is a resource whose only relation
+	// is the owner and it was skipped as optional. Build one.
+	return fixtures, fmt.Sprintf(", func(m *models.%s) {\n%s\t}", names.Pascal, mine)
+}
+
+// confidentialTiersTest is the two assertions the flag exists for, and which a
+// generated project had nowhere: an administrator sees nothing, and a holder of
+// the grant sees everything.
+//
+// Only for a --confidential resource. For any other, "an ADMIN sees nothing"
+// is false and the test would be asserting a bug.
+const confidentialTiersTest = `
+// --confidential: the operator. An empty list and a 404, which is the whole
+// point of the flag and is otherwise asserted nowhere in a generated project.
+//
+// A 404 rather than a 403, deliberately: a 403 confirms the row exists, which
+// is itself something an administrator is not meant to learn here.
+func Test%s_AnAdminSeesNothing(t *testing.T) {
+	client, db, auth := mount%s(t)
+
+	rowOwner := testkit.User(t, db, "owner-hidden@example.com", models.RoleUser)
+%s	record := factory.Create%s(t, db%s)
+	admin := testkit.User(t, db, "admin-blind@example.com", models.RoleAdmin)
+	client = client.As(testkit.SignIn(t, db, auth, admin))
+
+	client.Get("/api/v1/%s").AssertOK().JSON().Count("data", 0)
+	client.Get("/api/v1/%s/" + record.ID).AssertNotFound()
+}
+
+// --confidential: the third tier. A named person holding %s.confidential
+// reads rows they do not own, and every read is in the activity log, which is
+// why the grant goes to a person rather than to a role.
+func Test%s_AGrantHolderSeesEveryRow(t *testing.T) {
+	client, db, auth := mount%s(t)
+
+	rowOwner := testkit.User(t, db, "owner-seen@example.com", models.RoleUser)
+%s	record := factory.Create%s(t, db%s)
+	reader := testkit.Granted(t, db, "confidential-reader@example.com",
+		"%s.view", "%s.confidential")
+
+	client.As(testkit.SignIn(t, db, auth, reader)).
+		Get("/api/v1/%s").
+		AssertOK().
+		JSON().
+		Count("data", 1).
+		Where("data.0.id", record.ID)
 }
 `

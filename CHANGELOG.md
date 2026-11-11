@@ -23,6 +23,50 @@ Also worth knowing:
 ---
 
 
+## v3.505.0 - November 11, 2026
+
+### The grid was the one way into an owned table that ignored ownership
+
+Found by reading the three tests grit#205 reported as failing, which turned out to be reporting something larger than a test bug. On every `--owned-by` resource, the bulk-edit grid took a list of row ids and loaded exactly those rows with no scope on the query at all.
+
+```text
+POST /api/v1/memos/bulk-edit    # the ids belong to another user
+200 OK  {"data":{"affected":1},"message":"1 memo updated"}
+```
+
+The list refused those rows. The detail route answered 404. Patch refused the write. This one did it and reported success, so a caller holding nothing but `memos.edit` could rewrite any other account's row by putting its id in the grid. Nothing in a project would have noticed, because the response says how many rows were affected and not whose.
+
+`BulkCreate` had the matching hole pointing the other way: it decoded the row it was handed, owner column included, and believed it, so the grid could file rows under somebody else's account. A single create has stamped the owner from the session since ownership shipped.
+
+Both arrived with the grid in v3.372.0, and both were unchecked: `grit doctor` looked at List, Export, Bulk, GetByID and load, and not at the two newest methods in the file. It looks at all seven now.
+
+There was also a comment directly above the unscoped query saying an owned resource is scoped to the caller here. That sentence is most of why nobody looked, so it is removed from existing projects too and not only from the generator.
+
+#### It reaches projects that already exist
+
+```bash
+grit upgrade
+```
+
+A generator fix reaches resources generated from here on and nothing that exists, and a project with twenty owned resources is not going to regenerate twenty resources. So `grit upgrade` scopes the grid in every generated service it finds, reading the owner column out of the service's own List, and prints the name of any service it could not read so that one can be checked by hand. A repaired service is byte-identical to a generated one, which a test compares rather than trusts.
+
+#### And three bugs in --confidential, one release old
+
+- **grit#204:** `grit upgrade` wrote an `internal/authz/actor.go` that imports `internal/confidential` and never wrote the package, so an upgraded project did not compile: exactly one file referenced it and nothing provided it. A fresh `grit new` was fine, which is the shape of divergence that goes unnoticed. A test now reads every internal import in the set of files that travels on upgrade and fails if the set does not also write the package.
+- **grit#205:** a `--confidential` resource generated three tests that sign in as an ADMIN and expect to see the row, which is exactly what the flag removes. So the generator wrote the contract into the resource and the opposite of the contract into its tests, and the flag was red on first use: fifteen resources adopted at once meant 45 failing tests. They act as the row's owner now, and two tests the flag always needed are generated beside them: an administrator gets an empty list and a 404, and a holder of `<resource>.confidential` sees every row. Both of those were asserted nowhere in a generated project.
+- **grit#206:** the `owned-resource-unscoped` check knew `authz.ScopeOwned` and not `authz.ScopeConfidential`, so it reported every correctly scoped confidential resource as wide open. The check is an error and the docs present `grit doctor` as a CI gate, which made the quickest route to a green pipeline dropping the flag.
+
+#### The part of grit#206 that was not about --confidential
+
+The same report noticed `grit doctor` saying &ldquo;27 checks over 9 resource(s)&rdquo; on a project with nineteen. Every per-resource check was skipping every resource whose name is more than one word.
+
+The handler and service maps dropped any file with an underscore in its name, on the reasoning that those are the generator's extra handlers: `product_import.go`, `page_tree.go`. It is also where a two-word resource lives. `CartItem` is `cart_item.go`, so it was discarded, and with it every ownership, PII, tenancy and append-only check that resource would have had. Which resources got checked depended on how they happened to be named, which is why the result looked arbitrary.
+
+They are keyed by file name now and looked up by the resource's own, so an extra handler is still not mistaken for a resource and a two-word resource is no longer invisible. `grit doctor` on `examples/commerce` went from four resources to five.
+
+Smaller, from the same report: adopting `--confidential` on an existing resource left two entries for it in the permission catalogue, because the injection is idempotent on the whole block and the block differs between flags only in its list of actions. The old entry is removed before the new one goes in.
+
+
 ## v3.504.0 - November 11, 2026
 
 ### An administrator who cannot read customer content

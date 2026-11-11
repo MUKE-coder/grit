@@ -521,7 +521,13 @@ func (s *InvoiceService) BulkEdit(ctx context.Context, edits []InvoiceGridEdit) 
 		ids = append(ids, w.id)
 	}
 	var allowed []models.Invoice
-	if err := s.db(ctx).Model(&models.Invoice{}).Where("id IN ?", ids).Find(&allowed).Error; err != nil {
+	rows := s.db(ctx).Model(&models.Invoice{}).Where("id IN ?", ids)
+	// --owned-by user: a row the caller does not own drops out
+	// here and is reported as "no such invoice" below, so a
+	// guessed id in the grid changes nothing and cannot be told from a
+	// wrong one.
+	rows = authz.ScopeOwned(ctx, rows, "user_id")
+	if err := rows.Find(&allowed).Error; err != nil {
 		return nil, nil, fmt.Errorf("loading invoices to edit: %w", err)
 	}
 	exists := make(map[string]bool, len(allowed))
@@ -583,6 +589,12 @@ func (s *InvoiceService) BulkCreate(ctx context.Context, rows []map[string]inter
 		item.ID = ""
 		item.CreatedAt = time.Time{}
 		item.UpdatedAt = time.Time{}
+		// --owned-by user: the owner is the caller here too.
+		// Before the stamp, a row in the grid carried its own user_id and
+		// the insert believed it, so the grid could file rows under
+		// somebody else. Stamped before validation because the column is
+		// binding:"required" and a grid has no business typing it.
+		item.UserID = authz.UserIDFrom(ctx)
 		// The binding: tags, which encoding/json does not know about.
 		//
 		// A single create is bound by gin, so required and min are enforced

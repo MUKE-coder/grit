@@ -1065,7 +1065,7 @@
     "title": "Performance & Security Testing",
     "href": "/docs/testing",
     "section": "Security & Testing",
-    "keywords": "testing k6 load test smoke average stress spike soak breakpoint pentest penetration methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm codeql ptes owasp wstg run tests driven against grit app includes phase attack catalogue scoring structure justifies 2k 10k engagement docs performance security"
+    "keywords": "testing k6 load test smoke average stress spike soak breakpoint pentest penetration methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm codeql ptes owasp wstg testkit granted permission non-admin owner sign in as run tests driven against grit app includes phase attack catalogue scoring structure justifies 2k 10k engagement docs performance security"
   },
   {
     "title": "Tutorials",
