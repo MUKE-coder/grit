@@ -72,6 +72,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.514.0 */}
+            <div className="mb-12" id="v3.514.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.514.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A role the admin never heard of</h3>
+                <p>
+                  Somebody asked on grit#89 how adding and removing roles could
+                  be made easier. Looking at it turned up a silent bug rather
+                  than a missing feature.
+                </p>
+                <p>
+                  <code>grit add role</code> reached <strong>four of its seven
+                  places</strong> and reported success. It looked for{' '}
+                  <code>apps/admin/resources/users.ts</code>, and resources
+                  moved into a folder each some releases ago, so the real path
+                  is <code>apps/admin/resources/users/users.ts</code> and the
+                  old one simply did not exist. The check was{' '}
+                  <code>fileExists</code>, the answer was no, and the whole
+                  admin block was skipped without a word.
+                </p>
+                <p>
+                  So the role reached the Go model, the Zod schema, the
+                  TypeScript union and the shared constants, and in the admin it
+                  had no badge, no filter and no option in the form&apos;s
+                  select. You could not give the new role to anybody from the
+                  screen that exists to give roles to people. The command
+                  printed &ldquo;added to 4 location(s)&rdquo; and looked like
+                  it had worked.
+                </p>
+                <p>
+                  It resolves the definition now, with the same helper the admin
+                  sync already uses for the same lookup, and it says so when a
+                  count comes back short rather than letting the number pass as
+                  a detail.
+                </p>
+                <h4>And the command that was missing</h4>
+                <p>
+                  <code>grit remove role</code>. Adding had no counterpart, so a
+                  role added by mistake had to be unpicked from seven places by
+                  hand, and missing one is quiet: a value left in the Zod enum
+                  that the Go model no longer accepts means the admin form
+                  offers a role the API refuses, and nothing looks wrong until
+                  somebody picks it.
+                </p>
+                <p>
+                  Adding a role and removing it again leaves the project exactly
+                  as it was, byte for byte across all five files. That is the
+                  test, because it is the only assertion that catches a partial
+                  removal.
+                </p>
+                <p>
+                  Three things it refuses to do. <code>ADMIN</code> and{' '}
+                  <code>USER</code> cannot be removed at all, not even with{' '}
+                  <code>--force</code>: the seeder creates an ADMIN, every
+                  generated route guard asks for one, registration assigns USER,
+                  and a project without them compiles and cannot sign anybody
+                  in. It stops if your own code still names the role, because a
+                  guard asking for a role that no longer exists asks for
+                  something nothing can be. And removing a role the project does
+                  not have says so instead of reporting a successful no-op.
+                </p>
+                <p>
+                  It reads files and never your database, like{' '}
+                  <code>grit doctor</code>. The database may be Postgres, it may
+                  not be running, and &ldquo;could not connect&rdquo; would have
+                  become a silent skip of the only safety check there was. So it
+                  prints the query rather than pretending to know: an account
+                  left on a removed role cannot sign in, because the API refuses
+                  a role it cannot resolve.
+                </p>
+              </div>
+            </div>
+
             {/* v3.513.0 */}
             <div className="mb-12" id="v3.513.0">
               <div className="flex items-center gap-3 mb-4">

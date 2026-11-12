@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.513.0"
+var version = "3.514.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -791,7 +791,42 @@ func removeCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(removeResourceCmd())
+	cmd.AddCommand(removeRoleCmd())
 
+	return cmd
+}
+
+func removeRoleCmd() *cobra.Command {
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "role <ROLE_NAME>",
+		Short: "Remove a role from the project",
+		Long: `Take a role out of every file ` + "`grit add role`" + ` puts it in: the Go
+constant, the Zod enum, the TypeScript union, the shared constants, and the
+admin's badge, filter and form option.
+
+ADMIN and USER cannot be removed. The framework's own code names them: the
+seeder creates an ADMIN, every generated route guard asks for one, and
+registration assigns USER. A project without them compiles and cannot sign
+anybody in.
+
+It stops if any of your own code still names the role, because a guard asking
+for a role that no longer exists asks for something nothing can be. --force
+removes the declarations anyway.
+
+It reads files and never your database, so it cannot tell you whether any
+account still holds the role. It prints the query. An account left on a removed
+role cannot sign in: the API refuses a role it cannot resolve.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			cHeading.Printf("\n  Removing role: %s\n\n", strings.ToUpper(args[0]))
+			cmd.SilenceUsage = true
+			return scaffold.RemoveRole(args[0], force)
+		},
+	}
+	cmd.Flags().BoolVar(&force, "force", false,
+		"Remove the declarations even though your own code still names the role")
 	return cmd
 }
 

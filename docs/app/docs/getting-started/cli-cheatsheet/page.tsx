@@ -1056,6 +1056,54 @@ export default function CLICheatsheetPage() {
               </div>
 
               {/* -------------------------------------------------------- */}
+              {/*  grit remove role                                        */}
+              {/* -------------------------------------------------------- */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                  grit remove role
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Take a role back out of all seven places{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    grit add role
+                  </code>{" "}
+                  put it: the Go constant, the Zod enum, the TypeScript union,
+                  the shared constants, and the admin&apos;s badge, filter and
+                  form option. Adding a role and removing it again leaves the
+                  project exactly as it was, which is a test rather than a
+                  claim.
+                </p>
+                <div className="space-y-3">
+                  <TerminalCard
+                    cmd="grit remove role MODERATOR"
+                    desc="Remove MODERATOR from Go, TypeScript and the admin"
+                  />
+                  <TerminalCard
+                    cmd="grit remove role MODERATOR --force"
+                    desc="Remove it even though your own code still names the role"
+                  />
+                </div>
+                <div className="p-4 rounded-lg border border-warning/20 bg-warning/5 mt-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-2">
+                    <strong className="text-foreground">ADMIN and USER cannot be removed.</strong>{" "}
+                    The framework&apos;s own code names them: the seeder creates
+                    an ADMIN, every generated route guard asks for one, and
+                    registration assigns USER. A project without them compiles
+                    and cannot sign anybody in.
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    It stops if your own code still names the role, because a
+                    guard asking for a role that no longer exists asks for
+                    something nothing can be. And it reads files rather than
+                    your database, so it cannot tell you whether accounts still
+                    hold the role: it prints the query instead. An account left
+                    on a removed role cannot sign in, because the API refuses a
+                    role it cannot resolve.
+                  </p>
+                </div>
+              </div>
+
+              {/* -------------------------------------------------------- */}
               {/*  grit add web-auth                                       */}
               {/* -------------------------------------------------------- */}
               <div className="mb-12">

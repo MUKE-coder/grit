@@ -80,8 +80,18 @@ func AddRole(roleName string) error {
 	}
 
 	// 5. Admin users resource — badge config
-	usersResource := filepath.Join(adminRoot, "resources", "users.ts")
-	if fileExists(usersResource) {
+	//
+	// Resolved rather than guessed. This was
+	// filepath.Join(adminRoot, "resources", "users.ts"), which stopped
+	// existing when each resource moved into a folder of its own, so
+	// fileExists answered no and the three admin injections below were
+	// skipped in silence. The command still said it had added the role,
+	// because it counted the four places it did reach.
+	usersResource := FindResourceDef(filepath.Join(adminRoot, "resources"), "users")
+	if usersResource == "" {
+		spinner.Printf("  - No admin users resource found, so the role has no badge, filter or form option\n")
+	}
+	if usersResource != "" {
 		badgeLine := fmt.Sprintf(`          %s: { color: "success", label: "%s" },`, upper, label)
 		if err := injectBefore(usersResource, "// grit:role-badges", badgeLine); err != nil {
 			spinner.Printf("  - Skipped users resource badges (marker not found)\n")
@@ -111,6 +121,15 @@ func AddRole(roleName string) error {
 
 	if count == 0 {
 		return fmt.Errorf("no files were updated: make sure role markers exist (run `grit upgrade` to add them)")
+	}
+	// Seven places, and a count below that means somebody has to be told
+	// which. A role the admin does not know about cannot be given to anybody
+	// from the screen that exists to give it to somebody.
+	const roleLocations = 7
+	if count < roleLocations {
+		yellow := color.New(color.FgHiYellow)
+		yellow.Printf("\n  ⚠ %d of %d places updated. Check the admin users resource for the\n"+
+			"    grit:role-badges, grit:role-filters and grit:role-options markers.\n", count, roleLocations)
 	}
 
 	fmt.Println()
