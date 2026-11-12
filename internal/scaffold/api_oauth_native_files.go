@@ -373,6 +373,23 @@ func oauthCodeDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("opening the test database: %v", err)
 	}
+
+	// One connection, and only one.
+	//
+	// Every connection to ":memory:" gets its OWN empty database, and the pool
+	// opens a second one as soon as two queries overlap. The race test below
+	// runs two goroutines through ConsumeOAuthCode, so one of them landed on a
+	// fresh empty database and answered "no such table: o_auth_exchange_codes".
+	// It passed or failed on timing, which reads as a broken feature rather
+	// than a test-harness problem: it went green locally and red in CI on the
+	// same commit. internal/testkit caps its pool for exactly this reason; a
+	// helper that opens its own database has to do it too.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatalf("reaching the connection pool: %v", err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+
 	if err := db.AutoMigrate(&models.OAuthExchangeCode{}); err != nil {
 		t.Fatalf("migrating: %v", err)
 	}

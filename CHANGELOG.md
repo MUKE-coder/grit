@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.505.9 - November 12, 2026
+
+### A generated test that passed here and failed in CI
+
+CI went red on v3.505.8 while the same suite was green on this machine, which is the useful kind of disagreement.
+
+```text
+--- FAIL: TestTwoExchangesRaceAndOnlyOneWins
+    0 of 2 exchanges succeeded, want exactly 1
+    (errors: [no such table: o_auth_exchange_codes ...])
+```
+
+The table was missing, and it was missing locally too: the test passed here with the same error in its log. Every connection to `:memory:` gets its **own empty database**, and the pool opens a second as soon as two queries overlap. That test runs two goroutines through the same exchange on purpose, so one of them landed on a fresh database and found no tables at all. Pass or fail on timing, with an error that reads as a broken feature rather than a broken harness.
+
+`internal/testkit` has capped its pool at one connection for exactly this reason, and says so in a comment that describes this symptom precisely. A helper that opens its own database is outside that, and a test in `internal/services` cannot use testkit anyway, because testkit imports services. So it caps its own pool now. Twenty consecutive runs, no errors.
+
+Fifty-odd generated helpers open a bare `:memory:` database and exactly one of them runs a goroutine. The rest are sequential, where a second connection is never asked for, so sweeping them would be fifty files touched to prevent nothing. A test catches the first of them to grow a goroutine instead, which is the moment the bug becomes real.
+
+### grit skills said twenty-seven and meant twenty-eight
+
+Found while checking whether grit#160 was still open, which it mostly is not: `grit skills install` became visible in `--help` in v3.467.0, with the three artefacts people call a Grit skill spelled out and a refusal that names the repository rather than failing with an npm error.
+
+What it still said was the wrong number. The help text counts the pack and the list of skills is beside it in the same file, so the two drift the moment a skill is added and the prose is not reread. `grit-teacher` arrived in v3.499.0 and made it twenty-eight.
+
+A test counts the list and requires the help text to say that number, and requires it not to say any other, which is the half a search for the right word alone would miss. The shape of mistake nobody notices is the one where the sentence still reads correctly.
+
+
 ## v3.505.8 - November 12, 2026
 
 ### A logo that leaked, a race that answered 500, and a public route with no limit of its own

@@ -72,6 +72,83 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.9 */}
+            <div className="mb-12" id="v3.505.9">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.9
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A generated test that passed here and failed in CI</h3>
+                <p>
+                  CI went red on v3.505.8 while the same suite was green on
+                  this machine, which is the useful kind of disagreement.
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`--- FAIL: TestTwoExchangesRaceAndOnlyOneWins
+    0 of 2 exchanges succeeded, want exactly 1
+    (errors: [no such table: o_auth_exchange_codes ...])`}
+                />
+                <p>
+                  The table was missing, and it was missing locally too: the
+                  test passed here with the same error in its log. Every
+                  connection to <code>:memory:</code> gets its{' '}
+                  <strong>own empty database</strong>, and the pool opens a
+                  second as soon as two queries overlap. That test runs two
+                  goroutines through the same exchange on purpose, so one of
+                  them landed on a fresh database and found no tables at all.
+                  Pass or fail on timing, with an error that reads as a broken
+                  feature rather than a broken harness.
+                </p>
+                <p>
+                  <code>internal/testkit</code> has capped its pool at one
+                  connection for exactly this reason, and says so in a comment
+                  that describes this symptom precisely. A helper that opens
+                  its own database is outside that, and a test in{' '}
+                  <code>internal/services</code> cannot use testkit anyway,
+                  because testkit imports services. So it caps its own pool
+                  now. Twenty consecutive runs, no errors.
+                </p>
+                <p>
+                  Fifty-odd generated helpers open a bare{' '}
+                  <code>:memory:</code> database and exactly one of them runs a
+                  goroutine. The rest are sequential, where a second connection
+                  is never asked for, so sweeping them would be fifty files
+                  touched to prevent nothing. A test catches the first of them
+                  to grow a goroutine instead, which is the moment the bug
+                  becomes real.
+                </p>
+
+                <h3>grit skills said twenty-seven and meant twenty-eight</h3>
+                <p>
+                  Found while checking whether grit#160 was still open, which
+                  it mostly is not: <code>grit skills install</code> became
+                  visible in <code>--help</code> in v3.467.0, with the three
+                  artefacts people call a Grit skill spelled out and a refusal
+                  that names the repository rather than failing with an npm
+                  error.
+                </p>
+                <p>
+                  What it still said was the wrong number. The help text counts
+                  the pack and the list of skills is beside it in the same
+                  file, so the two drift the moment a skill is added and the
+                  prose is not reread. <code>grit-teacher</code> arrived in
+                  v3.499.0 and made it twenty-eight.
+                </p>
+                <p>
+                  A test counts the list and requires the help text to say that
+                  number, and requires it not to say any other, which is the
+                  half a search for the right word alone would miss. The shape
+                  of mistake nobody notices is the one where the sentence still
+                  reads correctly.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.8 */}
             <div className="mb-12" id="v3.505.8">
               <div className="flex items-center gap-3 mb-4">

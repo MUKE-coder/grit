@@ -137,3 +137,50 @@ func TestSkillsCommandIsFindableAndSaysWhereTheFilesComeFrom(t *testing.T) {
 		}
 	}
 }
+
+// The number in the help text is the number of skills in the pack.
+//
+// `grit skills --help` says how many skills the pack holds, and the list is
+// right beside it in the same file, so the two drift the moment somebody adds
+// a skill and does not reread the prose. It said twenty-seven while the list
+// held twenty-eight, which is the shape of mistake nobody notices because the
+// sentence still reads correctly (grit#160).
+func TestTheHelpTextCountsThePackCorrectly(t *testing.T) {
+	spelled := map[int]string{
+		25: "twenty-five", 26: "twenty-six", 27: "twenty-seven",
+		28: "twenty-eight", 29: "twenty-nine", 30: "thirty",
+		31: "thirty-one", 32: "thirty-two", 33: "thirty-three",
+	}
+	want, ok := spelled[len(expertSkillNames)]
+	if !ok {
+		t.Fatalf("the pack has %d skills and this test cannot spell that; add it to the map",
+			len(expertSkillNames))
+	}
+
+	long := skillsCmd().Long
+	if !strings.Contains(long, want+" expert skills") {
+		t.Errorf("the pack has %d skills and the help text does not say %q.\n"+
+			"Help text says: %s", len(expertSkillNames), want, packCountLine(long))
+	}
+	// And not some other number, which is what a search for the right one
+	// alone would miss.
+	for n, word := range spelled {
+		if n == len(expertSkillNames) {
+			continue
+		}
+		if strings.Contains(long, word+" expert skills") {
+			t.Errorf("the help text also says %q, so it names two different counts", word)
+		}
+	}
+}
+
+// packCountLine is the line of the help text that counts the pack, for an
+// error message that shows what it actually says.
+func packCountLine(long string) string {
+	for _, line := range strings.Split(long, "\n") {
+		if strings.Contains(line, "expert skills, private") {
+			return strings.TrimSpace(line)
+		}
+	}
+	return "(no line counting the pack)"
+}
