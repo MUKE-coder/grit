@@ -745,9 +745,9 @@ func fieldZod(f GoField) string {
 	kind, param, _ := strings.Cut(f.Format, ":")
 	switch FieldType(kind) {
 	case FieldEmail:
-		return `z.string().email().or(z.literal(""))`
+		return `z.email().or(z.literal(""))`
 	case FieldURL:
-		return `z.string().url().regex(/^https?:\/\//i).or(z.literal(""))`
+		return `z.url().regex(/^https?:\/\//i).or(z.literal(""))`
 	case FieldDomain:
 		return `z.string().regex(/^([a-z0-9-]+\.)+[a-z0-9-]{2,63}$/i).or(z.literal(""))`
 	case FieldTel:

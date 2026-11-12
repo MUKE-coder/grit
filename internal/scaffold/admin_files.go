@@ -595,7 +595,7 @@ func adminPackageJSON(opts Options) string {
     "tw-animate-css": "^1.4.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "@react-pdf/renderer": "^4.1.5",
-    "zod": "^3.25.0",
+    "zod": "` + zodVersion + `",
     "@repo/shared": "workspace:*",
     "@repo/upload": "workspace:*"
   },

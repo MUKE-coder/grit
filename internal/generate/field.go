@@ -740,9 +740,9 @@ func (f Field) ZodType() string {
 		base = "z.string().nullable()"
 	case FieldBelongsTo:
 		// FK columns are UUID strings matching the referenced model's PK.
-		base = `z.string().uuid("Invalid ID")`
+		base = `z.uuid("Invalid ID")`
 	case FieldManyToMany:
-		base = "z.array(z.string().uuid()).optional()"
+		base = "z.array(z.uuid()).optional()"
 	case FieldStringArray:
 		base = "z.array(z.string()).optional()"
 	case FieldMoney:

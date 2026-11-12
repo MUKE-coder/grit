@@ -293,7 +293,29 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+# Where a link in an email goes.
+#
+# OAUTH_FRONTEND_URL is the origin for the links the API mails out: verify your
+# email, reset your password, finish signing in with a provider. The default is
+# port 3001, which is the ADMIN app, because in development that is the app you
+# are signed into.
+#
+# In a split-domain deployment that default is wrong and nothing will say so:
+# the mail sends successfully and the customer lands on the operator's console.
+# Set it to wherever your customers sign in.
+#
+#   OAUTH_FRONTEND_URL=https://app.example.com
+#
 OAUTH_FRONTEND_URL=http://localhost:3001
+
+# And invitation links, if the multitenant plugin is installed.
+#
+# "grit plugin add multitenant" mails an invitation with an accept link on it.
+# That link uses GRIT_WEB_URL when it is set, and falls back to the web app's
+# development origin. Same failure as above and for the same reason: an invited
+# colleague is not an operator and should not be sent to the admin.
+#
+# GRIT_WEB_URL=https://app.example.com
 
 # The Domain the CSRF cookie is set with. Unset means host-only, which is right
 # here: the API and the frontend are both on localhost.

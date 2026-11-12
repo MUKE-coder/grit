@@ -125,9 +125,14 @@ func TestSkillsCommandIsFindableAndSaysWhereTheFilesComeFrom(t *testing.T) {
 	// Three artefacts get called a Grit skill. The help has to tell them apart,
 	// because "there are two skill definitions, one of which cannot be read"
 	// was a fair reading of the old help and is what the issue said.
+	//
+	// "private repository" was on this list until the pack was published. The
+	// test is about telling the three apart, not about the pack's visibility,
+	// and TestTheHelpTextDoesNotClaimThePackIsPrivate now asserts the opposite
+	// of what that entry did: two tests requiring contradictory things is how
+	// a true statement gets reverted to a false one.
 	for _, want := range []string{
 		expertPack,
-		"private repository",
 		"skills/grit/SKILL.md",
 		".claude/skills/grit/SKILL.md",
 	} {
@@ -183,4 +188,29 @@ func packCountLine(long string) string {
 		}
 	}
 	return "(no line counting the pack)"
+}
+
+// The help text does not tell people they cannot read the pack.
+//
+// It said "a private repository" in three places, which was true until the
+// repository was published. A claim about who may read an agent skill is the
+// one thing in this help text that has to be right, because it is the whole
+// subject of grit#160: a skill tells an agent how to write code in somebody's
+// project, so whether they can read it first is the question.
+func TestTheHelpTextDoesNotClaimThePackIsPrivate(t *testing.T) {
+	long := skillsCmd().Long
+
+	for _, wrong := range []string{"private repository", ", private,", "private pack"} {
+		if strings.Contains(long, wrong) {
+			t.Errorf("the help text still says %q. The pack at %s is public; if that changes, "+
+				"change this test and the text together rather than only one of them",
+				wrong, expertPack)
+		}
+	}
+	// And it says the thing that replaced it, so this is not just the absence
+	// of a word.
+	if !strings.Contains(long, "It is public, so you can read every skill") {
+		t.Error("the help text no longer says the pack is readable before installing, which is " +
+			"the question grit#160 was about")
+	}
 }

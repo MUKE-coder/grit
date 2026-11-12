@@ -44,7 +44,7 @@ func desktopPackageJSON(opts DesktopOptions) string {
     "@tanstack/react-query": "^5.62.0",
     "react-hook-form": "^7.54.0",
     "@hookform/resolvers": "^4.1.0",
-    "zod": "^3.24.0",
+    "zod": "` + zodVersion + `",
     "lucide-react": "^0.468.0",
     "clsx": "^2.1.0",
     "tailwind-merge": "^2.6.0",

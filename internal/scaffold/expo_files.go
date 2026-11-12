@@ -139,7 +139,7 @@ func expoPackageJSON(opts Options) string {
     "react-native-gesture-handler": "~2.28.0",
     "react-hook-form": "^7.54.0",
     "@hookform/resolvers": "^3.9.0",
-    "zod": "^3.23.0"
+    "zod": "` + zodVersion + `"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

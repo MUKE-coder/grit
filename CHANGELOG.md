@@ -23,6 +23,36 @@ Also worth knowing:
 ---
 
 
+## v3.506.0 - November 12, 2026
+
+### zod 4, and a freshly generated project with no advisories at all
+
+grit#175. zod 3 carries a HIGH advisory with no fix inside 3.x, GHSA-mrhx-c7xc-m3w5, and it was the last one left in a new project. A fresh scaffold now answers:
+
+```text
+$ pnpm audit
+No known vulnerabilities found
+```
+
+Not just no HIGH. None, at any severity.
+
+#### It cost less than the issue expected, and that was worth checking
+
+The issue listed four API changes to work through and feared a sweep over every hand-written schema in the admin and web templates. Three of the four do not apply: there is not one `required_error` or `invalid_type_error` in the tree, and not one `z.string().datetime()`. The `z.string().email()` family is real and it was seven call sites in three files, because the admin and web schemas are generated from those.
+
+Then the more useful finding, from installing zod 4.6.7 and asking it rather than reasoning about it: **every 3.x spelling still type-checks and still validates at runtime.** `z.string().email()`, `z.string().url()` and `z.string().uuid("message")` are deprecated in favour of `z.email()`, `z.url()` and `z.uuid()`, and they work, and they still reject bad input.
+
+So this was a pin bump. The call sites were modernised because they should be, not because they had to be, and the eight separate `"zod"` pins at four different 3.x minors across eight files became one constant, which is its own small fix: a dependency the generator writes into every frontend is one fact.
+
+#### Which is why grit upgrade does not scan your schemas
+
+The plan was for `grit upgrade` to refuse to move the pin while a project's own schemas still used 3.x-only calls, and to name the files. That was the right design for the problem as described and it guards against nothing: there are no 3.x-only calls that break under 4, so the scanner would have refused no project and cost every upgrade a pass over every schema in the repository. It is not built.
+
+The input-versus-output divergence around `.default()` is real in zod 4, and it does not reach Grit's own forms: `LoginSchema`, `RegisterSchema` and `ForgotPasswordSchema` declare no defaults, so `z.infer` and `z.input` are the same type for every schema handed to `useForm`. A schema of your own with defaults is still worth a look.
+
+Verified on a generated triple project rather than on the templates: zod 4.6.7 resolved, and `type-check` clean on both the admin and the web app with the real compiler.
+
+
 ## v3.505.9 - November 12, 2026
 
 ### A generated test that passed here and failed in CI

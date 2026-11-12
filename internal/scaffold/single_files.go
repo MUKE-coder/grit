@@ -606,7 +606,7 @@ func singleFrontendPackageJSON(opts Options) string {
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "tailwind-merge": "^2.6.0",
-    "zod": "^3.25.0",
+    "zod": "` + zodVersion + `",
     "@hookform/resolvers": "^5.9.0",
     "@react-pdf/renderer": "^4.1.5",
 `+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",

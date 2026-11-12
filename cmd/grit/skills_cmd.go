@@ -62,29 +62,27 @@ they work.
 
 WHERE THE FILES COME FROM
 
-The pack is ` + expertPack + `, a private repository, so this command needs
-access to it and says so before trying rather than failing with an npm error.
-It installs through "npx skills add", which writes into your agent's own
-configuration directory.
+The pack is ` + expertPack + `. It is public, so you can read every skill
+before installing it, which is worth doing: a skill tells an agent how to write
+code in your project. It installs through "npx skills add", which writes into
+your agent's own configuration directory.
 
 Three different things get called a Grit skill, and they do different jobs:
 
-  this pack                     twenty-eight expert skills, private, installed here
+  this pack                     twenty-eight expert skills, installed here
   skills/grit/SKILL.md          one general skill, public, in the Grit repository
   .claude/skills/grit/SKILL.md  written into your project by "grit new", and
                                 tailored to the architecture you chose
 
 An agent skill tells an agent how to write code in your project, so it is worth
 knowing which one you are reading.`,
-		// Visible, although the pack is private and most people who find this
-		// in `grit --help` cannot install it.
+		// It was Hidden, on the reasoning that a command most people could not
+		// run was noise in the help output: the pack was a private repository.
+		// That produced something worse, a command which writes into somebody's
+		// agent configuration from a source they cannot read and cannot find.
 		//
-		// It was Hidden, on the reasoning that a command most people cannot run
-		// is noise in the help output. True as far as it goes, and it produced
-		// something worse: a command that writes into somebody's agent
-		// configuration, from a source they cannot read, that they cannot find.
-		// A clear refusal naming the repository is the better answer, because
-		// then the person who typed it knows what the answer is (grit#160).
+		// The pack is public now, so the reasoning is gone along with the
+		// condition behind it (grit#160).
 	}
 	cmd.AddCommand(skillsInstallCmd())
 	cmd.AddCommand(skillsStatusCmd())
@@ -303,14 +301,16 @@ func npxName() string {
 
 // requirePackAccess checks the expert pack is reachable before npx tries.
 //
-// The pack is a private repository. Without this, somebody without access got
-// whatever npm says about a 404, which reads as "the command is broken" rather
-// than "you cannot see this repository" (grit#160).
+// It was written when the pack was private, to turn "whatever npm says about a
+// 404" into "you cannot see this repository". The pack is public now, so that
+// is no longer the likely cause, and the check is worth keeping anyway: a
+// repository that has been renamed, deleted or is simply unreachable fails the
+// same way, and npm's 404 is the wrong way to hear about any of them.
 //
-// Checked with `gh`, because that is what holds the credentials that would make
-// the install work. No `gh` means no check, not a refusal: an install that
-// would have succeeded must not be blocked by a missing tool, so this returns
-// nil and lets npx have its go.
+// Checked with `gh`, because it is already there and already knows how to ask.
+// No `gh` means no check, not a refusal: an install that would have succeeded
+// must not be blocked by a missing tool, so this returns nil and lets npx have
+// its go.
 func requirePackAccess() error {
 	gh, err := exec.LookPath("gh")
 	if err != nil {
@@ -321,13 +321,12 @@ func requirePackAccess() error {
 	if err := cmd.Run(); err == nil {
 		return nil
 	}
-	return fmt.Errorf("the expert pack is at %s, and this machine cannot read it\n\n"+
-		"It is a private repository. Either you have not been given access, or\n"+
-		"`gh` is signed in as somebody who has not:\n\n"+
-		"    gh auth status\n"+
+	return fmt.Errorf("the expert pack is at %s, and this machine cannot reach it\n\n"+
+		"The repository is public, so this is usually the network, GitHub being\n"+
+		"down, or the repository having moved. Check with:\n\n"+
 		"    gh repo view %s\n\n"+
-		"The public Grit skill, which is a smaller and different thing, is\n"+
-		"skills/grit/SKILL.md in the Grit repository and needs no access:\n\n"+
+		"The general Grit skill, which is a smaller and different thing, is\n"+
+		"skills/grit/SKILL.md in the Grit repository:\n\n"+
 		"    https://github.com/MUKE-coder/grit/blob/main/skills/grit/SKILL.md\n\n"+
 		"A project scaffolded by `grit new` already has its own tailored copy at\n"+
 		".claude/skills/grit/SKILL.md.", expertPack, expertPack)

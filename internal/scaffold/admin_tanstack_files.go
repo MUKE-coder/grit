@@ -637,7 +637,7 @@ func adminTanStackPackageJSON(opts Options) string {
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.6.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zod": "^3.24.1",
+    "zod": "` + zodVersion + `",
     "@repo/shared": "workspace:*",
     "@repo/upload": "workspace:*"
   },

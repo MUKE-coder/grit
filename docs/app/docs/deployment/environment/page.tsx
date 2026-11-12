@@ -11,7 +11,7 @@ const REQUIRED = [
   { name: 'JWT_SECRET', note: 'Signs access tokens. 32+ random bytes. Changing it logs everyone out.' },
   { name: 'FIELD_ENCRYPTION_KEY', note: 'Encrypts two-factor secrets and encrypted columns. 32 bytes in base64, written to .env by grit new. Keep it in the secret store and back it up separately from the database: losing or changing it locks out every two-factor user. See the go-live checklist.' },
   { name: 'APP_ENV', note: 'Set to production. Controls error verbosity, cookie flags and whether debug routes mount.' },
-  { name: 'APP_PORT', note: 'Defaults to 8080. Platforms that assign a port (Railway, Render, Heroku) inject their own — map it.' },
+  { name: 'APP_PORT', note: 'Defaults to 8080. Platforms that assign a port (Railway, Render, Heroku) inject their own: map it.' },
   { name: 'CORS_ORIGINS', note: 'Comma-separated exact origins. Never a wildcard in production with credentials on.' },
 ]
 
@@ -21,6 +21,17 @@ const CONDITIONAL = [
   { name: 'S3_* / R2_*', when: 'File uploads are enabled' },
   { name: 'OAUTH_GOOGLE_* / OAUTH_GITHUB_*', when: 'Social login is enabled' },
   { name: 'AI_GATEWAY_API_KEY', when: 'The AI module is on' },
+  // The two that are wrong by default rather than absent by default, which is
+  // why they are worth a row rather than a footnote: the mail sends, and the
+  // customer lands on the operator's console (grit#199).
+  {
+    name: 'OAUTH_FRONTEND_URL',
+    when: 'Customers and operators are on different domains. It is the origin for every link the API mails: verify your email, reset your password, finish signing in with a provider. It defaults to port 3001, which is the admin, so in a split-domain deployment the default sends your customers to your own console and nothing reports an error.',
+  },
+  {
+    name: 'GRIT_WEB_URL',
+    when: 'The multitenant plugin is installed and the web app is on another origin. It is the origin for an invitation’s accept link, and it falls back to the web app’s development origin. An invited colleague is not an operator.',
+  },
 ]
 
 export default function EnvironmentPage() {
@@ -52,7 +63,7 @@ export default function EnvironmentPage() {
                   <h2 className="font-semibold mb-2">Build-time vs runtime: read this one first</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     Anything the frontend reads while it compiles is <strong>baked into the
-                    output</strong>. Set it only at runtime and it is not missing — it is
+                    output</strong>. Set it only at runtime and it is not missing, it is
                     the empty string, compiled in, with nothing logged and nothing failing.
                     The page renders, the API calls go to the wrong host, and the deploy
                     looks green.
@@ -61,7 +72,7 @@ export default function EnvironmentPage() {
                     On every platform with a separate &ldquo;build arguments&rdquo; field,
                     that is where <code className="text-xs">NEXT_PUBLIC_*</code> and anything
                     read during prerender belongs. Secrets go in runtime environment, never
-                    build args — build logs are a wider audience than a container.
+                    build args: build logs are a wider audience than a container.
                   </p>
                 </div>
               </div>

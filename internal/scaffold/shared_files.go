@@ -79,7 +79,7 @@ func sharedPackageJSON(opts Options) string {
   },
   "dependencies": {
     "libphonenumber-js": "` + libphonenumberVersion + `",
-    "zod": "^3.25.0"
+    "zod": "` + zodVersion + `"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
@@ -138,7 +138,7 @@ export const RegisterSchema = z.object({
 export const UpdateUserSchema = z.object({
   firstName: z.string().min(2).optional(),
   lastName: z.string().min(2).optional(),
-  email: z.string().email().optional(),
+  email: z.email().optional(),
   role: z.enum(["ADMIN", "EDITOR", "USER"]).optional(), // grit:role-enum
   jobTitle: z.string().optional(),
   bio: z.string().optional(),
@@ -445,7 +445,7 @@ func sharedFileRefSchema() string {
 // dimensions, audio gets duration). They're optional because not every
 // upload has them — a PDF has no width, a CSV has no thumbnail.
 export const RenditionSchema = z.object({
-  url: z.string().url(),
+  url: z.url(),
   key: z.string().min(1),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
@@ -456,7 +456,7 @@ export const RenditionSchema = z.object({
 export type Rendition = z.infer<typeof RenditionSchema>;
 
 export const FileRefSchema = z.object({
-  url: z.string().url(),
+  url: z.url(),
   key: z.string().min(1),
   name: z.string().min(1),
   mime: z.string().min(1),
@@ -464,7 +464,7 @@ export const FileRefSchema = z.object({
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
   duration: z.number().int().nonnegative().optional(),
-  thumbnail_url: z.string().url().optional(),
+  thumbnail_url: z.url().optional(),
 
   // Written by the image pipeline. format is what the file actually is after
   // optimisation, which is not always what was uploaded: a PNG photograph

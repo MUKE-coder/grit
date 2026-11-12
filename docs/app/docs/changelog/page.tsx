@@ -72,6 +72,94 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.506.0 */}
+            <div className="mb-12" id="v3.506.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.506.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>zod 4, and a freshly generated project with no advisories at all</h3>
+                <p>
+                  grit#175. zod 3 carries a HIGH advisory with no fix inside
+                  3.x, GHSA-mrhx-c7xc-m3w5, and it was the last one left in a
+                  new project. A fresh scaffold now answers:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`$ pnpm audit
+No known vulnerabilities found`}
+                />
+                <p>
+                  Not just no HIGH. None, at any severity.
+                </p>
+
+                <h4>It cost less than the issue expected, and that was worth checking</h4>
+                <p>
+                  The issue listed four API changes to work through and feared
+                  a sweep over every hand-written schema in the admin and web
+                  templates. Three of the four do not apply: there is not one{' '}
+                  <code>required_error</code> or{' '}
+                  <code>invalid_type_error</code> in the tree, and not one{' '}
+                  <code>z.string().datetime()</code>. The{' '}
+                  <code>z.string().email()</code> family is real and it was
+                  seven call sites in three files, because the admin and web
+                  schemas are generated from those.
+                </p>
+                <p>
+                  Then the more useful finding, from installing zod 4.6.7 and
+                  asking it rather than reasoning about it: <strong>every 3.x
+                  spelling still type-checks and still validates at
+                  runtime.</strong>{' '}
+                  <code>z.string().email()</code>,{' '}
+                  <code>z.string().url()</code> and{' '}
+                  <code>z.string().uuid(&quot;message&quot;)</code> are
+                  deprecated in favour of <code>z.email()</code>,{' '}
+                  <code>z.url()</code> and <code>z.uuid()</code>, and they
+                  work, and they still reject bad input.
+                </p>
+                <p>
+                  So this was a pin bump. The call sites were modernised
+                  because they should be, not because they had to be, and the
+                  eight separate <code>&quot;zod&quot;</code> pins at four
+                  different 3.x minors across eight files became one constant,
+                  which is its own small fix: a dependency the generator writes
+                  into every frontend is one fact.
+                </p>
+
+                <h4>Which is why grit upgrade does not scan your schemas</h4>
+                <p>
+                  The plan was for <code>grit upgrade</code> to refuse to move
+                  the pin while a project&apos;s own schemas still used
+                  3.x-only calls, and to name the files. That was the right
+                  design for the problem as described and it guards against
+                  nothing: there are no 3.x-only calls that break under 4, so
+                  the scanner would have refused no project and cost every
+                  upgrade a pass over every schema in the repository. It is not
+                  built.
+                </p>
+                <p>
+                  The input-versus-output divergence around{' '}
+                  <code>.default()</code> is real in zod 4, and it does not
+                  reach Grit&apos;s own forms:{' '}
+                  <code>LoginSchema</code>, <code>RegisterSchema</code> and{' '}
+                  <code>ForgotPasswordSchema</code> declare no defaults, so{' '}
+                  <code>z.infer</code> and <code>z.input</code> are the same
+                  type for every schema handed to <code>useForm</code>. A
+                  schema of your own with defaults is still worth a look.
+                </p>
+                <p>
+                  Verified on a generated triple project rather than on the
+                  templates: zod 4.6.7 resolved, and{' '}
+                  <code>type-check</code> clean on both the admin and the web
+                  app with the real compiler.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.9 */}
             <div className="mb-12" id="v3.505.9">
               <div className="flex items-center gap-3 mb-4">

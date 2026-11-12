@@ -892,7 +892,7 @@ func desktopClientPackageJSON(opts Options) string {
     "@hookform/resolvers": "^3.9.0",
     "recharts": "^2.15.0",
     "tailwind-merge": "^2.5.5",
-    "zod": "^3.23.0"
+    "zod": "` + zodVersion + `"
   },
   "devDependencies": {
     "@tanstack/router-cli": "^1.167.40",

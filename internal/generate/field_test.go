@@ -83,8 +83,8 @@ func TestField_ZodType(t *testing.T) {
 		{Field{Type: "float"}, "z.number()"},
 		{Field{Type: "bool"}, "z.boolean()"},
 		{Field{Type: "datetime"}, "z.string().nullable()"},
-		{Field{Type: "belongs_to"}, "z.string().uuid"},
-		{Field{Type: "many_to_many"}, "z.array(z.string().uuid())"},
+		{Field{Type: "belongs_to"}, "z.uuid"},
+		{Field{Type: "many_to_many"}, "z.array(z.uuid())"},
 		{Field{Type: "string_array"}, "z.array(z.string())"},
 	}
 

@@ -76,10 +76,10 @@ func TestGeneratedSchemaMakesAnOptionalRelationshipOptional(t *testing.T) {
 	}
 	out := readTestFile(t, root+"/packages/shared/schemas/deal.ts")
 
-	if !strings.Contains(out, "contact_id: z.string().uuid(\"Invalid ID\").nullable().optional()") {
+	if !strings.Contains(out, "contact_id: z.uuid(\"Invalid ID\").nullable().optional()") {
 		t.Errorf("an optional relationship should be nullable and optional:\n%s", out)
 	}
-	if strings.Contains(out, "company_id: z.string().uuid(\"Invalid ID\").nullable().optional()") {
+	if strings.Contains(out, "company_id: z.uuid(\"Invalid ID\").nullable().optional()") {
 		t.Error("a required relationship was made optional")
 	}
 }
