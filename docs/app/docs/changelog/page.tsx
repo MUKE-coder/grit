@@ -72,6 +72,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.511.1 */}
+            <div className="mb-12" id="v3.511.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.511.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The nightly canary was red, and it was right</h3>
+                <p>
+                  <code>scripts/check-docs-paths.py</code> scaffolds a project
+                  and checks that every project path the docs name actually
+                  exists in it. The citations page added in v3.508.0 names{' '}
+                  <code>apps/web/lib/citations.ts</code>, which is a file the
+                  reader writes: that page exists precisely because Grit ships
+                  no CSL engine. So the check was correct and the path needed
+                  the reason the other twenty-three excused paths carry.
+                </p>
+                <p>
+                  Worth saying plainly: this had been failing since v3.508.0
+                  and was read as noise. The check is the one that catches a
+                  docs page naming a file the framework stopped writing, which
+                  is the most ordinary way documentation goes quietly wrong.
+                </p>
+              </div>
+            </div>
+
             {/* v3.511.0 */}
             <div className="mb-12" id="v3.511.0">
               <div className="flex items-center gap-3 mb-4">

@@ -23,6 +23,15 @@ Also worth knowing:
 ---
 
 
+## v3.511.1 - November 12, 2026
+
+### The nightly canary was red, and it was right
+
+`scripts/check-docs-paths.py` scaffolds a project and checks that every project path the docs name actually exists in it. The citations page added in v3.508.0 names `apps/web/lib/citations.ts`, which is a file the reader writes: that page exists precisely because Grit ships no CSL engine. So the check was correct and the path needed the reason the other twenty-three excused paths carry.
+
+Worth saying plainly: this had been failing since v3.508.0 and was read as noise. The check is the one that catches a docs page naming a file the framework stopped writing, which is the most ordinary way documentation goes quietly wrong.
+
+
 ## v3.511.0 - November 12, 2026
 
 ### Billing belongs to the organisation, not to whoever clicked Checkout
