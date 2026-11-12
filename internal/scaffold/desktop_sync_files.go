@@ -124,6 +124,10 @@ type SyncResult struct {
 	Pushed     int      ` + "`" + `json:"pushed"` + "`" + `
 	Pulled     int      ` + "`" + `json:"pulled"` + "`" + `
 	Conflicts  int      ` + "`" + `json:"conflicts"` + "`" + `
+	// Failed is changes the server refused for a reason that will not change
+	// by sending them again. They are parked for somebody to look at rather
+	// than retried, and they are not counted as pending (grit#215).
+	Failed     int      ` + "`" + `json:"failed"` + "`" + `
 	Errors     []string ` + "`" + `json:"errors,omitempty"` + "`" + `
 	StartedAt  string   ` + "`" + `json:"started_at"` + "`" + `
 	FinishedAt string   ` + "`" + `json:"finished_at"` + "`" + `
@@ -153,12 +157,13 @@ func (e *Engine) Sync(models []string) (*SyncResult, error) {
 		res.Pulled += n
 	}
 
-	pushed, conflicts, err := e.Push()
+	pushed, conflicts, failed, err := e.PushAll()
 	if err != nil {
 		res.Errors = append(res.Errors, fmt.Sprintf("push: %v", err))
 	}
 	res.Pushed = pushed
 	res.Conflicts = conflicts
+	res.Failed = failed
 	res.FinishedAt = time.Now().Format(time.RFC3339)
 	return res, nil
 }
@@ -356,6 +361,10 @@ type SyncStatus struct {
 	AutoSync     bool     ` + "`" + `json:"auto_sync"` + "`" + `
 	Syncing      bool     ` + "`" + `json:"syncing"` + "`" + `
 	Pending      int64    ` + "`" + `json:"pending"` + "`" + `
+	// Failed is the parked changes. A screen shows these in their own
+	// section: they are not waiting for anything and nothing will move them
+	// without a person.
+	Failed       int64    ` + "`" + `json:"failed"` + "`" + `
 	LastSync     string   ` + "`" + `json:"last_sync,omitempty"` + "`" + `
 	LastError    string   ` + "`" + `json:"last_error,omitempty"` + "`" + `
 	DeviceID     string   ` + "`" + `json:"device_id,omitempty"` + "`" + `
@@ -366,6 +375,7 @@ type SyncStatus struct {
 // background tick (no extra network call on every poll).
 func (e *Engine) Status() SyncStatus {
 	pending, _ := e.PendingCount()
+	failed, _ := e.FailedCount()
 	e.autoMu.Lock()
 	ls := ""
 	if !e.lastSync.IsZero() {
@@ -377,6 +387,7 @@ func (e *Engine) Status() SyncStatus {
 		AutoSync:     e.IsAutoSyncEnabled(),
 		Syncing:      e.syncingN > 0,
 		Pending:      pending,
+		Failed:       failed,
 		LastSync:     ls,
 		LastError:    e.lastErr,
 		DeviceID:     e.deviceID,
@@ -473,6 +484,39 @@ type PushResult struct {
 	ServerVersion int                    ` + "`" + `json:"server_version,omitempty"` + "`" + `
 	ServerData    map[string]interface{} ` + "`" + `json:"server_data,omitempty"` + "`" + `
 	NewVersion    int                    ` + "`" + `json:"new_version,omitempty"` + "`" + `
+
+	// Retryable is the server saying whether this same change could ever
+	// succeed. Nil means it did not say, which is what an older server looks
+	// like, and then permanentCodes decides.
+	Retryable *bool ` + "`" + `json:"retryable,omitempty"` + "`" + `
+}
+
+// permanentCodes are the refusals this client knows are permanent, for a
+// server too old to say.
+//
+// Deliberately short. It covers the codes the framework itself emits and
+// nothing else: an application's own guard answers a code no desktop build
+// could have been compiled with, which is exactly why the server sends
+// retryable and why this is only the fallback.
+var permanentCodes = map[string]bool{
+	"READ_ONLY":     true,
+	"UNKNOWN_MODEL": true,
+	"DECODE_ERROR":  true,
+	"FORBIDDEN":     true,
+	"NOT_FOUND":     true,
+}
+
+// permanent reports a refusal that will be refused again for the same payload.
+//
+// The server's word first. Without it, an unrecognised code is treated as
+// worth retrying, because retrying something permanent wastes a request a
+// minute while parking something transient hides work that would have gone
+// through on its own. Of the two ways to be wrong, that one is recoverable.
+func (r PushResult) permanent() bool {
+	if r.Retryable != nil {
+		return !*r.Retryable
+	}
+	return permanentCodes[r.Code]
 }
 
 // Push drains the outbox into a single /api/sync/push call and applies
@@ -483,28 +527,41 @@ type PushResult struct {
 //
 // Returns (pushed, conflicts, err).
 func (e *Engine) Push() (int, int, error) {
-	// Skip rows that already have an unresolved conflict — the user has
-	// to resolve those via ResolveConflict before they're tried again.
+	pushed, conflicts, _, err := e.PushAll()
+	return pushed, conflicts, err
+}
+
+// PushAll is Push with the failed count as well: changes the server refused
+// for a reason that will not change, which are now parked rather than sent
+// again on every sync (grit#215).
+func (e *Engine) PushAll() (int, int, int, error) {
+	// Skip rows with an unresolved conflict, which wait for ResolveConflict,
+	// and rows already parked as failed. Re-sending a failed row is the bug:
+	// with auto-sync on it was one doomed request every thirty seconds for
+	// the life of the install, and the only thing that moves it now is a
+	// person choosing to retry or revert it.
 	var entries []Outbox
-	if err := e.DB.Where("has_conflict = 0").Order("created_at asc").Find(&entries).Error; err != nil {
-		return 0, 0, err
+	if err := e.DB.Where("has_conflict = 0 AND state <> ?", OutboxFailed).
+		Order("created_at asc").Find(&entries).Error; err != nil {
+		return 0, 0, 0, err
 	}
 	// The server takes at most MaxPushChanges a push, so a long offline stretch
 	// goes up in several.
-	pushed, conflicts := 0, 0
+	pushed, conflicts, failed := 0, 0, 0
 	for start := 0; start < len(entries); start += MaxPushChanges {
 		end := start + MaxPushChanges
 		if end > len(entries) {
 			end = len(entries)
 		}
-		p, c, err := e.pushEntries(entries[start:end])
+		p, c, f, err := e.pushEntries(entries[start:end])
 		pushed += p
 		conflicts += c
+		failed += f
 		if err != nil {
-			return pushed, conflicts, err
+			return pushed, conflicts, failed, err
 		}
 	}
-	return pushed, conflicts, nil
+	return pushed, conflicts, failed, nil
 }
 
 // PushOne pushes a single queued change immediately. Used by the "Confirm"
@@ -512,7 +569,8 @@ func (e *Engine) Push() (int, int, error) {
 // changes one at a time. Returns (pushed, conflicts, err).
 func (e *Engine) PushOne(table, entityID string) (int, int, error) {
 	var entry Outbox
-	if err := e.DB.Where("model = ? AND entity_id = ? AND has_conflict = 0", table, entityID).First(&entry).Error; err != nil {
+	if err := e.DB.Where("model = ? AND entity_id = ? AND has_conflict = 0 AND state <> ?",
+		table, entityID, OutboxFailed).First(&entry).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, 0, fmt.Errorf("no pending change for %s/%s", table, entityID)
 		}
@@ -520,16 +578,17 @@ func (e *Engine) PushOne(table, entityID string) (int, int, error) {
 	}
 	e.setSyncing(true)
 	defer e.setSyncing(false)
-	return e.pushEntries([]Outbox{entry})
+	pushed, conflicts, _, err := e.pushEntries([]Outbox{entry})
+	return pushed, conflicts, err
 }
 
 // pushEntries posts a specific set of outbox rows to /api/sync/push and applies
 // each per-entry result. Shared by Push (drain the whole outbox) and PushOne
 // (confirm a single change). Successful entries are removed; conflicts are kept
 // with the server state attached for the merge dialog.
-func (e *Engine) pushEntries(entries []Outbox) (int, int, error) {
+func (e *Engine) pushEntries(entries []Outbox) (int, int, int, error) {
 	if len(entries) == 0 {
-		return 0, 0, nil
+		return 0, 0, 0, nil
 	}
 
 	batch := PushBatch{Changes: make([]PushChange, 0, len(entries))}
@@ -549,28 +608,29 @@ func (e *Engine) pushEntries(entries []Outbox) (int, int, error) {
 
 	body, err := e.doPOST(e.APIURL+"/sync/push", batch)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 
 	var resp struct {
 		Results []PushResult ` + "`" + `json:"results"` + "`" + `
 	}
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return 0, 0, fmt.Errorf("decoding push response: %w", err)
+		return 0, 0, 0, fmt.Errorf("decoding push response: %w", err)
 	}
 	if len(resp.Results) != len(entries) {
-		return 0, 0, fmt.Errorf("push: server returned %d results for %d changes", len(resp.Results), len(entries))
+		return 0, 0, 0, fmt.Errorf("push: server returned %d results for %d changes", len(resp.Results), len(entries))
 	}
 
 	pushed := 0
 	conflicts := 0
+	failed := 0
 	for i, r := range resp.Results {
 		en := entries[i]
 		switch {
 		case r.OK:
 			// Remove the outbox entry; mark the local record at the new version.
 			if err := e.DB.Delete(&en).Error; err != nil {
-				return pushed, conflicts, err
+				return pushed, conflicts, failed, err
 			}
 			if en.Op == "delete" {
 				e.DB.Where("model = ? AND id = ?", en.Model, en.EntityID).Delete(&Record{})
@@ -592,12 +652,32 @@ func (e *Engine) pushEntries(entries []Outbox) (int, int, error) {
 			})
 			conflicts++
 
+		case r.permanent():
+			// The server will refuse this again for the same payload, so it
+			// is parked and shown to somebody rather than re-sent for ever.
+			// The reason goes in its own columns: conflict_msg is named for
+			// conflicts, and a UI built from the field name would show a plan
+			// limit in a merge dialog (grit#215).
+			e.DB.Model(&en).Updates(map[string]interface{}{
+				"state":      OutboxFailed,
+				"error_code": r.Code,
+				"error_msg":  r.Message,
+				"failed_at":  nowUnix(),
+			})
+			failed++
+
 		default:
-			// Other errors leave the entry alone; user can retry later.
-			e.DB.Model(&en).Update("conflict_msg", fmt.Sprintf("%s: %s", r.Code, r.Message))
+			// Worth trying again: a database fault, or a server that said so.
+			// The count is kept so a screen can tell a row that has been
+			// refused thirty times from one on its first attempt.
+			e.DB.Model(&en).Updates(map[string]interface{}{
+				"attempts":   gorm.Expr("attempts + 1"),
+				"error_code": r.Code,
+				"error_msg":  r.Message,
+			})
 		}
 	}
-	return pushed, conflicts, nil
+	return pushed, conflicts, failed, nil
 }
 
 // ResolveConflict accepts the user's merge for one conflicted entity.
@@ -698,8 +778,18 @@ func (e *Engine) RevertAll() error {
 // PendingCount returns how many outbox entries are waiting (used to
 // drive the title-bar badge).
 func (e *Engine) PendingCount() (int64, error) {
+	// Queued rows only. A failed one is not waiting to go: counting it made
+	// the pending badge show work that was never going to happen, and gave a
+	// screen no way to tell the two apart (grit#215).
 	var n int64
-	err := e.DB.Model(&Outbox{}).Count(&n).Error
+	err := e.DB.Model(&Outbox{}).Where("state <> ?", OutboxFailed).Count(&n).Error
+	return n, err
+}
+
+// FailedCount is how many changes are parked for somebody to look at.
+func (e *Engine) FailedCount() (int64, error) {
+	var n int64
+	err := e.DB.Model(&Outbox{}).Where("state = ?", OutboxFailed).Count(&n).Error
 	return n, err
 }
 
@@ -707,8 +797,49 @@ func (e *Engine) PendingCount() (int64, error) {
 // "review what's about to push" panel.
 func (e *Engine) GetPendingChanges() ([]Outbox, error) {
 	var entries []Outbox
-	err := e.DB.Order("created_at asc").Find(&entries).Error
+	err := e.DB.Where("state <> ?", OutboxFailed).Order("created_at asc").Find(&entries).Error
 	return entries, err
+}
+
+// GetFailedChanges returns the changes the server refused, newest first, for
+// the section of the sync screen that shows them.
+//
+// Each carries ErrorCode and ErrorMsg, which are the server's own words. They
+// are separate from ConflictMsg on purpose: that field is named for conflicts,
+// and a screen built from the field name would show a plan limit in a merge
+// dialog.
+func (e *Engine) GetFailedChanges() ([]Outbox, error) {
+	var entries []Outbox
+	err := e.DB.Where("state = ?", OutboxFailed).Order("failed_at desc").Find(&entries).Error
+	return entries, err
+}
+
+// RetryChange puts a failed change back in the queue.
+//
+// For after the reason is gone: the plan was upgraded, the permission granted,
+// the row restored. It clears the error rather than hiding it, so a second
+// refusal reads as a fresh one rather than the old message with a new date.
+//
+// Nothing retries automatically. A change the server refused on its merits is
+// a decision somebody has to make, and making it for them is how a doomed
+// request ends up repeating for ever.
+func (e *Engine) RetryChange(table, entityID string) error {
+	res := e.DB.Model(&Outbox{}).
+		Where("model = ? AND entity_id = ? AND state = ?", table, entityID, OutboxFailed).
+		Updates(map[string]interface{}{
+			"state":      OutboxQueued,
+			"error_code": "",
+			"error_msg":  "",
+			"failed_at":  0,
+			"attempts":   0,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("no failed change for %s/%s", table, entityID)
+	}
+	return nil
 }
 
 func (e *Engine) doGET(url string) ([]byte, error) {
@@ -889,7 +1020,41 @@ type Outbox struct {
 	ServerData    []byte ` + "`" + `gorm:"type:blob"` + "`" + `
 	ServerVersion int
 	ConflictMsg   string ` + "`" + `gorm:"size:500"` + "`" + `
+
+	// State is "queued" or "failed". Empty means queued: every row written
+	// before this column existed is still waiting to go.
+	//
+	// Without it a refusal the server will never accept was indistinguishable
+	// from a change that is simply waiting. The row stayed in the outbox, the
+	// pending badge counted it, and every push sent it again: with auto-sync
+	// on, one doomed request every thirty seconds for the life of the install
+	// (grit#215).
+	//
+	// A failed row never disappears on its own. It is somebody's work, and the
+	// only thing that clears it is a person choosing to retry or revert it.
+	State     string ` + "`" + `gorm:"size:10;index"` + "`" + `
+	ErrorCode string ` + "`" + `gorm:"size:64"` + "`" + `
+	ErrorMsg  string ` + "`" + `gorm:"size:500"` + "`" + `
+	// Attempts counts the pushes that were refused for a reason worth
+	// retrying. A row climbing this is a server problem, not a payload one.
+	Attempts int
+	// FailedAt is when it was parked, so a screen can order by it.
+	FailedAt int64
 }
+
+// Outbox states.
+const (
+	// OutboxQueued is waiting to be pushed. The zero value means this, so a
+	// row written before the column existed reads correctly.
+	OutboxQueued = "queued"
+	// OutboxFailed is a change the server refused for a reason that will not
+	// change by sending it again. It is not retried and it is not counted as
+	// pending.
+	OutboxFailed = "failed"
+)
+
+// Failed reports a change parked for a human.
+func (o Outbox) Failed() bool { return o.State == OutboxFailed }
 
 func (Outbox) TableName() string { return "sync_outbox" }
 

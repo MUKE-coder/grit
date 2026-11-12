@@ -190,6 +190,11 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		// registrations.
 		filepath.Join(desktopRoot, "sync", "policy.go"):      tmpl("desktop/sync/policy.go"),
 		filepath.Join(desktopRoot, "sync", "policy_test.go"): tmpl("desktop/sync/policy_test.go"),
+
+		// A change the server refuses for a reason that will not change is
+		// parked for somebody rather than re-sent on every push for the life
+		// of the install (grit#215).
+		filepath.Join(desktopRoot, "sync", "failed_state_test.go"): tmpl("desktop/sync/failed_state_test.go"),
 	}
 
 	// Not in the map above: it is generated from the project's registrations

@@ -72,6 +72,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.513.0 */}
+            <div className="mb-12" id="v3.513.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.513.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One doomed request every thirty seconds, for ever</h3>
+                <p>
+                  grit#215. A per-change refusal from <code>/sync/push</code>{' '}
+                  that was not a version conflict left the outbox row queued
+                  with no failed state, so the client re-sent it on every push
+                  for the rest of the install&apos;s life. With auto-sync on
+                  that is one request every thirty seconds that the server is
+                  guaranteed to refuse.
+                </p>
+                <p>
+                  Three problems came out of one branch, and the report named
+                  all three. A 4xx was retried, when a 4xx for an unchanged
+                  payload is permanent. The row was indistinguishable from one
+                  simply waiting, because <code>PendingCount</code> counted it
+                  and <code>HasConflict</code> was the only flag there was. And
+                  the reason was stored in <code>conflict_msg</code>, a field
+                  named for conflicts, so a screen built from the field name
+                  would show a plan limit in a merge dialog.
+                </p>
+                <p>
+                  The outbox has a state now. A permanent refusal moves the row
+                  to <code>failed</code> with the server&apos;s own{' '}
+                  <code>error_code</code> and <code>error_msg</code>, it stops
+                  being sent, and it stops counting as pending.{' '}
+                  <code>GetFailedChanges</code> and <code>FailedCount</code>{' '}
+                  are what a sync screen renders its second section from. A
+                  transient refusal is still retried and the attempts are
+                  counted, so a row refused thirty times reads differently from
+                  one on its first try.
+                </p>
+                <p>
+                  Nothing retries by itself and nothing clears by itself.{' '}
+                  <code>RetryChange</code> puts a parked row back in the queue
+                  when the reason is gone, and it clears the old error rather
+                  than leaving it to be read as a fresh one.
+                </p>
+                <h4>The server says which refusals are permanent</h4>
+                <p>
+                  <code>PushResult.Permanent()</code> and{' '}
+                  <code>.Transient()</code> set a <code>retryable</code> field
+                  on the wire. That is the reporter&apos;s own suggestion and it
+                  is the right place for the decision: the server is the only
+                  thing that knows what its own hooks answer. An entitlement
+                  guard refusing a row because the plan does not cover it is
+                  permanent for an unchanged payload, and no list compiled into
+                  a desktop build could know that code exists.
+                </p>
+                <p>
+                  A client talking to a server too old to send it falls back to
+                  the codes the framework itself emits, and treats anything it
+                  does not recognise as worth retrying. Of the two ways to be
+                  wrong, wasting a request is recoverable and hiding
+                  somebody&apos;s work is not.
+                </p>
+                <p>
+                  Five tests ship with every project, including the
+                  report&apos;s own measurement: four pushes of a change the
+                  server refuses, and the server is asked exactly once.
+                </p>
+                <p>
+                  Also fixed: the push-chunking upgrade repair still described
+                  the loop as it was before this change, so it would have
+                  reported every project as not the file Grit wrote. That is the
+                  third anchor in two days to drift from the template it
+                  repairs.
+                </p>
+              </div>
+            </div>
+
             {/* v3.512.0 */}
             <div className="mb-12" id="v3.512.0">
               <div className="flex items-center gap-3 mb-4">

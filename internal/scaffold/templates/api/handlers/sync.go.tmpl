@@ -55,6 +55,40 @@ type PushResult struct {
 	ServerVersion int         `json:"server_version,omitempty"`
 	ServerData    interface{} `json:"server_data,omitempty"`
 	NewVersion    int         `json:"new_version,omitempty"`
+
+	// Retryable says whether sending this same change again could ever
+	// succeed. Nil means the server did not say, which is what an older
+	// server looks like to a newer client.
+	//
+	// It is here rather than in a table of codes inside each client because
+	// the server is the only thing that knows what its own hooks answer. An
+	// entitlement guard refusing a row because the plan does not cover it is
+	// permanent for an unchanged payload, and no list compiled into a desktop
+	// build could know that code exists (grit#215).
+	//
+	// A client that ignores the field keeps the behaviour it has.
+	Retryable *bool `json:"retryable,omitempty"`
+}
+
+// permanent and transient are the two answers, as pointers so "the server did
+// not say" stays distinguishable from "the server said no".
+var (
+	pushPermanent = false
+	pushTransient = true
+)
+
+// Permanent marks a refusal that will be refused again for the same payload.
+// The client parks it and shows it to somebody instead of retrying forever.
+func (r PushResult) Permanent() PushResult {
+	r.Retryable = &pushPermanent
+	return r
+}
+
+// Transient marks a refusal worth retrying: the server would answer
+// differently later.
+func (r PushResult) Transient() PushResult {
+	r.Retryable = &pushTransient
+	return r
 }
 
 // Changes made while offline.
@@ -173,7 +207,7 @@ func syncFault(c *gin.Context, ch PushChange, err error, message string) string 
 func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRows) PushResult {
 	proto, err := h.Registry.New(ch.Model)
 	if err != nil {
-		return PushResult{OK: false, Code: "UNKNOWN_MODEL", Message: err.Error()}
+		return PushResult{OK: false, Code: "UNKNOWN_MODEL", Message: err.Error()}.Permanent()
 	}
 	policy := h.Registry.PolicyFor(ch.Model)
 	// A model the server authors: the client is told rather than the write
@@ -184,7 +218,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 	// does not depend on who is asking: nobody pushes to a read_only model.
 	if !policy.Writable() {
 		return PushResult{OK: false, Code: "READ_ONLY",
-			Message: ch.Model + " is registered " + policy.Mode + ": the server writes these rows, a client does not"}
+			Message: ch.Model + " is registered " + policy.Mode + ": the server writes these rows, a client does not"}.Permanent()
 	}
 	// Enforced before the payload reaches a decoder: a field declared
 	// local_only is a promise it never leaves the device, and a promise kept
@@ -204,14 +238,14 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 		// keep referring to the same row after the server insert.
 		obj := proto
 		if err := decodeInto(obj, ch.Data); err != nil {
-			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}
+			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}.Permanent()
 		}
 		setField(obj, "ID", ch.ID)
 		if !syncMayWrite(c, ch.Model, "create", obj) {
-			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not create " + ch.Model}
+			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not create " + ch.Model}.Permanent()
 		}
 		if err := h.rows().Create(c.Request.Context(), obj); err != nil {
-			return PushResult{OK: false, Code: "CREATE_FAILED", Message: syncFault(c, ch, err, "the server could not create the row")}
+			return PushResult{OK: false, Code: "CREATE_FAILED", Message: syncFault(c, ch, err, "the server could not create the row")}.Transient()
 		}
 		// Mirror the online handler: emit a semantic activity row so offline
 		// creates surface in /system/activity, not just the raw audit log.
@@ -223,14 +257,14 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 		current, err := h.current(c, rows, ch, proto)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
+				return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}.Permanent()
 			}
-			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: syncFault(c, ch, err, "the server could not read the row")}
+			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: syncFault(c, ch, err, "the server could not read the row")}.Transient()
 		}
 		// Not found rather than forbidden: a row the caller may not touch is one
 		// whose existence it does not get to learn.
 		if !syncMayWrite(c, ch.Model, "edit", current) {
-			return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
+			return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}.Permanent()
 		}
 		serverVersion := getIntField(current, "Version")
 		if serverVersion != ch.Version {
@@ -273,13 +307,13 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 		// fields through their driver.Valuer implementations, exactly like create.
 		obj := current
 		if err := decodeInto(obj, ch.Data); err != nil {
-			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}
+			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}.Permanent()
 		}
 		setField(obj, "ID", ch.ID)
 		// The payload is merged onto the loaded row, so check again: an owner may
 		// not hand a row to somebody else by rewriting its owner field.
 		if !syncMayWrite(c, ch.Model, "edit", obj) {
-			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not change who owns this row"}
+			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not change who owns this row"}.Permanent()
 		}
 		// Set the new version here rather than leaving it to the BeforeUpdate
 		// hook, because for a full-struct Save the hook cannot win.
@@ -298,7 +332,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 		// BeforeUpdate hook. Omit associations so the nested relation object is not
 		// upserted, and CreatedAt so the client can't rewind the original timestamp.
 		if err := h.rows().Save(c.Request.Context(), obj); err != nil {
-			return PushResult{OK: false, Code: "UPDATE_FAILED", Message: syncFault(c, ch, err, "the server could not update the row")}
+			return PushResult{OK: false, Code: "UPDATE_FAILED", Message: syncFault(c, ch, err, "the server could not update the row")}.Transient()
 		}
 		newVersion := getIntField(obj, "Version")
 		services.LogUpdate(h.DB, c, entityType, syncIdentifier(ch.Data, ch.ID), ch.ID, services.DiffSummary(ch.Data))
@@ -311,10 +345,10 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 				// Already gone — treat as success so the outbox can clear.
 				return PushResult{OK: true}
 			}
-			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: syncFault(c, ch, err, "the server could not read the row")}
+			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: syncFault(c, ch, err, "the server could not read the row")}.Transient()
 		}
 		if !syncMayWrite(c, ch.Model, "delete", current) {
-			return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
+			return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}.Permanent()
 		}
 		serverVersion := getIntField(current, "Version")
 		if ch.Version != 0 && serverVersion != ch.Version {
@@ -327,7 +361,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 			}
 		}
 		if err := h.rows().Delete(c.Request.Context(), current, ch.ID); err != nil {
-			return PushResult{OK: false, Code: "DELETE_FAILED", Message: syncFault(c, ch, err, "the server could not delete the row")}
+			return PushResult{OK: false, Code: "DELETE_FAILED", Message: syncFault(c, ch, err, "the server could not delete the row")}.Transient()
 		}
 		services.LogDelete(h.DB, c, entityType, ch.ID, ch.ID)
 		return PushResult{OK: true}

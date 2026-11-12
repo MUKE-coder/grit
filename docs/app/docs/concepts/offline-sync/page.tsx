@@ -310,6 +310,62 @@ if errors.As(err, &policyErr) {
                 <code>read_only</code> and the desktop app still queues writes for it,
                 that command not having been run is the first thing to check.
               </p>
+
+              <h3 id="failed-changes">A refusal the server will repeat</h3>
+              <p>
+                Some pushes are refused on their merits. The plan does not cover
+                another project, the permission is not granted, the row was deleted on
+                the server. Sending the same payload again gets the same answer, so a
+                change like that is <strong>parked</strong> rather than retried: its
+                outbox row moves to <code>failed</code>, carrying the server&apos;s own
+                code and message, and it is not counted as pending.
+              </p>
+              <p>
+                It used to be retried for ever. The row stayed queued, the pending badge
+                counted it, and with auto-sync on that is one doomed request every
+                thirty seconds for the life of the install, about a record the person
+                cannot fix and must not dismiss without being told what it was.
+              </p>
+              <CodeBlock language="go" code={`status := engine.Status()
+status.Pending   // waiting to go
+status.Failed    // parked, waiting for a person
+
+parked, _ := engine.GetFailedChanges()
+for _, row := range parked {
+    // row.ErrorCode and row.ErrorMsg are the server's words.
+    // Not row.ConflictMsg: that field is named for conflicts, and a screen
+    // built from the field name would show a plan limit in a merge dialog.
+    show(row.Model, row.ErrorCode, row.ErrorMsg)
+}
+
+// When the reason is gone: the plan upgraded, the permission granted.
+engine.RetryChange("projects", id)`} />
+              <p>
+                Nothing retries on its own, and a failed row never disappears on its
+                own either. It is somebody&apos;s work, and the only things that move it
+                are <code>RetryChange</code> and the revert the sync screen already has.
+              </p>
+              <h4>Which refusals are permanent</h4>
+              <p>
+                The server decides, and says so in the push result:{' '}
+                <code>PushResult.Permanent()</code> and{' '}
+                <code>.Transient()</code> set a <code>retryable</code> field the client
+                reads. That is the right place for it, because the server is the only
+                thing that knows what its own hooks answer: an entitlement guard
+                refusing a row because the plan does not cover it is permanent for an
+                unchanged payload, and no list compiled into a desktop build could know
+                that code exists.
+              </p>
+              <p>
+                A client talking to a server too old to send the field falls back to the
+                codes the framework itself emits, and treats anything it does not
+                recognise as worth retrying. Of the two ways to be wrong, wasting a
+                request is recoverable and hiding somebody&apos;s work is not. A{' '}
+                <code>CREATE_FAILED</code> or an <code>INTERNAL_ERROR</code> is a
+                database fault that may clear, so those are retried and the attempt
+                count is kept: a row climbing it is a server problem rather than a
+                payload one.
+              </p>
               <p>
                 <code>local_only</code> is stripped on both sides: the client does not
                 send it and the server would drop it anyway, which is what makes it a

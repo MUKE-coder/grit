@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.513.0 - November 12, 2026
+
+### One doomed request every thirty seconds, for ever
+
+grit#215. A per-change refusal from `/sync/push` that was not a version conflict left the outbox row queued with no failed state, so the client re-sent it on every push for the rest of the install's life. With auto-sync on that is one request every thirty seconds that the server is guaranteed to refuse.
+
+Three problems came out of one branch, and the report named all three. A 4xx was retried, when a 4xx for an unchanged payload is permanent. The row was indistinguishable from one simply waiting, because `PendingCount` counted it and `HasConflict` was the only flag there was. And the reason was stored in `conflict_msg`, a field named for conflicts, so a screen built from the field name would show a plan limit in a merge dialog.
+
+The outbox has a state now. A permanent refusal moves the row to `failed` with the server's own `error_code` and `error_msg`, it stops being sent, and it stops counting as pending. `GetFailedChanges` and `FailedCount` are what a sync screen renders its second section from. A transient refusal is still retried and the attempts are counted, so a row refused thirty times reads differently from one on its first try.
+
+Nothing retries by itself and nothing clears by itself. `RetryChange` puts a parked row back in the queue when the reason is gone, and it clears the old error rather than leaving it to be read as a fresh one.
+
+#### The server says which refusals are permanent
+
+`PushResult.Permanent()` and `.Transient()` set a `retryable` field on the wire. That is the reporter's own suggestion and it is the right place for the decision: the server is the only thing that knows what its own hooks answer. An entitlement guard refusing a row because the plan does not cover it is permanent for an unchanged payload, and no list compiled into a desktop build could know that code exists.
+
+A client talking to a server too old to send it falls back to the codes the framework itself emits, and treats anything it does not recognise as worth retrying. Of the two ways to be wrong, wasting a request is recoverable and hiding somebody's work is not.
+
+Five tests ship with every project, including the report's own measurement: four pushes of a change the server refuses, and the server is asked exactly once.
+
+Also fixed: the push-chunking upgrade repair still described the loop as it was before this change, so it would have reported every project as not the file Grit wrote. That is the third anchor in two days to drift from the template it repairs.
+
+
 ## v3.512.0 - November 12, 2026
 
 ### A deployed site where every upload silently did nothing

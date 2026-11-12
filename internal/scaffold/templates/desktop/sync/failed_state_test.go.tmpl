@@ -1,0 +1,262 @@
+package sync
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+// A change the server refuses for a reason that will not change is parked,
+// not retried (grit#215).
+//
+// Before this, a per-change refusal that was not VERSION_CONFLICT left the
+// outbox row queued with no failed state. The client re-sent it on every push
+// for the rest of the install's life, and with auto-sync on that is one doomed
+// request every thirty seconds. The sync screen could not tell it from a
+// change that was simply waiting, because PendingCount counted it and
+// HasConflict was the only flag there was.
+
+// refusingServer answers every change with one canned refusal, and counts how
+// many times it was asked.
+func refusingServer(t *testing.T, result PushResult) (*httptest.Server, *int) {
+	t.Helper()
+	asked := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/sync/push" {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"changes":[],"cursor":""}`))
+			return
+		}
+		asked++
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"results": []PushResult{result}})
+	}))
+	t.Cleanup(srv.Close)
+	return srv, &asked
+}
+
+func no() *bool  { v := false; return &v }
+func yes() *bool { v := true; return &v }
+
+// The measurement from the report: four pushes, four identical refusals, the
+// row still queued. Now it is refused once and parked.
+func TestAPermanentRefusalIsParkedAfterOneAttempt(t *testing.T) {
+	e, srv := engineFor(t, nil)
+	_ = srv
+
+	// The server says so, which is the case that matters: PLAN_LIMIT is an
+	// application's own code and no list compiled into this client could
+	// know it exists.
+	refused := PushResult{
+		OK: false, Code: "PLAN_LIMIT",
+		Message:   "Your plan covers 5 projects",
+		Retryable: no(),
+	}
+	server, asked := refusingServer(t, refused)
+	e.APIURL = server.URL + "/api"
+
+	if err := e.LocalCreate("projects", "", map[string]interface{}{"title": "A sixth"}); err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 4; i++ {
+		if _, _, _, err := e.PushAll(); err != nil {
+			t.Fatalf("push %d: %v", i+1, err)
+		}
+	}
+	if *asked != 1 {
+		t.Errorf("the server was asked %d times; a permanent refusal must be sent once", *asked)
+	}
+
+	// Not pending: the badge counted it before, so it showed work that was
+	// never going to go.
+	pending, err := e.PendingCount()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pending != 0 {
+		t.Errorf("PendingCount is %d; a parked change is not waiting for anything", pending)
+	}
+	failed, err := e.FailedCount()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if failed != 1 {
+		t.Fatalf("FailedCount is %d, want 1", failed)
+	}
+
+	// And the reason is in its own field, not in one named for conflicts.
+	rows, err := e.GetFailedChanges()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("GetFailedChanges returned %d rows", len(rows))
+	}
+	row := rows[0]
+	if row.ErrorCode != "PLAN_LIMIT" || row.ErrorMsg != "Your plan covers 5 projects" {
+		t.Errorf("the refusal reads %q / %q", row.ErrorCode, row.ErrorMsg)
+	}
+	if row.ConflictMsg != "" {
+		t.Error("the reason went into conflict_msg, where a merge dialog would show it")
+	}
+	if !row.Failed() || row.FailedAt == 0 {
+		t.Error("the row does not read as failed")
+	}
+
+	// It never vanishes on its own. It is somebody's work.
+	if _, err := e.GetPendingChanges(); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := e.FailedCount(); n != 1 {
+		t.Error("the failed row disappeared")
+	}
+}
+
+// A refusal worth retrying is retried, and counted.
+func TestATransientRefusalIsRetried(t *testing.T) {
+	e, srv := engineFor(t, nil)
+	_ = srv
+
+	server, asked := refusingServer(t, PushResult{
+		OK: false, Code: "UPDATE_FAILED",
+		Message:   "the server could not update the row",
+		Retryable: yes(),
+	})
+	e.APIURL = server.URL + "/api"
+
+	if err := e.LocalCreate("projects", "", map[string]interface{}{"title": "Keep trying"}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 3; i++ {
+		if _, _, _, err := e.PushAll(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if *asked != 3 {
+		t.Errorf("the server was asked %d times; a transient refusal is worth retrying", *asked)
+	}
+	if n, _ := e.FailedCount(); n != 0 {
+		t.Error("a transient refusal was parked")
+	}
+	if n, _ := e.PendingCount(); n != 1 {
+		t.Error("a transient refusal stopped being pending")
+	}
+
+	rows, err := e.GetPendingChanges()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || rows[0].Attempts != 3 {
+		t.Errorf("attempts is %d after three refusals; a screen cannot tell a row refused thirty times "+
+			"from one on its first try", rows[0].Attempts)
+	}
+}
+
+// A server too old to send `retryable` still gets the framework's own codes
+// right, so upgrading the client alone is an improvement rather than a
+// regression.
+func TestAnOlderServerStillParksTheCodesWeKnow(t *testing.T) {
+	e, srv := engineFor(t, nil)
+	_ = srv
+
+	// No Retryable field at all.
+	server, asked := refusingServer(t, PushResult{
+		OK: false, Code: "READ_ONLY",
+		Message: "sentence_origins is registered read_only",
+	})
+	e.APIURL = server.URL + "/api"
+
+	if err := e.LocalCreate("sentence_origins", "", map[string]interface{}{"text": "a claim"}); err != nil {
+		// A project that declares the policy refuses this locally, which is
+		// grit#214 and the better outcome. This test is about the client
+		// build that predates it.
+		t.Skip("this project refuses the write locally, which is the stronger guarantee")
+	}
+	for i := 0; i < 3; i++ {
+		if _, _, _, err := e.PushAll(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if *asked != 1 {
+		t.Errorf("the server was asked %d times; READ_ONLY is permanent whether or not the server says so", *asked)
+	}
+	if n, _ := e.FailedCount(); n != 1 {
+		t.Error("READ_ONLY was not parked")
+	}
+}
+
+// An unknown code from a server that does not say is retried rather than
+// parked. Of the two ways to be wrong, wasting a request is recoverable and
+// hiding somebody's work is not.
+func TestAnUnknownCodeIsRetriedWhenTheServerDoesNotSay(t *testing.T) {
+	e, srv := engineFor(t, nil)
+	_ = srv
+
+	server, asked := refusingServer(t, PushResult{
+		OK: false, Code: "SOMETHING_NEW", Message: "who knows",
+	})
+	e.APIURL = server.URL + "/api"
+
+	if err := e.LocalCreate("projects", "", map[string]interface{}{"title": "x"}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if _, _, _, err := e.PushAll(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if *asked != 2 {
+		t.Errorf("an unrecognised code from a silent server was parked after %d attempts", *asked)
+	}
+}
+
+// Retrying is a decision somebody makes, and it clears the old reason rather
+// than leaving it to be read as a fresh one.
+func TestRetryPutsAParkedChangeBackInTheQueue(t *testing.T) {
+	e, srv := engineFor(t, nil)
+	_ = srv
+
+	server, asked := refusingServer(t, PushResult{
+		OK: false, Code: "PLAN_LIMIT", Message: "Your plan covers 5 projects", Retryable: no(),
+	})
+	e.APIURL = server.URL + "/api"
+
+	if err := e.LocalCreate("projects", "id-1", map[string]interface{}{"title": "A sixth"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := e.PushAll(); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := e.FailedCount(); n != 1 {
+		t.Fatal("the change was not parked")
+	}
+
+	if err := e.RetryChange("projects", "id-1"); err != nil {
+		t.Fatalf("retrying: %v", err)
+	}
+	if n, _ := e.FailedCount(); n != 0 {
+		t.Error("the change is still failed after a retry")
+	}
+	if n, _ := e.PendingCount(); n != 1 {
+		t.Error("the retried change is not pending")
+	}
+	rows, _ := e.GetPendingChanges()
+	if len(rows) == 1 && (rows[0].ErrorCode != "" || rows[0].Attempts != 0) {
+		t.Error("the old reason survived the retry, so a second refusal reads as the first one with a new date")
+	}
+
+	// And it does go again.
+	if _, _, _, err := e.PushAll(); err != nil {
+		t.Fatal(err)
+	}
+	if *asked != 2 {
+		t.Errorf("the retried change was not sent (server asked %d times)", *asked)
+	}
+
+	// Retrying something that is not parked says so rather than doing nothing.
+	if err := e.RetryChange("projects", "no-such-row"); err == nil {
+		t.Error("retrying a change that is not failed returned no error")
+	}
+}

@@ -470,23 +470,29 @@ func repairSyncEnginePushSource(src string) (string, []string, []string) {
 const (
 	desktopPushBatchDoc = "// PushBatch is the JSON shape /api/sync/push expects.\n"
 	desktopMaxPushConst = "// MaxPushChanges is the most changes the server takes in one push.\nconst MaxPushChanges = 500\n\n"
-	desktopPushOld      = "\treturn e.pushEntries(entries)\n}\n"
-	desktopPushNew      = `	// The server takes at most MaxPushChanges a push, so a long offline stretch
+	// The whole push in one call, which is what a project generated before
+	// the chunking has. The "after" text has to be exactly what the template
+	// writes today, or the repair reports every project as not the file Grit
+	// wrote: grit#215 moved this loop into PushAll and gave it a third
+	// counter, and the anchor did not follow.
+	desktopPushOld = "\treturn e.pushEntries(entries)\n}\n"
+	desktopPushNew = `	// The server takes at most MaxPushChanges a push, so a long offline stretch
 	// goes up in several.
-	pushed, conflicts := 0, 0
+	pushed, conflicts, failed := 0, 0, 0
 	for start := 0; start < len(entries); start += MaxPushChanges {
 		end := start + MaxPushChanges
 		if end > len(entries) {
 			end = len(entries)
 		}
-		p, c, err := e.pushEntries(entries[start:end])
+		p, c, f, err := e.pushEntries(entries[start:end])
 		pushed += p
 		conflicts += c
+		failed += f
 		if err != nil {
-			return pushed, conflicts, err
+			return pushed, conflicts, failed, err
 		}
 	}
-	return pushed, conflicts, nil
+	return pushed, conflicts, failed, nil
 }
 `
 )
