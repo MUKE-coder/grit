@@ -393,7 +393,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&full, "full", false, "Everything: API + web + admin + desktop + Expo + docs site")
 	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app")
 	cmd.Flags().BoolVar(&includeDesktop, "desktop", false, "Include a Wails desktop app that shares the monorepo API")
-	cmd.Flags().BoolVar(&withI18n, "i18n", false, "Add internationalisation (next-intl, translated API messages, en/fr/sw)")
+	cmd.Flags().BoolVar(&withI18n, "i18n", false, "Add internationalisation (next-intl, translated API messages, en/es/fr/sw)")
 	cmd.Flags().BoolVar(&withMultitenant, "multitenant", false,
 		"Add multi-tenancy: organizations, memberships, per-organization roles, "+
 			"and query scoping for the models you mark tenant.Owned. The same as "+

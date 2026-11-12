@@ -49,9 +49,9 @@ pnpm install`}
                 </li>
                 <li>
                   <strong>The web app and the admin</strong> get next-intl, catalogues in{' '}
-                  <code className={C}>messages/en.json</code>, <code className={C}>fr.json</code> and{' '}
-                  <code className={C}>sw.json</code>, and a language switcher: in the admin&apos;s page
-                  header, and in the web app&apos;s navbar.
+                  <code className={C}>messages/en.json</code>, <code className={C}>es.json</code>,{' '}
+                  <code className={C}>fr.json</code> and <code className={C}>sw.json</code>, and a
+                  language switcher: in the admin&apos;s page header, and in the web app&apos;s navbar.
                 </li>
                 <li>
                   The locale lives in the cookie, not the URL, so a link means the same page in every

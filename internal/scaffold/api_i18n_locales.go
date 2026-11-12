@@ -2,14 +2,17 @@ package scaffold
 
 // The seed catalogues.
 //
-// Three locales ship, and two of them are real translations rather than copies
+// Four locales ship, and three of them are real translations rather than copies
 // of the English with the keys renamed. A stub catalogue is worse than none: it
 // makes the feature look finished, and the first person to switch locale finds
 // out otherwise.
 //
-// English, French and Swahili. Swahili because the scaffold is built in Uganda
-// and East Africa is not a rounding error, and because a framework whose only
-// second language is French has quietly decided who it is for.
+// English, Spanish, French and Swahili. Swahili because the scaffold is built in
+// Uganda and East Africa is not a rounding error, and because a framework whose
+// only second language is French has quietly decided who it is for. Spanish for
+// the same reason at a larger scale: it is the second most spoken first
+// language in the world, and a project that has to add it by hand is one where
+// the feature is present but the audience it names is not.
 //
 // Keys are dotted and grouped by area. Flat JSON rather than nested, because a
 // flat map needs no traversal code and a translator editing it cannot break the
@@ -59,6 +62,54 @@ func i18nLocaleEN() string {
   "common.no": "No",
   "common.saved": "Saved",
   "common.cancelled": "Cancelled"
+}
+`
+}
+
+func i18nLocaleES() string {
+	return `{
+  "errors.not_found": "No encontrado",
+  "errors.resource_not_found": "%s no encontrado",
+  "errors.unauthorized": "Tienes que iniciar sesión para hacer eso",
+  "errors.forbidden": "No tienes permiso para hacer eso",
+  "errors.validation": "Algunos datos no son correctos",
+  "errors.internal": "Algo salió mal por nuestra parte",
+  "errors.invalid_request": "No se pudo entender esa solicitud",
+  "errors.rate_limited": "Demasiadas solicitudes. Inténtalo de nuevo en un momento",
+  "errors.conflict": "Eso entra en conflicto con algo que ya existe",
+  "errors.payload_too_large": "Ese archivo es demasiado grande",
+
+  "auth.invalid_credentials": "Ese correo y esa contraseña no coinciden",
+  "auth.account_locked": "Esta cuenta está bloqueada. Inténtalo más tarde",
+  "auth.email_taken": "Ya existe una cuenta con ese correo",
+  "auth.email_not_verified": "Primero verifica tu correo electrónico",
+  "auth.token_expired": "Tu sesión ha caducado. Vuelve a iniciar sesión",
+  "auth.token_invalid": "Ese enlace de inicio de sesión no es válido",
+  "auth.registered": "Cuenta creada",
+  "auth.signed_in": "Sesión iniciada",
+  "auth.signed_out": "Sesión cerrada",
+  "auth.password_reset_sent": "Si ese correo existe, un enlace de restablecimiento está en camino",
+  "auth.password_changed": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos",
+  "auth.totp_required": "Introduce el código de tu aplicación de autenticación",
+  "auth.totp_invalid": "Ese código no es correcto",
+
+  "validation.required": "%s es obligatorio",
+  "validation.email": "%s debe ser una dirección de correo válida",
+  "validation.min_length": "%s debe tener al menos %d caracteres",
+  "validation.max_length": "%s debe tener como máximo %d caracteres",
+  "validation.unique": "Ese %s ya está en uso",
+  "validation.numeric": "%s debe ser un número",
+  "validation.positive": "%s debe ser mayor que cero",
+
+  "resource.created": "%s creado",
+  "resource.updated": "%s actualizado",
+  "resource.deleted": "%s eliminado",
+  "resource.restored": "%s restaurado",
+
+  "common.yes": "Sí",
+  "common.no": "No",
+  "common.saved": "Guardado",
+  "common.cancelled": "Cancelado"
 }
 `
 }

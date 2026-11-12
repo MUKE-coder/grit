@@ -182,7 +182,7 @@ This command only creates new projects. Use grit upgrade for an existing one.`,
 	cmd.Flags().StringVar(&awsSecretKey, "aws-secret-key", "", "AWS secret key for SES")
 
 	cmd.Flags().StringSliceVar(&plugins, "plugin", nil, "Built-in plugin to install; repeat or comma-separate")
-	cmd.Flags().BoolVar(&withI18n, "i18n", false, "Add internationalisation (next-intl, translated API messages, en/fr/sw)")
+	cmd.Flags().BoolVar(&withI18n, "i18n", false, "Add internationalisation (next-intl, translated API messages, en/es/fr/sw)")
 
 	cmd.Flags().BoolVar(&yes, "yes", false, "Use the defaults and the flags, with no prompts. Needs a project name")
 	cmd.Flags().BoolVar(&inPlace, "here", false, "Scaffold into the current directory")
