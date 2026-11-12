@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.515.0 - November 12, 2026
+
+### A route that was forgotten fails open
+
+grit#179, proposal 1, which the reporter called the strongest of their ten and which is their sentence above. A generated resource's routes carry their permission because the generator writes it. A route you write carries whatever you remembered, and a route with nothing in front of it is reachable by any signed-in account, which with open registration is anybody.
+
+The failure is the wrong way round, and that is the whole argument: forgetting makes a route *more* permissive, so the mistake nobody notices is the one that costs something. They paid for it with a 364-line module guard and a 429-line catalog holding 105 per-route overrides, to get back a property the framework had no opinion about.
+
+Now the route says what it needs, in a form a machine reads:
+
+`{`m.Staff.POST("/payslips/:id/email", perm("payroll.edit"), h.EmailOne) m.Staff.GET("/payslips", perm("payroll.view", "payroll.admin"), h.List) m.Staff.POST("/payroll/run", role("FINANCE"), h.Run) m.Protected.GET("/payslips/mine", openToAnySignedIn("the handler scopes every row to the caller"), h.Mine)`}` `perm` is `RequireRole("ADMIN", "perm:x")` underneath, which is exactly what the generator writes, so there is one meaning of &ldquo;this route needs x&rdquo; rather than two spellings that drift. They are short on purpose: a declaration you have to spell out in full is one people shorten by leaving out.
+
+`openToAnySignedIn` is the part that makes the check usable. It guards nothing and changes nothing at runtime. What it does is turn &ldquo;this route has no permission&rdquo; from something nobody wrote down into something somebody did, and it requires the reason, because almost every honest use is one of two sentences and if you cannot write either the route probably wants a `perm`.
+
+#### And the build fails
+
+`{`$ grit routes --check ✗ POST /api/v1/payslips/:id/void apps/api/internal/routes/payroll_routes.go → h.Void 1 route(s) stand behind authentication and demand no permission.`}` Exit code 1, so it belongs in CI beside the tests. It is a `grit doctor` check too, so the answer arrives without knowing the flag exists, and the routes table marks a declared-open route `signed in (declared)` rather than plain `signed in`.
+
+#### Why it does not check every route
+
+A freshly generated project has **67** routes behind authentication that demand no permission, and almost all of them are right: `/auth/me`, `/api-keys`, `/auth/passkeys/:id`. They are the caller's own things, scoped in the handler. Asking each to declare one would be 67 false positives on the first run, and a check that is mostly wrong is one people learn to pass with `--no-verify`.
+
+So the default is the routes the project wrote, told apart by the manifest, which is exactly the reporter's situation with 105 hand-written routes in their own files. `--strict` checks all of them, and on a fresh project reports exactly those 67.
+
+One thing worth recording about building it: the check needed to know which file a route was written in, and the first version grew a second per-file parser to work it out, with its own group seeding and its own guess at whether a route really came from that file. `ParseProject` already parses file by file with a seeded group table and was simply throwing the filename away. One line there replaced forty here.
+
+
 ## v3.514.0 - November 12, 2026
 
 ### A role the admin never heard of

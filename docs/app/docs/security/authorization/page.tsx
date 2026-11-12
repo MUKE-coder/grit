@@ -78,6 +78,73 @@ staff.PUT("/users/:id",
 // Role-only still works. Nothing existing had to change.
 admin.Use(middleware.RequireRole("ADMIN"))`} />
 
+            <h2 id="declaring">Declare it on the route, and fail the build when it is missing</h2>
+            <p>
+              A generated resource&apos;s routes carry their permission because the generator
+              writes it. A route <strong>you</strong> write carries whatever you remembered to
+              put there, and a route with nothing in front of it is reachable by any signed-in
+              account. With open registration that is anybody.
+            </p>
+            <p>
+              That failure is the wrong way round: forgetting makes a route <em>more</em>{' '}
+              permissive, so the mistake nobody notices is the one that costs something. A
+              project building a multitenant business suite reported writing a 364-line module
+              guard and a 429-line catalog, with 105 per-route overrides, to get this property
+              back.
+            </p>
+            <CodeBlock language="go" filename="internal/routes/payroll_routes.go" code={`// What the route needs. perm is RequireRole("ADMIN", "perm:x") written short.
+m.Staff.POST("/payslips/:id/email", perm("payroll.edit"), h.EmailOne)
+
+// Any of several.
+m.Staff.GET("/payslips", perm("payroll.view", "payroll.admin"), h.List)
+
+// A role rather than a permission, for the rare route that is about who
+// somebody IS. Prefer perm: a permission can be granted to a new role
+// without touching the route.
+m.Staff.POST("/payroll/run", role("FINANCE"), h.Run)
+
+// And the honest answer for a route that needs no permission, because its
+// handler scopes every row to the caller. The reason is required.
+m.Protected.GET("/payslips/mine",
+    openToAnySignedIn("the handler scopes every row to the caller"),
+    h.Mine)`} />
+            <p>
+              These are short on purpose. A declaration you have to spell as{' '}
+              <code>middleware.RequireRole(&quot;ADMIN&quot;, &quot;perm:payroll.edit&quot;)</code>{' '}
+              is one people shorten by leaving out, and the whole point is that writing it should
+              be easier than not writing it. <code>perm</code> is that call underneath, so there
+              is one meaning of &ldquo;this route needs x&rdquo; rather than two spellings that
+              can drift.
+            </p>
+
+            <h3>grit routes --check</h3>
+            <CodeBlock language="bash" code={`$ grit routes --check
+
+  ✗ POST   /api/v1/payslips/:id/void
+      apps/api/internal/routes/payroll_routes.go  →  h.Void
+
+  1 route(s) stand behind authentication and demand no permission.
+  Any signed-in account can reach them, which with open registration is anybody.`} />
+            <p>
+              Exit code 1, so it belongs in CI beside the tests. It is also a{' '}
+              <code>grit doctor</code> check, so the answer arrives without having to know the
+              flag exists, and the routes table marks a declared-open route{' '}
+              <code>signed in (declared)</code> rather than plain{' '}
+              <code>signed in</code>: the table is where somebody scans for a route nobody
+              guarded, and a route that says why it needs none is not one of those.
+            </p>
+            <div className="not-prose my-6 rounded-lg border border-border bg-muted/30 p-4 text-sm leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">It checks the routes you wrote, not Grit&apos;s.</strong>{' '}
+              A freshly generated project has 67 routes behind authentication that demand no
+              permission, and almost all of them are right: <code>/auth/me</code>,{' '}
+              <code>/api-keys</code>, <code>/auth/passkeys/:id</code>. They are the caller&apos;s
+              own things, scoped in the handler. Asking each to declare a permission would be 67
+              false positives on the first run, and a check that is mostly wrong is one people
+              learn to pass with <code>--no-verify</code>. The manifest records which route files
+              Grit wrote, and those are skipped. <code>--strict</code> checks every route, for a
+              project willing to annotate those too.
+            </div>
+
             <h2 id="staff-routes">Staff routes: how a custom role reaches the admin API</h2>
             <p>
               <code>routes.go</code> has two groups for the admin API, and which one a route is on

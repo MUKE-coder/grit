@@ -62,6 +62,10 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		// document with a page size, a named font, a line spacing and a page
 		// break before each chapter, which is what a submission or a marking
 		// scheme specifies and what no list export can produce (grit#212).
+		// perm() and openToAnySignedIn(): what a hand-written route says it
+		// requires, in a form `grit routes --check` can read (grit#179).
+		filepath.Join(apiRoot, "internal", "routes", "perm.go"): tmpl("api/routes/perm.go"),
+
 		filepath.Join(apiRoot, "internal", "docx", "docx.go"):      tmpl("api/docx/docx.go"),
 		filepath.Join(apiRoot, "internal", "docx", "report.go"):    tmpl("api/docx/report.go"),
 		filepath.Join(apiRoot, "internal", "docx", "docx_test.go"): tmpl("api/docx/docx_test.go"),

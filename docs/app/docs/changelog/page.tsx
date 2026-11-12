@@ -72,6 +72,108 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.515.0 */}
+            <div className="mb-12" id="v3.515.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.515.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A route that was forgotten fails open</h3>
+                <p>
+                  grit#179, proposal 1, which the reporter called the strongest
+                  of their ten and which is their sentence above. A generated
+                  resource&apos;s routes carry their permission because the
+                  generator writes it. A route you write carries whatever you
+                  remembered, and a route with nothing in front of it is
+                  reachable by any signed-in account, which with open
+                  registration is anybody.
+                </p>
+                <p>
+                  The failure is the wrong way round, and that is the whole
+                  argument: forgetting makes a route <em>more</em> permissive,
+                  so the mistake nobody notices is the one that costs
+                  something. They paid for it with a 364-line module guard and
+                  a 429-line catalog holding 105 per-route overrides, to get
+                  back a property the framework had no opinion about.
+                </p>
+                <p>
+                  Now the route says what it needs, in a form a machine reads:
+                </p>
+                <pre><code>{`m.Staff.POST("/payslips/:id/email", perm("payroll.edit"), h.EmailOne)
+m.Staff.GET("/payslips", perm("payroll.view", "payroll.admin"), h.List)
+m.Staff.POST("/payroll/run", role("FINANCE"), h.Run)
+
+m.Protected.GET("/payslips/mine",
+    openToAnySignedIn("the handler scopes every row to the caller"),
+    h.Mine)`}</code></pre>
+                <p>
+                  <code>perm</code> is{' '}
+                  <code>RequireRole(&quot;ADMIN&quot;, &quot;perm:x&quot;)</code>{' '}
+                  underneath, which is exactly what the generator writes, so
+                  there is one meaning of &ldquo;this route needs x&rdquo;
+                  rather than two spellings that drift. They are short on
+                  purpose: a declaration you have to spell out in full is one
+                  people shorten by leaving out.
+                </p>
+                <p>
+                  <code>openToAnySignedIn</code> is the part that makes the
+                  check usable. It guards nothing and changes nothing at
+                  runtime. What it does is turn &ldquo;this route has no
+                  permission&rdquo; from something nobody wrote down into
+                  something somebody did, and it requires the reason, because
+                  almost every honest use is one of two sentences and if you
+                  cannot write either the route probably wants a{' '}
+                  <code>perm</code>.
+                </p>
+                <h4>And the build fails</h4>
+                <pre><code>{`$ grit routes --check
+
+  ✗ POST   /api/v1/payslips/:id/void
+      apps/api/internal/routes/payroll_routes.go  →  h.Void
+
+  1 route(s) stand behind authentication and demand no permission.`}</code></pre>
+                <p>
+                  Exit code 1, so it belongs in CI beside the tests. It is a{' '}
+                  <code>grit doctor</code> check too, so the answer arrives
+                  without knowing the flag exists, and the routes table marks a
+                  declared-open route <code>signed in (declared)</code> rather
+                  than plain <code>signed in</code>.
+                </p>
+                <h4>Why it does not check every route</h4>
+                <p>
+                  A freshly generated project has <strong>67</strong> routes
+                  behind authentication that demand no permission, and almost
+                  all of them are right: <code>/auth/me</code>,{' '}
+                  <code>/api-keys</code>, <code>/auth/passkeys/:id</code>. They
+                  are the caller&apos;s own things, scoped in the handler.
+                  Asking each to declare one would be 67 false positives on the
+                  first run, and a check that is mostly wrong is one people
+                  learn to pass with <code>--no-verify</code>.
+                </p>
+                <p>
+                  So the default is the routes the project wrote, told apart by
+                  the manifest, which is exactly the reporter&apos;s situation
+                  with 105 hand-written routes in their own files.{' '}
+                  <code>--strict</code> checks all of them, and on a fresh
+                  project reports exactly those 67.
+                </p>
+                <p>
+                  One thing worth recording about building it: the check needed
+                  to know which file a route was written in, and the first
+                  version grew a second per-file parser to work it out, with
+                  its own group seeding and its own guess at whether a route
+                  really came from that file. <code>ParseProject</code> already
+                  parses file by file with a seeded group table and was simply
+                  throwing the filename away. One line there replaced forty
+                  here.
+                </p>
+              </div>
+            </div>
+
             {/* v3.514.0 */}
             <div className="mb-12" id="v3.514.0">
               <div className="flex items-center gap-3 mb-4">

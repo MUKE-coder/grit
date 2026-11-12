@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.514.0"
+var version = "3.515.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -2981,6 +2981,8 @@ func printDesktopSuccess(name string) {
 
 func routesCmd() *cobra.Command {
 	var write bool
+	var check bool
+	var strict bool
 	cmd := &cobra.Command{
 		Use:   "routes",
 		Short: "List all registered API routes",
@@ -2999,13 +3001,34 @@ Use --write after editing a guard by hand:
 
 grit generate and grit remove already refresh it, and grit upgrade refreshes
 it along with everything else. This is the narrow one, for when the only thing
-that changed is a guard you wrote yourself.`,
+that changed is a guard you wrote yourself.
+
+With --check, exit non-zero when a route you wrote stands behind
+authentication and demands no permission. Forgetting one makes a route MORE
+permissive, which is the wrong way round, so this turns "somebody forgot" into
+a failing build. Declare it on the route:
+
+    m.Staff.POST("/payslips/:id/email", perm("payroll.edit"), h.EmailOne)
+
+or say why it needs none:
+
+    m.Protected.GET("/notifications", openToAnySignedIn("scoped to the caller"), h.List)
+
+--check looks at the routes in files Grit did not write, because a generated
+project has 67 routes that are legitimately the caller's own things and asking
+each to declare a permission would be 67 false positives. --strict checks every
+route, for a project willing to annotate those too.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 
 			cwd, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("getting working directory: %w", err)
+			}
+
+			if check || strict {
+				cmd.SilenceUsage = true
+				return runRouteCheck(cwd, strict)
 			}
 
 			routesFile, err := routeparser.FindRoutesFile(cwd)
@@ -3046,7 +3069,67 @@ that changed is a guard you wrote yourself.`,
 	}
 	cmd.Flags().BoolVar(&write, "write", false,
 		"rewrite internal/access/registry.go from the route files")
+	cmd.Flags().BoolVar(&check, "check", false,
+		"exit non-zero when a route you wrote declares no permission")
+	cmd.Flags().BoolVar(&strict, "strict", false,
+		"with --check, include the routes in files Grit wrote")
 	return cmd
+}
+
+// runRouteCheck reports the routes that stand behind authentication and demand
+// nothing, which is the failure grit#179 asked for: forgetting a guard makes a
+// route more permissive, so the mistake nobody notices is the costly one.
+func runRouteCheck(cwd string, strict bool) error {
+	root, err := findProjectRoot()
+	if err != nil {
+		return err
+	}
+	res, err := routeparser.Check(root, strict)
+	if err != nil {
+		return err
+	}
+
+	scope := "the routes you wrote"
+	if strict {
+		scope = "every route"
+	}
+	cHeading.Printf("\n  Route permissions (%s)\n\n", scope)
+
+	if !res.ManifestKnown && !strict {
+		cMuted.Println("  This project has no manifest entries for its route files, so Grit's own")
+		cMuted.Println("  routes cannot be told from yours. Nothing was checked. Run with --strict")
+		cMuted.Println("  to check every route, or `grit upgrade` to record what Grit wrote.")
+		fmt.Println()
+		return nil
+	}
+
+	if res.OK() {
+		cOK.Printf("  \u2713 %d route(s) checked, every one declares what it requires\n\n", res.Checked)
+		return nil
+	}
+
+	for _, f := range res.Undeclared {
+		where := f.File
+		if where == "" {
+			where = "an unknown file"
+		}
+		cErr.Printf("  \u2717 %-6s %s\n", f.Route.Method, f.Route.Path)
+		cMuted.Printf("      %s  \u2192  %s\n", where, f.Route.Handler)
+	}
+
+	fmt.Println()
+	cErr.Printf("  %d route(s) stand behind authentication and demand no permission.\n", len(res.Undeclared))
+	cMuted.Println("  Any signed-in account can reach them, which with open registration is anybody.")
+	fmt.Println()
+	cMuted.Println("  Declare what each one needs:")
+	cMuted.Println("      m.Staff.POST(\"/payslips/:id/email\", perm(\"payroll.edit\"), h.EmailOne)")
+	fmt.Println()
+	cMuted.Println("  Or say why it needs none, which is a real answer for a route whose")
+	cMuted.Println("  handler scopes every row to the caller:")
+	cMuted.Println("      m.Protected.GET(\"/notifications\", openToAnySignedIn(\"scoped to the caller\"), h.List)")
+	fmt.Println()
+
+	return fmt.Errorf("%d route(s) declare no permission", len(res.Undeclared))
 }
 
 // ── grit down / grit up ─────────────────────────────────────────────────────

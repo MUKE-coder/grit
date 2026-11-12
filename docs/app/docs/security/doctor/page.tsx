@@ -149,6 +149,11 @@ const checks: { name: string; level: string; what: string }[] = [
     what: 'A NEXT_PUBLIC_ variable the app reads that its Dockerfile cannot accept, so the built image carries the development default. An error rather than a warning when NEXT_PUBLIC_STORAGE_URL is one of them: the CSP then permits only localhost, and every upload and every stored image is blocked with no HTTP status and nothing in any log.',
   },
   {
+    name: 'route-declares-no-permission',
+    level: 'error',
+    what: 'A route you wrote that stands behind authentication and demands no permission, so any signed-in account can reach it. Forgetting a guard makes a route MORE permissive, which is why this is the mistake nothing complains about. Declare perm("x") on the route, or openToAnySignedIn("the reason") when the handler scopes every row to the caller. `grit routes --check` is the same question with an exit code, for CI.',
+  },
+  {
     name: 'docker-misses-workspace-packages',
     level: 'error',
     what: 'A packages/ member has its own node_modules and the builder stage does not copy it, so the image will not build. pnpm nests a dependency when two packages need different versions, and the failure is forty lines of type mismatch naming the same library twice, in a file you did not change.',
@@ -179,7 +184,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  29 checks over 0 resource(s)
+  30 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -198,7 +203,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  29 checks over 10 resource(s)
+  30 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment

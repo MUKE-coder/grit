@@ -54,6 +54,13 @@ type Route struct {
 	Handler string
 	Group   string // middleware group (public, protected, staff, admin)
 	Access  Access
+
+	// File is the route file this was written in, relative to the project
+	// root, and empty when the source was parsed from memory.
+	//
+	// It is here because `grit routes --check` has to tell a route Grit wrote
+	// from one you wrote, and the manifest records files rather than routes.
+	File string
 }
 
 // Access is what stands in front of a route: the middleware its group carries,
@@ -94,6 +101,35 @@ type Access struct {
 	// Optional is true when the route identifies a caller if one is present and
 	// serves anonymous requests otherwise, which is what Identify does.
 	Optional bool
+
+	// OpenReason is why a protected route deliberately requires no permission,
+	// from openToAnySignedIn("..."). Empty on a route that simply has none.
+	//
+	// The distinction is the whole of grit#179's first proposal. A route with
+	// no permission and no reason is one somebody forgot, and forgetting makes
+	// a route MORE permissive, so it is the mistake that costs something and
+	// the one nothing complains about. With the reason recorded,
+	// `grit routes --check` can tell the two apart.
+	OpenReason string
+}
+
+// DeclaredOpen reports a route that says, in the source, that it needs no
+// permission.
+func (a Access) DeclaredOpen() bool { return a.OpenReason != "" }
+
+// NeedsPermission reports a route that stands behind authentication, demands
+// nothing in particular, and has not said why.
+//
+// Public routes are not included: a route with no caller at all is a separate
+// decision, made somewhere else and visible in the table as "public".
+func (a Access) NeedsPermission() bool {
+	if !a.Authenticated || a.DeclaredOpen() {
+		return false
+	}
+	// Staff is a gate rather than a demand, so a route behind it that names no
+	// permission is exactly the case in question: it admits anybody holding
+	// any permission at all.
+	return len(a.Roles) == 0 && len(a.Permissions) == 0
 }
 
 // Summary renders the access requirement as one short phrase, for a table
@@ -115,6 +151,11 @@ func (a Access) Summary() string {
 		parts = append(parts, "api key")
 	case a.Staff:
 		parts = append(parts, "any permission")
+	case a.DeclaredOpen():
+		// Distinguished from a bare "signed in" on purpose: the table is
+		// where somebody scans for a route nobody guarded, and a route that
+		// says why it needs no permission is not one of those.
+		parts = append(parts, "signed in (declared)")
 	case a.Authenticated:
 		parts = append(parts, "signed in")
 	case a.Optional:
@@ -147,6 +188,12 @@ const (
 	// guardPermissionFor names a permission the route cannot know in advance,
 	// because the resource is a path parameter.
 	guardPermissionFor
+	// guardPerm is the short declaration a hand-written route uses:
+	// perm("payroll.edit") is RequireRole("ADMIN", "perm:payroll.edit").
+	guardPerm
+	// guardOpenDeclared is openToAnySignedIn("reason"): a route that says it
+	// needs no permission, with why. It guards nothing.
+	guardOpenDeclared
 )
 
 // accessMiddleware is every middleware in the generated project that changes
@@ -165,6 +212,14 @@ var accessMiddleware = map[string]guardKind{
 	"RequireRole":          guardRole,
 	"RequireStaff":         guardStaff,
 	"RequirePermissionFor": guardPermissionFor,
+
+	// The short declarations a hand-written route uses (grit#179). perm and
+	// role are RequireRole underneath, so they mean exactly what the
+	// generated routes mean; openToAnySignedIn guards nothing and is read
+	// only here.
+	"perm":              guardPerm,
+	"role":              guardRole,
+	"openToAnySignedIn": guardOpenDeclared,
 }
 
 // group is one router group as declared in the source.
@@ -225,6 +280,9 @@ func ParseProject(routesFile string) ([]Route, error) {
 	main := string(data)
 
 	routes, groups := parseFile(main, nil)
+	for i := range routes {
+		routes[i].File = routesFile
+	}
 
 	seed := map[string]*group{}
 	for name, g := range groups {
@@ -246,6 +304,9 @@ func ParseProject(routesFile string) ([]Route, error) {
 			return nil, fmt.Errorf("opening %s: %w", filepath.Base(file), err)
 		}
 		more, _ := parseFile(string(src), seed)
+		for i := range more {
+			more[i].File = file
+		}
 		routes = append(routes, more...)
 	}
 
@@ -497,6 +558,32 @@ func applyGuard(a *Access, call string) {
 			}
 			a.Roles = appendUnique(a.Roles, lit)
 		}
+	case guardPerm:
+		// perm("x") is RequireRole("ADMIN", "perm:x"), so it records the same
+		// thing: either the permission or an ADMIN gets in.
+		a.Authenticated = true
+		a.APIKeyOnly = false
+		a.Roles = appendUnique(a.Roles, "ADMIN")
+		for _, arg := range splitArgs(rawArgs) {
+			if lit, ok := stringLit(arg); ok {
+				a.Permissions = appendUnique(a.Permissions, lit)
+			}
+		}
+
+	case guardOpenDeclared:
+		// A declaration rather than a guard: it admits what the group already
+		// admits. What it records is that somebody chose this, so a route with
+		// no permission can be told from a route that forgot one.
+		a.Authenticated = true
+		if args := splitArgs(rawArgs); len(args) > 0 {
+			if lit, ok := stringLit(args[0]); ok {
+				a.OpenReason = lit
+			}
+		}
+		if a.OpenReason == "" {
+			a.OpenReason = "declared open"
+		}
+
 	case guardPermissionFor:
 		a.Authenticated = true
 		// The resource is a path parameter, so the permission is only knowable

@@ -108,6 +108,10 @@ var checks = []struct {
 	// the builder stage (grit#216). Both are file reads.
 	{"next-public-not-a-build-arg", checkNextPublicBuildArgs},
 	{"docker-misses-workspace-packages", checkDockerCopiesWorkspacePackages},
+	// A route you wrote with no permission in front of it. Forgetting makes a
+	// route more permissive, so it is the mistake nothing complains about
+	// (grit#179).
+	{"route-declares-no-permission", checkRoutePermissions},
 }
 
 // Run audits the project at root.

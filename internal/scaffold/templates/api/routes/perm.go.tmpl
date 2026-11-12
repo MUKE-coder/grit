@@ -1,0 +1,77 @@
+package routes
+
+import (
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/middleware"
+)
+
+// Saying what a hand-written route requires, in a form a machine can read.
+//
+// A generated resource's routes carry their permission, because the generator
+// writes it. A route you write carries whatever you remember to put there, and
+// a route with nothing in front of it is reachable by any signed-in account.
+// With open registration that is anybody.
+//
+// That failure is silent and it is the wrong way round: forgetting makes a
+// route MORE permissive, so the mistake nobody notices is the one that costs
+// something. A project reported building a 364-line module guard and a
+// 429-line catalog to get this back, with 105 per-route overrides, which is a
+// lot of code to write because the framework had no opinion (grit#179).
+//
+// So: declare it on the route, and let `grit routes --check` fail the build
+// when a route declares nothing.
+//
+//	m.Staff.POST("/payslips/:id/email", perm("payroll.edit"), h.EmailOne)
+//
+// These are deliberately short and unqualified. A declaration you have to
+// spell as middleware.RequireRole("ADMIN", "perm:payroll.edit") is one people
+// shorten by leaving out, and the whole point is that writing it should be
+// easier than not writing it.
+
+// perm admits a caller holding any of the named permissions, and an ADMIN.
+//
+// Identical to middleware.RequireRole("ADMIN", "perm:x"), which is what the
+// generator writes, so there is one meaning of "this route needs x" rather
+// than two spellings that could drift apart.
+//
+//	perm("payroll.edit")                  // payroll.edit, or ADMIN
+//	perm("payroll.edit", "payroll.admin") // either one, or ADMIN
+func perm(permissions ...string) gin.HandlerFunc {
+	args := make([]string, 0, len(permissions)+1)
+	args = append(args, "ADMIN")
+	for _, p := range permissions {
+		args = append(args, "perm:"+p)
+	}
+	return middleware.RequireRole(args...)
+}
+
+// role admits a caller holding any of the named roles, and nobody else.
+//
+// For the rare route that is about who somebody IS rather than what they may
+// do: a route only a FINANCE account should reach whatever permissions have
+// been granted elsewhere. Prefer perm for everything else, because a
+// permission can be granted to a new role without touching the route.
+func role(roles ...string) gin.HandlerFunc {
+	return middleware.RequireRole(roles...)
+}
+
+// openToAnySignedIn marks a protected route that deliberately requires no
+// permission, with the reason.
+//
+// It admits exactly what the protected group already admits, so it changes
+// nothing at runtime: it is a declaration, not a guard. What it does is turn
+// "this route has no permission" from something nobody wrote down into
+// something somebody did, which is the difference `grit routes --check` reads.
+//
+// The reason is required because the reason is the point. Almost every honest
+// use is one of two:
+//
+//	openToAnySignedIn("every row is scoped to the caller in the handler")
+//	openToAnySignedIn("this is the caller's own profile")
+//
+// If you cannot write the sentence, the route probably wants a perm.
+func openToAnySignedIn(reason string) gin.HandlerFunc {
+	_ = reason // read by `grit routes --check`, not at runtime
+	return func(c *gin.Context) { c.Next() }
+}
