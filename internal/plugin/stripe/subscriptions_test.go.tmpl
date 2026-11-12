@@ -223,7 +223,7 @@ func TestCheckoutGrantsAccessOnce(t *testing.T) {
 	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.updated", fake.subscriptions["sub_1"])); err != nil {
 		t.Fatal(err)
 	}
-	entitled, err := s.Entitled(context.Background(), user.ID)
+	entitled, err := s.Entitled(context.Background(), userScope(user.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestPastDueKeepsAccessAndUnpaidEndsIt(t *testing.T) {
 	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.updated", fake.ends("sub_1", models.SubscriptionPastDue))); err != nil {
 		t.Fatal(err)
 	}
-	if entitled, _ := s.Entitled(context.Background(), user.ID); !entitled {
+	if entitled, _ := s.Entitled(context.Background(), userScope(user.ID)); !entitled {
 		t.Error("a failed renewal cut access off on the first retry")
 	}
 	if ended != 0 {
@@ -270,14 +270,14 @@ func TestPastDueKeepsAccessAndUnpaidEndsIt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	entitled, err := s.Entitled(context.Background(), user.ID)
+	entitled, err := s.Entitled(context.Background(), userScope(user.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if entitled || ended != 1 {
 		t.Errorf("entitled %v, OnEnded ran %d times", entitled, ended)
 	}
-	current, err := s.Current(context.Background(), user.ID)
+	current, err := s.Current(context.Background(), userScope(user.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,7 +295,7 @@ func TestCancelKeepsAccessUntilTheEndOfThePeriod(t *testing.T) {
 	if err := s.HandleCheckout(context.Background(), checkoutEvent(t, fake.sessions["cs_1"])); err != nil {
 		t.Fatal(err)
 	}
-	after, err := s.Cancel(context.Background(), user.ID)
+	after, err := s.Cancel(context.Background(), userScope(user.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ func TestCancelKeepsAccessUntilTheEndOfThePeriod(t *testing.T) {
 	if after.CurrentPeriodEnd == nil || after.CurrentPeriodEnd.Before(time.Now()) {
 		t.Error("the period end was not recorded")
 	}
-	resumed, err := s.Resume(context.Background(), user.ID)
+	resumed, err := s.Resume(context.Background(), userScope(user.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,16 +324,16 @@ func TestRefreshRefusesSomebodyElsesSession(t *testing.T) {
 	if err := s.DB.Create(&other).Error; err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Refresh(context.Background(), other.ID, "cs_1"); err != nil {
+	if _, err := s.Refresh(context.Background(), userScope(other.ID), "cs_1"); err != nil {
 		t.Fatal(err)
 	}
-	if entitled, _ := s.Entitled(context.Background(), other.ID); entitled {
+	if entitled, _ := s.Entitled(context.Background(), userScope(other.ID)); entitled {
 		t.Error("another account's checkout granted access")
 	}
-	if _, err := s.Refresh(context.Background(), user.ID, "cs_1"); err != nil {
+	if _, err := s.Refresh(context.Background(), userScope(user.ID), "cs_1"); err != nil {
 		t.Fatal(err)
 	}
-	if entitled, _ := s.Entitled(context.Background(), user.ID); !entitled {
+	if entitled, _ := s.Entitled(context.Background(), userScope(user.ID)); !entitled {
 		t.Error("the return page did not settle the subscription")
 	}
 	_ = fake

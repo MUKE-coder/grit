@@ -84,18 +84,26 @@ func (s Subscription) PriceID() string {
 
 // CreateCustomer makes the Stripe customer a subscription belongs to.
 //
-// Made once per person and remembered, rather than looked up by email each
-// time: two customers with the same address are a support ticket about an
+// Made once per billing scope and remembered, rather than looked up by email
+// each time: two customers with the same address are a support ticket about an
 // invoice going to the wrong one.
-func (c *Client) CreateCustomer(ctx context.Context, email, name, userID string) (Customer, error) {
+//
+// Per scope, not per person. A user in two organizations needs two customers
+// or both organizations share one card, one tax id, one billing address and
+// one invoice history, and the second organization cannot hold a plan at all
+// (grit#144). The idempotency key is the scope's, so a retry still makes one
+// customer and a different organization still makes its own.
+func (c *Client) CreateCustomer(ctx context.Context, email, name string, sc Scope) (Customer, error) {
 	form := url.Values{}
 	form.Set("email", email)
 	if name != "" {
 		form.Set("name", name)
 	}
-	form.Set("metadata[user_id]", userID)
+	for key, value := range sc.Metadata() {
+		form.Set("metadata["+key+"]", value)
+	}
 	var out Customer
-	err := c.do(ctx, http.MethodPost, "/v1/customers", form, "customer-"+userID, &out)
+	err := c.do(ctx, http.MethodPost, "/v1/customers", form, sc.CustomerKey(), &out)
 	return out, err
 }
 
@@ -108,6 +116,10 @@ type CheckoutParams struct {
 	SuccessURL string
 	CancelURL  string
 	UserID     string
+	// OrgID is the organization being billed, empty without the multitenant
+	// plugin. It goes on the subscription's metadata so a webhook months later
+	// still says whose it is.
+	OrgID string
 	// TrialDays starts the subscription in a trial, if the plan has one.
 	TrialDays int
 }
@@ -124,7 +136,15 @@ func (c *Client) StartCheckout(ctx context.Context, p CheckoutParams) (Session, 
 	form.Set("client_reference_id", p.UserID)
 	// On the subscription itself, so every later event carries it: a webhook
 	// arriving months after the checkout still says whose it is.
+	//
+	// org_id is here for the same reason and it is the one that matters:
+	// Stripe sends no organization header, so without it an event for
+	// organization A arriving before the row exists has nothing to say which
+	// organization it belongs to (grit#144).
 	form.Set("subscription_data[metadata][user_id]", p.UserID)
+	if p.OrgID != "" {
+		form.Set("subscription_data[metadata][org_id]", p.OrgID)
+	}
 	if p.TrialDays > 0 {
 		form.Set("subscription_data[trial_period_days]", strconv.Itoa(p.TrialDays))
 	}

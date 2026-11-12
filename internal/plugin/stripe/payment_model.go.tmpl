@@ -28,9 +28,23 @@ const (
 // it in OnSucceeded to mark that thing paid; the payments package never
 // interprets it.
 type Payment struct {
-	ID        string `gorm:"primarykey;size:36" json:"id"`
-	UserID    string `gorm:"size:36;index;not null" json:"user_id"`
-	Reference string `gorm:"size:191;index;not null" json:"reference"`
+	ID string `gorm:"primarykey;size:36" json:"id"`
+	// UserID is who started it, always. In a single-tenant project it is also
+	// who owns it, and every read is scoped by it.
+	UserID string `gorm:"size:36;index;not null" json:"user_id"`
+	// OrgID is the organization that owns this payment, and NULL in a project
+	// without the multitenant plugin.
+	//
+	// Nullable rather than two generated models: the organization owns the
+	// money, not the person who happened to click Checkout, and that has to be
+	// true without the billing code existing twice (grit#144). A project with
+	// no organizations leaves it NULL and behaves exactly as it did.
+	//
+	// It is also what settles a webhook. Stripe sends no organization header,
+	// so the row is the only thing that can say which organization an event
+	// belongs to.
+	OrgID     *string `gorm:"size:36;index" json:"org_id,omitempty"`
+	Reference string  `gorm:"size:191;index;not null" json:"reference"`
 	// Amount is in the currency's smallest unit (cents), as Stripe counts it.
 	Amount   int64  `gorm:"not null" json:"amount"`
 	Currency string `gorm:"size:3;not null" json:"currency"`

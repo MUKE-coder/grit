@@ -71,13 +71,21 @@ func NewService(db *gorm.DB) *Service {
 
 // Checkout is a request to be paid. The caller has already worked out Amount.
 type Checkout struct {
-	UserID    string
+	UserID string
+	// OrgID is the organization being billed, empty in a project without the
+	// multitenant plugin. Use ScopeFrom(c).OrgID rather than reading a header:
+	// a client-supplied organization is a client choosing whose card to
+	// charge (grit#144).
+	OrgID     string
 	Reference string
 	Amount    int64
 	Currency  string
 	// Description shows on the customer's receipt and in the dashboard.
 	Description string
 }
+
+// scope is who this checkout bills.
+func (c Checkout) scope() Scope { return Scope{UserID: c.UserID, OrgID: c.OrgID} }
 
 // Started is a payment the customer can now confirm in the browser.
 type Started struct {
@@ -103,9 +111,13 @@ func (s *Service) Create(ctx context.Context, in Checkout) (Started, error) {
 		return Started{}, respond.Rule("%q is not a currency code", in.Currency)
 	}
 
+	// Scoped, so the same reference in two organizations is two payments
+	// rather than one that collides. Keyed by user alone, a person in two
+	// organizations paying invoice:1 in each had the second reuse or cancel
+	// the first (grit#144).
 	var existing []models.Payment
-	if err := s.DB.WithContext(ctx).
-		Where("user_id = ? AND reference = ?", in.UserID, in.Reference).
+	if err := in.scope().Apply(s.DB.WithContext(ctx).Model(&models.Payment{})).
+		Where("reference = ?", in.Reference).
 		Order("created_at DESC").Find(&existing).Error; err != nil {
 		return Started{}, fmt.Errorf("looking for an open payment: %w", err)
 	}
@@ -126,6 +138,7 @@ func (s *Service) Create(ctx context.Context, in Checkout) (Started, error) {
 
 	p := models.Payment{
 		UserID:    in.UserID,
+		OrgID:     in.scope().OrgPtr(),
 		Reference: in.Reference,
 		Amount:    in.Amount,
 		Currency:  in.Currency,
@@ -141,8 +154,10 @@ func (s *Service) Create(ctx context.Context, in Checkout) (Started, error) {
 		IdempotencyKey: "payment-" + p.ID,
 		Description:    in.Description,
 		// A webhook can find the payment from these even if the process died
-		// before it stored the intent's id.
-		Metadata: map[string]string{"payment_id": p.ID, "reference": in.Reference},
+		// before it stored the intent's id. org_id is here so a human reading
+		// the Stripe dashboard can tell whose payment it is; the row is what
+		// the code resolves against.
+		Metadata: intentMetadata(p.ID, in.Reference, in.scope()),
 	})
 	if err != nil {
 		if delErr := s.DB.WithContext(ctx).Delete(&p).Error; delErr != nil {
@@ -169,20 +184,26 @@ func (s *Service) cancel(ctx context.Context, p models.Payment) error {
 	return s.apply(ctx, p, intent)
 }
 
-// Get returns a payment of the user's.
-func (s *Service) Get(ctx context.Context, userID, id string) (models.Payment, error) {
+// Get returns a payment inside the caller's scope: the organization's when
+// one is active, otherwise the caller's own.
+//
+// A payment made with organization A active is not readable while B is, which
+// is the whole point: before this, scoping by user alone meant switching
+// organization changed nothing about what you could see (grit#144).
+func (s *Service) Get(ctx context.Context, sc Scope, id string) (models.Payment, error) {
 	var p models.Payment
-	err := s.DB.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).First(&p).Error
+	err := sc.Apply(s.DB.WithContext(ctx).Model(&models.Payment{})).
+		Where("id = ?", id).First(&p).Error
 	return p, err
 }
 
 // Refresh reads the payment's intent back from Stripe and applies it: the
 // customer's return from checkout is settled without waiting for a webhook.
-func (s *Service) Refresh(ctx context.Context, userID, id string) (models.Payment, error) {
+func (s *Service) Refresh(ctx context.Context, sc Scope, id string) (models.Payment, error) {
 	if s.Stripe == nil {
 		return models.Payment{}, ErrUnavailable
 	}
-	p, err := s.Get(ctx, userID, id)
+	p, err := s.Get(ctx, sc, id)
 	if err != nil || p.IntentID == nil {
 		return p, err
 	}
@@ -196,19 +217,26 @@ func (s *Service) Refresh(ctx context.Context, userID, id string) (models.Paymen
 	if err := s.apply(ctx, p, intent); err != nil {
 		return p, err
 	}
-	return s.Get(ctx, userID, id)
+	return s.Get(ctx, sc, id)
 }
 
 // Refund refunds amount of a paid payment; zero refunds what is left. A
 // refund Stripe has already completed is recorded now; one still pending is
 // recorded when the charge.refunded webhook arrives, and the webhook for a
 // completed one then finds nothing to change.
-func (s *Service) Refund(ctx context.Context, id string, amount int64) error {
+//
+// Scoped, like Get. Refunding is the one that would have hurt: an operator
+// with organization B active could refund organization A's payment by id, and
+// a refund is not a thing you can take back (grit#144). Pass Unscoped() from
+// a genuine platform-wide admin path, which is then a deliberate choice at the
+// call site rather than the default.
+func (s *Service) Refund(ctx context.Context, sc Scope, id string, amount int64) error {
 	if s.Stripe == nil {
 		return ErrUnavailable
 	}
 	var p models.Payment
-	if err := s.DB.WithContext(ctx).First(&p, "id = ?", id).Error; err != nil {
+	if err := sc.Apply(s.DB.WithContext(ctx).Model(&models.Payment{})).
+		Where("id = ?", id).First(&p).Error; err != nil {
 		return err
 	}
 	if p.Status != models.PaymentSucceeded || p.IntentID == nil {

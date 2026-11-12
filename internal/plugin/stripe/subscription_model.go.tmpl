@@ -28,8 +28,18 @@ const (
 // two rows, and the history is worth keeping: it is the answer to "when did
 // they leave and what were they on".
 type Subscription struct {
-	ID     string `gorm:"primarykey;size:36" json:"id"`
+	ID string `gorm:"primarykey;size:36" json:"id"`
+	// UserID is who subscribed. In a multitenant project it is a record of
+	// who did it and nothing more: the organization owns the subscription, so
+	// it survives this person leaving and another admin can manage it.
 	UserID string `gorm:"size:36;index;not null" json:"user_id"`
+	// OrgID is the organization that owns it, NULL without the multitenant
+	// plugin. See the note on models.Payment.OrgID.
+	//
+	// A user in two organizations holds two subscriptions, one per
+	// organization, each against its own Stripe customer. Keyed by user they
+	// shared one, so the second organization could not buy a plan at all.
+	OrgID *string `gorm:"size:36;index" json:"org_id,omitempty"`
 	// CustomerID is the Stripe customer, which outlives any one subscription.
 	CustomerID string `gorm:"size:255;index;not null" json:"-"`
 	// SubscriptionID is Stripe's, and unique: a redelivered webhook finds this

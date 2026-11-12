@@ -72,6 +72,96 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.511.0 */}
+            <div className="mb-12" id="v3.511.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.511.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Billing belongs to the organisation, not to whoever clicked Checkout</h3>
+                <p>
+                  grit#144. Installing the Stripe and multi-tenancy plugins
+                  together gave billing keyed to a <strong>user</strong>. One
+                  Stripe customer per person across every organisation they
+                  belonged to, so two organisations could not hold two plans, a
+                  payment made in A was readable while B was active, and the
+                  same reference in two organisations collided on one row. If
+                  the person who subscribed left, the organisation lost its
+                  subscription with them.
+                </p>
+                <p>
+                  <code>Payment</code> and <code>Subscription</code> now carry a
+                  nullable <code>org_id</code>, stamped from the active
+                  organisation and left NULL without the plugin. Every read,
+                  refund, portal link, cancel and resume narrows to that scope,
+                  and each organisation gets its own Stripe customer, so two
+                  organisations hold two plans with two cards and two tax ids
+                  and one person can belong to both.
+                </p>
+                <h4>One implementation, not two</h4>
+                <p>
+                  The report asked for this and it is the decision the rest
+                  follows from. There is no multitenant variant of the plugin.
+                  A variant would mean the security-critical half, webhook
+                  verification and event idempotency and the conditional state
+                  updates, existed twice and drifted, with the second copy
+                  getting less review. It would also make the install order
+                  load-bearing: add Stripe first and your billing is user-keyed
+                  for ever.
+                </p>
+                <p>
+                  What makes one implementation possible is small. The
+                  multi-tenancy middleware does{' '}
+                  <code>c.Set(&quot;org_id&quot;, ...)</code>, so reading it
+                  back with <code>c.GetString</code> compiles in a project that
+                  has no tenant package at all and returns empty there. The
+                  plugins can be installed in either order, which is checked by
+                  generating a project each way and compiling it.
+                </p>
+                <p>
+                  The default is narrow and the wide one is spelled out:{' '}
+                  <code>payments.Unscoped()</code> for a genuinely
+                  platform-wide path. That is the right way round, because the
+                  mistake that matters is reading another organisation&apos;s
+                  billing by accident, and it cannot happen without typing it.
+                </p>
+                <h4>The two that would have hurt</h4>
+                <p>
+                  The admin payment list had no organisation filter, which is
+                  the easiest place to read somebody else&apos;s money by
+                  accident: the route exists, the operator has the role, and
+                  every organisation&apos;s rows arrive in one page with
+                  nothing saying so. And <code>Refund</code> took an id and
+                  nothing else, so an operator with B active could refund
+                  A&apos;s payment, which is not a thing you can take back.
+                  Both are scoped, and both have a test that fails if they stop
+                  being.
+                </p>
+                <p>
+                  The webhook settles the right organisation with no header,
+                  because Stripe sends none: the organisation is written to the
+                  subscription&apos;s metadata at checkout and read once, when
+                  the row is created. A later event never moves a subscription
+                  between organisations.
+                </p>
+                <p>
+                  Verified by generating a project both ways round, compiling
+                  it, and running the thirty tests the plugin ships inside it,
+                  including four new ones that are the report&apos;s own
+                  acceptance criteria. A project that already had payments
+                  before it had organisations has <code>org_id</code> NULL on
+                  those rows and only the project knows which organisation each
+                  belongs to, so the backfill is one line of SQL the install
+                  notes and the docs both hand you rather than something
+                  guessed at.
+                </p>
+              </div>
+            </div>
+
             {/* v3.510.0 */}
             <div className="mb-12" id="v3.510.0">
               <div className="flex items-center gap-3 mb-4">

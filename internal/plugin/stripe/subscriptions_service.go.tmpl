@@ -77,6 +77,11 @@ func SiteURL() string {
 // StartInput is a customer about to subscribe.
 type StartInput struct {
 	UserID string
+	// OrgID is the organization that will own the subscription, empty in a
+	// project without the multitenant plugin. The organization owns it so it
+	// survives the person who clicked Checkout leaving, and so another admin
+	// can change the card (grit#144).
+	OrgID string
 	// PriceID is the recurring price, from your plan table.
 	PriceID string
 	// SuccessURL and CancelURL are where Stripe returns them. Put
@@ -85,6 +90,9 @@ type StartInput struct {
 	CancelURL  string
 	TrialDays  int
 }
+
+// scope is who this checkout subscribes.
+func (in StartInput) scope() Scope { return Scope{UserID: in.UserID, OrgID: in.OrgID} }
 
 // Start returns the hosted checkout URL to send the customer to.
 //
@@ -98,7 +106,11 @@ func (s *Subscriptions) Start(ctx context.Context, in StartInput) (string, error
 	if in.UserID == "" || in.PriceID == "" {
 		return "", errors.New("payments: a checkout needs a user and a price")
 	}
-	current, err := s.Current(ctx, in.UserID)
+	// Scoped: "already has a subscription" is a question about this
+	// organization. A person who subscribed in organization A must still be
+	// able to buy a plan for organization B, which keying by user alone made
+	// impossible (grit#144).
+	current, err := s.Current(ctx, in.scope())
 	if err != nil {
 		return "", err
 	}
@@ -110,7 +122,7 @@ func (s *Subscriptions) Start(ctx context.Context, in StartInput) (string, error
 	if err := s.DB.WithContext(ctx).First(&user, "id = ?", in.UserID).Error; err != nil {
 		return "", fmt.Errorf("loading the customer: %w", err)
 	}
-	customerID, err := s.customerFor(ctx, user)
+	customerID, err := s.customerFor(ctx, user, in.scope())
 	if err != nil {
 		return "", err
 	}
@@ -120,6 +132,7 @@ func (s *Subscriptions) Start(ctx context.Context, in StartInput) (string, error
 		SuccessURL: in.SuccessURL,
 		CancelURL:  in.CancelURL,
 		UserID:     in.UserID,
+		OrgID:      in.OrgID,
 		TrialDays:  in.TrialDays,
 	})
 	if err != nil {
@@ -128,11 +141,15 @@ func (s *Subscriptions) Start(ctx context.Context, in StartInput) (string, error
 	return session.URL, nil
 }
 
-// customerFor reuses the Stripe customer this person already has, from any of
-// their subscriptions, and makes one the first time.
-func (s *Subscriptions) customerFor(ctx context.Context, user models.User) (string, error) {
+// customerFor reuses the Stripe customer this scope already has, from any of
+// its subscriptions, and makes one the first time.
+//
+// Per scope rather than per person: reusing the customer across organizations
+// is what put both of them on one card and one invoice history.
+func (s *Subscriptions) customerFor(ctx context.Context, user models.User, sc Scope) (string, error) {
 	var existing models.Subscription
-	res := s.DB.WithContext(ctx).Where("user_id = ? AND customer_id <> ''", user.ID).
+	res := sc.Apply(s.DB.WithContext(ctx).Model(&models.Subscription{})).
+		Where("customer_id <> ''").
 		Order("created_at DESC").Limit(1).Find(&existing)
 	if res.Error != nil {
 		return "", res.Error
@@ -140,7 +157,7 @@ func (s *Subscriptions) customerFor(ctx context.Context, user models.User) (stri
 	if res.RowsAffected == 1 {
 		return existing.CustomerID, nil
 	}
-	customer, err := s.Stripe.CreateCustomer(ctx, user.Email, strings.TrimSpace(user.FirstName+" "+user.LastName), user.ID)
+	customer, err := s.Stripe.CreateCustomer(ctx, user.Email, strings.TrimSpace(user.FirstName+" "+user.LastName), sc)
 	if err != nil {
 		return "", err
 	}
@@ -148,11 +165,11 @@ func (s *Subscriptions) customerFor(ctx context.Context, user models.User) (stri
 }
 
 // Portal returns the billing portal URL: cards, invoices, cancelling.
-func (s *Subscriptions) Portal(ctx context.Context, userID, returnURL string) (string, error) {
+func (s *Subscriptions) Portal(ctx context.Context, sc Scope, returnURL string) (string, error) {
 	if s.Stripe == nil {
 		return "", ErrUnavailable
 	}
-	current, err := s.Current(ctx, userID)
+	current, err := s.Current(ctx, sc)
 	if err != nil {
 		return "", err
 	}
@@ -168,9 +185,9 @@ func (s *Subscriptions) Portal(ctx context.Context, userID, returnURL string) (s
 
 // Current is the subscription that decides what this account may do: the live
 // one, or the most recent if none is live.
-func (s *Subscriptions) Current(ctx context.Context, userID string) (models.Subscription, error) {
+func (s *Subscriptions) Current(ctx context.Context, sc Scope) (models.Subscription, error) {
 	var rows []models.Subscription
-	if err := s.DB.WithContext(ctx).Where("user_id = ?", userID).
+	if err := sc.Apply(s.DB.WithContext(ctx).Model(&models.Subscription{})).
 		Order("created_at DESC").Find(&rows).Error; err != nil {
 		return models.Subscription{}, fmt.Errorf("reading the subscription: %w", err)
 	}
@@ -187,17 +204,17 @@ func (s *Subscriptions) Current(ctx context.Context, userID string) (models.Subs
 
 // Entitled is the question the rest of the app asks: may this account have the
 // thing it is paying for?
-func (s *Subscriptions) Entitled(ctx context.Context, userID string) (bool, error) {
-	current, err := s.Current(ctx, userID)
+func (s *Subscriptions) Entitled(ctx context.Context, sc Scope) (bool, error) {
+	current, err := s.Current(ctx, sc)
 	return current.Entitled(), err
 }
 
 // Cancel stops the subscription renewing, leaving the days already paid for.
-func (s *Subscriptions) Cancel(ctx context.Context, userID string) (models.Subscription, error) {
+func (s *Subscriptions) Cancel(ctx context.Context, sc Scope) (models.Subscription, error) {
 	if s.Stripe == nil {
 		return models.Subscription{}, ErrUnavailable
 	}
-	current, err := s.Current(ctx, userID)
+	current, err := s.Current(ctx, sc)
 	if err != nil {
 		return current, err
 	}
@@ -211,15 +228,15 @@ func (s *Subscriptions) Cancel(ctx context.Context, userID string) (models.Subsc
 	if err := s.apply(ctx, updated); err != nil {
 		return current, err
 	}
-	return s.Current(ctx, userID)
+	return s.Current(ctx, sc)
 }
 
 // Resume undoes a cancellation while the period is still running.
-func (s *Subscriptions) Resume(ctx context.Context, userID string) (models.Subscription, error) {
+func (s *Subscriptions) Resume(ctx context.Context, sc Scope) (models.Subscription, error) {
 	if s.Stripe == nil {
 		return models.Subscription{}, ErrUnavailable
 	}
-	current, err := s.Current(ctx, userID)
+	current, err := s.Current(ctx, sc)
 	if err != nil {
 		return current, err
 	}
@@ -233,13 +250,13 @@ func (s *Subscriptions) Resume(ctx context.Context, userID string) (models.Subsc
 	if err := s.apply(ctx, updated); err != nil {
 		return current, err
 	}
-	return s.Current(ctx, userID)
+	return s.Current(ctx, sc)
 }
 
 // Refresh reads the checkout session back from Stripe and records what it
 // found, so the page the customer lands on after paying is already right
 // rather than waiting on a webhook.
-func (s *Subscriptions) Refresh(ctx context.Context, userID, sessionID string) (models.Subscription, error) {
+func (s *Subscriptions) Refresh(ctx context.Context, sc Scope, sessionID string) (models.Subscription, error) {
 	if s.Stripe == nil {
 		return models.Subscription{}, ErrUnavailable
 	}
@@ -250,8 +267,8 @@ func (s *Subscriptions) Refresh(ctx context.Context, userID, sessionID string) (
 	// The session says whose checkout it was. Anyone can put a session id in a
 	// URL, so a session belonging to somebody else is not this caller's to
 	// read, let alone to be granted from.
-	if session.ClientReferenceID != userID || session.Subscription == "" {
-		return s.Current(ctx, userID)
+	if session.ClientReferenceID != sc.UserID || session.Subscription == "" {
+		return s.Current(ctx, sc)
 	}
 	subscription, err := s.Stripe.GetSubscription(ctx, session.Subscription)
 	if err != nil {
@@ -260,11 +277,20 @@ func (s *Subscriptions) Refresh(ctx context.Context, userID, sessionID string) (
 	if subscription.Metadata == nil {
 		subscription.Metadata = map[string]string{}
 	}
-	subscription.Metadata["user_id"] = userID
+	// Only fills what Stripe did not say. The subscription's own metadata was
+	// written at checkout and is what a later webhook will carry, so letting
+	// the caller's scope override it would let a request decide which
+	// organization a subscription belongs to.
+	if subscription.Metadata["user_id"] == "" {
+		subscription.Metadata["user_id"] = sc.UserID
+	}
+	if subscription.Metadata["org_id"] == "" && sc.Multitenant() {
+		subscription.Metadata["org_id"] = sc.OrgID
+	}
 	if err := s.apply(ctx, subscription); err != nil {
 		return models.Subscription{}, err
 	}
-	return s.Current(ctx, userID)
+	return s.Current(ctx, sc)
 }
 
 // Register receives the subscription events. The provider itself is registered
@@ -358,8 +384,21 @@ func (s *Subscriptions) apply(ctx context.Context, incoming Subscription) error 
 			return nil
 		}
 
+		// Which organization this subscription belongs to, for a row being
+		// created. Stripe sends no organization header, so the metadata put on
+		// the subscription at checkout is the only thing that can say, and it
+		// is read once: a later event must never move a subscription from one
+		// organization to another (grit#144).
+		orgID := row.OrgID
+		if !known {
+			if org := incoming.Metadata["org_id"]; org != "" {
+				orgID = &org
+			}
+		}
+
 		was := row.Entitled()
 		row.UserID = userID
+		row.OrgID = orgID
 		row.CustomerID = incoming.CustomerID
 		row.SubscriptionID = incoming.ID
 		row.Status = incoming.Status

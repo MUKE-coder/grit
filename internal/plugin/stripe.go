@@ -34,7 +34,7 @@ var stripeTemplates embed.FS
 func stripePlugin() Plugin {
 	return Plugin{
 		Name:    "stripe",
-		Version: "1.1.0",
+		Version: "1.2.0",
 		Summary: "Stripe payments and subscriptions: server-priced checkout, hosted billing, webhook-settled, refunds",
 		Description: `Takes money through Stripe without trusting the browser with the price.
 
@@ -56,7 +56,12 @@ func stripePlugin() Plugin {
   • A failed renewal keeps access while Stripe retries the card, and ends it
     when Stripe gives up: past_due is entitled, unpaid is not
 
-No SDK: plain REST calls, with the API version pinned.`,
+No SDK: plain REST calls, with the API version pinned.
+
+Billing belongs to the organization when the multitenant plugin is installed:
+one Stripe customer per organization, so two organizations hold two plans and
+a payment made in one is not readable from the other. Without that plugin
+nothing changes, because org_id is simply never set.`,
 
 		NextSteps: []string{
 			"On a project made before v3.311.0, run grit upgrade first: it adds the payment error codes and the CSP list the plugin writes Stripe's origins into",
@@ -65,6 +70,8 @@ No SDK: plain REST calls, with the API version pinned.`,
 			"API .env:            STRIPE_SECRET_KEY=sk_test_...   STRIPE_WEBHOOK_SECRET=whsec_...",
 			"Web .env:            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...",
 			"Start a payment in your checkout handler: paymentService.Create(ctx, payments.Checkout{UserID: userID, Reference: \"order:\" + order.ID, Amount: order.TotalCents, Currency: \"usd\"})",
+			"With organizations: take the scope off the request, payments.ScopeFrom(c), and pass its UserID and OrgID. The organization then owns the billing, so it survives the person who subscribed leaving and another admin can change the card",
+			"Already had payments before organizations? Those rows have org_id NULL and an organization-scoped read will not return them. Only you know which organization each belongs to: UPDATE payments SET org_id = '<org>' WHERE ... , and the same for subscriptions",
 			"Mark the order paid in routes.go: paymentService.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Payment) error { ... }",
 			"Webhooks locally:    stripe listen --forward-to localhost:8080/webhooks/stripe (or rely on the return page's refresh)",
 			"Subscriptions: make a recurring price in the Stripe dashboard, then POST /subscriptions/checkout {\"price_id\": \"price_...\"} and send the customer to the url it answers",
@@ -99,7 +106,12 @@ func hasNextWeb(ctx Context) bool {
 
 func stripeFiles(ctx Context) map[string]string {
 	files := map[string]string{
-		apiPath(ctx, "internal/models/payment.go"):         stripeTemplate(ctx, "payment_model.go.tmpl"),
+		apiPath(ctx, "internal/models/payment.go"): stripeTemplate(ctx, "payment_model.go.tmpl"),
+		// Who a payment or subscription belongs to. One file for both project
+		// shapes: it reads the organization off the gin context by key name,
+		// so it compiles with or without the multitenant plugin (grit#144).
+		apiPath(ctx, "internal/payments/scope.go"):         stripeTemplate(ctx, "billing_scope.go.tmpl"),
+		apiPath(ctx, "internal/payments/scope_test.go"):    stripeTemplate(ctx, "billing_scope_test.go.tmpl"),
 		apiPath(ctx, "internal/payments/stripe.go"):        stripeTemplate(ctx, "stripe_client.go.tmpl"),
 		apiPath(ctx, "internal/payments/service.go"):       stripeTemplate(ctx, "payments_service.go.tmpl"),
 		apiPath(ctx, "internal/payments/payments_test.go"): stripeTemplate(ctx, "payments_test.go.tmpl"),

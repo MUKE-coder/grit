@@ -1,0 +1,123 @@
+package payments
+
+import (
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+)
+
+// contextFor builds a gin context the way the middleware leaves it: user_id
+// always, org_id only when the multitenant plugin is installed and an
+// organization is active.
+func contextFor(userID, orgID string) *gin.Context {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("user_id", userID)
+	if orgID != "" {
+		c.Set("org_id", orgID)
+	}
+	return c
+}
+
+// A project without the multitenant plugin has nothing setting org_id, so the
+// scope falls through to the user and behaves exactly as it did before
+// billing learned about organizations (grit#144).
+func TestASingleTenantProjectScopesByUser(t *testing.T) {
+	sc := ScopeFrom(contextFor("user-1", ""))
+
+	if sc.Multitenant() {
+		t.Error("a request with no org_id read as multitenant")
+	}
+	if sc.OrgPtr() != nil {
+		t.Error("a single-tenant payment would be stamped with an organization")
+	}
+	if got := sc.CustomerKey(); got != "customer-user-1" {
+		t.Errorf("customer key is %q, want the per-user one", got)
+	}
+	if _, ok := sc.Metadata()["org_id"]; ok {
+		t.Error("single-tenant metadata names an organization")
+	}
+}
+
+// And with the plugin, the organization owns it.
+func TestAnOrganizationOwnsItsBilling(t *testing.T) {
+	sc := ScopeFrom(contextFor("user-1", "org-a"))
+
+	if !sc.Multitenant() {
+		t.Fatal("a request with org_id did not read as multitenant")
+	}
+	if sc.OrgPtr() == nil || *sc.OrgPtr() != "org-a" {
+		t.Error("the payment would not be stamped with the organization")
+	}
+	if got := sc.CustomerKey(); got != "customer-org-org-a" {
+		t.Errorf("customer key is %q: two organizations would share one Stripe customer", got)
+	}
+	if sc.Metadata()["org_id"] != "org-a" {
+		t.Error("the Stripe object would not say which organization it is for")
+	}
+}
+
+// The acceptance criterion from the issue: a user in two organizations gets a
+// separate Stripe customer in each, or both share one card, one tax id and one
+// invoice history.
+func TestOneUserInTwoOrganizationsGetsTwoCustomers(t *testing.T) {
+	a := ScopeFrom(contextFor("user-1", "org-a"))
+	b := ScopeFrom(contextFor("user-1", "org-b"))
+
+	if a.CustomerKey() == b.CustomerKey() {
+		t.Errorf("both organizations key the same Stripe customer (%q)", a.CustomerKey())
+	}
+}
+
+// A payment made with organization A active is not readable while B is. Owns
+// is the in-memory half of the same rule Apply makes in SQL.
+func TestARowIsOnlyVisibleInsideItsOwnScope(t *testing.T) {
+	orgA, orgB := "org-a", "org-b"
+	a := ScopeFrom(contextFor("user-1", orgA))
+	b := ScopeFrom(contextFor("user-1", orgB))
+	single := ScopeFrom(contextFor("user-1", ""))
+
+	if !a.Owns("user-1", &orgA) {
+		t.Error("organization A cannot see its own row")
+	}
+	if a.Owns("user-1", &orgB) {
+		t.Error("organization A can see organization B's row, with the same user in both")
+	}
+	if b.Owns("user-1", &orgA) {
+		t.Error("organization B can see organization A's row")
+	}
+
+	// An organization's row is the organization's, not the individual's: a
+	// colleague who did not click Checkout still has to be able to manage it.
+	if !a.Owns("somebody-else", &orgA) {
+		t.Error("an organization's own row is hidden from another member, which is the complaint this fixes")
+	}
+
+	// And a row belonging to an organization is never returned on a route
+	// with no organization active.
+	if single.Owns("user-1", &orgA) {
+		t.Error("an organization's row is visible on an unscoped route")
+	}
+	if !single.Owns("user-1", nil) {
+		t.Error("a single-tenant row is not visible to its own user")
+	}
+	if single.Owns("somebody-else", nil) {
+		t.Error("a single-tenant row is visible to another user")
+	}
+}
+
+// Unscoped is for a genuine platform-wide path, and it has to be spelled out
+// at the call site. The default being narrow is the point.
+func TestUnscopedSeesEverything(t *testing.T) {
+	org := "org-a"
+	if !Unscoped().Owns("anyone", &org) {
+		t.Error("Unscoped cannot see an organization's row")
+	}
+	if !Unscoped().Owns("anyone", nil) {
+		t.Error("Unscoped cannot see a single-tenant row")
+	}
+	if Unscoped().Multitenant() {
+		t.Error("Unscoped reads as an organization scope")
+	}
+}

@@ -226,7 +226,7 @@ func TestWebhooksApplyOnceAndNeverBackwards(t *testing.T) {
 	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.processing", late)); err != nil {
 		t.Fatal(err)
 	}
-	p, err := s.Get(context.Background(), "u1", started.Payment.ID)
+	p, err := s.Get(context.Background(), userScope("u1"), started.Payment.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +249,7 @@ func TestAFailingOnSucceededLeavesThePaymentUnpaid(t *testing.T) {
 	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.succeeded", fake.pay(*started.Payment.IntentID))); err == nil {
 		t.Fatal("the failure was swallowed")
 	}
-	p, err := s.Get(context.Background(), "u1", started.Payment.ID)
+	p, err := s.Get(context.Background(), userScope("u1"), started.Payment.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,14 +279,14 @@ func TestRefreshReadsTheIntentBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	fake.pay(*started.Payment.IntentID)
-	p, err := s.Refresh(context.Background(), "u1", started.Payment.ID)
+	p, err := s.Refresh(context.Background(), userScope("u1"), started.Payment.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if p.Status != models.PaymentSucceeded {
 		t.Errorf("payment is %q", p.Status)
 	}
-	if _, err := s.Refresh(context.Background(), "someone-else", started.Payment.ID); err == nil {
+	if _, err := s.Refresh(context.Background(), userScope("someone-else"), started.Payment.ID); err == nil {
 		t.Error("another user read the payment")
 	}
 }
@@ -305,16 +305,16 @@ func TestRefundsAddUpAndTheWebhookAddsNothing(t *testing.T) {
 	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.succeeded", fake.pay(*started.Payment.IntentID))); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Refund(context.Background(), started.Payment.ID, 400); err != nil {
+	if err := s.Refund(context.Background(), userScope("u1"), started.Payment.ID, 400); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Refund(context.Background(), started.Payment.ID, 700); err == nil {
+	if err := s.Refund(context.Background(), userScope("u1"), started.Payment.ID, 700); err == nil {
 		t.Error("refunded more than was left")
 	}
-	if err := s.Refund(context.Background(), started.Payment.ID, 0); err != nil {
+	if err := s.Refund(context.Background(), userScope("u1"), started.Payment.ID, 0); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Refund(context.Background(), started.Payment.ID, 0); err == nil {
+	if err := s.Refund(context.Background(), userScope("u1"), started.Payment.ID, 0); err == nil {
 		t.Error("refunded a payment with nothing left on it")
 	}
 	// Stripe's own webhook for the full refund arrives after.
@@ -322,7 +322,7 @@ func TestRefundsAddUpAndTheWebhookAddsNothing(t *testing.T) {
 	if err := s.HandleEvent(context.Background(), refunded); err != nil {
 		t.Fatal(err)
 	}
-	p, err := s.Get(context.Background(), "u1", started.Payment.ID)
+	p, err := s.Get(context.Background(), userScope("u1"), started.Payment.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -345,5 +345,126 @@ func TestAStripeRefusalCarriesItsMessage(t *testing.T) {
 	var provider *ProviderError
 	if !errors.As(err, &provider) || provider.Status != http.StatusUnauthorized || !strings.Contains(provider.Error(), "Invalid API Key") {
 		t.Errorf("got %v", err)
+	}
+}
+
+// userScope is the scope a project without the multitenant plugin produces:
+// no organization, so every read narrows to the user exactly as it did before
+// billing learned about organizations (grit#144).
+func userScope(userID string) Scope { return Scope{UserID: userID} }
+
+// orgScope is a caller acting inside an organization.
+func orgScope(userID, orgID string) Scope { return Scope{UserID: userID, OrgID: orgID} }
+
+// orgCheckout is the same checkout, billed to an organization.
+func orgCheckout(orgID, reference string, amount int64) Checkout {
+	return Checkout{UserID: "u1", OrgID: orgID, Reference: reference, Amount: amount, Currency: "USD"}
+}
+
+// The acceptance criterion from grit#144: a payment created with organization
+// A active is invisible and non-refundable while B is active, for the same
+// person. Before this, scoping by user alone meant switching organization
+// changed nothing about what you could see.
+func TestAPaymentIsNotVisibleFromAnotherOrganization(t *testing.T) {
+	s, _ := newService(t)
+
+	started, err := s.Create(context.Background(), orgCheckout("org-a", "invoice:1", 1000))
+	if err != nil {
+		t.Fatalf("creating the payment: %v", err)
+	}
+	if started.Payment.OrgID == nil || *started.Payment.OrgID != "org-a" {
+		t.Fatal("the payment was not stamped with the organization that created it")
+	}
+
+	if _, err := s.Get(context.Background(), orgScope("u1", "org-a"), started.Payment.ID); err != nil {
+		t.Errorf("organization A cannot read its own payment: %v", err)
+	}
+	// The same user, signed in, with B active.
+	if _, err := s.Get(context.Background(), orgScope("u1", "org-b"), started.Payment.ID); err == nil {
+		t.Error("organization B can read organization A's payment")
+	}
+	if _, err := s.Get(context.Background(), userScope("u1"), started.Payment.ID); err == nil {
+		t.Error("an organization's payment is readable on a route with no organization active")
+	}
+
+	// A colleague in A can: the organization owns it, not the person who
+	// happened to click Checkout. That is the whole complaint being fixed.
+	if _, err := s.Get(context.Background(), orgScope("someone-else", "org-a"), started.Payment.ID); err != nil {
+		t.Errorf("another member of organization A cannot read its payment: %v", err)
+	}
+}
+
+// Refunding is the one that cannot be taken back.
+func TestAnotherOrganizationCannotRefundTheirPayment(t *testing.T) {
+	s, fake := newService(t)
+
+	started, err := s.Create(context.Background(), orgCheckout("org-a", "invoice:1", 1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.apply(context.Background(), started.Payment, fake.pay(*started.Payment.IntentID)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.Refund(context.Background(), orgScope("u1", "org-b"), started.Payment.ID, 0); err == nil {
+		t.Error("organization B refunded organization A's payment")
+	}
+	if fake.refundFor != 0 {
+		t.Errorf("stripe was asked to refund %d for another organization's payment", fake.refundFor)
+	}
+	if err := s.Refund(context.Background(), orgScope("u1", "org-a"), started.Payment.ID, 0); err != nil {
+		t.Errorf("organization A cannot refund its own payment: %v", err)
+	}
+}
+
+// The same reference in two organizations is two payments, not one that
+// collides. Keyed by user alone, the second reused the first or canceled it.
+func TestTheSameReferenceInTwoOrganizationsIsTwoPayments(t *testing.T) {
+	s, _ := newService(t)
+
+	first, err := s.Create(context.Background(), orgCheckout("org-a", "invoice:1", 1000))
+	if err != nil {
+		t.Fatalf("organization A: %v", err)
+	}
+	second, err := s.Create(context.Background(), orgCheckout("org-b", "invoice:1", 2500))
+	if err != nil {
+		t.Fatalf("organization B: %v", err)
+	}
+
+	if first.Payment.ID == second.Payment.ID {
+		t.Fatal("the two organizations share one payment row")
+	}
+	if second.Payment.Amount != 2500 {
+		t.Errorf("organization B's payment is for %d, want 2500: it reused A's", second.Payment.Amount)
+	}
+
+	// A's is untouched: not canceled by B's different amount for the same
+	// reference, which is what the unscoped lookup did.
+	reread, err := s.Get(context.Background(), orgScope("u1", "org-a"), first.Payment.ID)
+	if err != nil {
+		t.Fatalf("rereading organization A's payment: %v", err)
+	}
+	if reread.Status == models.PaymentCanceled {
+		t.Error("creating organization B's payment canceled organization A's")
+	}
+}
+
+// And the other half of the promise: a project with no organizations behaves
+// exactly as it did.
+func TestASingleTenantPaymentStampsNoOrganization(t *testing.T) {
+	s, _ := newService(t)
+
+	started, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if started.Payment.OrgID != nil {
+		t.Errorf("a project with no organizations stamped org_id %q", *started.Payment.OrgID)
+	}
+	if _, err := s.Get(context.Background(), userScope("u1"), started.Payment.ID); err != nil {
+		t.Errorf("the owner cannot read their own payment: %v", err)
+	}
+	if _, err := s.Get(context.Background(), userScope("u2"), started.Payment.ID); err == nil {
+		t.Error("another user can read it")
 	}
 }

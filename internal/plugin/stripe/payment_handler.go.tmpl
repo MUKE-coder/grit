@@ -27,7 +27,7 @@ func NewPaymentHandler(db *gorm.DB, service *payments.Service) *PaymentHandler {
 
 // Get returns one of the caller's payments, as the database has it.
 func (h *PaymentHandler) Get(c *gin.Context) {
-	p, err := h.Payments.Get(c.Request.Context(), c.GetString("user_id"), c.Param("id"))
+	p, err := h.Payments.Get(c.Request.Context(), payments.ScopeFrom(c), c.Param("id"))
 	if err != nil {
 		respond.WriteError(c, err, "Could not load the payment")
 		return
@@ -39,7 +39,7 @@ func (h *PaymentHandler) Get(c *gin.Context) {
 // it. The checkout's return page calls it once, so the order is settled
 // even where no webhook reaches the API, such as on a laptop.
 func (h *PaymentHandler) Refresh(c *gin.Context) {
-	p, err := h.Payments.Refresh(c.Request.Context(), c.GetString("user_id"), c.Param("id"))
+	p, err := h.Payments.Refresh(c.Request.Context(), payments.ScopeFrom(c), c.Param("id"))
 	if err != nil {
 		respond.WriteError(c, err, "Could not check the payment")
 		return
@@ -47,11 +47,18 @@ func (h *PaymentHandler) Refresh(c *gin.Context) {
 	respond.OK(c, p)
 }
 
-// List is every payment, newest first, for the admin.
+// List is every payment in the active organization, newest first, for the
+// admin.
 //
 //	GET /api/admin/payments?status=succeeded&reference=order:123
+//
+// Scoped, because an admin list is the easiest place to read somebody else's
+// money by accident: the route exists, the operator has the role, and the
+// rows of every organization arrive in one page with nothing saying so
+// (grit#144). A platform-wide view is a deliberate thing to build, with
+// payments.Unscoped() and a permission of its own, not the default.
 func (h *PaymentHandler) List(c *gin.Context) {
-	q := h.DB.WithContext(c.Request.Context()).Model(&models.Payment{})
+	q := payments.ScopeFrom(c).Apply(h.DB.WithContext(c.Request.Context()).Model(&models.Payment{}))
 	params := paginate.Bind(c).
 		With("status", c.Query("status")).
 		With("reference", c.Query("reference")).
@@ -82,7 +89,7 @@ func (h *PaymentHandler) Refund(c *gin.Context) {
 			return
 		}
 	}
-	if err := h.Payments.Refund(c.Request.Context(), c.Param("id"), req.Amount); err != nil {
+	if err := h.Payments.Refund(c.Request.Context(), payments.ScopeFrom(c), c.Param("id"), req.Amount); err != nil {
 		respond.WriteError(c, err, "Could not refund the payment")
 		return
 	}

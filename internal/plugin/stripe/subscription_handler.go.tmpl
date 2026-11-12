@@ -53,8 +53,13 @@ func (h *SubscriptionHandler) Start(c *gin.Context) {
 		respond.Validation(c, "Send the price to subscribe to", map[string]string{"price_id": "is required"})
 		return
 	}
+	// The organization comes off the request's own context, never from the
+	// body: a client naming an organization is a client choosing whose card
+	// to charge (grit#144).
+	scope := payments.ScopeFrom(c)
 	url, err := h.Subscriptions.Start(c.Request.Context(), payments.StartInput{
-		UserID:  c.GetString("user_id"),
+		UserID:  scope.UserID,
+		OrgID:   scope.OrgID,
 		PriceID: req.PriceID,
 		// Stripe fills the session id in, for a return page that would rather
 		// read the outcome than wait for the webhook.
@@ -84,7 +89,7 @@ func (h *SubscriptionHandler) Portal(c *gin.Context) {
 			return
 		}
 	}
-	url, err := h.Subscriptions.Portal(c.Request.Context(), c.GetString("user_id"), h.url(req.ReturnPath, "/billing"))
+	url, err := h.Subscriptions.Portal(c.Request.Context(), payments.ScopeFrom(c), h.url(req.ReturnPath, "/billing"))
 	if err != nil {
 		respond.WriteError(c, err, "Could not open the billing portal")
 		return
@@ -96,7 +101,7 @@ func (h *SubscriptionHandler) Portal(c *gin.Context) {
 //
 //	GET /subscriptions/me
 func (h *SubscriptionHandler) Current(c *gin.Context) {
-	subscription, err := h.Subscriptions.Current(c.Request.Context(), c.GetString("user_id"))
+	subscription, err := h.Subscriptions.Current(c.Request.Context(), payments.ScopeFrom(c))
 	if err != nil {
 		respond.WriteError(c, err, "Could not read the subscription")
 		return
@@ -112,7 +117,7 @@ func (h *SubscriptionHandler) Current(c *gin.Context) {
 //
 //	POST /subscriptions/refresh?session_id=cs_...
 func (h *SubscriptionHandler) Refresh(c *gin.Context) {
-	subscription, err := h.Subscriptions.Refresh(c.Request.Context(), c.GetString("user_id"), c.Query("session_id"))
+	subscription, err := h.Subscriptions.Refresh(c.Request.Context(), payments.ScopeFrom(c), c.Query("session_id"))
 	if err != nil {
 		respond.WriteError(c, err, "Could not check the subscription")
 		return
@@ -127,7 +132,7 @@ func (h *SubscriptionHandler) Refresh(c *gin.Context) {
 //
 //	POST /subscriptions/cancel
 func (h *SubscriptionHandler) Cancel(c *gin.Context) {
-	subscription, err := h.Subscriptions.Cancel(c.Request.Context(), c.GetString("user_id"))
+	subscription, err := h.Subscriptions.Cancel(c.Request.Context(), payments.ScopeFrom(c))
 	if err != nil {
 		respond.WriteError(c, err, "Could not cancel the subscription")
 		return
@@ -139,7 +144,7 @@ func (h *SubscriptionHandler) Cancel(c *gin.Context) {
 //
 //	POST /subscriptions/resume
 func (h *SubscriptionHandler) Resume(c *gin.Context) {
-	subscription, err := h.Subscriptions.Resume(c.Request.Context(), c.GetString("user_id"))
+	subscription, err := h.Subscriptions.Resume(c.Request.Context(), payments.ScopeFrom(c))
 	if err != nil {
 		respond.WriteError(c, err, "Could not resume the subscription")
 		return

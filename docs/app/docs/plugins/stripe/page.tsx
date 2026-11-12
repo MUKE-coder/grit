@@ -42,7 +42,7 @@ const STEPS: PluginStep[] = [
 ]
 
 const RELATED: RelatedPlugin[] = [
-  { name: 'Multi-tenancy', href: '/docs/plugins/multitenant', why: 'If each organisation is billed separately, add it before the billing model hardens around one customer per app.' },
+  { name: 'Multi-tenancy', href: '/docs/plugins/multitenant', why: 'Install it in either order. With it, an organisation owns its billing: its own Stripe customer, its own plan, its own invoice history.' },
   { name: 'Webhooks', href: '/docs/backend/webhooks', why: 'Outbound webhooks, to the Standard Webhooks spec, for telling other systems what you just charged for.' },
 ]
 
@@ -91,6 +91,58 @@ started, err := h.Payments.Create(ctx, payments.Checkout{
             the payment for the old amount is canceled at Stripe first, so its secret cannot be used to pay the old
             price.
           </p>
+
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Billing with organisations</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            With the{' '}
+            <Link href="/docs/plugins/multitenant" className="underline underline-offset-4 hover:text-foreground">
+              multi-tenancy plugin
+            </Link>{' '}
+            installed, billing belongs to the organisation rather than to the person who happened to click
+            Checkout. That is the normal shape of a multitenant product: the organisation owns the subscription
+            and the invoice history, another admin can open the portal and change the card, and the subscription
+            survives the subscriber leaving.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Take the scope off the request rather than reading an organisation from the body. A client naming an
+            organisation is a client choosing whose card to charge.
+          </p>
+          <CodeBlock language="go" code={`scope := payments.ScopeFrom(c)   // user_id, and org_id when one is active
+
+started, err := h.Payments.Create(ctx, payments.Checkout{
+    UserID:    scope.UserID,
+    OrgID:     scope.OrgID,       // empty without the multitenant plugin
+    Reference: "invoice:" + invoice.ID,
+    Amount:    invoice.TotalCents,
+    Currency:  "usd",
+})`} />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            Every read narrows to that scope: a payment made with organisation A active is not readable, and not
+            refundable, while B is, for the same signed-in person. The admin payment list is scoped too, because
+            an admin list is the easiest place to read somebody else&apos;s money by accident. A genuinely
+            platform-wide view is <code>payments.Unscoped()</code>, spelled out at the call site.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Each organisation gets its own Stripe customer, so two organisations hold two plans with two cards and
+            two tax ids, and one person can belong to both. The organisation also rides on the subscription&apos;s
+            metadata, which is what lets a webhook settle the right organisation: Stripe sends no organisation
+            header, so the stored row and the metadata are the only things that can say.
+          </p>
+          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4 text-sm leading-relaxed text-muted-foreground">
+            <strong className="text-foreground">One implementation, not two.</strong> There is no multitenant
+            variant of this plugin. <code>org_id</code> is a nullable column that is simply never set in a project
+            without organisations, so a single-tenant app behaves exactly as it did. A variant would mean the
+            security-critical half, webhook verification and event idempotency and the conditional state updates,
+            existed twice and drifted, with the second copy getting less review. It would also make the install
+            order load-bearing, and it is not: add the plugins in either order.
+          </div>
+          <div className="mb-4 rounded-lg border border-warning/30 bg-warning/5 p-4 text-sm leading-relaxed text-muted-foreground">
+            <strong className="text-foreground">Payments from before you had organisations</strong> have{' '}
+            <code>org_id</code> NULL, and an organisation-scoped read will not return them. Only you know which
+            organisation each belongs to, so the backfill is yours to write:{' '}
+            <code>UPDATE payments SET org_id = &apos;...&apos; WHERE ...</code>, and the same for{' '}
+            <code>subscriptions</code>.
+          </div>
 
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Mark the order paid</h2>
           <CodeBlock language="go" code={`// routes.go, after paymentService is made.

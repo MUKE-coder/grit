@@ -1,0 +1,152 @@
+package payments
+
+import (
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+// Who a payment or a subscription belongs to.
+//
+// The normal shape of a multitenant product is one billing relationship per
+// organization: the organization owns the subscription and the invoice
+// history, another admin can open the portal and change the card, and the
+// subscription survives the person who clicked Checkout leaving (grit#144).
+// Keying billing to a user gives one Stripe customer per person across every
+// organization they belong to, so two organizations cannot hold two plans and
+// a payment made in one is readable from the other.
+//
+// # One implementation, not two
+//
+// Payment and Subscription always carry a nullable org_id. In a project
+// without the multitenant plugin it is always NULL, every scope falls back to
+// the user, and the behaviour is exactly what it was. In a project with it,
+// the column is stamped from the active organization and every read, refund
+// and portal link is narrowed to it.
+//
+// That is deliberately not two generated variants. A variant means the
+// security-critical half, webhook verification and event idempotency and the
+// conditional state updates, exists twice and drifts, with the second copy
+// getting less review. It would also make the install order load-bearing:
+// install stripe first and your billing is user-keyed for ever.
+//
+// # Why this reads a string key
+//
+// The multitenant middleware does `c.Set("org_id", ...)`. Reading it back with
+// c.GetString means this file compiles in a project that has no tenant package
+// at all, which is what lets one implementation serve both. A project without
+// the plugin has nothing setting the key, so Scope falls through to the user
+// and nothing changes.
+const orgContextKey = "org_id"
+
+// Scope is who the caller is billing as.
+//
+// OrgID empty means a single-tenant project, or a route outside any
+// organization. UserID is always set: it is who did it, and it is what a
+// single-tenant project scopes by.
+type Scope struct {
+	UserID string
+	OrgID  string
+
+	// unscoped reads every organization's rows. Set only by Unscoped().
+	unscoped bool
+}
+
+// ScopeFrom reads the caller's billing scope off the request.
+func ScopeFrom(c *gin.Context) Scope {
+	return Scope{
+		UserID: c.GetString("user_id"),
+		OrgID:  c.GetString(orgContextKey),
+	}
+}
+
+// Multitenant reports a scope that belongs to an organization.
+func (s Scope) Multitenant() bool { return s.OrgID != "" }
+
+// OrgPtr is the value to store in a nullable org_id column.
+func (s Scope) OrgPtr() *string {
+	if s.OrgID == "" {
+		return nil
+	}
+	org := s.OrgID
+	return &org
+}
+
+// Apply narrows a query to this scope.
+//
+// An organization's rows are the organization's: anybody who can reach the
+// route can see them, which is the point of the organization owning the
+// billing rather than the person who happened to start it. Without an
+// organization it narrows to the user, which is what every project did before.
+//
+// The two are never combined. Narrowing by organization AND user would hide an
+// organization's own invoices from the colleague who has to pay them, which is
+// the exact complaint this is fixing.
+func (s Scope) Apply(q *gorm.DB) *gorm.DB {
+	if s.unscoped {
+		return q
+	}
+	if s.Multitenant() {
+		return q.Where("org_id = ?", s.OrgID)
+	}
+	// org_id IS NULL as well as user_id, so a row belonging to an
+	// organization is never returned on a route with no organization active.
+	// Without it, a member of two organizations hitting an unscoped route
+	// would see both organizations' payments.
+	return q.Where("user_id = ? AND org_id IS NULL", s.UserID)
+}
+
+// Owns reports whether a row is inside this scope. The same rule as Apply,
+// for a row already in hand.
+func (s Scope) Owns(ownerUserID string, orgID *string) bool {
+	if s.unscoped {
+		return true
+	}
+	if s.Multitenant() {
+		return orgID != nil && *orgID == s.OrgID
+	}
+	return orgID == nil && ownerUserID == s.UserID
+}
+
+// CustomerKey is the idempotency key for creating this scope's Stripe
+// customer, and it is per organization when there is one.
+//
+// A user in two organizations has to end up with two Stripe customers, or both
+// organizations share one card, one tax id and one invoice history.
+func (s Scope) CustomerKey() string {
+	if s.Multitenant() {
+		return "customer-org-" + s.OrgID
+	}
+	return "customer-" + s.UserID
+}
+
+// Metadata is what to put on the Stripe object, so a webhook can tell which
+// organization an event belongs to without a header. Stripe sends no
+// organization header, and the row this resolves to is what settles it.
+func (s Scope) Metadata() map[string]string {
+	m := map[string]string{"user_id": s.UserID}
+	if s.Multitenant() {
+		m["org_id"] = s.OrgID
+	}
+	return m
+}
+
+// Unscoped is a scope that reads every organization's rows.
+//
+// It exists so a platform-wide path says so at the call site. The default is
+// narrow and the wide one is spelled out, which is the right way round: the
+// mistake that matters is reading another organization's billing by accident,
+// and that cannot happen without typing this.
+func Unscoped() Scope { return Scope{unscoped: true} }
+
+// intentMetadata is what a PaymentIntent carries so a person reading the
+// Stripe dashboard can tell whose payment it is.
+//
+// The code never resolves an organization from here. A webhook finds the
+// payment row and the row carries org_id, which is a fact the app wrote;
+// metadata is a string on an object anybody with dashboard access can edit.
+func intentMetadata(paymentID, reference string, sc Scope) map[string]string {
+	m := sc.Metadata()
+	m["payment_id"] = paymentID
+	m["reference"] = reference
+	return m
+}
