@@ -1,0 +1,52 @@
+package models
+
+import (
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+
+	"selcheck/apps/api/internal/ids"
+	"selcheck/apps/api/internal/money"
+)
+
+// Invoice represents a invoice in the system.
+type Invoice struct {
+	ID        string         `gorm:"primarykey;size:36" json:"id"`
+	Reference string         `gorm:"size:255;uniqueIndex" json:"reference" binding:"required" search:"trigram"`
+	Slug      string         `gorm:"size:255;uniqueIndex" json:"slug" search:"trigram" slug:"reference"`
+	Notes     string         `gorm:"type:text" json:"notes" search:"trigram"`
+	Total     money.Money    `gorm:"embedded;embeddedPrefix:total_" json:"total"`
+	Paid      bool           `json:"paid"`
+	Status    string         `gorm:"size:255" json:"status" binding:"required" enum:"draft|sent|paid"`
+	Contact   string         `gorm:"size:254" json:"contact" format:"email" docs:"format:email,example:ada@example.com" search:"trigram"`
+	ClientID  string         `gorm:"size:36;index" json:"client_id" binding:"required"`
+	Client    *Client        `gorm:"foreignKey:ClientID" json:"client,omitempty"`
+	Version   int            `gorm:"not null;default:1" json:"version"`
+	CreatedAt time.Time      `gorm:"index" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"index" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	// ArchivedAt is the "put this away without destroying it" state, and it is
+	// deliberately not DeletedAt. A soft delete is invisible to every query and
+	// means the row is gone as far as the app is concerned; an archived row is
+	// still listable, still exportable and still restorable in one click. The
+	// list endpoint hides archived rows unless ?archived=true asks for them.
+	ArchivedAt *time.Time `gorm:"index" json:"archived_at,omitempty"`
+}
+
+// BeforeCreate generates a UUID and auto-generates the slug before inserting.
+func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.ID = ids.New()
+	}
+	if m.Slug == "" {
+		m.Slug = slugify(fmt.Sprintf("%v", m.Reference))
+	}
+	return nil
+}
+
+// BeforeUpdate increments Version so offline clients can detect server-side updates.
+func (m *Invoice) BeforeUpdate(tx *gorm.DB) error {
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
+	return nil
+}

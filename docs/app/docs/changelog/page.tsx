@@ -72,6 +72,130 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.510.0 */}
+            <div className="mb-12" id="v3.510.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.510.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A rebuild button that reads the model, and pickers that work without a mouse</h3>
+                <p>
+                  grit#87. A field added to a Go model reached the API, the
+                  shared types and the admin, and never reached the screens on
+                  a laptop or a phone. <code>grit sync</code> reported the
+                  drift and could not fix it, and the only route to a current
+                  screen was to regenerate the resource with its complete field
+                  list retyped.
+                </p>
+                <p>
+                  Retyping that list is the part worth fixing. It is tedious,
+                  and it is quietly dangerous: a type remembered as{' '}
+                  <code>string</code> that was <code>text</code>, or a missing{' '}
+                  <code>unique</code>, silently becomes the new truth, and the
+                  first symptom is a column that changed under a table full of
+                  data. So <code>grit generate resource &lt;Name&gt; --force</code>{' '}
+                  no longer needs <code>--fields</code>: it reads the list off
+                  the model, which is the one list that cannot be wrong, and
+                  prints what it read before it uses it.
+                </p>
+                <p>
+                  Not a second parser. The reader that already turns a model
+                  into a definition for <code>grit generate seeder</code> took
+                  a mode instead: a seeder must not invent a slug it computes
+                  or a foreign key pointing at nothing, and a rebuild must keep
+                  both, and that is the whole difference between them.
+                </p>
+                <p>
+                  The desktop screen is updated in place rather than rebuilt.
+                  Its <code>COLUMNS</code> array now carries the same marker
+                  fences the admin resource file has had since v3.31.16, so a
+                  new field is appended inside the fence and a column somebody
+                  has customised is left exactly as it is. Insert-only: a field
+                  removed from the model keeps its column rather than being
+                  silently deleted, because a sync that removes things is a
+                  sync nobody can leave running.
+                </p>
+                <p>
+                  The Expo list is deliberately not done this way, and{' '}
+                  <code>grit sync</code> says so rather than skipping it
+                  quietly. That screen renders a header block and a row block
+                  that have to line up underneath a summed table width: three
+                  things that must agree, where an insert getting one wrong
+                  puts the headers over the wrong columns. <code>--force</code>{' '}
+                  rebuilds it, which is exactly why --force stopped needing the
+                  field list in the same release.
+                </p>
+                <h4>What a byte comparison found</h4>
+                <p>
+                  A rebuild of an unchanged model should produce the same model
+                  back. Diffing the two is how three faults turned up that the
+                  unit tests passed.
+                </p>
+                <p>
+                  The rebuild dropped <code>required</code> from every column,
+                  and turned a required foreign key into <code>*string</code>{' '}
+                  with <code>default:null</code>, which is a migration that
+                  relaxes a NOT NULL nobody asked to relax. The cause is that{' '}
+                  <code>GoField.Required</code> reads a tag literally named{' '}
+                  <code>required:&quot;true&quot;</code>, and a generated model
+                  says <code>binding:&quot;required&quot;</code>. It also
+                  dropped the money column outright, because{' '}
+                  <code>money.Money</code> is embedded, two columns behind one
+                  field, and the type reader written for seeders answers
+                  &quot;skip it&quot; for anything it does not recognise. For a
+                  seeder a skip costs a duller demo. Here it regenerates the
+                  model without the column. An unreadable column now stops the
+                  rebuild and names itself.
+                </p>
+                <p>
+                  The test fixture is the literal bytes of a real{' '}
+                  <code>grit generate resource</code> run rather than a model
+                  written by hand, because the hand-written one had money as a
+                  decimal float, which is a shape no generated project has.
+                </p>
+                <h4>The pickers, from grit#179</h4>
+                <p>
+                  Proposal 5 asked for a searchable combobox on every{' '}
+                  <code>belongs_to</code> field and on an enum over about seven
+                  options. Most of it had shipped. What had not was everything
+                  around the search box.
+                </p>
+                <p>
+                  The enum picker rendered its list as an absolutely positioned
+                  child of the form, so inside a dialog it clipped and near the
+                  bottom of a long form it opened past the edge of the window,
+                  which is the same as having no list. It is portalled and
+                  fixed now, like the date picker and the relationship pickers
+                  beside it, and it opens upward when there is more room above.
+                </p>
+                <p>
+                  And neither single-choice picker was a listbox:{' '}
+                  <code>aria-haspopup</code> on the trigger and nothing else,
+                  so a screen reader got a pile of unlabelled buttons and the
+                  relationship picker had no arrow-key movement at all. Both
+                  now carry <code>role=&quot;listbox&quot;</code>,{' '}
+                  <code>role=&quot;option&quot;</code>,{' '}
+                  <code>aria-selected</code> and{' '}
+                  <code>aria-activedescendant</code>, with Arrow, Home, End,
+                  Enter and Escape, and focus handed back to the trigger on
+                  close. The multi-select picker was given this in the
+                  accessibility pass and these two were missed, which is the
+                  failure mode that stays invisible to everybody who is in the
+                  room when the feature is demonstrated.
+                </p>
+                <p>
+                  The search box appears from eight options. Over three it is
+                  clutter; over forty it is the only way to use the control.
+                  With no search box the arrow keys work from the trigger, or
+                  the control could not be opened without a mouse.
+                </p>
+              </div>
+            </div>
+
             {/* v3.509.0 */}
             <div className="mb-12" id="v3.509.0">
               <div className="flex items-center gap-3 mb-4">

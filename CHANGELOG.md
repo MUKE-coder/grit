@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.510.0 - November 12, 2026
+
+### A rebuild button that reads the model, and pickers that work without a mouse
+
+grit#87. A field added to a Go model reached the API, the shared types and the admin, and never reached the screens on a laptop or a phone. `grit sync` reported the drift and could not fix it, and the only route to a current screen was to regenerate the resource with its complete field list retyped.
+
+Retyping that list is the part worth fixing. It is tedious, and it is quietly dangerous: a type remembered as `string` that was `text`, or a missing `unique`, silently becomes the new truth, and the first symptom is a column that changed under a table full of data. So `grit generate resource <Name> --force` no longer needs `--fields`: it reads the list off the model, which is the one list that cannot be wrong, and prints what it read before it uses it.
+
+Not a second parser. The reader that already turns a model into a definition for `grit generate seeder` took a mode instead: a seeder must not invent a slug it computes or a foreign key pointing at nothing, and a rebuild must keep both, and that is the whole difference between them.
+
+The desktop screen is updated in place rather than rebuilt. Its `COLUMNS` array now carries the same marker fences the admin resource file has had since v3.31.16, so a new field is appended inside the fence and a column somebody has customised is left exactly as it is. Insert-only: a field removed from the model keeps its column rather than being silently deleted, because a sync that removes things is a sync nobody can leave running.
+
+The Expo list is deliberately not done this way, and `grit sync` says so rather than skipping it quietly. That screen renders a header block and a row block that have to line up underneath a summed table width: three things that must agree, where an insert getting one wrong puts the headers over the wrong columns. `--force` rebuilds it, which is exactly why --force stopped needing the field list in the same release.
+
+#### What a byte comparison found
+
+A rebuild of an unchanged model should produce the same model back. Diffing the two is how three faults turned up that the unit tests passed.
+
+The rebuild dropped `required` from every column, and turned a required foreign key into `*string` with `default:null`, which is a migration that relaxes a NOT NULL nobody asked to relax. The cause is that `GoField.Required` reads a tag literally named `required:"true"`, and a generated model says `binding:"required"`. It also dropped the money column outright, because `money.Money` is embedded, two columns behind one field, and the type reader written for seeders answers "skip it" for anything it does not recognise. For a seeder a skip costs a duller demo. Here it regenerates the model without the column. An unreadable column now stops the rebuild and names itself.
+
+The test fixture is the literal bytes of a real `grit generate resource` run rather than a model written by hand, because the hand-written one had money as a decimal float, which is a shape no generated project has.
+
+#### The pickers, from grit#179
+
+Proposal 5 asked for a searchable combobox on every `belongs_to` field and on an enum over about seven options. Most of it had shipped. What had not was everything around the search box.
+
+The enum picker rendered its list as an absolutely positioned child of the form, so inside a dialog it clipped and near the bottom of a long form it opened past the edge of the window, which is the same as having no list. It is portalled and fixed now, like the date picker and the relationship pickers beside it, and it opens upward when there is more room above.
+
+And neither single-choice picker was a listbox: `aria-haspopup` on the trigger and nothing else, so a screen reader got a pile of unlabelled buttons and the relationship picker had no arrow-key movement at all. Both now carry `role="listbox"`, `role="option"`, `aria-selected` and `aria-activedescendant`, with Arrow, Home, End, Enter and Escape, and focus handed back to the trigger on close. The multi-select picker was given this in the accessibility pass and these two were missed, which is the failure mode that stays invisible to everybody who is in the room when the feature is demonstrated.
+
+The search box appears from eight options. Over three it is clutter; over forty it is the only way to use the control. With no search box the arrow keys work from the trigger, or the control could not be opened without a mouse.
+
+
 ## v3.509.0 - November 12, 2026
 
 ### An upgrade that quietly changed who could call two endpoints

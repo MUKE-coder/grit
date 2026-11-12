@@ -2110,8 +2110,11 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
 // including ones created at runtime through the admin — instead of a hardcoded
 // ADMIN/EDITOR/USER list that never saw custom roles.
 func adminSelectField() string {
-	return `import { useQuery } from "@tanstack/react-query";
-import { useId, useState, useRef, useEffect, useMemo } from "react";
+	return `"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useId, useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "@/lib/api-client";
 import type { FieldDefinition } from "@/lib/resource";
 import { ChevronDown, Check, Search } from "@/lib/icons";
@@ -2123,11 +2126,32 @@ interface SelectFieldProps {
   error?: string;
 }
 
-// A searchable single-select combobox. Type to filter the options by label; use
-// arrow keys + Enter to pick, Escape to close. Works for both command-generated
-// select fields (static options) and fields that pull choices from optionsUrl.
+/**
+ * A single-select combobox: the list of choices for an enum field, and for a
+ * field that pulls its choices from optionsUrl.
+ *
+ * Three things here are not decoration, and all three were found by using the
+ * control rather than by reading it.
+ *
+ * The panel is portalled to the body and positioned fixed, like the date
+ * picker and the relationship pickers beside it. As an absolutely positioned
+ * child it clipped inside any dialog or scroll container with overflow
+ * hidden, and a select near the bottom of a long form opened past the edge of
+ * the window. A list you cannot see is the same as no list.
+ *
+ * It opens upward when there is more room above. The threshold is the space a
+ * search box and a couple of options need, and below that the bigger side
+ * wins however small it is.
+ *
+ * And it is a real listbox: role="combobox" on the search box with
+ * aria-activedescendant, role="listbox" on the list, role="option" and
+ * aria-selected on each choice. The previous version announced a pile of
+ * unlabelled buttons, which is a thing nobody notices until the person who
+ * needs it is already using the product.
+ */
 export function SelectField({ field, value, onChange, error }: SelectFieldProps) {
   const fieldId = useId();
+  const listboxId = useId();
   const labelKey = field.optionsLabelKey ?? "name";
   const valueKey = field.optionsValueKey ?? "name";
 
@@ -2152,8 +2176,10 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 320 });
 
   const selected = options.find((o) => o.value === value);
   const filtered = useMemo(
@@ -2161,43 +2187,180 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
     [options, query]
   );
 
-  // Close on outside click; focus the search box on open.
+  // A search box over three choices is clutter, and over forty it is the only
+  // way to use the control at all. Eight is where the list stops being
+  // something you read at a glance.
+  const SEARCH_FROM = 8;
+  const searchable = options.length >= SEARCH_FROM;
+
+  // Below when there is room, above when there is not, and never taller than
+  // the space it has. The same arithmetic as the relationship picker, for the
+  // same reason: the panel is fixed, so a list that opens past the bottom edge
+  // cannot be scrolled to.
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const gutter = 8;
+    const below = window.innerHeight - rect.bottom - gutter;
+    const above = rect.top - gutter;
+    const minimum = 180;
+    const flip = below < minimum && above > below;
+    const space = Math.max((flip ? above : below) - 4, 120);
+    const maxHeight = Math.min(space, 320);
+    setPos({
+      top: flip ? Math.max(gutter, rect.top - maxHeight - 4) : rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      maxHeight,
+    });
+  }, []);
+
+  // Close on outside click, follow the trigger on scroll, and focus the search
+  // box when there is one. When there is not, focus stays on the trigger and
+  // the arrow keys work from there.
   useEffect(() => {
     if (!open) return;
+    updatePosition();
     const onDoc = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        panelRef.current && !panelRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
     };
+    const onScroll = () => updatePosition();
     document.addEventListener("mousedown", onDoc);
-    inputRef.current?.focus();
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    if (searchable) inputRef.current?.focus();
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open, searchable, updatePosition]);
+
+  // Keep the active option in view while the arrows move through a long list.
+  useEffect(() => {
+    if (!open) return;
+    const node = document.getElementById(listboxId + "-" + String(active));
+    node?.scrollIntoView({ block: "nearest" });
+  }, [active, open, listboxId]);
 
   const pick = (v: string) => {
     onChange(v);
     setOpen(false);
     setQuery("");
+    // Focus goes back where it came from. Leaving it on a node that has just
+    // been unmounted drops the user at the top of the document.
+    triggerRef.current?.focus();
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, filtered.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+    else if (e.key === "Home") { e.preventDefault(); setActive(0); }
+    else if (e.key === "End") { e.preventDefault(); setActive(Math.max(filtered.length - 1, 0)); }
     else if (e.key === "Enter") { e.preventDefault(); if (filtered[active]) pick(filtered[active].value); }
-    else if (e.key === "Escape") { setOpen(false); }
+    else if (e.key === "Escape") { e.preventDefault(); setOpen(false); triggerRef.current?.focus(); }
   };
 
+  // Opening with the keyboard, from the trigger. Without this the control is
+  // reachable with Tab and cannot be opened without a mouse.
+  const onTriggerKeyDown = (e: React.KeyboardEvent) => {
+    if (open) { onKeyDown(e); return; }
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setActive(Math.max(options.findIndex((o) => o.value === value), 0));
+      setOpen(true);
+    }
+  };
+
+  const activeId = filtered[active] ? listboxId + "-" + String(active) : undefined;
+
+  const panel = (
+    <div
+      ref={panelRef}
+      className="fixed z-[9999] overflow-hidden rounded-lg border border-border bg-bg-secondary shadow-2xl"
+      style={{
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        maxHeight: pos.maxHeight,
+        backgroundColor: "var(--bg-secondary, #111118)",
+      }}
+    >
+      {searchable && (
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+          <Search className="h-4 w-4 shrink-0 text-text-muted" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setActive(0); }}
+            onKeyDown={onKeyDown}
+            placeholder="Search..."
+            role="combobox"
+            aria-expanded="true"
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            aria-activedescendant={activeId}
+            aria-label={` + "`" + `Search ${field.label} options` + "`" + `}
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-text-muted focus:outline-none"
+          />
+        </div>
+      )}
+      <ul
+        id={listboxId}
+        role="listbox"
+        aria-label={field.label}
+        className="overflow-y-auto py-1"
+        style={{ maxHeight: pos.maxHeight - (searchable ? 42 : 0) }}
+      >
+        {filtered.length === 0 && (
+          <li className="px-3 py-2 text-sm text-text-muted">No matches</li>
+        )}
+        {filtered.map((opt, i) => (
+          <li
+            key={opt.value}
+            id={listboxId + "-" + String(i)}
+            role="option"
+            aria-selected={opt.value === value}
+            onMouseEnter={() => setActive(i)}
+            onClick={() => pick(opt.value)}
+            className={` + "`" + `flex cursor-pointer items-center justify-between px-3 py-2 text-left text-sm ${
+              i === active ? "bg-bg-hover" : ""
+            } ${opt.value === value ? "text-accent" : "text-foreground"}` + "`" + `}
+          >
+            {opt.label}
+            {opt.value === value && <Check className="h-4 w-4 shrink-0" />}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
   return (
-    <div className="space-y-1.5" ref={rootRef}>
+    <div className="space-y-1.5">
       <label htmlFor={fieldId} className="block text-sm font-medium text-foreground">
         {field.label}
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
-      <div className="relative">
+      <div>
         <button
           id={fieldId}
+          ref={triggerRef}
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            setActive(Math.max(options.findIndex((o) => o.value === value), 0));
+            setOpen((o) => !o);
+          }}
+          onKeyDown={onTriggerKeyDown}
           aria-haspopup="listbox"
           aria-expanded={open}
+          aria-controls={open ? listboxId : undefined}
+          aria-activedescendant={open && !searchable ? activeId : undefined}
           className={` + "`" + `flex w-full items-center justify-between rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-left text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${error ? "border-danger" : ""}` + "`" + `}
         >
           <span className={selected ? "" : "text-text-muted"}>
@@ -2205,42 +2368,9 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 text-text-muted" />
         </button>
-        {open && (
-          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-bg-secondary shadow-lg">
-            <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-              <Search className="h-4 w-4 shrink-0 text-text-muted" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => { setQuery(e.target.value); setActive(0); }}
-                onKeyDown={onKeyDown}
-                placeholder="Search..."
-                aria-label={` + "`" + `Search ${field.label} options` + "`" + `}
-                className="w-full bg-transparent text-sm text-foreground placeholder:text-text-muted focus:outline-none"
-              />
-            </div>
-            <ul className="max-h-56 overflow-y-auto py-1">
-              {filtered.length === 0 && (
-                <li className="px-3 py-2 text-sm text-text-muted">No matches</li>
-              )}
-              {filtered.map((opt, i) => (
-                <li key={opt.value}>
-                  <button
-                    type="button"
-                    onMouseEnter={() => setActive(i)}
-                    onClick={() => pick(opt.value)}
-                    className={` + "`" + `flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
-                      i === active ? "bg-bg-hover" : ""
-                    } ${opt.value === value ? "text-accent" : "text-foreground"}` + "`" + `}
-                  >
-                    {opt.label}
-                    {opt.value === value && <Check className="h-4 w-4" />}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* Portalled to the body: as a child of the form it clipped inside any
+            dialog and opened off screen near the bottom of a long page. */}
+        {open && typeof document !== "undefined" && createPortal(panel, document.body)}
       </div>
       {field.description && !error && (
         <p className="text-xs text-text-muted">{field.description}</p>
@@ -3587,6 +3717,11 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
+  // Which option the arrow keys are on. Tracked here rather than by moving
+  // focus, so focus stays in the search box and a screen reader announces the
+  // movement through aria-activedescendant.
+  const [active, setActive] = useState(0);
+  const listboxId = useId();
   // The record just created inline. Held locally so its label shows the instant
   // it is selected: the options query is refetching at that moment, and without
   // this the field displays a raw UUID until the network settles.
@@ -3714,6 +3849,31 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
     return String(found[displayField] || found.name || found.title || found.id || "");
   }, [value, allOptions, displayField]);
 
+  const choose = (id: string) => {
+    onChange(id);
+    setOpen(false);
+    setSearch("");
+    triggerRef.current?.focus();
+  };
+
+  // Arrow keys move, Enter picks, Escape closes and hands focus back. Home and
+  // End jump, which is what makes a list of sixty clients navigable at all.
+  const onSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, filtered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+    else if (e.key === "Home") { e.preventDefault(); setActive(0); }
+    else if (e.key === "End") { e.preventDefault(); setActive(Math.max(filtered.length - 1, 0)); }
+    else if (e.key === "Enter") {
+      e.preventDefault();
+      const picked = filtered[active] as Record<string, unknown> | undefined;
+      if (picked) choose(String(picked.id));
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+    }
+  };
+
   const dropdown = open ? createPortal(
     <div
       ref={dropdownRef}
@@ -3725,7 +3885,14 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
           type="text"
           placeholder="Search..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setActive(0); }}
+          onKeyDown={onSearchKeyDown}
+          role="combobox"
+          aria-expanded="true"
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={filtered[active] ? listboxId + "-" + String(active) : undefined}
+          aria-label={"Search " + (field.label ?? "options")}
           className={inputClasses({ inputSize: "sm", className: "flex" })}
           style={{ backgroundColor: "var(--bg-secondary, #111118)" }}
           autoFocus
@@ -3747,21 +3914,27 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
                 Clear selection
               </button>
             )}
-            {filtered.map((item) => {
-              const id = String(item.id);
-              const label = String(item[displayField] || item.name || item.title || item.id || "");
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => { onChange(id); setOpen(false); setSearch(""); }}
-                  className={` + "`" + `flex w-full items-center rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
-                    ${value === id ? "bg-bg-hover font-medium" : ""}` + "`" + `}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            <div id={listboxId} role="listbox" aria-label={field.label ?? "Options"}>
+              {filtered.map((item, i) => {
+                const id = String(item.id);
+                const label = String(item[displayField] || item.name || item.title || item.id || "");
+                return (
+                  <div
+                    key={id}
+                    id={listboxId + "-" + String(i)}
+                    role="option"
+                    aria-selected={value === id}
+                    onMouseEnter={() => setActive(i)}
+                    onClick={() => choose(id)}
+                    className={` + "`" + `flex cursor-pointer items-center rounded-sm px-3 py-2 text-sm text-foreground
+                      ${i === active ? "bg-bg-hover" : ""}
+                      ${value === id ? "font-medium" : ""}` + "`" + `}
+                  >
+                    {label}
+                  </div>
+                );
+              })}
+            </div>
           </>
         )}
       </div>

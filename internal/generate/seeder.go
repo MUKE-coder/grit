@@ -223,8 +223,18 @@ func modelFileFor(apiRoot string, names Names) string {
 	return ""
 }
 
-// definitionFromModelFile parses a specific model file into a definition.
+// definitionFromModelFile parses a specific model file into a definition for
+// a seeder. See definitionFromModelFileMode for the other reader of the same
+// file, and for what the two differ about.
 func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) {
+	return definitionFromModelFileMode(apiRoot, name, modelForSeeder)
+}
+
+// definitionFromModelFileMode parses a model file into a definition, keeping
+// or dropping the columns a seeder must not invent. See
+// rebuild_from_model.go for why this is a parameter rather than a second
+// function.
+func definitionFromModelFileMode(apiRoot, name string, mode modelReadMode) (*ResourceDefinition, error) {
 	names := MakeNames(name)
 	modelPath := modelFileFor(apiRoot, names)
 	if modelPath == "" {
@@ -259,17 +269,59 @@ func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) 
 	// not exist.
 	skip := map[string]bool{
 		"id": true, "created_at": true, "updated_at": true,
-		"deleted_at": true, "version": true, "slug": true,
+		"deleted_at": true, "version": true,
 		"archived_at": true,
 		"path":        true,
 		"depth":       true,
 		"position":    true,
 	}
+	// A seeder must not invent a slug, which BeforeCreate computes, nor a
+	// foreign key, which would point at a row that may not exist. A rebuild
+	// has to keep both: a definition without them regenerates a model without
+	// the columns.
+	if mode == modelForSeeder {
+		skip["slug"] = true
+	}
 	def := &ResourceDefinition{Name: names.Pascal}
 	for _, gf := range target.Fields {
 		jn := gf.JSONName
-		if jn == "" || skip[jn] || strings.HasSuffix(jn, "_id") {
-			continue // base column, slug (auto), or a FK we can't safely seed
+		if jn == "" || skip[jn] {
+			continue // a column the framework owns, not one somebody declared
+		}
+		if strings.HasSuffix(jn, "_id") {
+			if mode == modelForSeeder {
+				continue // a FK we cannot safely seed
+			}
+			// A belongs_to, spelled from the column rather than from the
+			// association field: <target>ID is the column, and the model's
+			// own Preload field is skipped below as a relation.
+			if related := belongsToTargetFor(gf, target); related != "" {
+				def.Fields = append(def.Fields, Field{
+					Name:         strings.TrimSuffix(jn, "_id"),
+					Type:         string(FieldBelongsTo),
+					RelatedModel: related,
+					// Without this a required relationship rebuilds as
+					// *string with default:null, which is a migration that
+					// drops a NOT NULL nobody asked to drop.
+					Required: columnIsRequired(gf),
+				})
+			}
+			continue
+		}
+		if mode == modelForRebuild {
+			// The association field, not a column: `Client *Client` is what
+			// Preload fills, and its column is the client_id handled above.
+			// A seeder skipped these because goTypeToFieldType had no answer
+			// for them, which is the same silence a rebuild must not keep.
+			if isAssociationField(gf) {
+				continue
+			}
+			f, rerr := rebuildFieldFor(gf)
+			if rerr != nil {
+				return nil, rerr
+			}
+			def.Fields = append(def.Fields, f)
+			continue
 		}
 		// A formatted field says what it is in its format tag, and has to be
 		// seeded with values its rule accepts: a tel column filled with

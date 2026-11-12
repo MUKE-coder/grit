@@ -558,10 +558,14 @@ export const Route = createFileRoute("/app/` + p + `/")({
 });
 
 const COLUMNS: DataColumn[] = [
+  // grit:cols:auto-start
 ` + strings.Join(colLines, "\n") + `
+  // grit:cols:auto-end
 ];
 
+// grit:search-keys:start
 const SEARCH_KEYS = [` + strings.Join(quotedKeys, ", ") + `];
+// grit:search-keys:end
 
 function ` + Plural + `Page() {
   const { data: items = [], isLoading } = use` + Plural + `();

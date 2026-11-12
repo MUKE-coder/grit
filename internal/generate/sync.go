@@ -40,6 +40,7 @@ func Sync() error {
 
 	var synced int
 	var adminFieldsAdded int
+	var desktopColumnsAdded int
 	var adminWarnings []string
 	var uiDrift []clientUIDrift
 	for _, entry := range entries {
@@ -98,8 +99,22 @@ func Sync() error {
 			}
 			adminWarnings = append(adminWarnings, warnings...)
 
-			// The admin was just brought up to date in place. The mobile and
-			// desktop screens cannot be, so say which fields they never saw.
+			// The desktop screen can be brought up to date in place too,
+			// now that its COLUMNS array is fenced the way the admin's is
+			// (grit#87).
+			deskAdded, deskWarnings, deskErr := SyncDesktopScreen(root, s)
+			if deskErr != nil {
+				fmt.Printf("  ⚠ desktop screen for %s: %v\n", s.Name, deskErr)
+			} else if deskAdded > 0 {
+				fmt.Printf("  ✓ apps/desktop: %d column%s added to the %s screen\n",
+					deskAdded, plural(deskAdded), s.Name)
+				desktopColumnsAdded += deskAdded
+			}
+			adminWarnings = append(adminWarnings, deskWarnings...)
+
+			// The Expo screens still cannot be, so say which fields they
+			// never saw. After the desktop pass, so it does not name a
+			// column that was just added.
 			uiDrift = append(uiDrift, findClientUIDrift(root, s)...)
 
 			synced++
@@ -113,6 +128,10 @@ func Sync() error {
 		if adminFieldsAdded > 0 {
 			fmt.Printf("  ✅ Auto-added %d field%s to admin resource files\n",
 				adminFieldsAdded, plural(adminFieldsAdded))
+		}
+		if desktopColumnsAdded > 0 {
+			fmt.Printf("  ✅ Auto-added %d column%s to desktop screens\n",
+				desktopColumnsAdded, plural(desktopColumnsAdded))
 		}
 		for _, w := range adminWarnings {
 			fmt.Println(w)

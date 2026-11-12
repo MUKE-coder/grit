@@ -114,19 +114,25 @@ func printClientUIDrift(drifts []clientUIDrift) {
 	}
 
 	fmt.Println("\n  ⚠ Some generated screens do not know about every field.")
-	fmt.Println("    Types, schemas and the admin are current. Mobile and desktop")
-	fmt.Println("    screens are only written when the resource is generated, and")
-	fmt.Println("    neither `grit sync` nor `grit generate field` updates them.")
+	fmt.Println("    Types, schemas and the admin are current, and so is a desktop")
+	fmt.Println("    screen carrying the grit:cols markers: sync adds new columns to")
+	fmt.Println("    those in place.")
+	fmt.Println("    The Expo screens are written once, when the resource is generated:")
+	fmt.Println("    its list renders a header block and a row block that have to line up")
+	fmt.Println("    under a summed table width, so adding a column in place would be")
+	fmt.Println("    three things to keep in step and a misaligned table when one slips.")
 	fmt.Println()
 
 	for _, resource := range order {
 		for _, d := range byResource[resource] {
 			fmt.Printf("    %s\n      missing: %s\n", d.File, strings.Join(d.Missing, ", "))
 		}
-		fmt.Printf("      to rebuild them, regenerate the resource with its full field list:\n")
-		fmt.Printf("        grit generate resource %s --fields \"...\" --force\n", resource)
-		fmt.Println("      that rewrites the screens and discards any edits you made to them,")
-		fmt.Println("      so add the field to those files by hand if you have customised them.")
+		fmt.Printf("      to rebuild them from the model, which no longer means retyping the\n")
+		fmt.Printf("      field list:\n")
+		fmt.Printf("        grit generate resource %s --force\n", resource)
+		fmt.Println("      it prints the field list it read before it uses it. That rewrites")
+		fmt.Println("      the screens and discards any edits you made to them, so add the")
+		fmt.Println("      field by hand instead if you have customised those files.")
 		fmt.Println()
 	}
 }

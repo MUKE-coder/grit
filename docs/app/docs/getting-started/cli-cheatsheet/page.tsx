@@ -452,6 +452,10 @@ export default function CLICheatsheetPage() {
                     desc="Interactive mode — define fields with prompts"
                   />
                   <TerminalCard
+                    cmd="grit generate resource Post --force"
+                    desc="Rebuild an existing resource from its own model. No --fields: it reads the field list off the model and prints what it read before using it"
+                  />
+                  <TerminalCard
                     cmd='grit g resource Post --fields "title:string,content:text" --roles "ADMIN,EDITOR"'
                     desc="Restrict generated routes to specific roles"
                   />
@@ -1239,6 +1243,30 @@ export default function CLICheatsheetPage() {
                   </code>
                   . Run this whenever you manually edit a Go model to keep
                   frontend types in sync.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  It also adds new model fields to the admin resource file and
+                  to the desktop screen&apos;s{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    COLUMNS
+                  </code>{" "}
+                  array, in place and insert-only: a column you have customised
+                  is left exactly as it is, because the field is already
+                  mentioned, and a field removed from the model keeps its
+                  column rather than being silently deleted.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The Expo screens are the exception and sync says so rather
+                  than quietly skipping them. Its list renders a header block
+                  and a row block that have to line up underneath a summed
+                  table width: three things that must agree, where an insert
+                  that gets one wrong puts the headers over the wrong columns.
+                  Those are rebuilt with{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    grit generate resource &lt;Name&gt; --force
+                  </code>
+                  , which reads the field list from the model rather than
+                  asking you to retype it.
                 </p>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   It writes the same schema{" "}

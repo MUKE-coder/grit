@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.509.0"
+var version = "3.510.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1156,8 +1156,27 @@ func generateResourceCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
+			case force:
+				// --force with no --fields rebuilds from the model that is
+				// already there (grit#87).
+				//
+				// Retyping the complete field list to regenerate one resource
+				// is not merely tedious: a type remembered as string that was
+				// text, or a missing unique, silently becomes the new truth,
+				// and the first symptom is a column that changed under a table
+				// full of data. The model is the one list that cannot be wrong.
+				var spelled string
+				def, spelled, err = generate.RebuildDefinitionFromModel(name)
+				if err != nil {
+					cmd.SilenceUsage = true
+					return fmt.Errorf("%w\n\nPass --fields to say what the resource should hold", err)
+				}
+				// Printed, because --force is destructive and the list has to be
+				// checkable before it is used. It is pasteable too: edit it and
+				// hand it back as --fields.
+				fmt.Printf("  Rebuilding %s from its own model:\n\n    --fields %q\n\n", name, spelled)
 			default:
-				return fmt.Errorf("specify fields with --fields, --from, or use -i for interactive mode\n\nExamples:\n  grit generate resource Post --fields \"title:string,content:text,published:bool\"\n  grit generate resource Post --fields \"title:string,slug:string:unique,views:int\"\n  grit generate resource Post --from post.yaml\n  grit generate resource Post -i")
+				return fmt.Errorf("specify fields with --fields, --from, or use -i for interactive mode\n\nExamples:\n  grit generate resource Post --fields \"title:string,content:text,published:bool\"\n  grit generate resource Post --fields \"title:string,slug:string:unique,views:int\"\n  grit generate resource Post --from post.yaml\n  grit generate resource Post -i\n\nOr rebuild an existing resource from its own model:\n  grit generate resource Post --force")
 			}
 
 			// --items: attach an inline has-many child (e.g. Invoice + InvoiceItem).
