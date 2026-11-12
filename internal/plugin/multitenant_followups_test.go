@@ -133,3 +133,52 @@ func funcBodyOf(src, signature string) (string, bool) {
 	}
 	return rest, true
 }
+
+// grit#199 item 1: two-factor sign-in on the invitation accept page.
+//
+// Password sign-in worked there. An account with TOTP enabled was told to
+// "complete it in the app, then reopen this link", which is a dead end: the
+// app it names is the admin, an invited colleague has no reason to have it,
+// and reopening the link lands on the same page.
+//
+// The page already received what it needed and discarded it: /api/auth/login
+// answers { totp_required: true, pending_token } and the page kept only the
+// flag. So this is the second half of a flow that was already half there.
+func TestTheAcceptPageFinishesTwoFactorSignIn(t *testing.T) {
+	src := mtWebInvitationPage()
+
+	if strings.Contains(src, "cannot be completed on this page") ||
+		strings.Contains(src, "Complete it in the app") {
+		t.Error("the accept page still sends a two-factor account away instead of finishing " +
+			"the sign-in it already has a pending token for")
+	}
+	// The pending token is kept rather than dropped.
+	if !strings.Contains(src, "setPendingToken(String(data.data.pending_token") {
+		t.Error("the pending token from /auth/login is not kept, so the second step has nothing " +
+			"to send")
+	}
+	// The same contract the admin's own TOTP screen uses. A second spelling of
+	// it is how the two come to disagree about a field name.
+	for _, want := range []string{
+		`"/api/auth/totp/verify"`,
+		`"/api/auth/totp/backup-codes/verify"`,
+		"pending_token: pendingToken",
+		"code: code.trim()",
+		"trust_device: false",
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("the verify call is missing %s", want)
+		}
+	}
+	// Somebody who has lost their authenticator is not stuck.
+	if !strings.Contains(src, "I have lost my authenticator") {
+		t.Error("there is no way to reach the backup-code path from this page")
+	}
+	// trust_device false, deliberately: a one-off visit to accept an
+	// invitation is not the moment to mark a browser trusted for every later
+	// sign-in.
+	if strings.Contains(src, "trust_device: true") {
+		t.Error("accepting an invitation marks the browser trusted, which is a decision for a " +
+			"sign-in the person chose to make, not for a link they followed once")
+	}
+}

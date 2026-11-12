@@ -23,6 +23,28 @@ Also worth knowing:
 ---
 
 
+## v3.506.1 - November 12, 2026
+
+### Two-factor sign-in on the invitation accept page
+
+grit#199 item 1. Password sign-in worked on the accept page. An account with two-factor enabled was told this:
+
+```text
+This account uses two-factor sign-in. Complete it in the app,
+then reopen this link.
+```
+
+Which is a dead end three times over. The app it names is the admin, an invited colleague has no reason to have it, and reopening the link lands on the same page saying the same thing.
+
+The page already had what it needed and threw it away: `/api/auth/login` answers `{`{ totp_required: true, pending_token }`}` for such an account, and the page kept only the flag. So this was the second half of a flow that was already half there, using the same contract the admin's own two-factor screen uses rather than a second spelling of it.
+
+With a way through for somebody who has lost their authenticator, since being locked out of a one-off invitation link is a worse place to be than being locked out of a sign-in page you can return to.
+
+`trust_device` is false here, deliberately. Following a link once to accept an invitation is not the moment to mark a browser as trusted for every later sign-in: that is a decision for a sign-in somebody chose to make.
+
+One function serves the Next and TanStack web apps, so both get it. Type-checked with the real compiler on a generated project with the plugin installed.
+
+
 ## v3.506.0 - November 12, 2026
 
 ### zod 4, and a freshly generated project with no advisories at all

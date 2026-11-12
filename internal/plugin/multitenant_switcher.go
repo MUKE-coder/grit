@@ -597,6 +597,12 @@ export default function AcceptOrganizationInvitationPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [busy, setBusy] = useState(false);
+  // The second step of a two-factor sign-in. /api/auth/login hands back a
+  // pending token rather than a session, and this page used to throw it away
+  // and tell the person to finish in an app they have no reason to have.
+  const [pendingToken, setPendingToken] = useState("");
+  const [code, setCode] = useState("");
+  const [useBackupCode, setUseBackupCode] = useState(false);
 
   useEffect(() => {
     const value = new URLSearchParams(window.location.search).get("token") || "";
@@ -687,8 +693,11 @@ export default function AcceptOrganizationInvitationPage() {
     try {
       const { data } = await orgClient.post("/api/auth/login", { email: preview.email, password });
       if (data.data?.totp_required) {
+        setPendingToken(String(data.data.pending_token ?? ""));
+        setCode("");
+        setUseBackupCode(false);
         setMode("totp");
-        setMessage("This account uses two-factor sign-in. Complete it in the app, then reopen this link.");
+        setMessage("");
         return;
       }
       const user = await currentUser();
@@ -697,6 +706,42 @@ export default function AcceptOrganizationInvitationPage() {
       decide(preview, user);
     } catch (error: any) {
       setMessage(describe(error, "Could not sign in with that password."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Finish the two-factor sign-in, which is the same call and the same
+  // contract the admin's own TOTP screen makes: a pending token, a code, and
+  // whether to trust this device. trust_device is false here on purpose: a
+  // one-off visit to accept an invitation is not the moment to mark a browser
+  // as trusted for every later sign-in.
+  async function verifyTotp(event: FormEvent) {
+    event.preventDefault();
+    if (!preview || !pendingToken) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const path = useBackupCode
+        ? "/api/auth/totp/backup-codes/verify"
+        : "/api/auth/totp/verify";
+      await orgClient.post(path, {
+        pending_token: pendingToken,
+        code: code.trim(),
+        trust_device: false,
+      });
+      // From here it is exactly the password path: the session cookie is set,
+      // so read who we are and decide what this invitation means for them.
+      const user = await currentUser();
+      setMe(user);
+      setPassword("");
+      setCode("");
+      setPendingToken("");
+      decide(preview, user);
+    } catch (error: any) {
+      setMessage(describe(error, useBackupCode
+        ? "That backup code was not accepted."
+        : "That code was not accepted. Codes last 30 seconds, so try the current one."));
     } finally {
       setBusy(false);
     }
@@ -868,7 +913,34 @@ export default function AcceptOrganizationInvitationPage() {
           </div>
         )}
 
-        {mode === "totp" && <p className="text-sm text-text-secondary">Two-factor sign-in cannot be completed on this page.</p>}
+        {mode === "totp" && (
+          <form onSubmit={verifyTotp} className="space-y-3">
+            <p className="text-sm text-text-secondary">
+              {useBackupCode
+                ? "Enter one of the backup codes you saved when you turned on two-factor sign-in."
+                : "Enter the 6-digit code from your authenticator app."}
+            </p>
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              placeholder={useBackupCode ? "backup code" : "123456"}
+              inputMode={useBackupCode ? "text" : "numeric"}
+              autoComplete="one-time-code"
+              autoFocus
+              className={input}
+            />
+            <button type="submit" disabled={busy || code.trim() === ""} className={primary}>
+              {busy ? "Checking…" : "Verify and accept"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setUseBackupCode(!useBackupCode); setCode(""); setMessage(""); }}
+              className="text-sm text-text-secondary underline-offset-4 hover:underline"
+            >
+              {useBackupCode ? "Use my authenticator app instead" : "I have lost my authenticator"}
+            </button>
+          </form>
+        )}
 
         {(mode === "invalid" || mode === "expired" || mode === "error") && (
           <a href="/" className="inline-block text-sm text-text-secondary underline-offset-4 hover:underline">Back to the site</a>
