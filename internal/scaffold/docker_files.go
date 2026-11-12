@@ -170,7 +170,18 @@ func frontendBuildArgs(opts Options) string {
 		return `        VITE_API_URL: ${API_URL:-http://localhost:8080}
         VITE_THEME: ${THEME:-atlas}`
 	}
-	return `        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}`
+	return nextPublicComposeArgs("web")
+}
+
+// adminBuildArgs is the admin image's build args. The admin reads five
+// variables the web app does not, including the two that decide when a session
+// warns and when it ends.
+func adminBuildArgs(opts Options) string {
+	if opts.UseTanStack() {
+		return `        VITE_API_URL: ${API_URL:-http://localhost:8080}
+        VITE_THEME: ${THEME:-atlas}`
+	}
+	return nextPublicComposeArgs("admin")
 }
 
 // frontendRuntimeEnv is the web container's environment. A Next.js app renders
@@ -264,7 +275,7 @@ services:
     restart: unless-stopped
     expose:
       - "3000"
-`, frontendBuildArgs(opts))
+`, adminBuildArgs(opts))
 	}
 
 	if opts.ShouldIncludeDocs() {
@@ -546,20 +557,34 @@ RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm ins
 FROM base AS builder
 WORKDIR /app
 
-# Only the root node_modules and the app's own.
+# The root node_modules and the app's own.
 #
-# packages/shared/node_modules was copied here too, and pnpm never creates it:
+# packages/shared/node_modules was named here once and pnpm never creates it:
 # the workspace sets nodeLinker: hoisted, so a package with no binaries of its
 # own gets no node_modules directory at all, and COPY --from has no "if it
-# exists". a docker build stopped on this line, which made a first production
+# exists". A docker build stopped on that line, which made a first production
 # deploy of a triple project impossible (grit#177).
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/%s/node_modules ./apps/%s/node_modules
 COPY . .
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# And the workspace packages, WITH whatever node_modules the install gave them.
+#
+# hoisted puts one copy of each dependency at the root, except where two
+# packages need different versions, and then it nests one. A packages/* member
+# whose dependency pins a peer more tightly than the root does therefore gets
+# its own node_modules, and without it that package resolves the root's older
+# copy and the build fails with forty lines of structural type mismatch naming
+# two paths that are the same library at two versions. It reads as a bug in
+# your own code, in a file you did not touch (grit#216).
+#
+# The whole directory rather than a node_modules inside it: /app/packages
+# always exists in deps, because the deps stage copies it before installing,
+# so this cannot hit the grit#177 problem. After COPY . . , or the context
+# copy puts a source tree with no node_modules back over it.
+COPY --from=deps /app/packages ./packages
 
+%s
 RUN pnpm --filter %s build
 
 `+nextRunnerNew+`
@@ -584,7 +609,7 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 `+strings.ReplaceAll(nextHealthcheck, "%", "%%")+`CMD ["node", "apps/%s/server.js"]
-`, app, app, app, app, app, app, app, app, app, app, app)
+`, app, app, app, app, nextPublicDockerfileArgs(app), app, app, app, app, app, app, app)
 }
 
 func dockerIgnore() string {

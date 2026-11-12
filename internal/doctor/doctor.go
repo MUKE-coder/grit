@@ -102,6 +102,12 @@ var checks = []struct {
 	// default for months (grit#186), so the projects that have it are the
 	// ones that trusted the .env.example.
 	{"ai-model-id-unresolvable", checkAIModelID},
+	// Two things a Docker build gets wrong that say nothing until a first
+	// production deploy: a NEXT_PUBLIC_* the app reads and the Dockerfile
+	// cannot accept, and a workspace package whose node_modules never reaches
+	// the builder stage (grit#216). Both are file reads.
+	{"next-public-not-a-build-arg", checkNextPublicBuildArgs},
+	{"docker-misses-workspace-packages", checkDockerCopiesWorkspacePackages},
 }
 
 // Run audits the project at root.

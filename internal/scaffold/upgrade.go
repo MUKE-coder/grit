@@ -1269,6 +1269,20 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += 15
 	}
 
+	// --- Docker ---
+	//
+	// writeDockerFiles was called from the two scaffold entry points and from
+	// nowhere else, so every fix written into a Dockerfile template reached
+	// new projects only and an existing one kept what it was scaffolded with.
+	// It took somebody attempting a production deploy to find out (grit#216).
+	spinner.Printf("  → Updating Docker files...\n")
+	if n, err := upgradeDockerFiles(root, opts, uOpts.Force); err != nil {
+		fmt.Printf("  ⚠ %v\n", err)
+	} else if n > 0 {
+		green.Printf("  ✓ Docker files updated\n")
+		updated += n
+	}
+
 	// --- Desktop (if exists) ---
 	//
 	// It had none. The desktop client took targeted repairs and never the file

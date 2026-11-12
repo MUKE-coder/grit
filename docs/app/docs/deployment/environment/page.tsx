@@ -68,11 +68,25 @@ export default function EnvironmentPage() {
                     The page renders, the API calls go to the wrong host, and the deploy
                     looks green.
                   </p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     On every platform with a separate &ldquo;build arguments&rdquo; field,
                     that is where <code className="text-xs">NEXT_PUBLIC_*</code> and anything
                     read during prerender belongs. Secrets go in runtime environment, never
                     build args: build logs are a wider audience than a container.
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Two things follow from that and are worth stating plainly.{' '}
+                    <strong>Changing one of these needs a rebuild, not a restart</strong>,
+                    because the old value is already in the bundle. And{' '}
+                    <code className="text-xs">NEXT_PUBLIC_STORAGE_URL</code> is the one to
+                    get right first: the Content-Security-Policy is built from it, uploads
+                    are presigned PUTs the browser makes straight to object storage, and if
+                    it is wrong every upload and every stored image is blocked by the
+                    browser. There is no HTTP status and no server log line, only a console
+                    violation, so there is nothing to grep for. The generated{' '}
+                    <code className="text-xs">docker-compose.prod.yml</code> makes it a
+                    required variable for that reason: a deploy that forgets it stops with
+                    a message instead of shipping a site whose uploads silently do nothing.
                   </p>
                 </div>
               </div>

@@ -143,6 +143,16 @@ const checks: { name: string; level: string; what: string }[] = [
     level: 'error',
     what: 'AI_GATEWAY_MODEL is not a model the gateway can resolve, so every AI request answers with a model error. Grit shipped such a default itself: anthropic/claude-sonnet-4-6, where the catalogue spells the minor with a dot.',
   },
+  {
+    name: 'next-public-not-a-build-arg',
+    level: 'error',
+    what: 'A NEXT_PUBLIC_ variable the app reads that its Dockerfile cannot accept, so the built image carries the development default. An error rather than a warning when NEXT_PUBLIC_STORAGE_URL is one of them: the CSP then permits only localhost, and every upload and every stored image is blocked with no HTTP status and nothing in any log.',
+  },
+  {
+    name: 'docker-misses-workspace-packages',
+    level: 'error',
+    what: 'A packages/ member has its own node_modules and the builder stage does not copy it, so the image will not build. pnpm nests a dependency when two packages need different versions, and the failure is forty lines of type mismatch naming the same library twice, in a file you did not change.',
+  },
 ]
 
 export default function DoctorPage() {
@@ -169,7 +179,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  27 checks over 0 resource(s)
+  29 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -188,7 +198,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  27 checks over 10 resource(s)
+  29 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment

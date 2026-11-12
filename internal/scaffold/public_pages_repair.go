@@ -82,11 +82,18 @@ func repairComposeWebAPIEnvSource(src string) (string, []string, []string) {
 		return src, nil, nil
 	}
 	block := src[start:end]
-	anchor := "        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}\n"
+	// Before `restart:`, which is the line after the build args in every
+	// shape of this service and does not move when the arg list changes.
+	//
+	// It used to anchor on the NEXT_PUBLIC_API_URL line and insert after it,
+	// which was right while that was the only build arg. grit#216 added ten
+	// more and sorted them, so that line became the second of seven and this
+	// spliced `environment:` into the middle of the args block.
+	anchor := "    restart: unless-stopped\n"
 	if strings.Count(block, anchor) != 1 {
 		return src, nil, []string{"the web service in docker-compose.prod.yml is not the one Grit wrote: give it API_INTERNAL_URL: http://api:8080, or its server-rendered pages cannot reach the API"}
 	}
-	block = strings.Replace(block, anchor, anchor+composeWebAPIEnv, 1)
+	block = strings.Replace(block, anchor, composeWebAPIEnv+anchor, 1)
 	return src[:start] + block + src[end:],
 		[]string{"the web container reaches the API over the Docker network for its server-rendered pages"}, nil
 }

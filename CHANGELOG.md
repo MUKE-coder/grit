@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.512.0 - November 12, 2026
+
+### A deployed site where every upload silently did nothing
+
+grit#216. The generated Next.js Dockerfiles accepted one build argument, `NEXT_PUBLIC_API_URL`. The generated apps read eleven between them. The other ten could not be supplied to a production build at all, so they took their development defaults in the deployed image and nothing reported it.
+
+One of them breaks every upload. `apps/web/next.config.ts` builds the Content-Security-Policy from `NEXT_PUBLIC_STORAGE_URL` and falls back to a MinIO on localhost, so a production image permits only the developer's laptop as a storage origin. Uploads are presigned PUTs the browser makes straight to object storage, and stored files are read from the same origin: both blocked. The API signs a good URL, the browser refuses it, and the trace is a console violation with no HTTP status and no server log line. There is nothing to grep for.
+
+`.env.example` told you to set it. The Dockerfile had no way to accept it, so anybody following that advice put it in their platform's environment panel, where Next cannot see it: `NEXT_PUBLIC_*` is inlined at build time and an `ENV` on the running container is too late.
+
+All eleven are build args now, generated from **one list** that the Dockerfiles and `docker-compose.prod.yml` are both written from. The drift was the bug: four places had to agree and they stopped agreeing without anything failing. A test scaffolds a project, greps the apps for every `NEXT_PUBLIC_` they read, and fails if one is not in that list, so the next variable somebody adds cannot repeat this.
+
+`NEXT_PUBLIC_STORAGE_URL` is *required* in the compose file rather than defaulted, which matters more than it looks: an empty string is falsy, so `|| "http://localhost:9002"` fires on an empty value exactly as it does on an unset one, and a default of `""` would reintroduce the whole bug. Docker itself now stops the deploy and says why.
+
+#### And an image that could not be built at all
+
+The second half of the same report. pnpm's hoisted linker puts one copy of each dependency at the root, except where two packages need different versions, and then it nests one. A `packages/*` member whose dependency pins a peer more tightly than the root does therefore has its own `node_modules`, and the builder stage did not copy it.
+
+The failure is forty lines of structural type mismatch naming two paths that are the same library at two versions, in a file nobody changed. It reads as a bug in your own code. It is fixed by one line, `COPY --from=deps /app/packages ./packages`, which has to come after `COPY . .` or the context copy puts a source tree with no `node_modules` back over it.
+
+#### Two reasons this reached a user
+
+`writeDockerFiles` was called from the two scaffold entry points and from nowhere else, so every fix written into a Dockerfile template reached new projects only. An existing project kept what it was scaffolded with until somebody tried a production deploy. `grit upgrade` writes them now, through the guard that holds back a file you have edited and names it rather than overwriting it, because a deployment file is one people genuinely do edit.
+
+And `grit doctor` has two new checks, so this is a line of output rather than an afternoon: a `NEXT_PUBLIC_` variable the app reads and the Dockerfile cannot accept, and a `packages/` member whose `node_modules` the builder stage does not copy. Both read files, like every other check, so CI can run them.
+
+#### What the tests did not catch
+
+The first version of this fix put the ARG block at the wrong `%s` of a twelve-placeholder format string, which spliced it into the middle of a `COPY` line and left a bare `web` on a line of its own. Every test in the new file passed, because every string it looked for was present: they were simply in pieces. Found by generating a project and reading the Dockerfile. There is a structural test now, which asserts every line is an instruction, a comment or a continuation.
+
+Sorting the build args also broke an unrelated upgrade repair that anchored on `NEXT_PUBLIC_API_URL` being the only one, and inserted `API_INTERNAL_URL` after it. It anchors on `restart:` now, which does not move when the argument list changes.
+
+
 ## v3.511.1 - November 12, 2026
 
 ### The nightly canary was red, and it was right

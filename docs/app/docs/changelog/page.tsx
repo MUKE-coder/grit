@@ -72,6 +72,126 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.512.0 */}
+            <div className="mb-12" id="v3.512.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.512.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A deployed site where every upload silently did nothing</h3>
+                <p>
+                  grit#216. The generated Next.js Dockerfiles accepted one build
+                  argument, <code>NEXT_PUBLIC_API_URL</code>. The generated apps
+                  read eleven between them. The other ten could not be supplied
+                  to a production build at all, so they took their development
+                  defaults in the deployed image and nothing reported it.
+                </p>
+                <p>
+                  One of them breaks every upload.{' '}
+                  <code>apps/web/next.config.ts</code> builds the
+                  Content-Security-Policy from{' '}
+                  <code>NEXT_PUBLIC_STORAGE_URL</code> and falls back to a MinIO
+                  on localhost, so a production image permits only the
+                  developer&apos;s laptop as a storage origin. Uploads are
+                  presigned PUTs the browser makes straight to object storage,
+                  and stored files are read from the same origin: both blocked.
+                  The API signs a good URL, the browser refuses it, and the
+                  trace is a console violation with no HTTP status and no server
+                  log line. There is nothing to grep for.
+                </p>
+                <p>
+                  <code>.env.example</code> told you to set it. The Dockerfile
+                  had no way to accept it, so anybody following that advice put
+                  it in their platform&apos;s environment panel, where Next
+                  cannot see it: <code>NEXT_PUBLIC_*</code> is inlined at build
+                  time and an <code>ENV</code> on the running container is too
+                  late.
+                </p>
+                <p>
+                  All eleven are build args now, generated from{' '}
+                  <strong>one list</strong> that the Dockerfiles and{' '}
+                  <code>docker-compose.prod.yml</code> are both written from.
+                  The drift was the bug: four places had to agree and they
+                  stopped agreeing without anything failing. A test scaffolds a
+                  project, greps the apps for every{' '}
+                  <code>NEXT_PUBLIC_</code> they read, and fails if one is not
+                  in that list, so the next variable somebody adds cannot repeat
+                  this.
+                </p>
+                <p>
+                  <code>NEXT_PUBLIC_STORAGE_URL</code> is <em>required</em> in
+                  the compose file rather than defaulted, which matters more
+                  than it looks: an empty string is falsy, so{' '}
+                  <code>|| &quot;http://localhost:9002&quot;</code> fires on an
+                  empty value exactly as it does on an unset one, and a default
+                  of <code>&quot;&quot;</code> would reintroduce the whole bug.
+                  Docker itself now stops the deploy and says why.
+                </p>
+                <h4>And an image that could not be built at all</h4>
+                <p>
+                  The second half of the same report. pnpm&apos;s hoisted linker
+                  puts one copy of each dependency at the root, except where two
+                  packages need different versions, and then it nests one. A{' '}
+                  <code>packages/*</code> member whose dependency pins a peer
+                  more tightly than the root does therefore has its own{' '}
+                  <code>node_modules</code>, and the builder stage did not copy
+                  it.
+                </p>
+                <p>
+                  The failure is forty lines of structural type mismatch naming
+                  two paths that are the same library at two versions, in a file
+                  nobody changed. It reads as a bug in your own code. It is
+                  fixed by one line, <code>COPY --from=deps /app/packages
+                  ./packages</code>, which has to come after{' '}
+                  <code>COPY . .</code> or the context copy puts a source tree
+                  with no <code>node_modules</code> back over it.
+                </p>
+                <h4>Two reasons this reached a user</h4>
+                <p>
+                  <code>writeDockerFiles</code> was called from the two scaffold
+                  entry points and from nowhere else, so every fix written into
+                  a Dockerfile template reached new projects only. An existing
+                  project kept what it was scaffolded with until somebody tried
+                  a production deploy. <code>grit upgrade</code> writes them
+                  now, through the guard that holds back a file you have edited
+                  and names it rather than overwriting it, because a deployment
+                  file is one people genuinely do edit.
+                </p>
+                <p>
+                  And <code>grit doctor</code> has two new checks, so this is a
+                  line of output rather than an afternoon: a{' '}
+                  <code>NEXT_PUBLIC_</code> variable the app reads and the
+                  Dockerfile cannot accept, and a{' '}
+                  <code>packages/</code> member whose{' '}
+                  <code>node_modules</code> the builder stage does not copy.
+                  Both read files, like every other check, so CI can run them.
+                </p>
+                <h4>What the tests did not catch</h4>
+                <p>
+                  The first version of this fix put the ARG block at the wrong{' '}
+                  <code>%s</code> of a twelve-placeholder format string, which
+                  spliced it into the middle of a <code>COPY</code> line and
+                  left a bare <code>web</code> on a line of its own. Every test
+                  in the new file passed, because every string it looked for was
+                  present: they were simply in pieces. Found by generating a
+                  project and reading the Dockerfile. There is a structural test
+                  now, which asserts every line is an instruction, a comment or
+                  a continuation.
+                </p>
+                <p>
+                  Sorting the build args also broke an unrelated upgrade repair
+                  that anchored on <code>NEXT_PUBLIC_API_URL</code> being the
+                  only one, and inserted <code>API_INTERNAL_URL</code> after it.
+                  It anchors on <code>restart:</code> now, which does not move
+                  when the argument list changes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.511.1 */}
             <div className="mb-12" id="v3.511.1">
               <div className="flex items-center gap-3 mb-4">
