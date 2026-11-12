@@ -58,6 +58,13 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):            apiPDFInvoiceGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "pdf_test.go"):           apiPDFTestGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "record.go"):             apiPDFRecordGo(),
+		// Word documents. internal/pdf renders a styled page; this renders a
+		// document with a page size, a named font, a line spacing and a page
+		// break before each chapter, which is what a submission or a marking
+		// scheme specifies and what no list export can produce (grit#212).
+		filepath.Join(apiRoot, "internal", "docx", "docx.go"):      tmpl("api/docx/docx.go"),
+		filepath.Join(apiRoot, "internal", "docx", "report.go"):    tmpl("api/docx/report.go"),
+		filepath.Join(apiRoot, "internal", "docx", "docx_test.go"): tmpl("api/docx/docx_test.go"),
 	}
 
 	for path, content := range files {

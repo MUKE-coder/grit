@@ -134,6 +134,11 @@
     "section": "Backend (Go API)",
     "title": "Authentication"
   },
+  "/docs/backend/documents": {
+    "keywords": "word docx doc document export report proposal dissertation thesis times new roman font size line spacing justified margin page break chapter heading table of contents letter contract tender board paper microsoft office openxml ooxml",
+    "section": "Backend (Go API)",
+    "title": "Word documents"
+  },
   "/docs/backend/handlers": {
     "keywords": "api endpoint handler controller request response gin paginate list",
     "section": "Backend (Go API)",
@@ -346,6 +351,11 @@
     "keywords": "expert skills skill pack claude agent subagent plugin marketplace grit skills install grit skills status agents md grit-build grit-core grit-setup grit-triple grit-double grit-single grit-resource grit-data grit-admin grit-ui-ux grit-plugins grit-blueprints grit-mobile grit-desktop grit-offline grit-reviewer grit-critic grit-design-review grit-security grit-perf grit-deploy grit-adopt grit-report grit-tokens grit-feedback grit-advocate grit-teacher grit-references",
     "section": "AI Workflows",
     "title": "The expert skills"
+  },
+  "/docs/frontend/citations": {
+    "keywords": "citation citations cite bibliography reference references csl citeproc apa harvard ieee chicago mla zotero mendeley bibtex csl-json goja v8go academic research paper",
+    "section": "Frontend (Next.js)",
+    "title": "Citations and bibliographies"
   },
   "/docs/frontend/hooks": {
     "keywords": "react query hooks tanstack fetch data mutation cache useQuery useMutation",

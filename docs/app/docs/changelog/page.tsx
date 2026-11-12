@@ -72,6 +72,113 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.508.0 */}
+            <div className="mb-12" id="v3.508.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.508.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Word documents, and why citations are not in the box</h3>
+                <p>
+                  grit#212, both halves. Every project now has{' '}
+                  <code>internal/docx</code>, and it travels on{' '}
+                  <code>grit upgrade</code> rather than only reaching new
+                  projects.
+                </p>
+                <p>
+                  It is a document writer, not a list export. A resource already
+                  exports its filtered list as CSV, XLSX and JSON, and a Word
+                  table of rows is that again in a format that holds it worse.
+                  What a list export cannot produce is a document with a page
+                  size, a named font at a given size, justified text, a line
+                  spacing and a page break before each chapter. Those are
+                  usually not preferences: a university department or a
+                  government office specifies them and marks against them, so
+                  getting them wrong costs the person submitting it something
+                  real. <code>docx.Submission()</code> returns that combination
+                  because it is asked for often enough that every project
+                  otherwise writes it out again.
+                </p>
+                <p>
+                  Headings are named Word styles rather than bold text, so the
+                  navigation pane and an automatic table of contents work.{' '}
+                  <code>Chapter</code> uses <code>pageBreakBefore</code> rather
+                  than an empty paragraph, so the break moves with the heading
+                  when the text above it grows.{' '}
+                  <code>docx.Attachment</code> quotes a filename properly,
+                  because a filename holding a quote or a newline either
+                  truncates the response header or injects another one, and a
+                  filename is the first thing in a response to come from user
+                  input.
+                </p>
+                <p>
+                  No dependency. A .docx is a zip of XML parts and this writes
+                  them with <code>archive/zip</code> and{' '}
+                  <code>encoding/xml</code>. The Go libraries for it are either
+                  thinly maintained or AGPL, and an AGPL dependency inside a
+                  framework other people build commercial products on is a
+                  licence decision nobody would choose deliberately.
+                </p>
+                <h4>The two bugs an independent reader found</h4>
+                <p>
+                  The tests were written against python-docx reading the output
+                  back, rather than against the writer&apos;s own assertions,
+                  and that is what caught them. A test I write against my own
+                  output agrees with whatever I produced, correct or not.
+                </p>
+                <p>
+                  <code>&lt;w:tblGrid&gt;</code> was missing. The schema
+                  requires it and Word silently tolerates its absence, so every
+                  table would have worked in Word and been refused by anything
+                  stricter. And the font and size lived only in{' '}
+                  <code>docDefaults</code>: Word honours that, but a reader
+                  asking the Normal style what font it is got nothing, which
+                  matters precisely because &ldquo;set in Times New Roman
+                  12pt&rdquo; is the claim a marking scheme is checked against.
+                  Both are fixed, and both now have a test. Sixteen tests ship
+                  with the package so a project can run them.
+                </p>
+                <h4>Citations</h4>
+                <p>
+                  The other half of grit#212 asked for a CSL formatter. It is
+                  not shipping, and{' '}
+                  <Link href="/docs/frontend/citations">citations</Link> is the
+                  reason in full rather than a shrug: render on the client,
+                  lazily, and persist what the engine produced so the server
+                  reads it rather than deriving it a second time. That last
+                  part is the point. Two implementations of one rule in two
+                  languages drift quietly, which has already cost a day in a
+                  Grit project when an FNV hash written once in TypeScript and
+                  once in Go stopped agreeing and nothing failed.
+                </p>
+                <p>
+                  The page carries the measurements rather than an opinion.
+                  citeproc-js under goja parses APA in 44 to 80 seconds against
+                  node&apos;s 0.61, and Chicago in 209; it is a cliff at about
+                  45 KB of style, and APA and Chicago are the two styles most
+                  people ask for. A goja VM is not safe for concurrent use
+                  either, so a server would need one engine per style per
+                  worker. <code>v8go</code> would fix the speed and bring cgo, a
+                  C toolchain in the image and the end of cross-compiling; if
+                  that becomes necessary it should follow the vips image
+                  backend, which is pure Go by default and cgo behind a build
+                  tag. And citeproc-js is CPAL-1.0 or AGPL-1.0, which is a
+                  decision a project should make deliberately rather than
+                  inherit from its framework.
+                </p>
+                <p>
+                  Two premises in the report did not hold, and the page says so
+                  rather than repeating them: nothing in Grit tells projects
+                  never to hand-roll a CSL formatter or a DOCX writer, and a
+                  resource exports CSV, XLSX and JSON rather than PDF.
+                </p>
+              </div>
+            </div>
+
             {/* v3.507.1 */}
             <div className="mb-12" id="v3.507.1">
               <div className="flex items-center gap-3 mb-4">

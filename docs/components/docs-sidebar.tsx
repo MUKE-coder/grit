@@ -145,6 +145,7 @@ const navItems: NavItem[] = [
       { title: 'The Request Lifecycle', href: '/docs/backend/request-lifecycle' },
       { title: 'Migrations', href: '/docs/backend/migrations' },
       { title: 'Invoices & Line Items', href: '/docs/backend/invoices' },
+      { title: 'Word documents', href: '/docs/backend/documents' },
       { title: 'Append-only Records', href: '/docs/backend/append-only' },
       { title: 'Transactional Outbox', href: '/docs/backend/outbox' },
       { title: 'Sagas', href: '/docs/backend/sagas' },
@@ -189,6 +190,7 @@ const navItems: NavItem[] = [
       { title: 'Internationalisation', href: '/docs/frontend/i18n' },
       { title: 'UI Components', href: '/docs/frontend/ui-components' },
       { title: 'Shared Package', href: '/docs/frontend/shared-package' },
+      { title: 'Citations', href: '/docs/frontend/citations' },
     ],
   },
   {

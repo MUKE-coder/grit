@@ -245,6 +245,16 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'The five-table variant schema, why options are shop-wide, why affects_price lives on the option, and why a variant price is resolved rather than stored. Installed with grit add variants.',
   },
+  '/docs/backend/documents': {
+    title: 'Word documents',
+    description:
+      'internal/docx writes .docx files from Go with no dependency: page size, a named font, line spacing, justified text and a page break before each chapter, which is what a submission or a marking scheme specifies and what a list export cannot produce.',
+  },
+  '/docs/frontend/citations': {
+    title: 'Citations and bibliographies',
+    description:
+      'Formatting APA, Harvard, IEEE or Chicago means running a CSL processor. Why it renders on the client, why the rendered output must be persisted rather than derived twice, the goja measurements that rule out the server, and the citeproc-js licence.',
+  },
   '/docs/backend/invoices': {
     title: 'Invoices & Line Items',
     description:

@@ -1,0 +1,622 @@
+// Package docx writes .docx documents.
+//
+// A .docx is a zip of XML parts, and this writes them with archive/zip and
+// encoding/xml from the standard library. No dependency: the Go libraries for
+// this are either thinly maintained or AGPL, and the subset a report needs is
+// small enough that owning it costs less than depending on one.
+//
+// It is deliberately a document writer, not a table writer. A resource's list
+// already exports as CSV, XLSX and JSON, and a Word table of rows is the same
+// thing again. What a list export cannot do is the thing people actually ask
+// Word for: a document with a page size, a named font at a given size,
+// justified text, a line spacing, and a page break before each chapter.
+// Those four are often a marking scheme rather than a preference.
+//
+// Two layers, the same shape as internal/pdf:
+//
+//  1. Doc primitives: Heading, Chapter, Para, Rich, Bullet, Numbered, Table,
+//     PageBreak. Compose them into any document.
+//
+//  2. A pre-built template, RenderReport in report.go, for the common case.
+//     Copy and adapt it.
+//
+// Everything is written on Bytes or WriteTo, so a Doc can be built up and
+// discarded cheaply.
+//
+//	doc := docx.New(docx.Style{
+//		Font:        "Times New Roman",
+//		Size:        12,
+//		LineSpacing: 1.5,
+//		Justify:     true,
+//	})
+//	doc.Chapter("Introduction")
+//	doc.Para("...")
+//	doc.Chapter("Literature Review")
+//	doc.Para("...")
+//	b, err := doc.Bytes()
+package docx
+
+import (
+	"archive/zip"
+	"bytes"
+	"encoding/xml"
+	"fmt"
+	"io"
+	"net/url"
+	"strconv"
+	"strings"
+)
+
+// ContentType is the MIME type of a .docx, which is long enough to get wrong
+// by hand and is what tells a browser to open Word rather than offer a
+// download of something it cannot identify.
+const ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+// Attachment is a Content-Disposition value for a download called name.
+//
+// The quoting is the point. A filename holding a quote or a newline, which is
+// what you get the first time a document is named after user input, either
+// truncates the header or injects another one. Anything outside a safe set is
+// replaced, and a UTF-8 name is also sent in the RFC 5987 form so that an
+// accented or non-Latin title survives.
+//
+//	c.Header("Content-Disposition", docx.Attachment(title+".docx"))
+func Attachment(name string) string {
+	if name == "" {
+		name = "document.docx"
+	}
+	var safe strings.Builder
+	for _, r := range name {
+		switch {
+		case r < 0x20 || r == 0x7f:
+			// Control characters, which is how a header gets split in two.
+			safe.WriteByte('_')
+		case r == '"' || r == '\\' || r == '/' || r == ';' || r > 0x7f:
+			safe.WriteByte('_')
+		default:
+			safe.WriteRune(r)
+		}
+	}
+	return fmt.Sprintf("attachment; filename=%q; filename*=UTF-8''%s",
+		safe.String(), url.PathEscape(name))
+}
+
+// Align is a paragraph alignment.
+type Align string
+
+const (
+	Left    Align = "left"
+	Center  Align = "center"
+	Right   Align = "right"
+	Justify Align = "both"
+)
+
+// Margin is the page margin on each side, in inches.
+//
+// Inches rather than twips because every marking scheme and house style is
+// written in inches or centimetres and nobody has ever been asked for a 1440
+// twip margin. Convert once, here, and the caller never sees the unit.
+type Margin struct {
+	Top, Right, Bottom, Left float64
+}
+
+// Style is the document default: what every paragraph gets unless it asks for
+// something else.
+type Style struct {
+	Font        string  // "Times New Roman". Empty means Calibri.
+	Size        float64 // points. Zero means 11.
+	LineSpacing float64 // 1, 1.5, 2. Zero means single.
+	Justify     bool    // justify body text
+	Margin      Margin  // inches. Zero means one inch all round.
+	Landscape   bool
+}
+
+// A4 in twips, which is the unit the format works in.
+const (
+	a4WidthTwips  = 11906
+	a4HeightTwips = 16838
+	twipsPerInch  = 1440
+)
+
+// Doc is a document being built.
+type Doc struct {
+	style Style
+	body  bytes.Buffer
+	err   error
+}
+
+// New returns an empty document with style as its default.
+func New(style Style) *Doc {
+	if style.Font == "" {
+		style.Font = "Calibri"
+	}
+	if style.Size == 0 {
+		style.Size = 11
+	}
+	if style.LineSpacing == 0 {
+		style.LineSpacing = 1
+	}
+	if style.Margin == (Margin{}) {
+		style.Margin = Margin{Top: 1, Right: 1, Bottom: 1, Left: 1}
+	}
+	return &Doc{style: style}
+}
+
+// Run is a span of text inside a paragraph, with its own emphasis.
+type Run struct {
+	Text      string
+	Bold      bool
+	Italic    bool
+	Underline bool
+}
+
+// esc escapes text for an XML text node.
+func esc(s string) string {
+	var b bytes.Buffer
+	// The error is from the writer, and a bytes.Buffer does not fail.
+	_ = xml.EscapeText(&b, []byte(s))
+	return b.String()
+}
+
+// halfPoints is the unit w:sz is written in.
+func halfPoints(points float64) string {
+	return strconv.Itoa(int(points * 2))
+}
+
+// lineTwips is the unit w:spacing/@w:line is written in: 240 is single.
+func lineTwips(multiple float64) string {
+	return strconv.Itoa(int(multiple * 240))
+}
+
+func inchTwips(inches float64) string {
+	return strconv.Itoa(int(inches * twipsPerInch))
+}
+
+// textWidthTwips is the width between the margins, which is what a table has
+// to fit into.
+func (d *Doc) textWidthTwips() int {
+	width := a4WidthTwips
+	if d.style.Landscape {
+		width = a4HeightTwips
+	}
+	inner := width - int(d.style.Margin.Left*twipsPerInch) - int(d.style.Margin.Right*twipsPerInch)
+	if inner < twipsPerInch {
+		// A margin wider than the page. Rather than emit a negative column
+		// width, which renders as a table of zero-width columns, fall back to
+		// something that at least shows the content.
+		inner = twipsPerInch
+	}
+	return inner
+}
+
+// runXML writes one <w:r>.
+func (d *Doc) runXML(r Run) string {
+	var props strings.Builder
+	if r.Bold {
+		props.WriteString(`<w:b/>`)
+	}
+	if r.Italic {
+		props.WriteString(`<w:i/>`)
+	}
+	if r.Underline {
+		props.WriteString(`<w:u w:val="single"/>`)
+	}
+	rPr := ""
+	if props.Len() > 0 {
+		rPr = `<w:rPr>` + props.String() + `</w:rPr>`
+	}
+	// xml:space="preserve" so a leading or trailing space survives. Without
+	// it Word trims them and "see page " runs into the next run.
+	return `<w:r>` + rPr + `<w:t xml:space="preserve">` + esc(r.Text) + `</w:t></w:r>`
+}
+
+// paraProps builds a <w:pPr>.
+type paraProps struct {
+	align           Align
+	style           string // a named style, e.g. Heading1
+	pageBreakBefore bool
+	numID           int // 0 for none
+	indentLevel     int
+	spacingAfter    int // twips
+	keepNext        bool
+}
+
+func (d *Doc) paraPropsXML(p paraProps) string {
+	var b strings.Builder
+	b.WriteString(`<w:pPr>`)
+	if p.style != "" {
+		b.WriteString(`<w:pStyle w:val="` + p.style + `"/>`)
+	}
+	if p.keepNext {
+		b.WriteString(`<w:keepNext/>`)
+	}
+	if p.pageBreakBefore {
+		b.WriteString(`<w:pageBreakBefore/>`)
+	}
+	if p.numID != 0 {
+		b.WriteString(`<w:numPr><w:ilvl w:val="` + strconv.Itoa(p.indentLevel) +
+			`"/><w:numId w:val="` + strconv.Itoa(p.numID) + `"/></w:numPr>`)
+	}
+	b.WriteString(`<w:spacing w:line="` + lineTwips(d.style.LineSpacing) +
+		`" w:lineRule="auto" w:after="` + strconv.Itoa(p.spacingAfter) + `"/>`)
+	if p.align != "" {
+		b.WriteString(`<w:jc w:val="` + string(p.align) + `"/>`)
+	}
+	b.WriteString(`</w:pPr>`)
+	return b.String()
+}
+
+// bodyAlign is the alignment a plain paragraph gets.
+func (d *Doc) bodyAlign() Align {
+	if d.style.Justify {
+		return Justify
+	}
+	return Left
+}
+
+// Para appends a paragraph of plain text in the document's default style.
+func (d *Doc) Para(text string) {
+	d.Rich(Run{Text: text})
+}
+
+// Rich appends a paragraph made of runs, so emphasis can change mid-sentence.
+//
+//	doc.Rich(
+//		docx.Run{Text: "The result was "},
+//		docx.Run{Text: "significant", Italic: true},
+//		docx.Run{Text: " at p < 0.05."},
+//	)
+func (d *Doc) Rich(runs ...Run) {
+	d.body.WriteString(`<w:p>` + d.paraPropsXML(paraProps{align: d.bodyAlign(), spacingAfter: 160}))
+	for _, r := range runs {
+		d.body.WriteString(d.runXML(r))
+	}
+	d.body.WriteString(`</w:p>`)
+}
+
+// Centered appends a centred paragraph, whatever the document's default
+// alignment is. A title or a byline justified across the page is stretched
+// into something nobody asked for.
+func (d *Doc) Centered(text string) {
+	d.body.WriteString(`<w:p>` + d.paraPropsXML(paraProps{align: Center, spacingAfter: 120}))
+	d.body.WriteString(d.runXML(Run{Text: text}))
+	d.body.WriteString(`</w:p>`)
+}
+
+// Heading appends a heading. Level is 1 to 3; anything else is clamped.
+//
+// Headings are a named style rather than bold text, which is what makes
+// Word's navigation pane and an automatic table of contents work.
+func (d *Doc) Heading(level int, text string) {
+	d.heading(level, text, false)
+}
+
+// Chapter is a level 1 heading that starts a new page.
+//
+// A page break before each chapter is the single most commonly specified
+// requirement in a university or departmental submission scheme, and doing it
+// with pageBreakBefore rather than an empty paragraph means the break moves
+// with the heading when the text above it grows.
+func (d *Doc) Chapter(title string) {
+	d.heading(1, title, true)
+}
+
+func (d *Doc) heading(level int, text string, newPage bool) {
+	if level < 1 {
+		level = 1
+	}
+	if level > 3 {
+		level = 3
+	}
+	d.body.WriteString(`<w:p>` + d.paraPropsXML(paraProps{
+		style:           "Heading" + strconv.Itoa(level),
+		align:           Left,
+		pageBreakBefore: newPage,
+		keepNext:        true,
+		spacingAfter:    200,
+	}))
+	d.body.WriteString(d.runXML(Run{Text: text}))
+	d.body.WriteString(`</w:p>`)
+}
+
+// Numbering ids, matching numbering.xml below.
+const (
+	numBullet  = 1
+	numDecimal = 2
+)
+
+// Bullet appends a bulleted list item. Level is 0 for the top level.
+func (d *Doc) Bullet(text string, level int) {
+	d.listItem(text, numBullet, level)
+}
+
+// Numbered appends a numbered list item. Level is 0 for the top level.
+func (d *Doc) Numbered(text string, level int) {
+	d.listItem(text, numDecimal, level)
+}
+
+func (d *Doc) listItem(text string, numID, level int) {
+	if level < 0 {
+		level = 0
+	}
+	if level > 8 {
+		level = 8
+	}
+	d.body.WriteString(`<w:p>` + d.paraPropsXML(paraProps{
+		numID:        numID,
+		indentLevel:  level,
+		align:        Left,
+		spacingAfter: 80,
+	}))
+	d.body.WriteString(d.runXML(Run{Text: text}))
+	d.body.WriteString(`</w:p>`)
+}
+
+// PageBreak starts a new page.
+//
+// Prefer Chapter when the next thing is a heading: this emits a paragraph of
+// its own, which is an empty line at the top of the new page if the content
+// after it moves.
+func (d *Doc) PageBreak() {
+	d.body.WriteString(`<w:p><w:r><w:br w:type="page"/></w:r></w:p>`)
+}
+
+// Table appends a bordered table. headers may be empty for a table with no
+// header row. Every row is padded or truncated to the header's width when
+// there is one.
+func (d *Doc) Table(headers []string, rows [][]string) {
+	cols := len(headers)
+	if cols == 0 {
+		for _, r := range rows {
+			if len(r) > cols {
+				cols = len(r)
+			}
+		}
+	}
+	if cols == 0 {
+		return
+	}
+
+	d.body.WriteString(`<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/>` +
+		`<w:tblW w:w="0" w:type="auto"/>` +
+		`<w:tblBorders>` +
+		`<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`</w:tblBorders></w:tblPr>`)
+
+	// <w:tblGrid> is required, and a table without one is rejected by a reader
+	// that follows the schema even though Word opens it. Equal columns across
+	// the text width: a table that sets its own widths can still override them
+	// per cell.
+	colWidth := d.textWidthTwips() / cols
+	d.body.WriteString(`<w:tblGrid>`)
+	for i := 0; i < cols; i++ {
+		d.body.WriteString(`<w:gridCol w:w="` + strconv.Itoa(colWidth) + `"/>`)
+	}
+	d.body.WriteString(`</w:tblGrid>`)
+
+	if len(headers) > 0 {
+		d.tableRow(headers, cols, true)
+	}
+	for _, r := range rows {
+		d.tableRow(r, cols, false)
+	}
+	d.body.WriteString(`</w:tbl>`)
+	// A table followed immediately by a table is merged by Word into one, so
+	// an empty paragraph after it keeps two tables apart.
+	d.body.WriteString(`<w:p/>`)
+}
+
+func (d *Doc) tableRow(cells []string, cols int, header bool) {
+	d.body.WriteString(`<w:tr>`)
+	for i := 0; i < cols; i++ {
+		text := ""
+		if i < len(cells) {
+			text = cells[i]
+		}
+		d.body.WriteString(`<w:tc><w:tcPr><w:tcW w:w="` +
+			strconv.Itoa(d.textWidthTwips()/cols) + `" w:type="dxa"/></w:tcPr>`)
+		// A table cell is never justified: justifying two words across a
+		// narrow column is what produces the rivers of white space that make
+		// a generated table look wrong.
+		d.body.WriteString(`<w:p>` + d.paraPropsXML(paraProps{align: Left, spacingAfter: 0}))
+		d.body.WriteString(d.runXML(Run{Text: text, Bold: header}))
+		d.body.WriteString(`</w:p></w:tc>`)
+	}
+	d.body.WriteString(`</w:tr>`)
+}
+
+// Err reports the first error, if any. Building never fails today, and this
+// exists so that adding a part that can fail does not change the API.
+func (d *Doc) Err() error { return d.err }
+
+// WriteTo writes the .docx to w.
+func (d *Doc) WriteTo(w io.Writer) (int64, error) {
+	b, err := d.Bytes()
+	if err != nil {
+		return 0, err
+	}
+	n, err := w.Write(b)
+	return int64(n), err
+}
+
+// Bytes renders the .docx.
+func (d *Doc) Bytes() ([]byte, error) {
+	if d.err != nil {
+		return nil, d.err
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	// [Content_Types].xml has to be the first entry in the archive. Readers
+	// that stream the zip look for it there, and one that does not find it
+	// reports the file as corrupt rather than as missing a part.
+	parts := []struct {
+		name string
+		body string
+	}{
+		{"[Content_Types].xml", contentTypes},
+		{"_rels/.rels", packageRels},
+		{"word/_rels/document.xml.rels", documentRels},
+		{"word/styles.xml", d.stylesXML()},
+		{"word/numbering.xml", numberingXML},
+		{"word/document.xml", d.documentXML()},
+	}
+	for _, p := range parts {
+		f, err := zw.Create(p.name)
+		if err != nil {
+			return nil, fmt.Errorf("docx: creating %s: %w", p.name, err)
+		}
+		if _, err := io.WriteString(f, p.body); err != nil {
+			return nil, fmt.Errorf("docx: writing %s: %w", p.name, err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("docx: closing archive: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (d *Doc) documentXML() string {
+	width, height := a4WidthTwips, a4HeightTwips
+	orient := ""
+	if d.style.Landscape {
+		width, height = height, width
+		orient = ` w:orient="landscape"`
+	}
+	return xmlHeader +
+		`<w:document xmlns:w="` + nsWord + `"><w:body>` +
+		d.body.String() +
+		`<w:sectPr><w:pgSz w:w="` + strconv.Itoa(width) + `" w:h="` + strconv.Itoa(height) + `"` + orient + `/>` +
+		`<w:pgMar w:top="` + inchTwips(d.style.Margin.Top) +
+		`" w:right="` + inchTwips(d.style.Margin.Right) +
+		`" w:bottom="` + inchTwips(d.style.Margin.Bottom) +
+		`" w:left="` + inchTwips(d.style.Margin.Left) +
+		`" w:header="708" w:footer="708" w:gutter="0"/>` +
+		`</w:sectPr></w:body></w:document>`
+}
+
+func (d *Doc) stylesXML() string {
+	font := esc(d.style.Font)
+	size := halfPoints(d.style.Size)
+
+	// Headings are sized off the body size rather than fixed, so a document
+	// set in 12pt and one set in 10pt both look deliberate.
+	heading := func(level int, scale float64, after int) string {
+		id := "Heading" + strconv.Itoa(level)
+		return `<w:style w:type="paragraph" w:styleId="` + id + `">` +
+			`<w:name w:val="heading ` + strconv.Itoa(level) + `"/>` +
+			`<w:basedOn w:val="Normal"/><w:next w:val="Normal"/>` +
+			`<w:qFormat/>` +
+			`<w:pPr><w:keepNext/><w:outlineLvl w:val="` + strconv.Itoa(level-1) + `"/>` +
+			`<w:spacing w:before="240" w:after="` + strconv.Itoa(after) + `"/></w:pPr>` +
+			`<w:rPr><w:rFonts w:ascii="` + font + `" w:hAnsi="` + font + `" w:cs="` + font + `"/>` +
+			`<w:b/><w:sz w:val="` + halfPoints(d.style.Size*scale) + `"/>` +
+			`<w:szCs w:val="` + halfPoints(d.style.Size*scale) + `"/></w:rPr></w:style>`
+	}
+
+	return xmlHeader +
+		`<w:styles xmlns:w="` + nsWord + `">` +
+		`<w:docDefaults><w:rPrDefault><w:rPr>` +
+		`<w:rFonts w:ascii="` + font + `" w:hAnsi="` + font + `" w:cs="` + font + `" w:eastAsia="` + font + `"/>` +
+		`<w:sz w:val="` + size + `"/><w:szCs w:val="` + size + `"/>` +
+		`</w:rPr></w:rPrDefault>` +
+		`<w:pPrDefault><w:pPr>` +
+		`<w:spacing w:line="` + lineTwips(d.style.LineSpacing) + `" w:lineRule="auto"/>` +
+		`</w:pPr></w:pPrDefault></w:docDefaults>` +
+		// Also on Normal, not only in docDefaults. Word reads docDefaults, but
+		// a reader that asks the Normal style what font it is gets nothing,
+		// and "set in Times New Roman 12pt" is the claim somebody marks.
+		`<w:style w:type="paragraph" w:default="1" w:styleId="Normal">` +
+		`<w:name w:val="Normal"/><w:qFormat/>` +
+		`<w:rPr><w:rFonts w:ascii="` + font + `" w:hAnsi="` + font + `" w:cs="` + font + `" w:eastAsia="` + font + `"/>` +
+		`<w:sz w:val="` + size + `"/><w:szCs w:val="` + size + `"/></w:rPr>` +
+		`</w:style>` +
+		heading(1, 1.5, 120) +
+		heading(2, 1.25, 120) +
+		heading(3, 1.1, 120) +
+		`<w:style w:type="table" w:styleId="TableGrid"><w:name w:val="Table Grid"/>` +
+		`<w:tblPr><w:tblBorders>` +
+		`<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>` +
+		`</w:tblBorders></w:tblPr></w:style>` +
+		`</w:styles>`
+}
+
+const (
+	xmlHeader = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` + "\n"
+	nsWord    = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+
+	contentTypes = xmlHeader +
+		`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+		`<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+		`<Default Extension="xml" ContentType="application/xml"/>` +
+		`<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
+		`<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
+		`<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>` +
+		`</Types>`
+
+	packageRels = xmlHeader +
+		`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+		`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+		`</Relationships>`
+
+	documentRels = xmlHeader +
+		`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+		`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+		`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>` +
+		`</Relationships>`
+)
+
+// numberingXML defines one bulleted and one numbered list, nine levels each.
+//
+// Word needs an abstract definition and a concrete num that points at it.
+// Without the concrete num a list item renders with no marker at all and no
+// indent, which looks like the text simply lost its bullet.
+var numberingXML = func() string {
+	var b strings.Builder
+	b.WriteString(xmlHeader + `<w:numbering xmlns:w="` + nsWord + `">`)
+
+	level := func(i int, fmtName, text, font string) string {
+		indent := strconv.Itoa(720 * (i + 1))
+		s := `<w:lvl w:ilvl="` + strconv.Itoa(i) + `">` +
+			`<w:start w:val="1"/>` +
+			`<w:numFmt w:val="` + fmtName + `"/>` +
+			`<w:lvlText w:val="` + text + `"/>` +
+			`<w:lvlJc w:val="left"/>` +
+			`<w:pPr><w:ind w:left="` + indent + `" w:hanging="360"/></w:pPr>`
+		if font != "" {
+			s += `<w:rPr><w:rFonts w:ascii="` + font + `" w:hAnsi="` + font + `" w:hint="default"/></w:rPr>`
+		}
+		return s + `</w:lvl>`
+	}
+
+	b.WriteString(`<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>`)
+	// U+2022, U+006F, U+25AA rather than the private-use codepoints Word
+	// writes with the Symbol font: those render as a blank box anywhere the
+	// font is missing, which includes LibreOffice and Google Docs.
+	bullets := []string{"•", "o", "▪"}
+	for i := 0; i < 9; i++ {
+		b.WriteString(level(i, "bullet", bullets[i%3], ""))
+	}
+	b.WriteString(`</w:abstractNum>`)
+
+	b.WriteString(`<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="multilevel"/>`)
+	for i := 0; i < 9; i++ {
+		b.WriteString(level(i, "decimal", "%"+strconv.Itoa(i+1)+".", ""))
+	}
+	b.WriteString(`</w:abstractNum>`)
+
+	b.WriteString(`<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>`)
+	b.WriteString(`<w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num>`)
+	b.WriteString(`</w:numbering>`)
+	return b.String()
+}()

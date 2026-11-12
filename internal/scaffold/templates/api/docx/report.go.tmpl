@@ -1,0 +1,120 @@
+package docx
+
+import (
+	"fmt"
+	"time"
+)
+
+// Submission is the style a marking scheme most often asks for: Times New
+// Roman at 12pt, justified, one and a half line spacing, one inch margins.
+//
+// It is here because those four together are specified often enough, by
+// universities and by government departments, that every project otherwise
+// writes them out again. Change any field after calling it.
+//
+//	style := docx.Submission()
+//	style.LineSpacing = 2 // double spaced, as some schemes ask
+func Submission() Style {
+	return Style{
+		Font:        "Times New Roman",
+		Size:        12,
+		LineSpacing: 1.5,
+		Justify:     true,
+		Margin:      Margin{Top: 1, Right: 1, Bottom: 1, Left: 1},
+	}
+}
+
+// Report is the data shape RenderReport consumes. Build one from your domain
+// model in the handler and pass it through.
+type Report struct {
+	Title    string
+	Subtitle string
+	Author   string
+	Date     time.Time // zero means no date line
+	Abstract string    // optional, on the title page under the heading
+	Chapters []ReportChapter
+}
+
+// ReportChapter is one chapter, which starts on a new page.
+type ReportChapter struct {
+	Title      string
+	Paragraphs []string
+	Sections   []ReportSection
+}
+
+// ReportSection is a sub-heading inside a chapter.
+type ReportSection struct {
+	Heading    string
+	Paragraphs []string
+	Bullets    []string
+	Table      *ReportTable
+}
+
+// ReportTable is a table inside a section.
+type ReportTable struct {
+	Headers []string
+	Rows    [][]string
+}
+
+// RenderReport returns the report as .docx bytes, ready to stream to the
+// response writer.
+//
+// Composition over inheritance: it is a Doc with the primitives called in
+// order. Copy this file as a starting point for a proposal, a dissertation, a
+// tender response or a board paper.
+//
+//	b, err := docx.RenderReport(report, docx.Submission())
+//	if err != nil {
+//		respond.Internal(c, err)
+//		return
+//	}
+//	c.Header("Content-Type", docx.ContentType)
+//	c.Header("Content-Disposition", docx.Attachment("proposal.docx"))
+//	c.Data(http.StatusOK, docx.ContentType, b)
+func RenderReport(r Report, style Style) ([]byte, error) {
+	doc := New(style)
+
+	// The title page is centred whatever the body alignment is: justifying a
+	// three word title stretches it across the page.
+	doc.Heading(1, r.Title)
+	if r.Subtitle != "" {
+		doc.Centered(r.Subtitle)
+	}
+	if r.Author != "" {
+		doc.Centered(r.Author)
+	}
+	if !r.Date.IsZero() {
+		doc.Centered(r.Date.Format("2 January 2006"))
+	}
+	if r.Abstract != "" {
+		doc.Heading(2, "Abstract")
+		doc.Para(r.Abstract)
+	}
+
+	for _, chapter := range r.Chapters {
+		doc.Chapter(chapter.Title)
+		for _, p := range chapter.Paragraphs {
+			doc.Para(p)
+		}
+		for _, section := range chapter.Sections {
+			if section.Heading != "" {
+				doc.Heading(2, section.Heading)
+			}
+			for _, p := range section.Paragraphs {
+				doc.Para(p)
+			}
+			for _, b := range section.Bullets {
+				doc.Bullet(b, 0)
+			}
+			if section.Table != nil {
+				doc.Table(section.Table.Headers, section.Table.Rows)
+			}
+		}
+	}
+
+	b, err := doc.Bytes()
+	if err != nil {
+		return nil, fmt.Errorf("rendering report %q: %w", r.Title, err)
+	}
+	return b, nil
+}

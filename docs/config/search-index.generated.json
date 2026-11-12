@@ -138,6 +138,12 @@
     "keywords": "jwt login register auth token password 2fa totp oauth google github trusted devices backup codes refresh implement authentication grit hashing bcrypt protected routes docs backend"
   },
   {
+    "title": "Word documents",
+    "href": "/docs/backend/documents",
+    "section": "Backend (Go API)",
+    "keywords": "word docx doc document export report proposal dissertation thesis times new roman font size line spacing justified margin page break chapter heading table of contents letter contract tender board paper microsoft office openxml ooxml internal writes files go no dependency named text before each submission marking scheme specifies list cannot produce docs backend documents"
+  },
+  {
     "title": "Error codes",
     "href": "/docs/backend/errors",
     "section": "Backend (Go API)",
@@ -640,6 +646,12 @@
     "href": "/docs/frontend/auth",
     "section": "Frontend (Next.js)",
     "keywords": "sign up protected pages grit web app httponly session cookies auth hooks proxy ts edge gate not thing protects page docs frontend"
+  },
+  {
+    "title": "Citations and bibliographies",
+    "href": "/docs/frontend/citations",
+    "section": "Frontend (Next.js)",
+    "keywords": "citation citations cite bibliography reference references csl citeproc apa harvard ieee chicago mla zotero mendeley bibtex csl-json goja v8go academic research paper formatting means running processor renders client rendered output must persisted rather than derived twice measurements rule out server js licence docs frontend bibliographies"
   },
   {
     "title": "Fetching Data in the Web App",

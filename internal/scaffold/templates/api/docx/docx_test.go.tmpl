@@ -1,0 +1,335 @@
+package docx
+
+import (
+	"archive/zip"
+	"bytes"
+	"encoding/xml"
+	"io"
+	"strings"
+	"testing"
+	"time"
+)
+
+// parts unzips a rendered document and returns every part by name.
+func parts(t *testing.T, b []byte) map[string]string {
+	t.Helper()
+	r, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+	if err != nil {
+		t.Fatalf("the output is not a zip: %v", err)
+	}
+	out := map[string]string{}
+	for _, f := range r.File {
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatalf("opening %s: %v", f.Name, err)
+		}
+		body, err := io.ReadAll(rc)
+		rc.Close()
+		if err != nil {
+			t.Fatalf("reading %s: %v", f.Name, err)
+		}
+		out[f.Name] = string(body)
+	}
+	return out
+}
+
+// wellFormed parses a part, which is the check that matters: a .docx whose XML
+// does not parse is reported by Word as corrupt rather than as missing
+// whatever was wrong, so a test asserting on substrings of broken XML passes
+// while the file does not open.
+func wellFormed(t *testing.T, name, body string) {
+	t.Helper()
+	dec := xml.NewDecoder(strings.NewReader(body))
+	for {
+		_, err := dec.Token()
+		if err == io.EOF {
+			return
+		}
+		if err != nil {
+			t.Fatalf("%s is not well-formed XML: %v", name, err)
+		}
+	}
+}
+
+func sample() *Doc {
+	d := New(Style{Font: "Times New Roman", Size: 12, LineSpacing: 1.5, Justify: true})
+	d.Heading(1, "A Study")
+	d.Chapter("Introduction")
+	d.Para("A paragraph.")
+	d.Rich(
+		Run{Text: "plain "},
+		Run{Text: "bold", Bold: true},
+		Run{Text: " and "},
+		Run{Text: "italic", Italic: true},
+	)
+	d.Heading(2, "Background")
+	d.Bullet("A bullet", 0)
+	d.Numbered("A number", 0)
+	d.Table([]string{"A", "B"}, [][]string{{"1", "2"}})
+	d.PageBreak()
+	d.Para("After the break.")
+	return d
+}
+
+func TestEveryRequiredPartIsPresentAndParses(t *testing.T) {
+	b, err := sample().Bytes()
+	if err != nil {
+		t.Fatalf("rendering: %v", err)
+	}
+	p := parts(t, b)
+
+	for _, name := range []string{
+		"[Content_Types].xml",
+		"_rels/.rels",
+		"word/_rels/document.xml.rels",
+		"word/document.xml",
+		"word/styles.xml",
+		"word/numbering.xml",
+	} {
+		body, ok := p[name]
+		if !ok {
+			t.Fatalf("the archive has no %s", name)
+		}
+		wellFormed(t, name, body)
+	}
+}
+
+// [Content_Types].xml has to be the archive's first entry. A reader that
+// streams the zip looks for it there and reports the file as corrupt when it
+// is somewhere else, which is a failure with nothing in it to point at the
+// ordering.
+func TestContentTypesIsTheFirstEntry(t *testing.T) {
+	b, err := sample().Bytes()
+	if err != nil {
+		t.Fatalf("rendering: %v", err)
+	}
+	r, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+	if err != nil {
+		t.Fatalf("the output is not a zip: %v", err)
+	}
+	if len(r.File) == 0 {
+		t.Fatal("the archive is empty")
+	}
+	if got := r.File[0].Name; got != "[Content_Types].xml" {
+		t.Errorf("first entry is %q, want [Content_Types].xml", got)
+	}
+}
+
+func TestTheStyleIsWhatWasAskedFor(t *testing.T) {
+	b, err := sample().Bytes()
+	if err != nil {
+		t.Fatalf("rendering: %v", err)
+	}
+	p := parts(t, b)
+
+	styles := p["word/styles.xml"]
+	for _, want := range []string{
+		`w:ascii="Times New Roman"`,
+		`<w:sz w:val="24"/>`, // 12pt is 24 half-points
+		`w:line="360"`,       // 1.5 spacing is 360 twips
+	} {
+		if !strings.Contains(styles, want) {
+			t.Errorf("styles.xml does not contain %s", want)
+		}
+	}
+
+	// The font belongs on the Normal style as well as in docDefaults. Word
+	// honours docDefaults, but a reader that asks the Normal style what font
+	// it is gets nothing, and "set in Times New Roman 12pt" is the claim a
+	// marking scheme is checked against.
+	normal := styles[strings.Index(styles, `w:styleId="Normal"`):]
+	normal = normal[:strings.Index(normal, "</w:style>")]
+	if !strings.Contains(normal, `w:ascii="Times New Roman"`) {
+		t.Error("the Normal style does not name the font")
+	}
+	if !strings.Contains(normal, `<w:sz w:val="24"/>`) {
+		t.Error("the Normal style does not name the size")
+	}
+
+	doc := p["word/document.xml"]
+	if !strings.Contains(doc, `<w:jc w:val="both"/>`) {
+		t.Error("body text is not justified")
+	}
+	// A4 portrait, one inch margins.
+	if !strings.Contains(doc, `<w:pgSz w:w="11906" w:h="16838"`) {
+		t.Error("the page is not A4")
+	}
+	if !strings.Contains(doc, `w:top="1440"`) {
+		t.Error("the top margin is not one inch")
+	}
+}
+
+func TestAChapterBreaksThePageAndAHeadingIsAStyle(t *testing.T) {
+	b, err := sample().Bytes()
+	if err != nil {
+		t.Fatalf("rendering: %v", err)
+	}
+	doc := parts(t, b)["word/document.xml"]
+
+	if !strings.Contains(doc, `<w:pageBreakBefore/>`) {
+		t.Error("Chapter did not break the page")
+	}
+	// pageBreakBefore rather than an empty paragraph holding a break: the
+	// break has to move with the heading when the text above it grows.
+	chapter := doc[strings.Index(doc, `<w:pageBreakBefore/>`):]
+	if !strings.Contains(chapter[:200], "Introduction") {
+		t.Error("the page break is not on the chapter heading")
+	}
+	for _, want := range []string{`w:val="Heading1"`, `w:val="Heading2"`} {
+		if !strings.Contains(doc, want) {
+			t.Errorf("document.xml has no %s: a heading is bold text, not a style, "+
+				"so Word's navigation pane and a table of contents are both empty", want)
+		}
+	}
+}
+
+func TestATableCarriesItsGrid(t *testing.T) {
+	b, err := sample().Bytes()
+	if err != nil {
+		t.Fatalf("rendering: %v", err)
+	}
+	doc := parts(t, b)["word/document.xml"]
+
+	// <w:tblGrid> is required by the schema. Word opens a table without one,
+	// which is why this went unnoticed until a reader that follows the schema
+	// refused the file outright.
+	if !strings.Contains(doc, "<w:tblGrid>") {
+		t.Fatal("the table has no <w:tblGrid>")
+	}
+	if n := strings.Count(doc, "<w:gridCol "); n != 2 {
+		t.Errorf("the grid declares %d columns, want 2", n)
+	}
+	if !strings.Contains(doc, `w:type="dxa"`) {
+		t.Error("cell widths are not given, so Word lays the table out from the cells " +
+			"while the grid says something else")
+	}
+}
+
+func TestTextIsEscapedAndSpacesSurvive(t *testing.T) {
+	d := New(Style{})
+	d.Rich(
+		Run{Text: "see page "},
+		Run{Text: "7 & 8 <with> \"quotes\"", Bold: true},
+	)
+	b, err := d.Bytes()
+	if err != nil {
+		t.Fatalf("rendering: %v", err)
+	}
+	doc := parts(t, b)["word/document.xml"]
+
+	wellFormed(t, "word/document.xml", doc)
+	if strings.Contains(doc, "<with>") {
+		t.Error("angle brackets in the text were not escaped, so the XML is no longer the document")
+	}
+	if !strings.Contains(doc, "&amp;") {
+		t.Error("an ampersand was not escaped")
+	}
+	// Without xml:space="preserve" Word trims the trailing space and
+	// "see page " runs into the next run.
+	if !strings.Contains(doc, `<w:t xml:space="preserve">see page </w:t>`) {
+		t.Error("the trailing space was not preserved")
+	}
+}
+
+func TestDefaultsAreFilledIn(t *testing.T) {
+	d := New(Style{})
+	if d.style.Font == "" || d.style.Size == 0 || d.style.LineSpacing == 0 {
+		t.Fatalf("a zero Style was not filled in: %+v", d.style)
+	}
+	if d.style.Margin == (Margin{}) {
+		t.Error("a zero Margin renders a document with no margins at all")
+	}
+	b, err := d.Bytes()
+	if err != nil {
+		t.Fatalf("rendering an empty document: %v", err)
+	}
+	wellFormed(t, "word/document.xml", parts(t, b)["word/document.xml"])
+}
+
+// A margin wider than the page would make every column negative, and a table
+// of negative columns renders as nothing at all.
+func TestAbsurdMarginsDoNotProduceNegativeColumns(t *testing.T) {
+	d := New(Style{Margin: Margin{Left: 40, Right: 40, Top: 1, Bottom: 1}})
+	d.Table([]string{"A", "B"}, [][]string{{"1", "2"}})
+	b, err := d.Bytes()
+	if err != nil {
+		t.Fatalf("rendering: %v", err)
+	}
+	doc := parts(t, b)["word/document.xml"]
+	if strings.Contains(doc, `w:w="-`) {
+		t.Error("a column has a negative width")
+	}
+}
+
+func TestAttachmentQuotesTheFilename(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"plain", "proposal.docx", `attachment; filename="proposal.docx"`},
+		{"a quote", `a"b.docx`, `attachment; filename="a_b.docx"`},
+		// A newline in a filename either truncates the header or injects
+		// another one, and a filename is the first thing to come from user
+		// input.
+		{"a newline", "a\nb.docx", `attachment; filename="a_b.docx"`},
+		{"a path", "../../etc/passwd", `attachment; filename=".._.._etc_passwd"`},
+		{"empty", "", `attachment; filename="document.docx"`},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := Attachment(c.in)
+			if !strings.HasPrefix(got, c.want) {
+				t.Errorf("Attachment(%q) = %q, want it to start %q", c.in, got, c.want)
+			}
+			if strings.ContainsAny(got, "\r\n") {
+				t.Errorf("Attachment(%q) = %q, which splits the header", c.in, got)
+			}
+		})
+	}
+
+	// A non-Latin name survives in the RFC 5987 form even though the plain
+	// filename is stripped back to ASCII.
+	if got := Attachment("отчёт.docx"); !strings.Contains(got, "filename*=UTF-8''") {
+		t.Errorf("Attachment of a non-Latin name has no UTF-8 form: %q", got)
+	}
+}
+
+func TestRenderReport(t *testing.T) {
+	b, err := RenderReport(Report{
+		Title:  "A Proposal",
+		Author: "A Student",
+		Date:   time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC),
+		Chapters: []ReportChapter{
+			{Title: "Introduction", Paragraphs: []string{"The first."}},
+			{Title: "Methodology", Sections: []ReportSection{{
+				Heading: "Sampling",
+				Bullets: []string{"One", "Two"},
+				Table:   &ReportTable{Headers: []string{"N"}, Rows: [][]string{{"40"}}},
+			}}},
+		},
+	}, Submission())
+	if err != nil {
+		t.Fatalf("rendering the report: %v", err)
+	}
+	doc := parts(t, b)["word/document.xml"]
+	wellFormed(t, "word/document.xml", doc)
+
+	// Two chapters means two page breaks, and the title page is not one of
+	// them: a report that opens on a blank page has an extra break.
+	if n := strings.Count(doc, "<w:pageBreakBefore/>"); n != 2 {
+		t.Errorf("the report has %d page breaks, want 2, one per chapter", n)
+	}
+	for _, want := range []string{"A Proposal", "A Student", "12 November 2026", "Sampling"} {
+		if !strings.Contains(doc, want) {
+			t.Errorf("the report does not contain %q", want)
+		}
+	}
+}
+
+func TestSubmissionIsWhatASchemeAsksFor(t *testing.T) {
+	s := Submission()
+	if s.Font != "Times New Roman" || s.Size != 12 || s.LineSpacing != 1.5 || !s.Justify {
+		t.Errorf("Submission() = %+v, which is not the combination schemes ask for", s)
+	}
+}
