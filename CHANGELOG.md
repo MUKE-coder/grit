@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.509.0 - November 12, 2026
+
+### An upgrade that quietly changed who could call two endpoints
+
+grit#213, and this half is the one worth reading. An upgrade rewrote a route file somebody had written by hand and moved two student-facing endpoints behind an admin permission. The upgrade summary lists the files it declined to take, so a rewritten file reads as success, and nothing said the authorization had changed. The first symptom would have been a 403 in production.
+
+The repair walks every `*_routes.go` and moves a resource's open routes behind a permission, which is a real fix for a real exposure. It decided what was generated code by looking for the text the generator writes, and the reasoning was that such an anchor cannot reach a developer's own code. That reasoning is wrong, and it is wrong for a reason worth stating: the generator's shape is the convention the documentation teaches, so hand-written code that follows the convention is indistinguishable from generated code by inspection. The file had a `handlers.XHandler`, and its two routes were `Import` and `Export`. Every anchor matched.
+
+The manifest knows which files Grit wrote, and now it decides. Not on whether a file is unmodified, though: a generated route file somebody has added a route to is still Grit's file and still needs the fix. The question is whether Grit ever wrote it. A project from before the manifest existed has no entries at all, so the gate asks first whether the manifest knows about *any* route file, and stands aside when it does not. A gate that silently stops repairing the oldest projects would be the same bug pointing the other way.
+
+And the summary names every route whose group or permission changed, in the files it did rewrite. A count was not enough: a project may have granted the old shape deliberately. When it declines to touch a file, it names the routes it would have moved, so the decision is the developer's rather than silence.
+
+#### zod 4, in the one file nothing compiled
+
+The other half of grit#213. `packages/shared/schemas/field-formats.ts` shipped with zod 3 syntax against the zod 4 pin for two releases, and every type-check in the repository passed throughout.
+
+The reason is structural rather than an oversight. `schemas/index.ts` does not re-export field-formats, so the file is only compiled when a resource with a formatted field imports it, and `packages/shared` had a tsconfig and a typescript and *no script*, so `turbo type-check` walked past the package entirely. The CI workflow had a comment documenting that gap and working around it. The package now declares `type-check`, CI runs it, and putting the old code back reproduces both reported errors.
+
+The schema itself is now `z.json()`, zod's own, in place of fifteen lines of hand-rolled recursive union. It was checked against the union it replaces on every case either accepts or refuses, NaN and Infinity and a nested undefined included. The three checked-in example apps were still pinned to zod 3 and are on 4 now.
+
+#### The desktop sync engine knows what it may write
+
+grit#214. The server declares every table's sync policy, enforces it on push and serves it at `GET /api/v1/sync/policy`. The desktop engine never asked, so it queued writes the server was guaranteed to refuse. The user then found a failed row in their sync screen about a record they did not create, cannot fix, and must not dismiss without being told what it was.
+
+`LocalCreate`, `LocalUpdate` and `LocalDelete` now return a typed `*sync.PolicyError` and write nothing. The whole difficulty is that refusing only matters offline, because online the server would have said so anyway: a client that fetches the policy at startup and gives up when the fetch fails has implemented the half that never fires. So the table is persisted in the device's own SQLite, and under that sits a compiled-in copy that `grit sync` writes from the project's own registrations, which is what makes the refusal work on an install that has never reached the server. A table nobody has declared stays writable, so a resource generated after the installed build shipped is not broken offline. The web engine persists its table too, for the same reason.
+
+`do()` returns a `*sync.APIError` holding the status code, with `Retryable()` on it. Every caller used to get a formatted string, which is fine for `/sync/push` and wrong for anything honouring the rule the offline guidance itself states: a 4xx will be a 4xx forever and must stop the retry, while a 5xx must back off and try again. Nobody should have to parse a status back out of an error message.
+
+Two faults in this were found by running it on a real generated project rather than by the unit tests. A table registered bare in `routes.go` and given an explicit policy in a project's own file tied on strictness, and the tie went to whichever file was read first, so a declared `client_wins` and a declared `max_offline_age` were silently replaced by defaults. And `MaxOfflineAge` has three spellings in real code, including the raw nanoseconds the generator itself emits; reading only one of them returned zero, which means no limit.
+
+
 ## v3.508.0 - November 12, 2026
 
 ### Word documents, and why citations are not in the box

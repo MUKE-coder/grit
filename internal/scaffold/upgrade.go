@@ -1000,10 +1000,19 @@ func Upgrade(uOpts UpgradeOptions) error {
 			return fmt.Errorf("updating shared files: %w", err)
 		}
 		updated += n
-		// The Zod schemas a resource with formatted fields imports. New files,
-		// so nothing a project has is touched.
+		// The Zod schemas a resource with formatted fields imports. Framework
+		// files, delivered whole: field-formats.ts shipped zod 3 syntax
+		// against the zod 4 pin, so a project holding the old copy does not
+		// type-check (grit#213).
 		if err := ensureSharedFieldFormats(filepath.Join(root, "packages", "shared")); err != nil {
 			return fmt.Errorf("adding the field format schemas: %w", err)
+		}
+		// And the script that would have caught it. Separate from the
+		// package.json above because that one is held back when a project has
+		// edited it, which is most projects, and this is one line they cannot
+		// know to add.
+		if err := addSharedTypeCheckScript(root); err != nil {
+			fmt.Printf("  ⚠ adding the shared type-check script: %v\n", err)
 		}
 	}
 

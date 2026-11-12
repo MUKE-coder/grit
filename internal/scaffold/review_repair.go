@@ -46,8 +46,34 @@ func repairReviewCriticals(root string, opts Options) error {
 	if err != nil {
 		return err
 	}
+	var routeFiles []string
 	for _, path := range files {
-		if !strings.HasSuffix(path, "_routes.go") {
+		if strings.HasSuffix(path, "_routes.go") {
+			routeFiles = append(routeFiles, path)
+		}
+	}
+	// A hand-written route file is not a generated one, whatever its name and
+	// whatever its contents look like. See route_repair_provenance.go.
+	provenance := routeFileProvenance(root, m, routeFiles)
+	for _, path := range routeFiles {
+		if allowed, why := provenance.mayRewrite(path); !allowed {
+			raw, readErr := os.ReadFile(path)
+			if readErr != nil {
+				continue
+			}
+			would := untouchedRouteRewrites(string(raw))
+			if len(would) == 0 {
+				continue
+			}
+			shown := path
+			if rel, relErr := filepath.Rel(root, path); relErr == nil {
+				shown = filepath.ToSlash(rel)
+			}
+			fmt.Printf("  ⚠ %s: %s\n", shown, why)
+			for _, route := range would {
+				fmt.Printf("      %s\n", route)
+			}
+			fmt.Println("      If these are a resource's own routes, move them to m.Staff with a permission by hand.")
 			continue
 		}
 		if err := repairSourceFile(root, m, path, func(src string) (string, []string, []string) {
@@ -188,6 +214,7 @@ func repairRouteSource(src string, owned map[string]bool, staff bool, module str
 	}
 
 	moved := 0
+	var movedRoutes []string
 	out := protectedRouteRe.ReplaceAllStringFunc(src, func(line string) string {
 		p := protectedRouteRe.FindStringSubmatch(line)
 		indent, method, plural, rest, name := p[1], p[2], p[3], p[4], p[5]
@@ -197,9 +224,14 @@ func repairRouteSource(src string, owned map[string]bool, staff bool, module str
 		}
 		moved++
 		if staff {
+			to := fmt.Sprintf("m.Staff + perm:%s.%s", plural, perm)
+			movedRoutes = append(movedRoutes,
+				describeRouteMove(method, "/"+plural+rest, "m.Protected", to))
 			return fmt.Sprintf(`%sm.Staff.%s("/%s%s", middleware.RequireRole("ADMIN", "perm:%s.%s"), h.%s)`,
 				indent, method, plural, rest, plural, perm, name)
 		}
+		movedRoutes = append(movedRoutes,
+			describeRouteMove(method, "/"+plural+rest, "m.Protected", "m.Admin"))
 		return fmt.Sprintf(`%sm.Admin.%s("/%s%s", h.%s)`, indent, method, plural, rest, name)
 	})
 	if moved == 0 {
@@ -218,8 +250,13 @@ func repairRouteSource(src string, owned map[string]bool, staff bool, module str
 	if staff {
 		where = "a permission"
 	}
-	return out, []string{fmt.Sprintf("%d shared %s now ask for %s instead of any signed-in account",
-		moved, plural(moved, "route", "routes"), where)}, nil
+	// Each route by name, not just a count. An authorization change in a file
+	// the upgrade rewrote reads as success otherwise, and a project may have
+	// granted the old shape deliberately (grit#213).
+	fixed := []string{fmt.Sprintf("%d shared %s now ask for %s instead of any signed-in account",
+		moved, plural(moved, "route", "routes"), where)}
+	fixed = append(fixed, movedRoutes...)
+	return out, fixed, nil
 }
 
 // repairSyncRegistrySource takes users and uploads out of the sync registry.

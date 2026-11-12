@@ -231,6 +231,18 @@ jobs:
           pnpm install --frozen-lockfile=false
           cd apps/web && npx tsc --noEmit
 
+      # packages/shared on its own, because an app only compiles the files it
+      # imports. schemas/index.ts does not re-export field-formats or phone,
+      # so those two are reached only by a resource with a formatted field, and
+      # field-formats.ts shipped zod 3 syntax against the zod 4 pin for two
+      # releases with every type-check in the repo passing (grit#213).
+      #
+      # The package has its own type-check script now, so this is the project's
+      # own command rather than a bare tsc.
+      - name: The shared package type-checks on its own
+        working-directory: examples/commerce/packages/shared
+        run: pnpm run type-check
+
       # examples/saas is the third: a subscription product with a customer
       # portal in apps/web beside the operator console in apps/admin. It is
       # here for a reason neither of the others covers, which is that its claim
@@ -469,12 +481,14 @@ jobs:
             exit 0
           fi
           pnpm install --frozen-lockfile=false
-          # The project's own script, not `pnpm -r exec tsc`.
+          # The project's own script, not `pnpm -r exec tsc`. The recursive
+          # form reports "Command tsc not found" for any package without a
+          # local typescript and says nothing about the application.
           #
-          # packages/shared has no scripts and no local typescript, so the
-          # recursive form fails there with "Command tsc not found" and says
-          # nothing about the application. Found by running it against a real
-          # generated project rather than by reading the workflow.
+          # This now covers packages/shared too, which it did not until
+          # grit#213: the package had a tsconfig and a typescript and no
+          # script, so turbo walked past it and a schema nothing imported was
+          # never compiled.
           pnpm run type-check 2>&1 | tail -30
 
       - name: Say what was proved

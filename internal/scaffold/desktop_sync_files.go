@@ -69,6 +69,10 @@ type Engine struct {
 	online     bool
 	deviceID   string
 	syncingN   int // >0 while a pull/push is in flight (drives the UI spinner)
+
+	// What each table allows a device to do, from GET /sync/policy, persisted
+	// locally and seeded from policies_bootstrap.go. See policy.go.
+	policies policyCache
 }
 
 // Open initializes a sync engine. dbPath is the absolute path to the
@@ -101,6 +105,11 @@ func Open(dbPath, apiURL string, getToken func() (string, error)) (*Engine, erro
 		e.deviceID = ids.New()
 		_ = e.setSetting("device_id", e.deviceID)
 	}
+	// Before any write is possible, and with no network: the stored table if
+	// this device has synced before, the compiled-in bootstrap if not. A fetch
+	// here instead would be the half that never fires, because the only time
+	// the refusal matters is when the fetch cannot succeed (grit#214).
+	e.loadStoredPolicies()
 	return e, nil
 }
 
@@ -127,6 +136,13 @@ func (e *Engine) Sync(models []string) (*SyncResult, error) {
 	e.setSyncing(true)
 	defer e.setSyncing(false)
 	res := &SyncResult{StartedAt: time.Now().Format(time.RFC3339)}
+
+	// Before the push, so a table that became read_only since the last sync is
+	// known about before this device's queue is sent, and before the pull, so
+	// a field allowlist that narrowed is in force for the rows being written.
+	// It costs one request on a run that is already making several, it never
+	// returns an error, and it persists what it learns: see policy.go.
+	e.RefreshPolicies()
 
 	for _, m := range models {
 		n, err := e.Pull(m)
@@ -736,6 +752,37 @@ func (e *Engine) attachAuth(req *http.Request) error {
 	return nil
 }
 
+// APIError is a non-2xx answer from the API, with the status kept.
+//
+// The status is the whole point. Every caller used to get a formatted string,
+// which is fine for /sync/push, where everything retries the same way, and
+// wrong for anything that has to honour the rule the offline guidance itself
+// states: a 4xx will be a 4xx forever and must stop the retry, while a 5xx or
+// a transport failure must back off and try again. Parsing the status back out
+// of an error message is not a thing a client should have to do (grit#214).
+//
+// Error() is byte-for-byte what do() used to return, so anything that only
+// prints it is unaffected.
+type APIError struct {
+	Path   string
+	Status int
+	Body   string
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("api %s: %d: %s", e.Path, e.Status, e.Body)
+}
+
+// Retryable reports whether sending the same request again could succeed.
+//
+// 408 and 429 are 4xx and are retryable: one is a timeout and the other is a
+// rate limit, and both are statements about now rather than about the request.
+// Every other 4xx is a judgement about the content, which does not change by
+// being sent again.
+func (e *APIError) Retryable() bool {
+	return e.Status >= 500 || e.Status == 408 || e.Status == 429
+}
+
 func (e *Engine) do(req *http.Request) ([]byte, error) {
 	resp, err := e.HTTP.Do(req)
 	if err != nil {
@@ -747,7 +794,7 @@ func (e *Engine) do(req *http.Request) ([]byte, error) {
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("api %s: %d: %s", req.URL.Path, resp.StatusCode, string(body))
+		return nil, &APIError{Path: req.URL.Path, Status: resp.StatusCode, Body: string(body)}
 	}
 	return body, nil
 }
@@ -932,7 +979,15 @@ func clientSlug(s string) string {
 // LocalCreate persists data locally and queues a "create" entry in the
 // outbox. id is required (UUID); pass ids.New() if you don't
 // have one yet. Reads via LocalGet/LocalList see the new row immediately.
+//
+// Refused with a *PolicyError, and nothing written, for a table whose sync
+// policy does not accept a push from a device. Use errors.As to tell that
+// apart from a database failure: it is not a retry, and Advice() is the
+// sentence for the user.
 func (e *Engine) LocalCreate(tableName, id string, data map[string]interface{}) error {
+	if err := e.guardLocalWrite(tableName, "create"); err != nil {
+		return err
+	}
 	if id == "" {
 		id = ids.New()
 	}
@@ -975,8 +1030,12 @@ func (e *Engine) LocalCreate(tableName, id string, data map[string]interface{}) 
 }
 
 // LocalUpdate merges data into the existing local row and queues an
-// "update" in the outbox. Errors if the row is missing.
+// "update" in the outbox. Errors if the row is missing, and refused with a
+// *PolicyError for a table this device may not write.
 func (e *Engine) LocalUpdate(tableName, id string, data map[string]interface{}) error {
+	if err := e.guardLocalWrite(tableName, "update"); err != nil {
+		return err
+	}
 	var rec Record
 	if err := e.DB.First(&rec, "model = ? AND id = ?", tableName, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1005,7 +1064,11 @@ func (e *Engine) LocalUpdate(tableName, id string, data map[string]interface{}) 
 
 // LocalDelete soft-deletes from the local mirror and queues a "delete"
 // in the outbox. The mirror row is removed too so reads stop seeing it.
+// Refused with a *PolicyError for a table this device may not write.
 func (e *Engine) LocalDelete(tableName, id string) error {
+	if err := e.guardLocalWrite(tableName, "delete"); err != nil {
+		return err
+	}
 	var rec Record
 	err := e.DB.First(&rec, "model = ? AND id = ?", tableName, id).Error
 	knownVersion := 0

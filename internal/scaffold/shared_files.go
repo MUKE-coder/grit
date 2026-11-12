@@ -77,6 +77,10 @@ func sharedPackageJSON(opts Options) string {
     "./brand": "./brand.config.ts",
     "./themes": "./themes.ts"
   },
+  "_scripts_comment": "type-check exists so turbo type-check reaches this package at all. Without it, a file in packages/shared is only compiled when an app imports it, and schemas/field-formats.ts and schemas/phone.ts are imported only by a resource with a formatted field. field-formats.ts shipped for two releases with zod 3 syntax against the zod 4 pin because of that gap, and the root pnpm type-check passed the whole time (grit#213).",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
   "dependencies": {
     "libphonenumber-js": "` + libphonenumberVersion + `",
     "zod": "` + zodVersion + `"

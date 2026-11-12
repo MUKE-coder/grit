@@ -240,12 +240,75 @@ sync:
                 </table>
               </div>
               <p>
-                The policy is enforced on the <strong>server</strong>. Clients read it
-                from <code>GET /api/sync/policy</code> to render the right UI, but a
-                rule an old build can ignore is not a rule, so the decision is made
-                where a request cannot argue with it. A client that cannot reach the
-                server falls back to the defaults rather than refusing to open, since
-                being unreachable is the case this whole feature exists for.
+                The policy is enforced on the <strong>server</strong>. A rule an old
+                build can ignore is not a rule, so the decision is made where a
+                request cannot argue with it.
+              </p>
+
+              <h3 id="client-refusal">The client refuses first</h3>
+              <p>
+                The server refusing a push is the backstop, not the useful part. Every
+                queued-and-failed write is a row somebody has to look at and dismiss,
+                about a record they did not create and cannot fix, and by the time they
+                see it the write may have been carried around for three days. So the
+                client declines to queue it at the keystroke instead.
+              </p>
+              <p>
+                That is only worth anything offline, because online the server would
+                have said so anyway. Which means it cannot depend on asking the server.
+                Both engines read their policy table in this order:
+              </p>
+              <ol>
+                <li>
+                  <strong>What the server last said</strong>, persisted locally: in the
+                  device SQLite for the desktop app, in the adapter&apos;s metadata for
+                  the web. A client that has synced once never needs the network again
+                  to know what it may write.
+                </li>
+                <li>
+                  <strong>The compiled-in table</strong>, which is what makes the
+                  refusal work on an install that has never reached the server at all.{' '}
+                  <code>grit sync</code> writes{' '}
+                  <code>apps/desktop/sync/policies_bootstrap.go</code> from the
+                  project&apos;s own registrations, so there is no second list to keep
+                  in step by hand.
+                </li>
+                <li>
+                  <code>offline_first</code>, for a table nobody has heard of. Unknown
+                  means allow, so a resource generated after the installed build
+                  shipped is not broken offline.
+                </li>
+              </ol>
+              <p>
+                A failed fetch keeps what the client had, and so does an empty answer:
+                a project that removed every registration and a response shape that
+                changed look identical from here, and forgetting is the costlier guess.
+              </p>
+              <CodeBlock language="go" code={`// apps/desktop: refused before anything is written or queued.
+err := engine.LocalCreate("cost_ledgers", "", map[string]interface{}{"amount": 5})
+
+var policyErr *sync.PolicyError
+if errors.As(err, &policyErr) {
+    // Not a retry, and not a database failure. Advice() is the sentence
+    // for the user; Error() names the table and the operation, for a log.
+    show(policyErr.Advice())
+}`} />
+              <p>
+                A typed error rather than a string, so a screen can tell a policy
+                refusal from a disk failure and say something true about it. The same
+                reason <code>do()</code> returns a <code>*sync.APIError</code> carrying
+                the HTTP status: a 4xx will be a 4xx forever and must stop the retry,
+                while a 5xx or a transport failure must back off and try again, and
+                honouring that rule should not require parsing a status back out of an
+                error message. <code>APIError.Retryable()</code> answers it, counting
+                408 and 429 as retryable because both are statements about now rather
+                than about the request.
+              </p>
+              <p>
+                <code>grit sync</code> rewrites the compiled-in table every time it
+                runs, and reports what it wrote. If a table is declared{' '}
+                <code>read_only</code> and the desktop app still queues writes for it,
+                that command not having been run is the first thing to check.
               </p>
               <p>
                 <code>local_only</code> is stripped on both sides: the client does not

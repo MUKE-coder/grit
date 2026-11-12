@@ -90,19 +90,17 @@ export const TimeSchema = z
   .string()
   .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, "Enter a time, such as 14:30");
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
-
-/** Any JSON value: what a json column holds. */
-export const JsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(JsonValueSchema),
-    z.record(JsonValueSchema),
-  ]),
-);
+/**
+ * Any JSON value: what a json column holds.
+ *
+ * zod's own, not a hand-rolled recursive union. The union version was fifteen
+ * lines and did not compile against zod 4 (z.record takes a key type as well
+ * as a value type now, and z.lazy no longer satisfies an explicit
+ * z.ZodType<T> annotation without a cast). Checked against the union it
+ * replaces on every case either accepts or refuses, NaN and Infinity and a
+ * nested undefined included: the two agree.
+ */
+export const JsonValueSchema = z.json();
 `
 }
 

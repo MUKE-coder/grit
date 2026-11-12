@@ -1,0 +1,241 @@
+package sync
+
+import (
+	"encoding/json"
+	"fmt"
+	gosync "sync"
+)
+
+// Sync policy, on the client.
+//
+// The server declares every table's policy with RegisterWithPolicy, enforces
+// it on push, and serves the lot at GET /api/v1/sync/policy. This is the half
+// that reads it, and the point of reading it is to refuse a write the server
+// is guaranteed to refuse.
+//
+// Why the client half is the valuable one: every queued-and-failed write is a
+// row somebody has to look at and dismiss, about a record they did not create,
+// cannot fix, and must not dismiss without being told what it was. A client
+// that queues a write for a read_only table carries it around until the next
+// push and then shows the user a failure that was knowable at the keystroke.
+//
+// # It has to work with no connection
+//
+// That is the whole requirement, because offline is the only time it matters
+// (grit#214). So the policy table is read in this order:
+//
+//  1. What the server last said, persisted in the local SQLite. Survives a
+//     restart, so a client that has synced once never needs the network again
+//     to know what it may write.
+//  2. The compiled-in bootstrap in policies_bootstrap.go, written by
+//     grit sync from the project's own registrations. This is what makes the
+//     refusal work on a client that has never reached the server at all.
+//  3. offline_first, for a table nobody has heard of. Unknown means allow, so
+//     a resource generated after this build of the app shipped is not broken
+//     offline.
+//
+// A fetch at startup that gives up when it fails would have implemented the
+// half that never fires.
+
+// Policy is how one table behaves offline: the client's view of the server's
+// sync.Policy, decoded from GET /sync/policy.
+//
+// Only the fields a client acts on. Fields and LocalOnly shape what the server
+// sends and strips, and a client does not need to know them to decide whether
+// it may write.
+type Policy struct {
+	Mode                 string `json:"mode"`
+	Conflict             string `json:"conflict"`
+	MaxOfflineAgeSeconds int    `json:"max_offline_age_seconds,omitempty"`
+}
+
+// The modes, spelled exactly as internal/sync/policy.go spells them.
+const (
+	ModeOfflineFirst = "offline_first"
+	ModeOnlineOnly   = "online_only"
+	ModeReadOnly     = "read_only"
+)
+
+// Writable reports whether this client may push changes for the table.
+//
+// False for read_only, where the server authors the rows, and for online_only,
+// which is not mirrored at all. One method rather than a check each caller
+// writes, so the list of unwritable modes has exactly one counterpart to the
+// server's Policy.Writable().
+func (p Policy) Writable() bool {
+	return p.Mode != ModeReadOnly && p.Mode != ModeOnlineOnly
+}
+
+// DefaultPolicy is what an unknown table gets: the behaviour every table had
+// before policies existed.
+func DefaultPolicy() Policy {
+	return Policy{Mode: ModeOfflineFirst, Conflict: "manual"}
+}
+
+// PolicyError is a local write refused because of the table's sync policy.
+//
+// A typed error rather than a string, so a screen can tell this apart from a
+// database failure and say something true about it. errors.As is the test.
+type PolicyError struct {
+	Table string
+	Op    string
+	Mode  string
+}
+
+func (e *PolicyError) Error() string {
+	switch e.Mode {
+	case ModeReadOnly:
+		return fmt.Sprintf("sync: %s is read-only on this device, so the %s was not queued: the server writes these records", e.Table, e.Op)
+	case ModeOnlineOnly:
+		return fmt.Sprintf("sync: %s is not available offline, so the %s was not queued: this record needs a connection", e.Table, e.Op)
+	default:
+		return fmt.Sprintf("sync: %s does not accept a %s from a device (mode %q)", e.Table, e.Op, e.Mode)
+	}
+}
+
+// Advice is the sentence to put in front of the user. The Error() text names
+// the table and the operation, which a log wants and a person does not.
+func (e *PolicyError) Advice() string {
+	switch e.Mode {
+	case ModeReadOnly:
+		return "This record is written by the server, not on this device. Nothing was lost and there is nothing to retry."
+	case ModeOnlineOnly:
+		return "This record needs a connection. Try again once you are back online."
+	default:
+		return "This record cannot be changed from this device."
+	}
+}
+
+// policiesSettingKey is where the server's answer is persisted in
+// sync_settings. One row holding the whole table as JSON: the map is small,
+// it is replaced wholesale on every fetch, and a row per table would make a
+// partial write possible.
+const policiesSettingKey = "sync_policies"
+
+// policyCache is the engine's view of the policy table.
+type policyCache struct {
+	mu     gosync.RWMutex
+	byName map[string]Policy
+	loaded bool
+}
+
+// loadStoredPolicies reads the persisted table at Open. A client that has
+// synced before starts knowing what it may write, with no network.
+func (e *Engine) loadStoredPolicies() {
+	e.policies.mu.Lock()
+	defer e.policies.mu.Unlock()
+	if e.policies.byName == nil {
+		e.policies.byName = map[string]Policy{}
+	}
+	// The bootstrap first, so a never-synced client is not empty.
+	for table, p := range bootstrapPolicies {
+		e.policies.byName[table] = p
+	}
+	raw := e.getSetting(policiesSettingKey)
+	if raw == "" {
+		return
+	}
+	stored := map[string]Policy{}
+	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
+		// A corrupt row costs the stored half, not the bootstrap half, and
+		// never the ability to open the app.
+		return
+	}
+	for table, p := range stored {
+		e.policies.byName[table] = p
+	}
+	e.policies.loaded = true
+}
+
+// RefreshPolicies fetches the declared policies and persists them.
+//
+// Failure is not an error the caller has to handle: a client that cannot reach
+// the server is the case this whole feature exists for. It keeps what it had,
+// which after loadStoredPolicies is the last thing the server said or the
+// compiled-in bootstrap.
+func (e *Engine) RefreshPolicies() {
+	body, err := e.doGET(e.APIURL + "/sync/policy")
+	if err != nil {
+		return
+	}
+	var envelope struct {
+		Data struct {
+			Models map[string]Policy `json:"models"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return
+	}
+	if len(envelope.Data.Models) == 0 {
+		// An empty answer is not a reason to forget a policy. A project that
+		// has removed every registration is indistinguishable here from a
+		// response shape that changed, and forgetting is the costlier guess.
+		return
+	}
+
+	e.policies.mu.Lock()
+	merged := map[string]Policy{}
+	for table, p := range bootstrapPolicies {
+		merged[table] = p
+	}
+	for table, p := range envelope.Data.Models {
+		merged[table] = p
+	}
+	e.policies.byName = merged
+	e.policies.loaded = true
+	e.policies.mu.Unlock()
+
+	// Persist what the server said, not the merge: the bootstrap is applied
+	// again at every load, and storing it would freeze a stale copy of it in
+	// the device database forever.
+	if encoded, err := json.Marshal(envelope.Data.Models); err == nil {
+		_ = e.setSetting(policiesSettingKey, string(encoded))
+	}
+}
+
+// PolicyFor returns the policy for a table. An unknown table is offline_first:
+// a resource generated after this build shipped must not be unusable offline.
+func (e *Engine) PolicyFor(table string) Policy {
+	e.policies.mu.RLock()
+	defer e.policies.mu.RUnlock()
+	if p, ok := e.policies.byName[table]; ok {
+		return p
+	}
+	return DefaultPolicy()
+}
+
+// Writable reports whether this device may queue a write for the table.
+func (e *Engine) Writable(table string) bool { return e.PolicyFor(table).Writable() }
+
+// Policies returns the whole table, for the Sync screen. Sorted by the
+// caller; a map crosses the Wails boundary as an object.
+func (e *Engine) Policies() map[string]Policy {
+	e.policies.mu.RLock()
+	defer e.policies.mu.RUnlock()
+	out := make(map[string]Policy, len(e.policies.byName))
+	for table, p := range e.policies.byName {
+		out[table] = p
+	}
+	return out
+}
+
+// PoliciesLoaded reports whether the server has ever answered. False means the
+// app is running on the compiled-in bootstrap, which a Sync screen may want to
+// say out loud.
+func (e *Engine) PoliciesLoaded() bool {
+	e.policies.mu.RLock()
+	defer e.policies.mu.RUnlock()
+	return e.policies.loaded
+}
+
+// guardLocalWrite is the one check all three local write entry points make.
+//
+// It is here rather than at each call site because a second way into the
+// outbox that forgets it is exactly the shape of bug this is fixing.
+func (e *Engine) guardLocalWrite(table, op string) error {
+	p := e.PolicyFor(table)
+	if p.Writable() {
+		return nil
+	}
+	return &PolicyError{Table: table, Op: op, Mode: p.Mode}
+}

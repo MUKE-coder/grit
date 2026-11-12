@@ -1,0 +1,307 @@
+package sync
+
+import (
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+// openTestEngine builds an engine over a real SQLite file in a temp dir.
+//
+// A file rather than :memory:, because each :memory: connection is its own
+// empty database and the whole point here is that something survives being
+// closed and reopened.
+func openTestEngine(t *testing.T, apiURL string) (*Engine, string) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "local.db")
+	e := openAt(t, path, apiURL)
+	return e, path
+}
+
+// openAt opens an engine on a given path and closes its database when the
+// test ends. Separate from openTestEngine because the restart test opens the
+// same file twice, which is the behaviour it exists to check.
+//
+// The close matters on Windows: an open handle makes t.TempDir()'s removal
+// fail and the test with it, even when every assertion passed.
+func openAt(t *testing.T, path, apiURL string) *Engine {
+	t.Helper()
+	e, err := Open(path, apiURL, func() (string, error) { return "token", nil })
+	if err != nil {
+		t.Fatalf("opening the engine: %v", err)
+	}
+	t.Cleanup(func() {
+		if sqlDB, err := e.DB.DB(); err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+	return e
+}
+
+// setPolicy puts one table's policy in the cache, the way a fetch would.
+func setPolicy(e *Engine, table string, p Policy) {
+	e.policies.mu.Lock()
+	if e.policies.byName == nil {
+		e.policies.byName = map[string]Policy{}
+	}
+	e.policies.byName[table] = p
+	e.policies.mu.Unlock()
+}
+
+// The fault in grit#214: the engine queued a write the server was guaranteed
+// to refuse, and the user found out at the next push.
+func TestAReadOnlyTableRefusesEveryLocalWrite(t *testing.T) {
+	e, _ := openTestEngine(t, "http://127.0.0.1:1/api/v1")
+	setPolicy(e, "sentence_origins", Policy{Mode: ModeReadOnly, Conflict: "manual"})
+
+	writes := map[string]func() error{
+		"create": func() error {
+			return e.LocalCreate("sentence_origins", "", map[string]interface{}{"text": "a claim"})
+		},
+		"update": func() error {
+			return e.LocalUpdate("sentence_origins", "some-id", map[string]interface{}{"text": "edited"})
+		},
+		"delete": func() error { return e.LocalDelete("sentence_origins", "some-id") },
+	}
+	for op, write := range writes {
+		err := write()
+		if err == nil {
+			t.Fatalf("%s on a read_only table was accepted", op)
+		}
+		var policyErr *PolicyError
+		if !errors.As(err, &policyErr) {
+			t.Errorf("%s returned %T (%v), want a *PolicyError a caller can tell apart from a database failure", op, err, err)
+			continue
+		}
+		if policyErr.Mode != ModeReadOnly || policyErr.Table != "sentence_origins" || policyErr.Op != op {
+			t.Errorf("%s reported %+v", op, policyErr)
+		}
+		if policyErr.Advice() == "" {
+			t.Errorf("%s has no sentence for the user", op)
+		}
+	}
+
+	// Nothing queued and nothing mirrored. A refusal that still writes is
+	// worse than no refusal: the row is there and the server never hears.
+	var queued int64
+	if err := e.DB.Model(&Outbox{}).Count(&queued).Error; err != nil {
+		t.Fatal(err)
+	}
+	if queued != 0 {
+		t.Errorf("%d outbox entries after three refused writes", queued)
+	}
+	var mirrored int64
+	if err := e.DB.Model(&Record{}).Where("model = ?", "sentence_origins").Count(&mirrored).Error; err != nil {
+		t.Fatal(err)
+	}
+	if mirrored != 0 {
+		t.Errorf("%d mirror rows after three refused writes", mirrored)
+	}
+}
+
+// online_only is refused for the same reason by a different argument: the
+// table is not mirrored at all, so a push for it is a bug in the client.
+func TestAnOnlineOnlyTableRefusesALocalWrite(t *testing.T) {
+	e, _ := openTestEngine(t, "http://127.0.0.1:1/api/v1")
+	setPolicy(e, "stock_levels", Policy{Mode: ModeOnlineOnly})
+
+	err := e.LocalCreate("stock_levels", "", map[string]interface{}{"qty": 1})
+	var policyErr *PolicyError
+	if !errors.As(err, &policyErr) {
+		t.Fatalf("got %v, want a *PolicyError", err)
+	}
+	if policyErr.Mode != ModeOnlineOnly {
+		t.Errorf("mode is %q", policyErr.Mode)
+	}
+}
+
+// And the other half, which is the one that decides whether this is usable at
+// all: a table nobody has declared is writable. A resource generated after
+// this build of the app shipped must not be unusable offline.
+func TestAnUnknownTableIsStillWritable(t *testing.T) {
+	e, _ := openTestEngine(t, "http://127.0.0.1:1/api/v1")
+
+	if !e.Writable("something_generated_last_week") {
+		t.Error("an undeclared table was refused; unknown has to mean allow")
+	}
+	if got := e.PolicyFor("something_generated_last_week").Mode; got != ModeOfflineFirst {
+		t.Errorf("an undeclared table has mode %q, want %q", got, ModeOfflineFirst)
+	}
+	if err := e.LocalCreate("something_generated_last_week", "", map[string]interface{}{"name": "x"}); err != nil {
+		t.Errorf("a write to an undeclared table failed: %v", err)
+	}
+}
+
+// The requirement the issue puts first: the refusal has to work with no
+// connection, because that is the only time it matters. So it has to survive
+// the engine being closed and reopened, with the server unreachable.
+func TestTheRefusalSurvivesARestartWithNoNetwork(t *testing.T) {
+	// A server that answers once, then is gone.
+	var hits int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":{"models":{"audit_entries":{"mode":"read_only","conflict":"manual"}}}}`))
+	}))
+	apiURL := server.URL + "/api/v1"
+
+	path := filepath.Join(t.TempDir(), "local.db")
+	first := openAt(t, path, apiURL)
+	first.RefreshPolicies()
+	if hits != 1 {
+		t.Fatalf("the policy endpoint was called %d times", hits)
+	}
+	if first.Writable("audit_entries") {
+		t.Fatal("the fetched read_only policy was not applied")
+	}
+	server.Close()
+
+	// Same database file, no server. This is the only situation the guard
+	// exists for, so it is the one worth asserting.
+	second := openAt(t, path, apiURL)
+	if second.Writable("audit_entries") {
+		t.Error("after a restart with the server gone, a read_only table was writable again")
+	}
+	if !second.PoliciesLoaded() {
+		t.Error("the stored policies did not read as loaded")
+	}
+	err := second.LocalCreate("audit_entries", "", map[string]interface{}{"what": "something"})
+	var policyErr *PolicyError
+	if !errors.As(err, &policyErr) {
+		t.Errorf("offline, the write returned %v, want a *PolicyError", err)
+	}
+
+	if _, statErr := os.Stat(path); statErr != nil {
+		t.Errorf("the local database is gone: %v", statErr)
+	}
+}
+
+// A fetch that fails must not forget what the device already knew. That is the
+// difference between a guard and a decoration.
+func TestAFailedFetchKeepsTheStoredPolicies(t *testing.T) {
+	e, _ := openTestEngine(t, "http://127.0.0.1:1/api/v1")
+	setPolicy(e, "audit_entries", Policy{Mode: ModeReadOnly})
+
+	e.RefreshPolicies() // nothing is listening on port 1
+
+	if e.Writable("audit_entries") {
+		t.Error("a failed policy fetch cleared the table, so the guard stopped working offline")
+	}
+}
+
+// An empty answer is not a reason to forget either: a response shape that
+// changed and a project that removed every registration look identical here,
+// and forgetting is the costlier guess.
+func TestAnEmptyAnswerDoesNotClearThePolicies(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"data":{"models":{}}}`))
+	}))
+	defer server.Close()
+
+	e, _ := openTestEngine(t, server.URL+"/api/v1")
+	setPolicy(e, "audit_entries", Policy{Mode: ModeReadOnly})
+	e.RefreshPolicies()
+
+	if e.Writable("audit_entries") {
+		t.Error("an empty models object cleared the policy table")
+	}
+}
+
+// The status code has to survive do(), because a 4xx and a 5xx want opposite
+// handling and the old code handed every caller a formatted string.
+func TestAPIErrorCarriesTheStatus(t *testing.T) {
+	cases := []struct {
+		status    int
+		retryable bool
+	}{
+		{http.StatusUnprocessableEntity, false},
+		{http.StatusForbidden, false},
+		{http.StatusNotFound, false},
+		{http.StatusRequestTimeout, true},
+		{http.StatusTooManyRequests, true},
+		{http.StatusServiceUnavailable, true},
+		{http.StatusInternalServerError, true},
+	}
+	for _, tc := range cases {
+		status := tc.status
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(status)
+			_, _ = w.Write([]byte(`{"error":{"code":"NOPE"}}`))
+		}))
+
+		e, _ := openTestEngine(t, server.URL+"/api/v1")
+		_, err := e.doGET(server.URL + "/api/v1/sync/pull")
+		server.Close()
+
+		var apiErr *APIError
+		if !errors.As(err, &apiErr) {
+			t.Errorf("%d returned %T, want a *APIError", status, err)
+			continue
+		}
+		if apiErr.Status != status {
+			t.Errorf("status is %d, want %d", apiErr.Status, status)
+		}
+		if apiErr.Retryable() != tc.retryable {
+			t.Errorf("%d reports retryable=%v, want %v", status, apiErr.Retryable(), tc.retryable)
+		}
+		// The message anything that only prints the error still sees.
+		if want := "/api/v1/sync/pull"; !errors.Is(err, err) || apiErr.Path != want {
+			t.Errorf("path is %q, want %q", apiErr.Path, want)
+		}
+	}
+}
+
+// The compiled-in table is what makes the refusal work on a fresh install, so
+// it has to be reachable before anything touches the network.
+func TestTheBootstrapTableIsLoadedAtOpen(t *testing.T) {
+	if len(bootstrapPolicies) == 0 {
+		t.Skip("this project declares no sync policies, so there is nothing to bootstrap")
+	}
+	e, _ := openTestEngine(t, "http://127.0.0.1:1/api/v1")
+	for table, want := range bootstrapPolicies {
+		if got := e.PolicyFor(table); got.Mode != want.Mode {
+			t.Errorf("%s: mode is %q at Open, want the bootstrap's %q", table, got.Mode, want.Mode)
+		}
+	}
+}
+
+// The guarantee, stated over this project's own policies rather than over a
+// fixture: on a fresh install, with no network and nothing stored, a table
+// this project declared read_only refuses a local write.
+//
+// That is the claim grit#214 asked for, and it is the one worth being able to
+// make out loud. A project with no read_only table skips: there is nothing to
+// prove and a skip says so.
+func TestThisProjectsReadOnlyTablesRefuseAWriteOnAFreshInstall(t *testing.T) {
+	var readOnly []string
+	for table, p := range bootstrapPolicies {
+		if p.Mode == ModeReadOnly {
+			readOnly = append(readOnly, table)
+		}
+	}
+	if len(readOnly) == 0 {
+		t.Skip("this project declares no read_only tables")
+	}
+
+	// Unreachable on purpose. The refusal has to hold with no server, because
+	// that is the only time it matters.
+	e, _ := openTestEngine(t, "http://127.0.0.1:1/api/v1")
+	for _, table := range readOnly {
+		err := e.LocalCreate(table, "", map[string]interface{}{"anything": "at all"})
+		var policyErr *PolicyError
+		if !errors.As(err, &policyErr) {
+			t.Errorf("%s: a fresh install with no network accepted a local create (%v)", table, err)
+		}
+	}
+
+	var queued int64
+	if err := e.DB.Model(&Outbox{}).Count(&queued).Error; err != nil {
+		t.Fatal(err)
+	}
+	if queued != 0 {
+		t.Errorf("%d writes were queued for tables the server is guaranteed to refuse", queued)
+	}
+}

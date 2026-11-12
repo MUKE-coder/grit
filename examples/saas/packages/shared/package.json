@@ -2,8 +2,6 @@
   "name": "@repo/shared",
   "version": "0.1.0",
   "private": true,
-  "main": "./index.ts",
-  "types": "./index.ts",
   "exports": {
     "./schemas": "./schemas/index.ts",
     "./types": "./types/index.ts",
@@ -11,9 +9,12 @@
     "./brand": "./brand.config.ts",
     "./themes": "./themes.ts"
   },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
   "dependencies": {
     "libphonenumber-js": "^1.13.13",
-    "zod": "^3.22.0"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

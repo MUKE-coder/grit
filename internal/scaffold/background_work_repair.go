@@ -435,7 +435,10 @@ const (
 // repairSyncEnginePushSource makes packages/sync push its outbox in chunks of
 // MAX_PUSH_CHANGES: the loop that sent it whole now runs once per chunk.
 func repairSyncEnginePushSource(src string) (string, []string, []string) {
-	if strings.Contains(src, "MAX_PUSH_CHANGES") || !strings.Contains(src, "/sync/push") {
+	// The declaration, not the token. A bare substring check also matches the
+	// name in a comment, so a sentence mentioning the constant was enough to
+	// make this repair decide the file was already done and return quietly.
+	if strings.Contains(src, "const MAX_PUSH_CHANGES") || !strings.Contains(src, "/sync/push") {
 		return src, nil, nil
 	}
 	warn := []string{"packages/sync/src/engine.ts is not the file Grit wrote: push the outbox in chunks of 500, or a device with more queued changes is refused by the server"}
@@ -489,7 +492,8 @@ const (
 )
 
 func repairDesktopPushSource(src string) (string, []string, []string) {
-	if strings.Contains(src, "MaxPushChanges") || !strings.Contains(src, "/sync/push") {
+	// The declaration, not the token: see the web half above.
+	if strings.Contains(src, "const MaxPushChanges") || !strings.Contains(src, "/sync/push") {
 		return src, nil, nil
 	}
 	if strings.Count(src, desktopPushOld) != 1 || strings.Count(src, desktopPushBatchDoc) != 1 {

@@ -45,8 +45,25 @@ func TestRepairPutsSharedRoutesBehindAPermission(t *testing.T) {
 	if len(warn) > 0 {
 		t.Errorf("warnings on an untouched generated file: %v", warn)
 	}
-	if len(fixed) != 1 || !strings.Contains(fixed[0], "9 shared routes") {
+	if len(fixed) == 0 || !strings.Contains(fixed[0], "9 shared routes") {
 		t.Errorf("reported %v, want the 9 routes it moved", fixed)
+	}
+	// Every route it moved, by name. A count alone lets an authorization
+	// change ride along inside a file the upgrade rewrote, which is how two
+	// student-facing endpoints went behind an admin permission with nothing
+	// in the summary saying so (grit#213).
+	report := strings.Join(fixed, "\n")
+	for _, want := range []string{
+		"GET /contacts: m.Protected → m.Staff + perm:contacts.view",
+		"POST /contacts/import: m.Protected → m.Staff + perm:contacts.create",
+		"PATCH /contacts/:id: m.Protected → m.Staff + perm:contacts.edit",
+	} {
+		if !strings.Contains(report, want) {
+			t.Errorf("the summary does not name the change %q:\n%s", want, report)
+		}
+	}
+	if n := len(fixed) - 1; n != 9 {
+		t.Errorf("named %d route changes, want 9:\n%s", n, report)
 	}
 	mustFormat(t, "the route file", out)
 	for _, want := range []string{

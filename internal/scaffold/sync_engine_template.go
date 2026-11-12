@@ -22,6 +22,16 @@ func syncEngineTS() string {
 } from "./types";
 
 const FORCE_OFFLINE_KEY = "force_offline";
+// What the server last said about each table, so the refusal to queue an
+// impossible write survives a reload with no connection (grit#214). One key
+// holding the whole table: it is small, it is replaced wholesale, and a key per
+// table would make a partial write possible.
+//
+// Above the other two deliberately: repairSyncEnginePushSource anchors on the
+// LAST_SYNCED_KEY line being immediately followed by MAX_PUSH_CHANGES, and a
+// constant inserted between them makes that repair warn and return early on
+// every project.
+const POLICIES_KEY = "sync_policies";
 const LAST_SYNCED_KEY = "last_synced_at";
 /** The most changes the server takes in one push. */
 const MAX_PUSH_CHANGES = 500;
@@ -112,14 +122,40 @@ export class SyncEngine {
       const body = (await response.json()) as {
         data?: { models?: Record<string, SyncPolicy> };
       };
-      if (body.data?.models) {
+      // An empty object is not a reason to forget a policy: a project that
+      // removed every registration and a response shape that changed look
+      // identical here, and forgetting is the costlier guess.
+      if (body.data?.models && Object.keys(body.data.models).length > 0) {
         this.policies = body.data.models;
         this.policiesLoaded = true;
+        await this.adapter.setMeta(POLICIES_KEY, JSON.stringify(this.policies));
         this.emit();
       }
     } catch {
-      // Keep whatever we had. Stored policies would be better still; that is
-      // worth adding once there is a reason to believe they change often.
+      // Keep whatever we had, which after restorePolicies() is whatever the
+      // server last said. A failed fetch must not make a read_only table
+      // writable again.
+    }
+  }
+
+  /**
+   * Reads the stored policy table at open, before anything can be written.
+   *
+   * This is the half that fires. A client that has synced once knows what it
+   * may write for ever after, with no network, which is the only situation
+   * where refusing to queue is worth anything at all.
+   */
+  private async restorePolicies(): Promise<void> {
+    try {
+      const raw = await this.adapter.getMeta(POLICIES_KEY);
+      if (!raw) return;
+      const stored = JSON.parse(raw) as Record<string, SyncPolicy>;
+      if (stored && typeof stored === "object" && Object.keys(stored).length > 0) {
+        this.policies = stored;
+        this.policiesLoaded = true;
+      }
+    } catch {
+      // A corrupt row costs the stored policies, never the ability to open.
     }
   }
 
@@ -158,6 +194,9 @@ export class SyncEngine {
     this.forceOffline = (await this.adapter.getMeta(FORCE_OFFLINE_KEY)) === "1";
     const last = await this.adapter.getMeta(LAST_SYNCED_KEY);
     this.lastSyncedAt = last ? Number(last) : null;
+    // Awaited, unlike the fetch below, because a write is possible as soon as
+    // open() returns and the stored table is a local read.
+    await this.restorePolicies();
     await this.refreshCounts();
     this.emit();
     if (!this.policiesLoaded) {

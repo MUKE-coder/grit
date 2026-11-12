@@ -136,6 +136,17 @@ func Sync() error {
 	for _, line := range written {
 		fmt.Println("  ✅ " + line)
 	}
+
+	// And the desktop app's compiled-in sync policy table, for the same
+	// reason: the policies are declared in the API and the desktop engine has
+	// to know them before it can reach the API (grit#214). Warned about rather
+	// than returned: a project with no desktop app is the common case and a
+	// failure here must not stop a type sync.
+	if line, err := SyncDesktopPolicyBootstrap(root); err != nil {
+		fmt.Printf("  ⚠ updating the desktop sync policies: %v\n", err)
+	} else if line != "" {
+		fmt.Println("  ✅ " + line)
+	}
 	fmt.Println()
 
 	return nil

@@ -72,6 +72,140 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.509.0 */}
+            <div className="mb-12" id="v3.509.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.509.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An upgrade that quietly changed who could call two endpoints</h3>
+                <p>
+                  grit#213, and this half is the one worth reading. An upgrade
+                  rewrote a route file somebody had written by hand and moved
+                  two student-facing endpoints behind an admin permission. The
+                  upgrade summary lists the files it declined to take, so a
+                  rewritten file reads as success, and nothing said the
+                  authorization had changed. The first symptom would have been
+                  a 403 in production.
+                </p>
+                <p>
+                  The repair walks every <code>*_routes.go</code> and moves a
+                  resource&apos;s open routes behind a permission, which is a
+                  real fix for a real exposure. It decided what was generated
+                  code by looking for the text the generator writes, and the
+                  reasoning was that such an anchor cannot reach a
+                  developer&apos;s own code. That reasoning is wrong, and it is
+                  wrong for a reason worth stating: the generator&apos;s shape
+                  is the convention the documentation teaches, so hand-written
+                  code that follows the convention is indistinguishable from
+                  generated code by inspection. The file had a{' '}
+                  <code>handlers.XHandler</code>, and its two routes were{' '}
+                  <code>Import</code> and <code>Export</code>. Every anchor
+                  matched.
+                </p>
+                <p>
+                  The manifest knows which files Grit wrote, and now it decides.
+                  Not on whether a file is unmodified, though: a generated route
+                  file somebody has added a route to is still Grit&apos;s file
+                  and still needs the fix. The question is whether Grit ever
+                  wrote it. A project from before the manifest existed has no
+                  entries at all, so the gate asks first whether the manifest
+                  knows about <em>any</em> route file, and stands aside when it
+                  does not. A gate that silently stops repairing the oldest
+                  projects would be the same bug pointing the other way.
+                </p>
+                <p>
+                  And the summary names every route whose group or permission
+                  changed, in the files it did rewrite. A count was not enough:
+                  a project may have granted the old shape deliberately. When it
+                  declines to touch a file, it names the routes it would have
+                  moved, so the decision is the developer&apos;s rather than
+                  silence.
+                </p>
+                <h4>zod 4, in the one file nothing compiled</h4>
+                <p>
+                  The other half of grit#213.{' '}
+                  <code>packages/shared/schemas/field-formats.ts</code> shipped
+                  with zod 3 syntax against the zod 4 pin for two releases, and
+                  every type-check in the repository passed throughout.
+                </p>
+                <p>
+                  The reason is structural rather than an oversight.{' '}
+                  <code>schemas/index.ts</code> does not re-export
+                  field-formats, so the file is only compiled when a resource
+                  with a formatted field imports it, and{' '}
+                  <code>packages/shared</code> had a tsconfig and a typescript
+                  and <em>no script</em>, so <code>turbo type-check</code>
+                  {' '}walked past the package entirely. The CI workflow had a
+                  comment documenting that gap and working around it. The
+                  package now declares <code>type-check</code>, CI runs it, and
+                  putting the old code back reproduces both reported errors.
+                </p>
+                <p>
+                  The schema itself is now <code>z.json()</code>, zod&apos;s own,
+                  in place of fifteen lines of hand-rolled recursive union. It
+                  was checked against the union it replaces on every case either
+                  accepts or refuses, NaN and Infinity and a nested undefined
+                  included. The three checked-in example apps were still pinned
+                  to zod 3 and are on 4 now.
+                </p>
+                <h4>The desktop sync engine knows what it may write</h4>
+                <p>
+                  grit#214. The server declares every table&apos;s sync policy,
+                  enforces it on push and serves it at{' '}
+                  <code>GET /api/v1/sync/policy</code>. The desktop engine never
+                  asked, so it queued writes the server was guaranteed to
+                  refuse. The user then found a failed row in their sync screen
+                  about a record they did not create, cannot fix, and must not
+                  dismiss without being told what it was.
+                </p>
+                <p>
+                  <code>LocalCreate</code>, <code>LocalUpdate</code> and{' '}
+                  <code>LocalDelete</code> now return a typed{' '}
+                  <code>*sync.PolicyError</code> and write nothing. The whole
+                  difficulty is that refusing only matters offline, because
+                  online the server would have said so anyway: a client that
+                  fetches the policy at startup and gives up when the fetch
+                  fails has implemented the half that never fires. So the table
+                  is persisted in the device&apos;s own SQLite, and under that
+                  sits a compiled-in copy that <code>grit sync</code> writes
+                  from the project&apos;s own registrations, which is what makes
+                  the refusal work on an install that has never reached the
+                  server. A table nobody has declared stays writable, so a
+                  resource generated after the installed build shipped is not
+                  broken offline. The web engine persists its table too, for the
+                  same reason.
+                </p>
+                <p>
+                  <code>do()</code> returns a <code>*sync.APIError</code> holding
+                  the status code, with <code>Retryable()</code> on it. Every
+                  caller used to get a formatted string, which is fine for{' '}
+                  <code>/sync/push</code> and wrong for anything honouring the
+                  rule the offline guidance itself states: a 4xx will be a 4xx
+                  forever and must stop the retry, while a 5xx must back off and
+                  try again. Nobody should have to parse a status back out of an
+                  error message.
+                </p>
+                <p>
+                  Two faults in this were found by running it on a real
+                  generated project rather than by the unit tests. A table
+                  registered bare in <code>routes.go</code> and given an
+                  explicit policy in a project&apos;s own file tied on
+                  strictness, and the tie went to whichever file was read first,
+                  so a declared <code>client_wins</code> and a declared{' '}
+                  <code>max_offline_age</code> were silently replaced by
+                  defaults. And <code>MaxOfflineAge</code> has three spellings
+                  in real code, including the raw nanoseconds the generator
+                  itself emits; reading only one of them returned zero, which
+                  means no limit.
+                </p>
+              </div>
+            </div>
+
             {/* v3.508.0 */}
             <div className="mb-12" id="v3.508.0">
               <div className="flex items-center gap-3 mb-4">

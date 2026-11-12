@@ -180,6 +180,22 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "sync", "engine_test.go"): desktopSyncEngineTestGo(opts),
 		filepath.Join(desktopRoot, "sync", "outbox.go"):      desktopSyncOutboxGo(),
 		filepath.Join(desktopRoot, "sync", "local.go"):       desktopSyncLocalGo(),
+
+		// What each table lets a device write, so the engine refuses a write
+		// the server is guaranteed to refuse rather than queueing it and
+		// parking the failure in front of somebody three days later
+		// (grit#214). policy.go reads the table; policies_bootstrap.go is the
+		// copy that makes the refusal work on a device that has never reached
+		// the server, and `grit sync` rewrites it from the project's own
+		// registrations.
+		filepath.Join(desktopRoot, "sync", "policy.go"):      tmpl("desktop/sync/policy.go"),
+		filepath.Join(desktopRoot, "sync", "policy_test.go"): tmpl("desktop/sync/policy_test.go"),
+	}
+
+	// Not in the map above: it is generated from the project's registrations
+	// and must not be overwritten on every upgrade with an empty one.
+	if err := ensureSyncPolicyBootstrap(desktopRoot); err != nil {
+		return fmt.Errorf("writing the sync policy bootstrap: %w", err)
 	}
 
 	for path, content := range files {
