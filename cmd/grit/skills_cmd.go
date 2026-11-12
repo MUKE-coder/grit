@@ -69,7 +69,8 @@ your agent's own configuration directory.
 
 Three different things get called a Grit skill, and they do different jobs:
 
-  this pack                     twenty-eight expert skills, installed here
+  this pack                     twenty-seven expert skills, plus the reference
+                                material they read, installed here
   skills/grit/SKILL.md          one general skill, public, in the Grit repository
   .claude/skills/grit/SKILL.md  written into your project by "grit new", and
                                 tailored to the architecture you chose

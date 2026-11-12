@@ -23,6 +23,35 @@ Also worth knowing:
 ---
 
 
+## v3.507.0 - November 12, 2026
+
+### The expert skills have a page, and the search box got looked at
+
+`grit skills install` has shipped for a while and the pack it installs was private, so the docs could say it existed and not much else. It is public now, at [MUKE-coder/grit-expert-skills](https://github.com/MUKE-coder/grit-expert-skills) , which means you can read a skill before you let it tell an agent how to write code in your project.
+
+So there is a page: [the expert skills](https://gritframework.com/docs/expert-skills), with all twenty-eight listed in groups, one line each on what they do and when they fire. Every line is the skill's own description out of its `SKILL.md` rather than a paraphrase, because twenty-eight paraphrases are twenty-eight chances to describe one wrongly and they all drift the first time a skill changes.
+
+It also settles something that costs people time: four different things in this project are called a Grit skill, and the page says which is which.
+
+The CLI said the pack held twenty-eight skills. Its own roster checker says twenty-seven, excluding `grit-references` as &ldquo;reference material the other skills read, not a skill&rdquo;. Both readings are defensible and the two surfaces disagreeing is not, so the help text now says twenty-seven plus the reference material, and a test counts it the way the pack counts it.
+
+#### And the search box
+
+Looking at the new page meant opening the search dialog, which turned out to have three things wrong with it that a token name explains:
+
+shadcn's `accent` means &ldquo;hover surface&rdquo;. This design system's `accent` is the brand violet. The selected result row carried `bg-accent`, so it was a solid violet bar, with `text-accent-foreground`, which is not a utility this config defines and therefore set no colour at all. A muted grey section label on a violet fill is unreadable, and it was the only thing telling two identically titled results apart.
+
+The search button in the header had the same violet at 30%, the one tinted control in a row of plain links, a document icon rather than a magnifier, and no `whitespace-nowrap`, so &ldquo;Search docs...&rdquo; broke across two lines at the widths the nav actually reaches.
+
+And the dialog's close button is absolutely positioned at the top right corner, which is correct in a dialog with a heading and lands on top of the input in a command palette.
+
+Fixed with tokens, so both themes follow: the selected row is the accent tint with its hairline and full-contrast text, the section is its own chip, the palette is wider and anchored near the top so the first result does not move as you type, and there is a footer saying it is keyboard driven. Results whose title is not unique now show their path, because searching &ldquo;deploy&rdquo; returned two rows both reading &ldquo;Deployment&rdquo;, both tagged Deployment, and picking one was a guess.
+
+The global focus ring is a violet rectangle floating around whatever has focus. In the palette the input is focused for as long as the dialog is open and nothing else can take focus, so the ring was permanent furniture. It is a 2px accent underline across the input row there, and there only: still a visible keyboard focus indicator, at full accent contrast.
+
+Both search surfaces index the new page: the embedded docs that `grit docs search` reads, and the website search. That needed the skill table written as data, because the index reader reads a const array a page maps over and does not read the text inside a hand-written table cell.
+
+
 ## v3.506.1 - November 12, 2026
 
 ### Two-factor sign-in on the invitation accept page

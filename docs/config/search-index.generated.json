@@ -624,6 +624,12 @@
     "keywords": "desktop generate resource wails crud model service tanstack injection full stack resources apps models services router route files 10 automatic code injections docs generation"
   },
   {
+    "title": "The expert skills",
+    "href": "/docs/expert-skills",
+    "section": "AI Workflows",
+    "keywords": "expert skills skill pack claude agent subagent plugin marketplace grit install status agents md grit-build grit-core grit-setup grit-triple grit-double grit-single grit-resource grit-data grit-admin grit-ui-ux grit-plugins grit-blueprints grit-mobile grit-desktop grit-offline grit-reviewer grit-critic grit-design-review grit-security grit-perf grit-deploy grit-adopt grit-report grit-tokens grit-feedback grit-advocate grit-teacher grit-references twenty seven teach ai assistant build plus reference material they read each one does fires puts them docs"
+  },
+  {
     "title": "Extending",
     "href": "/docs/extending",
     "section": "Documentation",

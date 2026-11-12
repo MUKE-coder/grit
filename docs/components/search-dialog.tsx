@@ -10,6 +10,10 @@ import {
   CommandItem,
 } from '@/components/ui/command'
 import {
+  Search,
+  CornerDownLeft,
+  ArrowUp,
+  ArrowDown,
   Rocket,
   Box,
   Server,
@@ -310,6 +314,26 @@ export function SearchDialog() {
       .slice(0, MAX_RESULTS)
   }, [query])
 
+  /*
+   * Titles that appear more than once in this result set.
+   *
+   * "deploy" returns two pages both called Deployment, both in the Deployment
+   * section: nothing on the row tells them apart, and picking one is a guess.
+   * Their paths do tell them apart, so those rows show one.
+   */
+  const ambiguous = useMemo(() => {
+    if (!results) return new Set<string>()
+    const counts = new Map<string, number>()
+    for (const { item } of results) {
+      counts.set(item.title, (counts.get(item.title) ?? 0) + 1)
+    }
+    return new Set(
+      Array.from(counts.entries())
+        .filter(([, count]) => count > 1)
+        .map(([title]) => title),
+    )
+  }, [results])
+
   /* Clearing on close so reopening starts from browse rather than from
      whatever was typed last time. */
   function onOpenChange(next: boolean) {
@@ -321,12 +345,13 @@ export function SearchDialog() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-md border border-border/50 bg-accent/30 px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors"
+        aria-label="Search documentation"
+        className="group inline-flex items-center gap-2 whitespace-nowrap rounded-btn-sm border border-border bg-surface-1 py-1.5 pl-2.5 pr-2 text-caption text-fg-muted transition-colors hover:border-border-strong hover:bg-surface-2 hover:text-fg sm:w-56"
       >
-        <FileText className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Search docs...</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border border-border/50 bg-background/80 px-1.5 font-mono text-[10px] font-medium text-muted-foreground/70 sm:inline-flex">
-          <span className="text-xs">⌘</span>K
+        <Search className="h-3.5 w-3.5 shrink-0 text-fg-subtle transition-colors group-hover:text-fg-muted" />
+        <span className="hidden sm:inline">Search docs</span>
+        <kbd className="pointer-events-none ml-auto hidden h-5 select-none items-center gap-0.5 rounded-xs border border-border bg-surface-2 px-1.5 font-mono text-[10px] font-medium text-fg-subtle sm:inline-flex">
+          <span className="text-[11px] leading-none">⌘</span>K
         </kbd>
       </button>
       {/* shouldFilter={false}: the ranking above is the filter. Leaving cmdk's
@@ -350,10 +375,10 @@ export function SearchDialog() {
                       onSelect={() => onSelect(item.href)}
                       className="cursor-pointer"
                     >
-                      <span className="text-muted-foreground/60">
+                      <span className="text-fg-subtle">
                         {sectionIcons[item.section] || <FileText className="h-3.5 w-3.5" />}
                       </span>
-                      <span>{item.title}</span>
+                      <span className="truncate">{item.title}</span>
                     </CommandItem>
                   ))}
               </CommandGroup>
@@ -361,8 +386,13 @@ export function SearchDialog() {
           ) : results.length === 0 ? (
             /* Written out rather than using CommandEmpty, which keys off
                cmdk's own filtering and never fires with it turned off. */
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              No results for &ldquo;{query}&rdquo;.
+            <div className="px-4 py-10 text-center">
+              <p className="text-sm text-fg">
+                No results for &ldquo;<span className="text-fg-muted">{query}</span>&rdquo;.
+              </p>
+              <p className="mt-1.5 text-caption text-fg-subtle">
+                Every word has to match. Try one fewer.
+              </p>
             </div>
           ) : (
             <CommandGroup heading={`${results.length} result${results.length === 1 ? '' : 's'}`}>
@@ -373,13 +403,18 @@ export function SearchDialog() {
                   onSelect={() => onSelect(item.href)}
                   className="cursor-pointer"
                 >
-                  <span className="text-muted-foreground/60">
+                  <span className="text-fg-subtle">
                     {sectionIcons[item.section] || <FileText className="h-3.5 w-3.5" />}
                   </span>
-                  <span>{item.title}</span>
+                  <span className="truncate">{item.title}</span>
+                  {ambiguous.has(item.title) && (
+                    <span className="shrink-0 truncate font-mono text-[11px] text-fg-subtle">
+                      {item.href}
+                    </span>
+                  )}
                   {/* The section is the only thing telling two similarly named
                       pages apart once the grouping is gone. */}
-                  <span className="ml-auto shrink-0 pl-3 text-xs text-muted-foreground/70">
+                  <span className="ml-auto shrink-0 rounded-xs border border-border bg-surface-2 px-1.5 py-0.5 text-[11px] text-fg-muted">
                     {item.section}
                   </span>
                 </CommandItem>
@@ -387,6 +422,31 @@ export function SearchDialog() {
             </CommandGroup>
           )}
         </CommandList>
+        {/* The palette is driven from the keyboard and never said so. The hints
+            are also the only remaining way out now that the corner X is gone,
+            alongside Escape itself. */}
+        <div className="flex items-center gap-4 border-t border-border bg-surface-2/50 px-4 py-2.5 text-[11px] text-fg-subtle">
+          <span className="flex items-center gap-1.5">
+            <kbd className="inline-flex items-center rounded-xs border border-border bg-surface-1 p-0.5">
+              <ArrowUp className="h-3 w-3" />
+            </kbd>
+            <kbd className="inline-flex items-center rounded-xs border border-border bg-surface-1 p-0.5">
+              <ArrowDown className="h-3 w-3" />
+            </kbd>
+            to navigate
+          </span>
+          <span className="flex items-center gap-1.5">
+            <kbd className="inline-flex items-center rounded-xs border border-border bg-surface-1 p-0.5">
+              <CornerDownLeft className="h-3 w-3" />
+            </kbd>
+            to open
+          </span>
+          <span className="ml-auto hidden sm:inline">
+            {results === null
+              ? `${searchIndex.length} pages`
+              : `${results.length} of ${searchIndex.length} pages`}
+          </span>
+        </div>
       </CommandDialog>
     </>
   )

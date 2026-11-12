@@ -794,6 +794,7 @@ export const CLI_COMMANDS: CliCommand[] = [
       'They read the docs out of your installed binary rather than from memory, so the answers match the version you are on.',
       'grit skills status shows what is present without touching the network.',
       'The pack is MUKE-coder/grit-expert-skills, and the experts file what Grit got wrong as issues while they work.',
+      'The repository is public, so you can read every skill before installing one. That is worth doing: a skill tells an agent how to write code in your project. /docs/expert-skills lists all of them.',
     ],
     files: [
       { path: '~/.claude/skills/grit-*', status: 'created', note: 'one directory per expert' },

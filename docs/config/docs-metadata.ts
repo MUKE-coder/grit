@@ -468,6 +468,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'An llmstxt.org index for the framework and for the API you build with it: what gritframework.dev/llms.txt and llms-full.txt contain, the pair a scaffolded API serves, and why the OpenAPI spec is still the contract.',
   },
+  '/docs/expert-skills': {
+    title: 'The expert skills',
+    description:
+      'Twenty-seven skills that teach an AI assistant to build with Grit, plus the reference material they read: what each one does, when it fires, and how grit skills install puts them in your agent.',
+  },
   '/docs/backend/health': {
     title: 'Health checks',
     description:

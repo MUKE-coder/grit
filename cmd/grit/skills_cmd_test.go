@@ -156,10 +156,28 @@ func TestTheHelpTextCountsThePackCorrectly(t *testing.T) {
 		28: "twenty-eight", 29: "twenty-nine", 30: "thirty",
 		31: "thirty-one", 32: "thirty-two", 33: "thirty-three",
 	}
-	want, ok := spelled[len(expertSkillNames)]
+	// The count is of SKILLS, which is not the length of the install list.
+	//
+	// expertSkillNames lists 28 directories because 28 get installed, and the
+	// pack's own scripts/check-roster.py excludes grit-references from its
+	// roster with the comment "reference material the other skills read, not a
+	// skill". So 27 and 28 are both defensible depending on what is being
+	// counted, and v3.505.9 changed the text from one to the other on the
+	// strength of len(expertSkillNames) alone, which made it contradict the
+	// pack's own language instead of agreeing with it.
+	//
+	// The text now says both halves, so it is true under either reading, and
+	// this counts the way the pack counts.
+	skills := 0
+	for _, name := range expertSkillNames {
+		if name != "grit-references" {
+			skills++
+		}
+	}
+	want, ok := spelled[skills]
 	if !ok {
 		t.Fatalf("the pack has %d skills and this test cannot spell that; add it to the map",
-			len(expertSkillNames))
+			skills)
 	}
 
 	long := skillsCmd().Long
@@ -170,7 +188,7 @@ func TestTheHelpTextCountsThePackCorrectly(t *testing.T) {
 	// And not some other number, which is what a search for the right one
 	// alone would miss.
 	for n, word := range spelled {
-		if n == len(expertSkillNames) {
+		if n == skills {
 			continue
 		}
 		if strings.Contains(long, word+" expert skills") {
