@@ -214,25 +214,50 @@ jobs:
     permissions:
       issues: write
     steps:
-      - name: Open or update the drift issue
+      - name: Open or update the canary issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          TITLE="Dependency drift: scaffolded project no longer builds"
+          # The title is about the canary, not about a cause.
+          #
+          # It used to say "Dependency drift: scaffolded project no longer
+          # builds", and said in the body that Grit itself had probably not
+          # changed. Three times running the cause was this repository: twice
+          # a scaffold change, and once a docs page naming a file a generated
+          # project does not have, which is neither a dependency nor a build.
+          # The report named no step, so the first move it invited was always
+          # diffing resolved-versions.txt (grit#200).
+          TITLE="Nightly canary: a freshly scaffolded project is failing"
           # One rolling issue rather than one per night.
           EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
             --search "\"$TITLE\" in:title" --json number --jq '.[0].number' || true)
+
+          # Which step actually failed, which is the one thing the reader needs
+          # before deciding where to look. One line per failing job.
+          FAILED=$(gh run view "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --json jobs \
+            --jq '.jobs[] | select(.conclusion == "failure")
+                  | "- **" + .name + "**: "
+                    + ([.steps[] | select(.conclusion == "failure") | .name] | join(", "))' \
+            2>/dev/null || true)
+          if [ -z "$FAILED" ]; then
+            FAILED="- (the failing step could not be read from the run)"
+          fi
+
           # Built with printf rather than a heredoc: YAML block scalars indent
           # every line, and an indented terminator never closes a heredoc.
           BODY=$(printf '%s\n' \
-            "The nightly canary scaffolded a fresh project and it failed to build." \
+            "The nightly canary scaffolded a fresh project and something failed." \
             "" \
-            "**Grit itself did not necessarily change** — this job resolves npm and Go dependencies fresh every night, so a transitive dependency publishing a breaking version produces exactly this failure." \
+            "What failed:" \
+            "" \
+            "$FAILED" \
             "" \
             "Run: $RUN_URL" \
             "" \
-            "The \`canary-*\` artifacts on that run contain the build logs and the resolved dependency versions. Diff \`resolved-versions.txt\` against the last green run to find what moved.")
+            "**Read that step before assuming a dependency moved.** This job does resolve npm and Go dependencies fresh every night, so a transitive dependency publishing a breaking version produces exactly this failure. It is also the only job that scaffolds a project and then checks it, so a change in this repository produces the same red, and that has been the cause more often than drift has." \
+            "" \
+            "If the step is a build or a test, the \`canary-*\` artifacts hold the logs and the resolved dependency versions: diff \`resolved-versions.txt\` against the last green run to find what moved. If it is a check, reproduce it locally against a scaffolded project rather than looking at versions at all.")
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
           else

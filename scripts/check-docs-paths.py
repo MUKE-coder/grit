@@ -94,6 +94,14 @@ EXPECTED_ABSENT = {
     'apps/web/components/ChatRoom.tsx': 'written by the reader in the realtime-chat course',
     'apps/web/components/RoomMembers.tsx': 'written by the reader in the realtime-chat course',
     'apps/web/components/Typing.tsx': 'written by the reader in the realtime-chat course',
+    'apps/web/lib/web-session.ts': 'written by the reader in the web-app auth page',
+    'apps/web/components/featured-products.tsx': 'written by the reader in the fetching-data page',
+
+    # The web app ships no gate: it is a public site until somebody adds one,
+    # and the auth page is where they do. apps/admin/proxy.ts DOES exist in a
+    # generated project, which is what says the page has the filename right:
+    # proxy.ts is the Next 16 name and middleware.ts is the old one.
+    'apps/web/proxy.ts': 'written by the reader in the web-app auth page',
 
     # Created by something you opt into.
     'apps/api/internal/middleware/tenant.go': 'created by grit plugin add multitenant',
