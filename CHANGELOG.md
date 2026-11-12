@@ -23,6 +23,21 @@ Also worth knowing:
 ---
 
 
+## v3.507.1 - November 12, 2026
+
+### Every ghost button on this site went violet on hover
+
+The search palette fix in v3.507.0 came from one token name, so the obvious next question was how many other components copied in from shadcn spell it the same way. Eleven do. Four of them are imported by anything, and one of those four is `Button`, which 172 files import.
+
+Its `ghost` and `outline` variants carried `hover:bg-accent hover:text-accent-foreground`. Here that paints the brand violet and then sets no text colour at all, so every ghost button on the docs site, including the previous and next links at the foot of every page, turned into a solid violet pill with pale grey text on it the moment the pointer touched it.
+
+Measured rather than guessed: `bg-accent` resolves to `rgb(169 155 255)`, and `text-accent-foreground` resolves to the inherited body colour, which is what a class that does not exist looks like.
+
+Ghost and outline now hover to `surface-2` with `fg` text, which is what the rest of the site uses for a hover. Same fix in `Toggle`, and the dialog close button. The seven that nothing imports are left alone.
+
+Also: the homepage says the pack exists. Twenty-seven expert skills, one command, in the section about developers and agents, next to the SKILL.md line that was the only thing there before.
+
+
 ## v3.507.0 - November 12, 2026
 
 ### The expert skills have a page, and the search box got looked at

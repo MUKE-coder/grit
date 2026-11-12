@@ -12,11 +12,17 @@ const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground hover:bg-fg/85',
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        // hover:bg-accent came from shadcn, where `accent` is the hover
+        // surface. Here it is the brand violet, so every ghost and outline
+        // button in the docs turned into a solid violet pill on hover, with
+        // hover:text-accent-foreground setting no colour at all because that
+        // utility does not exist in this config. See the note beside
+        // --accent-surface in app/globals.css.
         outline:
-          'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+          'border border-input bg-background hover:bg-surface-2 hover:text-fg',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        ghost: 'hover:bg-surface-2 hover:text-fg',
         link: 'text-accent underline-offset-4 hover:underline',
       },
       size: {

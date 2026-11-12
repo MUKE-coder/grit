@@ -264,6 +264,7 @@ export default function HomePage() {
             {[
               'Generates Go + React from one CLI command',
               'Ships a SKILL.md so agents know the patterns',
+              'Twenty-seven expert skills: grit skills install',
               'AI Gateway: 100+ models via one API key',
               'OWASP 2025 hardened: secure by default',
             ].map((line) => (

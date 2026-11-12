@@ -72,6 +72,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.507.1 */}
+            <div className="mb-12" id="v3.507.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.507.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every ghost button on this site went violet on hover</h3>
+                <p>
+                  The search palette fix in v3.507.0 came from one token name,
+                  so the obvious next question was how many other components
+                  copied in from shadcn spell it the same way. Eleven do. Four
+                  of them are imported by anything, and one of those four is{' '}
+                  <code>Button</code>, which 172 files import.
+                </p>
+                <p>
+                  Its <code>ghost</code> and <code>outline</code> variants
+                  carried <code>hover:bg-accent hover:text-accent-foreground</code>.
+                  Here that paints the brand violet and then sets no text colour
+                  at all, so every ghost button on the docs site, including the
+                  previous and next links at the foot of every page, turned into
+                  a solid violet pill with pale grey text on it the moment the
+                  pointer touched it.
+                </p>
+                <p>
+                  Measured rather than guessed: <code>bg-accent</code> resolves
+                  to <code>rgb(169 155 255)</code>, and{' '}
+                  <code>text-accent-foreground</code> resolves to the inherited
+                  body colour, which is what a class that does not exist looks
+                  like.
+                </p>
+                <p>
+                  Ghost and outline now hover to <code>surface-2</code> with{' '}
+                  <code>fg</code> text, which is what the rest of the site uses
+                  for a hover. Same fix in <code>Toggle</code>, and the dialog
+                  close button. The seven that nothing imports are left alone.
+                </p>
+                <p>
+                  Also: the homepage says the pack exists. Twenty-seven expert
+                  skills, one command, in the section about developers and
+                  agents, next to the SKILL.md line that was the only thing
+                  there before.
+                </p>
+              </div>
+            </div>
+
             {/* v3.507.0 */}
             <div className="mb-12" id="v3.507.0">
               <div className="flex items-center gap-3 mb-4">
