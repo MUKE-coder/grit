@@ -149,6 +149,17 @@ func authRouteLimits(dev bool) map[string]sentinel.Limit {
 		v + "/passkeys/login/finish":    {Requests: 30, Window: 5 * time.Minute},
 		v + "/sso/oidc/callback":        {Requests: 30, Window: 5 * time.Minute},
 		v + "/sso/saml/acs":             {Requests: 30, Window: 5 * time.Minute},
+
+		// The multitenant plugin's invitation preview. Public by necessity,
+		// because the page has to say what the link is before anybody can
+		// sign in, and it takes a token, which puts it in exactly the class
+		// above. The global per-IP limit covered it and the per-route one did
+		// not (grit#199, item 4).
+		//
+		// Listed whether or not the plugin is installed: a limit on a path
+		// the project does not serve never fires, and a limit added only by
+		// an installer is a limit the next installer forgets.
+		"/api/" + APIVersion + "/organization-invitations/preview": {Requests: 30, Window: 5 * time.Minute},
 	}
 
 	// Development relaxes them. It does not remove them: a route with no entry

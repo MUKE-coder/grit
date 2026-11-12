@@ -72,6 +72,96 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.505.8 */}
+            <div className="mb-12" id="v3.505.8">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.505.8
+                </span>
+                <span className="text-sm text-muted-foreground">November 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A logo that leaked, a race that answered 500, and a public route with no limit of its own</h3>
+                <p>
+                  Three of the six follow-ups in grit#199, found by exercising
+                  the v3.486.0 invitation flow on real generated projects. The
+                  reporter named the first two as the ones to pick first.
+                </p>
+
+                <h4>Every replaced organization logo stayed in the bucket</h4>
+                <p>
+                  Replacing or removing a logo cleared the column and left the
+                  object. The comment defending that said the storage driver
+                  owned its own cleanup, and nothing did: the orphan sweep
+                  reads the <code>uploads</code> table for rows nothing
+                  claimed, and a logo is uploaded straight to storage and never
+                  gets a row. So the justification named a mechanism that could
+                  not see these objects at all.
+                </p>
+                <p>
+                  Both paths delete the superseded object now. The key is
+                  derived from the stored URL and then{' '}
+                  <strong>verified</strong>: the candidate is rendered back
+                  through the same <code>GetURL</code> that wrote the column,
+                  and only a byte-for-byte match is handed to a delete. A
+                  project whose storage has moved, or a driver whose URLs are
+                  not a base plus the key, declines and leaves the object
+                  exactly where the old behaviour left it. That is what makes a
+                  string operation on a URL safe here, and it is why this
+                  needed no new column.
+                </p>
+                <p>
+                  Deleted after the column moves, never before: an object
+                  removed ahead of a write that then fails leaves the
+                  organization pointing at nothing. Best effort, because the
+                  column has already moved and failing the request over a
+                  bucket that refused the delete would report that the logo did
+                  not change when it did.
+                </p>
+
+                <h4>A slug or tax id race answered 500</h4>
+                <p>
+                  Both were checked with a SELECT and then written, so a
+                  concurrent write hit the unique index and came back{' '}
+                  <code>500 INTERNAL_ERROR</code>. The index is the truth and
+                  the check is a courtesy, so a violation has to answer what
+                  the check would have:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`409  SLUG_TAKEN      That slug was taken while you were creating this organization.
+409  TAX_ID_TAKEN    That tax id already belongs to another organization`}
+                />
+                <p>
+                  Both write paths ask <code>respond.DuplicateKey</code>, which
+                  already recognised all four drivers and names the column when
+                  the driver says so, so an update racing the tax id is
+                  reported as a tax id rather than as a slug. Verified against
+                  a real driver rather than a mock: the index fires with{' '}
+                  <code>UNIQUE constraint failed: organizations.slug</code>,
+                  and that is what the helper recognises.
+                </p>
+
+                <h4>The invitation preview had only the global limit</h4>
+                <p>
+                  <code>GET /organization-invitations/preview</code> is public
+                  by necessity, because the page has to say what a link is
+                  before anybody can sign in, and it takes a token. That puts
+                  it in the same class as every auth route with a per-route
+                  limit, and it had only the global per-IP one. It has its own
+                  now, listed whether or not the plugin is installed: a limit
+                  on a path the project does not serve never fires, and a limit
+                  added by an installer is one the next installer forgets.
+                </p>
+                <p>
+                  The remaining three items are TOTP on the accept page, an
+                  Expo device pass, and the split-domain verification origin.
+                  All three are real and none is a one-liner.
+                </p>
+              </div>
+            </div>
+
             {/* v3.505.7 */}
             <div className="mb-12" id="v3.505.7">
               <div className="flex items-center gap-3 mb-4">

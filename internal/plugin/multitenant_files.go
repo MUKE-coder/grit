@@ -198,6 +198,7 @@ func mtHandler(ctx Context) string {
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -209,6 +210,7 @@ import (
 
 	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/storage"
 	"{{MODULE}}/internal/tenant"
@@ -331,6 +333,15 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 		}).Error
 	})
 	if err != nil {
+		// availableSlug picked a free one, and a concurrent create took it
+		// between the look and the insert. The unique index is the truth and
+		// the check is a courtesy, so a violation has to answer what the
+		// check would have (grit#199, item 3). Before this it was a 500,
+		// which tells the person filling the form nothing they can act on.
+		if _, dup := respond.DuplicateKey(c, err); dup {
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "SLUG_TAKEN", "message": "That slug was taken while you were creating this organization. Try again."}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not create organization"}})
 		return
 	}
@@ -560,6 +571,18 @@ func (h *OrganizationHandler) Update(c *gin.Context) {
 		Select("name", "slug", "description", "website", "legal_name", "tax_id", "tax_country", "address_line1", "address_line2", "city", "region", "postal_code", "country").
 		Where("id = ? AND active = ?", orgID, true).
 		Updates(update).Error; err != nil {
+		// Both SELECTs above can be overtaken between the look and the write.
+		// The column the driver names decides which answer this is; when it
+		// names none, the slug is the one a form is far likelier to be
+		// fighting over (grit#199, item 3).
+		if column, dup := respond.DuplicateKey(c, err); dup {
+			code, message := "SLUG_TAKEN", "That slug is already in use"
+			if column == "tax_id" {
+				code, message = "TAX_ID_TAKEN", "That tax id already belongs to another organization"
+			}
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": code, "message": message}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not update organization"}})
 		return
 	}
@@ -620,31 +643,98 @@ func (h *OrganizationHandler) UploadLogo(c *gin.Context) {
 		return
 	}
 	logoURL := h.Storage.GetURL(key)
+	// The one this replaces, read before the column moves on.
+	previous := h.previousLogoKey(orgID)
 	update := models.Organization{LogoURL: logoURL}
 	if err := tenant.Unscoped(h.DB).Model(&models.Organization{}).
 		Select("logo_url").Where("id = ?", orgID).Updates(update).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not save the logo"}})
 		return
 	}
+	// After the column, never before: an object deleted ahead of a write that
+	// then fails leaves the organization pointing at nothing.
+	h.dropLogoObject(c, previous, key)
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"logo_url": logoURL}, "message": "Logo updated"})
 }
 
-// RemoveLogo clears the reference. The stored object is left in place: a delete
-// that races the CDN or a cached page is worse than an orphaned key, and the
-// storage driver owns its own cleanup.
+// RemoveLogo clears the reference and deletes the object behind it.
+//
+// It used to leave the object, on the reasoning that the storage driver owned
+// its own cleanup. Nothing did: the orphan sweep reads the uploads TABLE for
+// rows nothing claimed, and a logo is uploaded straight to storage and never
+// gets a row, so every replaced or removed logo stayed in the bucket for ever
+// (grit#199, item 2).
 func (h *OrganizationHandler) RemoveLogo(c *gin.Context) {
 	orgID := c.Param("id")
 	if !h.isOwner(c, orgID) && !authz.IsAdmin(c) {
 		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "Only the organization owner may change its logo"}})
 		return
 	}
+	previous := h.previousLogoKey(orgID)
 	update := models.Organization{LogoURL: ""}
 	if err := tenant.Unscoped(h.DB).Model(&models.Organization{}).
 		Select("logo_url").Where("id = ?", orgID).Updates(update).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not remove the logo"}})
 		return
 	}
+	h.dropLogoObject(c, previous, "")
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"logo_url": ""}, "message": "Logo removed"})
+}
+
+// previousLogoKey is the storage key behind this organization's current logo,
+// or "" when it cannot be established.
+//
+// Derived from the stored URL and then VERIFIED: the candidate is rendered
+// back through the same GetURL that wrote the column, and only a byte-for-byte
+// match is ever handed to a delete. A project that has moved its storage, or a
+// driver whose URLs are not a base plus the key, declines rather than guesses,
+// which leaves the object exactly where the old behaviour left it.
+//
+// The alternative was storing the key in a column of its own. This needs no
+// migration and is exact where it answers at all, which for every logo this
+// handler has written is always.
+func (h *OrganizationHandler) previousLogoKey(orgID string) string {
+	if h.Storage == nil {
+		return ""
+	}
+	var current models.Organization
+	if err := tenant.Unscoped(h.DB).Select("logo_url").
+		Where("id = ?", orgID).First(&current).Error; err != nil {
+		return ""
+	}
+	if current.LogoURL == "" {
+		return ""
+	}
+	// Every key this handler writes starts here, so the key is the tail of
+	// the URL from that marker on.
+	marker := "uploads/organizations/" + orgID + "/"
+	at := strings.Index(current.LogoURL, marker)
+	if at < 0 {
+		return ""
+	}
+	key := current.LogoURL[at:]
+	if cut := strings.IndexAny(key, "?#"); cut >= 0 {
+		key = key[:cut]
+	}
+	if h.Storage.GetURL(key) != current.LogoURL {
+		return ""
+	}
+	return key
+}
+
+// dropLogoObject deletes a superseded logo, best effort.
+//
+// Best effort because the column has already moved: a bucket that refuses the
+// delete is a leaked object, and failing the request over it would tell the
+// operator their logo did not change when it did. keep is the key just
+// written, so replacing a logo with itself does not delete it.
+func (h *OrganizationHandler) dropLogoObject(c *gin.Context, key, keep string) {
+	if h.Storage == nil || key == "" || key == keep {
+		return
+	}
+	if err := h.Storage.Delete(c.Request.Context(), key); err != nil {
+		log.Printf("organization logo: could not delete the superseded object %s: %v", key, err)
+	}
 }
 
 // Members lists an organization's members. Callers must belong to it.
