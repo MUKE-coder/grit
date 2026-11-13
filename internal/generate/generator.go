@@ -366,6 +366,20 @@ func (g *Generator) Run() error {
 		}
 	}
 
+	// Everything from here comes out of that model: the service, the handler,
+	// the routes, the shared type and schema, the admin screen. Recorded in
+	// the manifest so `grit doctor` can say when one of them is older than
+	// the model it describes, which is the state a hand-added column leaves
+	// the admin form and the create request in, silently.
+	//
+	// After the model is written, so the hash is the model this run produced,
+	// and after the auto-number sequence package, which is framework code
+	// every resource shares rather than anything derived from this one.
+	// Cleared when Run returns, so one generator's source cannot leak into
+	// the next command's writes.
+	manifest.DerivedFrom(filepath.Join(apiRoot, "internal", "models", names.Snake+".go"))
+	defer manifest.DerivedFromNothing()
+
 	if err := g.writeGoService(names); err != nil {
 		return fmt.Errorf("writing Go service: %w", err)
 	}
@@ -434,7 +448,15 @@ func (g *Generator) Run() error {
 	if err := g.writePolicy(names); err != nil {
 		return fmt.Errorf("writing the policy: %w", err)
 	}
-	if err := g.injectPolicyRegistration(names); err != nil {
+	// The registration goes into policies.go, which every resource registers
+	// in: its content follows which resources exist rather than any model's
+	// fields. Suspended over the injection as well as over the write, because
+	// the injection is by this generator and would otherwise take the source
+	// straight back.
+	if err := func() error {
+		defer manifest.SuspendSource()()
+		return g.injectPolicyRegistration(names)
+	}(); err != nil {
 		return fmt.Errorf("registering the policy: %w", err)
 	}
 	// And make main call Register, without which every rule in that package

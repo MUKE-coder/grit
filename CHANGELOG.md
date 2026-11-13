@@ -23,6 +23,44 @@ Also worth knowing:
 ---
 
 
+## v3.527.0 - November 13, 2026
+
+### The manifest knows what each generated file came out of
+
+`.grit/manifest.json` has always answered one question: have you edited this file. That is what lets `grit upgrade` replace the files nobody has touched and leave the rest alone.
+
+It could not answer the other one. **Is this file still what the model says?** `grit sync` regenerates the shared types and the Zod schemas, so those stay honest. It does not regenerate the handler's create request, the service's writable column list, or the admin form. Add a column to a model by hand, which is a reasonable thing to do, and all three describe the model as it was: the form has no input for it, the API drops it if something sends it anyway, and the only symptom is that the value does not save.
+
+So each entry now records what it was generated out of, and the hash that source had at the time.
+
+```bash
+$ grit doctor
+
+  33 checks over 2 resource(s)
+
+  ⚠ apps/api/internal/models/widget.go has changed since the files generated
+    from it: 9 files behind it.
+    apps/api/internal/handlers/widget.go, apps/api/internal/services/widget.go,
+    apps/admin/resources/widgets/widgets.ts and 6 more
+      run grit sync for the shared types and schemas, and grit generate
+      resource Widget to bring the handler, service and admin screen back
+      in line
+      (generated-file-behind-its-source)
+```
+
+One finding per model rather than one per file, and it counts separately the ones you have edited, because regenerating those takes your work with them.
+
+Generated from a model is not the same as invalidated by it. A route file lists endpoints, which do not move when a column arrives; the React Query hooks are generic CRUD; the admin page wrappers render a resource by name. Those are not reported. Nor is anything Grit refuses to regenerate, like the policy stub and the `.custom.tsx` overlay: a finding that cannot be cleared is one people learn to ignore, and it takes the ones beside it with it.
+
+#### Two commands have never recorded what they wrote
+
+Found while testing the above, and worth more than the feature. Neither `grit sync` nor `grit generate field` opened a manifest session, so every file either of them rewrote read as hand-edited from then on, and `grit upgrade` stopped maintaining it.
+
+`grit generate field` is the worse of the two. It is the supported way to add a column, and it touches the model, the handler, the service, the schemas, the type and the admin screen: one run quietly opted the entire resource out of framework fixes. Three of its writers used `os.WriteFile` directly and told the manifest nothing. Both commands record now.
+
+Borrowed from Bud, which tracks what each generated file depends on so it can rebuild only what changed. Grit uses the same record to answer a different question: not what to rebuild, but what is quietly out of date.
+
+
 ## v3.526.0 - November 13, 2026
 
 ### One place to register a database callback, and a record of what a run queried

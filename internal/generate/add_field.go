@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // addFieldSupported lists the field types `grit g field` can add to an existing
@@ -96,6 +98,15 @@ func AddField(resourceName, spec string) error {
 	if err := g.ensureModelImport(names, f); err != nil {
 		return err
 	}
+
+	// The model is now what it is going to be, and everything below is
+	// generated out of it. Recorded so `grit doctor` does not report the
+	// resource as drifted from a model this command has just brought it in
+	// line with: a check that fires on the state its own fix produces is
+	// worse than no check.
+	manifest.DerivedFrom(filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go"))
+	defer manifest.DerivedFromNothing()
+
 	if err := g.injectFrontendField(names, f); err != nil {
 		return err
 	}
@@ -134,7 +145,13 @@ func injectAfterAnchor(filePath, anchor, code string) error {
 		out := append([]string{}, lines[:i+1]...)
 		out = append(out, strings.TrimRight(code, "\n"))
 		out = append(out, lines[i+1:]...)
-		return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644)
+		if err := os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644); err != nil {
+			return err
+		}
+		// The manifest has to hear about it, or the file reads as
+		// hand-edited from here on and grit upgrade stops maintaining it.
+		manifest.Refresh(filePath)
+		return nil
 	}
 	return fmt.Errorf("%w: %q not found in %s", errNoAnchor, anchor, filePath)
 }
@@ -483,7 +500,11 @@ func injectModelLine(filePath, pascal, code string) error {
 	out := append([]string{}, lines[:at]...)
 	out = append(out, strings.TrimRight(code, "\n"))
 	out = append(out, lines[at:]...)
-	return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644)
+	if err := os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644); err != nil {
+		return err
+	}
+	manifest.Refresh(filePath)
+	return nil
 }
 
 // hasMarker reports whether a file carries an injection marker, so a file

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
@@ -29,6 +30,10 @@ func (g *Generator) writePolicy(names Names) error {
 	if fileExists(path) {
 		return nil
 	}
+	// And for the same reason it carries no source: a file nothing will ever
+	// regenerate would read as behind the model after any edit, with no
+	// command that could clear it. Same as the .custom.tsx overlay.
+	defer manifest.SuspendSource()()
 	return writeFileWithDirs(path, g.policySource(names))
 }
 
@@ -175,6 +180,11 @@ func (g *Generator) ensurePoliciesRegistry() error {
 	if fileExists(path) {
 		return nil
 	}
+	// Not derived from this resource's model, whatever the run is currently
+	// attributing writes to. It is the registry every resource registers in,
+	// created by whichever run comes first; recorded as generated out of that
+	// model, editing that model reported the registry as behind.
+	defer manifest.SuspendSource()()
 	if err := writeFileWithDirs(path, policiesRegistrySource(g.Module)); err != nil {
 		return fmt.Errorf("writing the policy registry: %w", err)
 	}

@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.526.0"
+var version = "3.527.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -750,6 +750,22 @@ options is a migration, not a generator run.`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
+
+			// Record what it writes. Without this every file this command
+			// touches read as hand-edited afterwards, so `grit upgrade`
+			// stopped maintaining the whole resource after one `grit g field`:
+			// the supported way to add a column quietly opted the resource out
+			// of framework fixes.
+			if root, err := scaffold.FindProjectRoot(); err == nil {
+				if release, startErr := manifest.Start(root, scaffold.DefaultVersion,
+					"resource:"+args[0]); startErr == nil {
+					defer func() {
+						if saveErr := release(); saveErr != nil {
+							fmt.Printf("  ⚠ could not record what the field change wrote: %v\n", saveErr)
+						}
+					}()
+				}
+			}
 			if err := generate.AddField(args[0], args[1]); err != nil {
 				return err
 			}
@@ -2702,6 +2718,25 @@ func syncCmd() *cobra.Command {
 		Long:  "Parse Go model files and regenerate TypeScript types and Zod schemas in packages/shared.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
+
+			// Record what it writes. Without this the manifest kept the hash
+			// the generator wrote, the bytes on disk no longer matched it,
+			// and every file sync had ever rewritten read as hand-edited:
+			// `grit upgrade` then refused to update it, so the shared types
+			// and schemas of any project that had run sync were quietly
+			// excluded from framework fixes.
+			//
+			// Not fatal when it cannot start. A project with no manifest
+			// predates one, and sync still has work to do.
+			if root, err := scaffold.FindProjectRoot(); err == nil {
+				if release, startErr := manifest.Start(root, scaffold.DefaultVersion, "sync"); startErr == nil {
+					defer func() {
+						if saveErr := release(); saveErr != nil {
+							fmt.Printf("  ⚠ could not record what sync wrote: %v\n", saveErr)
+						}
+					}()
+				}
+			}
 			return generate.Sync()
 		},
 	}

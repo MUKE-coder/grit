@@ -54,6 +54,11 @@ const checks: { name: string; level: string; what: string }[] = [
     what: 'The same query runs many times inside one request, which is what an N+1 looks like from the outside. The only check here that reads something a run produced: record a log with GRIT_QUERY_LOG=.grit/queries.jsonl while the app or its tests run, and this reads the file. Silent when there is none, and it says so when the log is older than the code.',
   },
   {
+    name: 'generated-file-behind-its-source',
+    level: 'warning',
+    what: 'A model has changed since the files generated from it. grit sync keeps the shared types and Zod schemas honest; nothing kept the handler\u2019s create request, the service\u2019s writable columns or the admin form honest, so a column added to a model by hand left all three describing the model as it was, and the only symptom was that the value did not save. One finding per model, not one per file, and it says separately which of them you have edited, because regenerating those would take your work with them.',
+  },
+  {
     name: 'append-only-mutable-routes',
     level: 'error',
     what: 'An append-only resource still mounts PUT, PATCH or DELETE. The model and the database trigger refuse the write, so the endpoint can only fail.',
@@ -194,7 +199,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  32 checks over 0 resource(s)
+  33 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -213,7 +218,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  32 checks over 10 resource(s)
+  33 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment

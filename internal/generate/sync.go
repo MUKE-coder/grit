@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
@@ -42,6 +43,11 @@ func Sync() error {
 		return fmt.Errorf("reading models directory: %w", err)
 	}
 
+	// Cleared when the model loop is done: sync writes a few things after it
+	// that belong to no model, and the last one read would otherwise be
+	// recorded as their source.
+	defer manifest.DerivedFromNothing()
+
 	var synced int
 	var adminFieldsAdded int
 	var desktopColumnsAdded int
@@ -58,6 +64,12 @@ func Sync() error {
 			fmt.Printf("  ⚠ Skipping %s: %v\n", entry.Name(), err)
 			continue
 		}
+
+		// Everything written for this model is derived from this model, as it
+		// is right now. Set per file rather than once, because the loop moves
+		// between models and the last one set would otherwise be recorded
+		// against all of them.
+		manifest.DerivedFrom(filePath)
 
 		for _, s := range structs {
 			// Skip User — it has custom schemas already
@@ -143,6 +155,14 @@ func Sync() error {
 		fmt.Println()
 		printClientUIDrift(uiDrift)
 	}
+
+	// The models are done, so nothing after this comes out of one.
+	//
+	// The deferred clear below is not enough on its own: defer runs when this
+	// function returns, and everything between here and there was recorded as
+	// generated out of whichever model the loop read last. The error
+	// catalogue below was the one that showed it.
+	manifest.DerivedFromNothing()
 
 	// The error catalogue, which is the other thing packages/shared holds that
 	// is generated rather than written.

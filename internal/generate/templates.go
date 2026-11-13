@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
@@ -1685,6 +1686,12 @@ func writeResourceCustomStub(dir string, names Names) error {
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("checking %s: %w", path, err)
 	}
+	// Not recorded as derived from the model, although it is: this file is
+	// written once and never again, so it would read as behind the model
+	// after any edit and nothing could ever clear it. A finding that cannot
+	// be resolved is one people learn to ignore, along with the ones beside
+	// it.
+	defer manifest.SuspendSource()()
 	// names.Pascal is also the shared row type: grit emits
 	// packages/shared/types/<name>.ts with an interface of the same name.
 	return writeFileWithDirs(path, scaffold.AdminResourceCustomStub(names.Pascal, names.Pascal))

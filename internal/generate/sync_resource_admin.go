@@ -127,6 +127,11 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 		if err := os.WriteFile(path, []byte(updated), 0644); err != nil {
 			return added, warnings, fmt.Errorf("writing %s: %w", path, err)
 		}
+		// The overlay-import write above refreshes and this, the write that
+		// matters, did not: the definition then read as hand-edited from the
+		// first sync onwards, so grit upgrade stopped maintaining it and the
+		// new drift check reported it as somebody else’s work.
+		manifest.Refresh(path)
 	}
 	return added, warnings, nil
 }

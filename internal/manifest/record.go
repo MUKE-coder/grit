@@ -22,6 +22,12 @@ var recording struct {
 	generator string
 	active    bool
 
+	// from is the file subsequent writes were generated out of, with its hash
+	// read when DerivedFrom was called. Nil until a command says so, which is
+	// why the scaffold records nothing here: its files come from no source in
+	// the project.
+	from *Source
+
 	// edited is every tracked file that was already hand-edited when this
 	// session began, by project-relative key.
 	//
@@ -80,6 +86,69 @@ func Start(root, gritVersion, generator string) (release func() error, err error
 	return Stop, nil
 }
 
+// DerivedFrom says that every file written from now on was generated out of
+// absPath, until it is called again or cleared with DerivedFromNothing.
+//
+// Hashed now, not later: the point is what the source said at the moment the
+// output was produced, so that a change to it afterwards is detectable. Read
+// the file after writing it, which for a resource means after the model
+// exists.
+//
+// A missing or unreadable file clears the source rather than recording a
+// half-truth. There is no error to return into the middle of a generator run,
+// and an entry with a source nobody can hash would read as permanently drifted.
+func DerivedFrom(absPath string) {
+	recording.mu.Lock()
+	defer recording.mu.Unlock()
+	if !recording.active {
+		return
+	}
+	rel, inside := Rel(recording.root, absPath)
+	if !inside {
+		recording.from = nil
+		return
+	}
+	data, err := os.ReadFile(absPath) // #nosec G304 -- a path inside the project
+	if err != nil {
+		recording.from = nil
+		return
+	}
+	recording.from = &Source{Path: Key(rel), Hash: Hash(string(data))}
+}
+
+// SuspendSource stops attributing writes until the returned function is
+// called, and then puts the source back.
+//
+// For a framework file written in the middle of a generator run: the policy
+// registry, the sequence package. Those arrive because they are missing, not
+// because this model asked for them, and recording them as generated out of
+// it reports them as behind whenever it changes.
+//
+// Paired rather than cleared, because clearing in the middle of Run would
+// leave every file written afterwards unattributed: the handler, the admin
+// screen, the shared type. One wrong entry removed and thirty right ones
+// with it, visible only by counting.
+func SuspendSource() func() {
+	recording.mu.Lock()
+	previous := recording.from
+	recording.from = nil
+	recording.mu.Unlock()
+	return func() {
+		recording.mu.Lock()
+		defer recording.mu.Unlock()
+		recording.from = previous
+	}
+}
+
+// DerivedFromNothing stops attributing writes to a source. Deferred by
+// whatever called DerivedFrom, so one generator's source cannot leak into the
+// next command's writes.
+func DerivedFromNothing() {
+	recording.mu.Lock()
+	defer recording.mu.Unlock()
+	recording.from = nil
+}
+
 // Generator relabels subsequent writes. Used when one command runs several
 // generators in sequence and each batch of files has a different owner.
 func Generator(name string) {
@@ -103,7 +172,7 @@ func Note(absPath, content string) {
 	if !inside {
 		return
 	}
-	recording.manifest.Record(rel, recording.generator, recording.grit, content)
+	recording.manifest.RecordFrom(rel, recording.generator, recording.grit, content, recording.from)
 }
 
 // Refresh re-reads a file from disk and updates its hash, keeping whichever
@@ -138,7 +207,31 @@ func Refresh(absPath string) {
 	if err != nil {
 		return
 	}
-	recording.manifest.Record(rel, existing.Generator, recording.grit, string(data))
+	// The source survives an injection, and is brought up to date only when
+	// this generator owns the file.
+	//
+	// An injection into somebody else's file is not a derivation. A resource
+	// run adds a line to cmd/server/main.go and to the admin's resource
+	// index, and neither of those depends on a single field of the model: the
+	// first version recorded them as generated out of it, so editing the
+	// model reported both as behind. Refresh keeps the owning generator, so
+	// comparing it is exact rather than a guess about paths.
+	// Note creates an attribution; Refresh only brings an existing one up to
+	// date. A file that is injected into and was never generated out of a
+	// model has nothing to update, which is right for cmd/server/main.go,
+	// the admin's resource index and routes.go: a line registering a
+	// resource does not follow any model's fields.
+	//
+	// An earlier version compared the owning generator against the running
+	// one instead, which dropped the source whenever a different command
+	// injected. `grit sync` is a different command, so the admin resource
+	// definition, whose form is the thing a missing column actually breaks,
+	// stopped being tracked after the first sync.
+	from := existing.From
+	if from != nil && recording.from != nil {
+		from = recording.from
+	}
+	recording.manifest.RecordFrom(rel, existing.Generator, recording.grit, string(data), from)
 }
 
 // WasEditedBeforeThisCommand reports whether a tracked file had already been

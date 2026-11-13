@@ -51,6 +51,28 @@ type Entry struct {
 	Grit string `json:"grit"`
 	// Hash is of the normalised content. See Hash.
 	Hash string `json:"hash"`
+
+	// From is what this file was generated out of, when it was generated out
+	// of something else in the project: a resource's admin screen, its
+	// handler and its shared type all come from one Go model.
+	//
+	// It answers the question Hash cannot. Hash says "have you edited this".
+	// From says "is this still what the model says", which is a different
+	// thing and the one nothing could answer: `grit sync` keeps the types and
+	// schemas honest, and nothing kept the admin form or the create request
+	// honest. Add a column to a model by hand and they describe the model as
+	// it was, with no error anywhere.
+	//
+	// Absent for the scaffold's own files, which come from no source in the
+	// project, and absent in every entry written before this existed. An
+	// entry without it behaves exactly as it did.
+	From *Source `json:"from,omitempty"`
+}
+
+// Source is a file this one was generated from, and its hash at that moment.
+type Source struct {
+	Path string `json:"path"`
+	Hash string `json:"hash"`
 }
 
 // Status describes how a file on disk relates to what Grit last wrote there.
@@ -150,13 +172,26 @@ func (m *Manifest) Save(root, gritVersion string) error {
 
 // Record notes that generator wrote content to rel.
 func (m *Manifest) Record(rel, generator, gritVersion, content string) {
+	m.RecordFrom(rel, generator, gritVersion, content, nil)
+}
+
+// RecordFrom is Record, with the source the file was generated out of.
+//
+// A file is never its own source: recording a model as derived from itself
+// would make every edit to it look like drift from itself, which is both
+// wrong and the kind of finding that makes people stop reading.
+func (m *Manifest) RecordFrom(rel, generator, gritVersion, content string, from *Source) {
 	if m.Files == nil {
 		m.Files = map[string]Entry{}
+	}
+	if from != nil && Key(from.Path) == Key(rel) {
+		from = nil
 	}
 	m.Files[Key(rel)] = Entry{
 		Generator: generator,
 		Grit:      gritVersion,
 		Hash:      Hash(content),
+		From:      from,
 	}
 }
 

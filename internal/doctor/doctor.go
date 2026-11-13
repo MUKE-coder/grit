@@ -120,6 +120,10 @@ var checks = []struct {
 	// repository holds, and still offline: the application writes a file and
 	// this reads it. Silent unless there is one.
 	{"query-repeated-in-one-request", checkQueryLog},
+	// A generated file older than the model it came from. The manifest has
+	// always known whether you edited a file; this is the other question,
+	// which nothing could answer: whether it is still what the model says.
+	{"generated-file-behind-its-source", checkDerivedFiles},
 }
 
 // Run audits the project at root.

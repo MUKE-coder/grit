@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/codefmt"
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // `grit generate field` used to stop at the model, the Zod schemas, the
@@ -131,7 +132,13 @@ func (l *goLines) write(path string) error {
 	if l.crlf {
 		s = strings.ReplaceAll(s, "\n", "\r\n")
 	}
-	return os.WriteFile(path, []byte(s), 0644)
+	if err := os.WriteFile(path, []byte(s), 0644); err != nil {
+		return err
+	}
+	// Same reason as every other write Grit makes: a file it changed and
+	// did not record reads as the developer's from then on.
+	manifest.Refresh(path)
+	return nil
 }
 
 // find returns the first line at or after from whose trimmed text is want.
