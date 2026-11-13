@@ -86,7 +86,9 @@ export default function Page() {
 
       <Section id="glance" title="The options at a glance">
         <p>
-          Seven projects that genuinely attempt more than routing. Stars and dates are a proxy for
+          Eight projects that genuinely attempt more than routing. Dates are the last commit on the branch you get when you clone, not
+          GitHub’s "last pushed", which counts a push to any of a project’s
+          branches and reads as much more recent. Stars and dates are a proxy for
           whether you will be alone when something breaks, not for quality.
         </p>
         <CompareTable
@@ -94,8 +96,9 @@ export default function Page() {
           columns={['Project', 'Frontend model', 'Admin UI', 'Stars', 'Last activity']}
           rows={[
             ['Buffalo', 'Go templates', 'no', '8.4k', 'March 2026'],
-            ['Beego', 'Go templates', 'partial', '32.4k', 'October 2026'],
-            ['Bud', 'Svelte, server rendered', 'no', '5.6k', 'November 2023'],
+            ['Beego', 'Go templates', 'partial', '32.4k', 'March 2026'],
+            ['Pagoda', 'Go components, HTMX', 'yes', '3.0k', 'October 2026'],
+            ['Bud', 'Svelte, server rendered', 'no', '5.6k', 'April 2023'],
             ['templ + HTMX', 'Go templates, typed', 'no', '10.6k', 'November 2026'],
             ['Encore', 'Bring your own', 'no', '12.7k', 'November 2026'],
             ['PocketBase', 'Bring your own', 'yes', '61.6k', 'October 2026'],
@@ -105,11 +108,11 @@ export default function Page() {
         <p className="text-sm">
           &quot;Admin UI&quot; means a working screen for your own tables on day one, not a
           dashboard you assemble. It is the single biggest difference between these projects in
-          practice.
+          practice, and only three of the eight have one.
         </p>
       </Section>
 
-      <Section id="options" title="The seven, in detail">
+      <Section id="options" title="The eight, in detail">
         <Option
           n={1}
           name="Buffalo"
@@ -139,7 +142,7 @@ export default function Page() {
           n={2}
           name="Beego"
           href="https://github.com/beego/beego"
-          meta="32,435 stars · last push October 2026 · Apache 2.0"
+          meta="32,435 stars · master last updated March 2026 · Apache 2.0"
           what={
             <p>
               The oldest and largest of these. Beego is a full MVC framework with its own ORM,
@@ -165,13 +168,13 @@ export default function Page() {
           n={3}
           name="Bud"
           href="https://github.com/livebud/bud"
-          meta="5,586 stars · no commits since November 2023 · MIT"
+          meta="5,586 stars · main last updated April 2023 · MIT"
           what={
             <p>
               The most interesting idea on this list. Bud generated the glue between a Go backend
               and a Svelte frontend as you added files, the way Vite generates a dev server. It
-              deserved to win. It has had no commits for two years, so it belongs here as prior art
-              rather than as a recommendation.
+              deserved to win. Its main branch has not moved since April 2023, so it belongs here as prior
+              art rather than as a recommendation.
             </p>
           }
           pros={[
@@ -179,7 +182,7 @@ export default function Page() {
             'Excellent developer experience when it worked',
           ]}
           cons={[
-            'No commits since November 2023',
+            'Its main branch has not moved since April 2023',
             'Svelte only, with the frontend choice baked in',
             'Do not start new work on it',
           ]}
@@ -188,6 +191,33 @@ export default function Page() {
 
         <Option
           n={4}
+          name="Pagoda"
+          href="https://github.com/mikestefanello/pagoda"
+          meta="2,964 stars · main last updated October 2026 · MIT"
+          what={
+            <p>
+              A starter kit rather than a library: you clone it and it is your application. Echo,
+              Ent, SQLite, HTMX and gomponents, with authentication, sessions, email verification,
+              a task queue and an admin panel already wired. The admin is the clever part: a
+              generated extension reads Ent&apos;s schema graph and produces admin screens for
+              every entity, so adding a field to the schema adds it to the admin.
+            </p>
+          }
+          pros={[
+            'A working application on the first clone, not a library to assemble',
+            'An admin generated from the Ent schema, so the two cannot drift',
+            'Type-safe HTML in pure Go with gomponents, and no JavaScript build',
+          ]}
+          cons={[
+            'A starter kit, so you inherit the code rather than upgrade a dependency',
+            'SQLite and Ent are baked in, not choices',
+            'Its admin is explicitly beta: no filters or sorting yet',
+          ]}
+          bestFor="A server-rendered Go application where you want the whole thing scaffolded and are happy owning it."
+        />
+
+        <Option
+          n={5}
           name="templ with HTMX"
           href="https://github.com/a-h/templ"
           meta="10,608 stars · active November 2026 · MIT"
@@ -213,7 +243,7 @@ export default function Page() {
         />
 
         <Option
-          n={5}
+          n={6}
           name="Encore"
           href="https://github.com/encoredev/encore"
           meta="12,712 stars · active November 2026 · MPL 2.0"
@@ -239,7 +269,7 @@ export default function Page() {
         />
 
         <Option
-          n={6}
+          n={7}
           name="PocketBase"
           href="https://pocketbase.io"
           meta="61,597 stars on its GitHub mirror · active, now developed on its own git host"
@@ -265,7 +295,7 @@ export default function Page() {
         />
 
         <Option
-          n={7}
+          n={8}
           name="Grit"
           href="https://github.com/MUKE-coder/grit"
           meta="Active November 2026 · MIT · this site"
@@ -312,7 +342,7 @@ export default function Page() {
 
         <H3>Then check the project is still alive</H3>
         <p>
-          Two of the seven above are effectively dormant. For a dependency you will carry for years,
+          Two of the eight above are effectively dormant. For a dependency you will carry for years,
           the date of the last commit tells you more than the star count. Open the repository and
           look before you commit to anything on any comparison page, including this one.
         </p>
