@@ -72,6 +72,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.516.0 */}
+            <div className="mb-12" id="v3.516.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.516.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Six commands that each worked out where the Go code lives, and four got it wrong</h3>
+                <p>
+                  A <code>--single</code> project keeps its Go module in{' '}
+                  <code>api/</code>, with the frontend owning the project root.
+                  Six places in the generator worked that out independently,
+                  and only one of them was right.
+                </p>
+                <p>
+                  <code>grit sync</code> looked in <code>apps/api</code> and
+                  stopped at &ldquo;models directory not found&rdquo;. It did
+                  not run at all on a single project, and the scaffold&apos;s
+                  own CLAUDE.md calls that command not optional.{' '}
+                  <code>grit generate migration</code> wrote its pair into{' '}
+                  <code>&lt;root&gt;/migrations</code> while{' '}
+                  <code>grit migrate</code> reads <code>api/migrations</code>,
+                  so the migration could never run and nothing said why.{' '}
+                  <code>generate job</code>, <code>mail</code>,{' '}
+                  <code>saga</code> and <code>sequence</code> all wrote to the
+                  project root rather than into the module.
+                </p>
+                <p>
+                  <code>Generator.APIRoot</code> had it right the whole time,
+                  and is now the only implementation: the rest call it. There is
+                  a test over the resolver rather than over each command,
+                  because one wrong answer is what produced six wrong commands.
+                </p>
+                <h4>The same shape, in the admin</h4>
+                <p>
+                  <code>adminRootFrom</code> knew four layouts and not the one{' '}
+                  <code>grit new --single</code> has written since the SPA moved
+                  to the project root. Three commands read it.
+                </p>
+                <p>
+                  So on every single project,{' '}
+                  <code>grit remove resource</code> deleted the Go side and left
+                  the admin definition and its page behind, <strong>still
+                  registered</strong>, so the panel kept a screen in its sidebar
+                  pointing at an endpoint that no longer existed. And{' '}
+                  <code>grit sync</code> never added a new model field to the
+                  admin table or form, silently, which is the feature that
+                  exists so those do not drift.{' '}
+                  <code>AdminCodeRoot</code>, which{' '}
+                  <code>grit generate</code> uses, had the case right, so
+                  generating worked and nothing else did.
+                </p>
+                <h4>And two paths that named files which were not there</h4>
+                <p>
+                  <code>grit sync</code> wrote to the resolved shared root and
+                  printed a hardcoded <code>packages/shared/...</code>, so every
+                  success line on a single project named a file that does not
+                  exist, two inches above the error-catalogue lines printing the
+                  real <code>src/shared</code> path.{' '}
+                  <code>generate migration</code> and{' '}
+                  <code>generate sequence</code> carried a display prefix
+                  decided separately from the root, which is how a path can be
+                  one directory out. Both now derive the label from the
+                  directory they actually wrote to.
+                </p>
+                <p>
+                  Found while starting grit#89, which asks for an admin without
+                  a public site. The plan there is to scaffold and then run{' '}
+                  <code>grit remove resource Blog</code>, reusing the one code
+                  path that knows every place the blog appears rather than
+                  building a second list. Checking that it worked is what turned
+                  this up.
+                </p>
+              </div>
+            </div>
+
             {/* v3.515.0 */}
             <div className="mb-12" id="v3.515.0">
               <div className="flex items-center gap-3 mb-4">

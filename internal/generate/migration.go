@@ -79,11 +79,8 @@ func generateMigrationAt(root, arch string, opts MigrationOptions) error {
 		index.Driver = projectDBProvider(root)
 	}
 
-	apiRoot, apiPrefix := root, ""
-	if arch != "single" {
-		apiRoot = filepath.Join(root, "apps", "api")
-		apiPrefix = "apps/api/"
-	}
+	apiRoot := apiRootFor(root, arch)
+	apiPrefix := displayPrefix(root, apiRoot)
 
 	at := opts.Now
 	if at.IsZero() {

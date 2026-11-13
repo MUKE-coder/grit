@@ -82,13 +82,52 @@ func sharedRootFrom(root string) string {
 // and `grit generate resource` has to keep working in it: the go.mod is what
 // says which, because it is the one file the module cannot be without.
 func (g *Generator) APIRoot() string {
-	if g.Architecture == "single" {
-		if api := filepath.Join(g.Root, "api"); fileExists(filepath.Join(api, "go.mod")) {
+	return apiRootFor(g.Root, g.Architecture)
+}
+
+// apiRootFrom is where a project's Go module lives, read from the project
+// rather than passed in.
+//
+// For every caller that has a root and no Generator, which is most of the
+// standalone commands. They each worked this out for themselves and several
+// got it wrong: a --single project keeps its module in api/, and four
+// commands returned the project root instead, so `grit generate migration`
+// wrote a pair into <root>/migrations that `grit migrate` could never find
+// because it reads api/migrations.
+func apiRootFrom(root string) string {
+	arch, _ := readGritJSON(root)
+	return apiRootFor(root, arch)
+}
+
+// displayPrefix renders the API root as a path relative to the project, for
+// the lines a command prints.
+//
+// Derived from the root that was actually chosen rather than from the
+// architecture, because those two disagreed: a single project got an empty
+// prefix while its files went to api/, so every path printed named a file one
+// directory up from where it was written.
+func displayPrefix(root, apiRoot string) string {
+	rel, err := filepath.Rel(root, apiRoot)
+	if err != nil || rel == "." {
+		return ""
+	}
+	return filepath.ToSlash(rel) + "/"
+}
+
+// apiRootFor is the one implementation, for a caller that already knows the
+// architecture.
+//
+// The directory on disk decides for a single project rather than the version
+// that wrote it: api/go.mod is the current shape, and a project scaffolded
+// before the Go module moved there keeps everything at the root.
+func apiRootFor(root, architecture string) string {
+	if architecture == "single" {
+		if api := filepath.Join(root, "api"); fileExists(filepath.Join(api, "go.mod")) {
 			return api
 		}
-		return g.Root
+		return root
 	}
-	return filepath.Join(g.Root, "apps", "api")
+	return filepath.Join(root, "apps", "api")
 }
 
 // AdminRoot returns the base directory for admin frontend files.

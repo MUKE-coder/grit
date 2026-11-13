@@ -61,12 +61,8 @@ func generateSequenceAt(root, module, arch string, opts SequenceOptions) error {
 		opts.Prefix = defaultPrefix(opts.Name)
 	}
 
-	apiRoot := root
-	apiPrefix := ""
-	if arch != "single" {
-		apiRoot = filepath.Join(root, "apps", "api")
-		apiPrefix = "apps/api/"
-	}
+	apiRoot := apiRootFor(root, arch)
+	apiPrefix := displayPrefix(root, apiRoot)
 
 	names := MakeNames(opts.Name)
 

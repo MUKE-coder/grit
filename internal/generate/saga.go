@@ -28,10 +28,7 @@ func GenerateWorkflow(opts WorkflowOptions) error {
 		return err
 	}
 	arch, _ := readGritJSON(root)
-	apiRoot := root
-	if arch != "single" {
-		apiRoot = filepath.Join(root, "apps", "api")
-	}
+	apiRoot := apiRootFor(root, arch)
 	module, err := readModulePath(root, arch)
 	if err != nil {
 		return err

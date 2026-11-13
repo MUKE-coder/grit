@@ -185,6 +185,19 @@ func adminRootFrom(root string) string {
 		filepath.Join(root, "apps", "admin"),
 		filepath.Join(root, "apps", "web", "admin-panel"),
 		filepath.Join(root, "apps", "web", "src", "admin-panel"),
+		// --single: the frontend owns the project root, so the panel is a
+		// section of the SPA at src/admin-panel.
+		//
+		// This was missing, and it is the layout `grit new --single` has
+		// written since the SPA moved out of frontend/. Three commands read
+		// this helper, so on every single project `grit remove resource` left
+		// the admin definition and its page behind, still registered and
+		// pointing at an endpoint that no longer existed, and `grit sync`
+		// silently never added a new field to the admin table or form.
+		// AdminCodeRoot, which `grit generate` uses, had the case right, so
+		// generation worked and nothing else did.
+		filepath.Join(root, "src", "admin-panel"),
+		// The older single shape, with the app in frontend/.
 		filepath.Join(root, "frontend", "src", "admin-panel"),
 	} {
 		if dirExists(candidate) {

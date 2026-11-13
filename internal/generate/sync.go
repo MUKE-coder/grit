@@ -21,7 +21,11 @@ func Sync() error {
 		return err
 	}
 
-	modelsDir := filepath.Join(root, "apps", "api", "internal", "models")
+	// Resolved, not assumed. This was apps/api/internal/models, so on a
+	// --single project, whose Go module is in api/, `grit sync` stopped at
+	// "models directory not found" and did nothing at all. The scaffold's own
+	// CLAUDE.md calls this command not optional.
+	modelsDir := filepath.Join(apiRootFrom(root), "internal", "models")
 	if !dirExists(modelsDir) {
 		return fmt.Errorf("models directory not found at %s", modelsDir)
 	}
@@ -69,7 +73,7 @@ func Sync() error {
 			if err := writeFileWithDirs(tsPath, tsContent); err != nil {
 				return fmt.Errorf("writing %s: %w", tsPath, err)
 			}
-			fmt.Printf("  ✓ packages/shared/types/%s.ts\n", kebab)
+			fmt.Printf("  ✓ %s\n", relFromRoot(root, tsPath))
 
 			// Write Zod schema
 			zodContent := buildZodSchema(s)
@@ -77,7 +81,7 @@ func Sync() error {
 			if err := writeFileWithDirs(zodPath, zodContent); err != nil {
 				return fmt.Errorf("writing %s: %w", zodPath, err)
 			}
-			fmt.Printf("  ✓ packages/shared/schemas/%s.ts\n", kebab)
+			fmt.Printf("  ✓ %s\n", relFromRoot(root, zodPath))
 
 			// v3.31.16: marker-based partial regen of the admin resource
 			// file. Adds any new model fields to the auto-section of

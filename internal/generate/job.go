@@ -31,12 +31,7 @@ func GenerateJob(opts JobOptions) error {
 	if err != nil {
 		return err
 	}
-	arch, _ := readGritJSON(root)
-	apiRoot := root
-	if arch != "single" {
-		apiRoot = filepath.Join(root, "apps", "api")
-	}
-	return generateJobAt(apiRoot, opts)
+	return generateJobAt(apiRootFrom(root), opts)
 }
 
 func generateJobAt(apiRoot string, opts JobOptions) error {

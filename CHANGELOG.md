@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.516.0 - November 13, 2026
+
+### Six commands that each worked out where the Go code lives, and four got it wrong
+
+A `--single` project keeps its Go module in `api/`, with the frontend owning the project root. Six places in the generator worked that out independently, and only one of them was right.
+
+`grit sync` looked in `apps/api` and stopped at &ldquo;models directory not found&rdquo;. It did not run at all on a single project, and the scaffold's own CLAUDE.md calls that command not optional. `grit generate migration` wrote its pair into `<root>/migrations` while `grit migrate` reads `api/migrations`, so the migration could never run and nothing said why. `generate job`, `mail`, `saga` and `sequence` all wrote to the project root rather than into the module.
+
+`Generator.APIRoot` had it right the whole time, and is now the only implementation: the rest call it. There is a test over the resolver rather than over each command, because one wrong answer is what produced six wrong commands.
+
+#### The same shape, in the admin
+
+`adminRootFrom` knew four layouts and not the one `grit new --single` has written since the SPA moved to the project root. Three commands read it.
+
+So on every single project, `grit remove resource` deleted the Go side and left the admin definition and its page behind, **still registered**, so the panel kept a screen in its sidebar pointing at an endpoint that no longer existed. And `grit sync` never added a new model field to the admin table or form, silently, which is the feature that exists so those do not drift. `AdminCodeRoot`, which `grit generate` uses, had the case right, so generating worked and nothing else did.
+
+#### And two paths that named files which were not there
+
+`grit sync` wrote to the resolved shared root and printed a hardcoded `packages/shared/...`, so every success line on a single project named a file that does not exist, two inches above the error-catalogue lines printing the real `src/shared` path. `generate migration` and `generate sequence` carried a display prefix decided separately from the root, which is how a path can be one directory out. Both now derive the label from the directory they actually wrote to.
+
+Found while starting grit#89, which asks for an admin without a public site. The plan there is to scaffold and then run `grit remove resource Blog`, reusing the one code path that knows every place the blog appears rather than building a second list. Checking that it worked is what turned this up.
+
+
 ## v3.515.0 - November 12, 2026
 
 ### A route that was forgotten fails open
