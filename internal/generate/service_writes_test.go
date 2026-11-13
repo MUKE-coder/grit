@@ -127,6 +127,17 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 			t.Fatalf("%s did not get the write checks", tc.service)
 		}
 
+		// And the row rules, last, because they are written against the
+		// two-argument load the policy repair above produces. Without this an
+		// upgraded project keeps services that never call internal/rowrules
+		// while a newly generated resource does: the file still compiles, so
+		// a rule simply has no effect on the resources the project already
+		// had, which is the worst shape a security feature can fail in.
+		out, changed = scaffold.RepairGeneratedServiceRowRules(out, module)
+		if !changed {
+			t.Fatalf("%s did not get the row rules", tc.service)
+		}
+
 		if got := codefmt.Go(out); got != tc.want {
 			t.Errorf("repairing %s did not produce the generated service.\n--- repaired\n%s\n--- generated\n%s", tc.service, got, tc.want)
 		}
@@ -136,6 +147,9 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 		settled := codefmt.Go(out)
 		if again, changed := scaffold.RepairGeneratedServiceWrites(settled, model); changed || again != settled {
 			t.Errorf("repairing %s twice changed it again", tc.service)
+		}
+		if again, changed := scaffold.RepairGeneratedServiceRowRules(settled, module); changed || again != settled {
+			t.Errorf("repairing %s's row rules twice changed it again", tc.service)
 		}
 		if again, changed := scaffold.RepairGeneratedServicePolicies(settled, module); changed || again != settled {
 			t.Errorf("the policy repair on %s was not idempotent", tc.service)

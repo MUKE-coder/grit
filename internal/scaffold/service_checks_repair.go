@@ -648,6 +648,19 @@ func repairGeneratedServiceChecks(root string, opts Options) error {
 				out = unwrapped
 				fixed = append(fixed, "go test builds this package again: the message for a wrong field type is no longer pre-formatted, which vet refuses as a non-constant format string")
 			}
+			// The row rules, after the checks above, because they are written
+			// against the two-argument load the policy repair produces.
+			//
+			// Without this an upgraded project keeps services that never call
+			// internal/rowrules while a newly generated resource does. The
+			// file still compiles, so nothing says anything: a rule written
+			// in rowrules/rules.go has no effect on the resources the project
+			// already had, which is the worst shape a security feature can
+			// fail in.
+			if scoped, ok := RepairGeneratedServiceRowRules(out, module); ok {
+				out = scoped
+				fixed = append(fixed, "this resource applies its row rules: a rule in internal/rowrules now filters its list and narrows its reads and writes, as it already did for anything generated since")
+			}
 			if len(fixed) == 0 {
 				return src, nil, nil
 			}

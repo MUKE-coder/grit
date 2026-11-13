@@ -72,6 +72,92 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.521.0 */}
+            <div className="mb-12" id="v3.521.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.521.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Row rules: which rows, as a condition on the query</h3>
+                <p>
+                  Roles answer whether somebody may use an endpoint. This
+                  answers the question after it, and it is where the bugs live,
+                  because it has to be asked again at every place a row can be
+                  read or written and one of them is always missed.
+                </p>
+                <pre><code>{`// internal/rowrules/rules.go
+Register("Order", Rules{
+    List:   \`@request.auth.id != "" && user_id = @request.auth.id\`,
+    View:   \`user_id = @request.auth.id\`,
+    Create: \`@request.auth.id != ""\`,
+    Update: \`user_id = @request.auth.id && status = "draft"\`,
+    Delete: \`user_id = @request.auth.id && status = "draft"\`,
+})`}</code></pre>
+                <p>
+                  The language is the one <code>?filter=</code> uses, so a rule
+                  can cross a relation, quantify over many related rows, or
+                  talk about the request. Every generated service applies its
+                  own rules at four sites: the list, the single read, and the
+                  load that an update and a delete both go through.
+                </p>
+                <h4>Three layers, not three alternatives</h4>
+                <pre><code>{`internal/authz      may this kind of person use this endpoint at all
+internal/rowrules   which rows may they see, as a condition on the query
+internal/policies   is this particular loaded record an exception`}</code></pre>
+                <p>
+                  The middle one is new and it is the only one that can filter
+                  a list. A Go callback over a loaded record cannot: by the
+                  time it runs the page has already been chosen, so the caller
+                  gets somebody else&apos;s rows minus the ones the callback
+                  refused, which is a shorter page rather than a correct one.
+                  It is called <code>rowrules</code> and not{' '}
+                  <code>policy</code> because this project already has{' '}
+                  <code>policies</code>, and two packages a letter apart is a
+                  trap for every future reader.
+                </p>
+                <h4>The decisions inside it</h4>
+                <ul>
+                  <li>
+                    Applied to the query, so a record you may not touch is{' '}
+                    <strong>not found</strong> rather than refused. A 403 on a
+                    row you may not read confirms the row exists.
+                  </li>
+                  <li>
+                    An empty rule adds nothing, which is the default. A project
+                    that has not written a rule has not decided nobody may read
+                    anything. <code>Denied</code> says the other thing out loud.
+                  </li>
+                  <li>
+                    An admin, and the application acting on its own behalf in a
+                    job, are not subject to them. A nightly invoice run reads
+                    every invoice.
+                  </li>
+                  <li>
+                    A create rule is evaluated before the row exists, so naming
+                    a column there is reported with a message saying why,
+                    rather than quietly ignored.
+                  </li>
+                  <li>
+                    A rule that does not parse <strong>refuses the query</strong>{' '}
+                    rather than running it unfiltered, and every rule is parsed
+                    at start-up so a typo is a line in the log before the first
+                    request.
+                  </li>
+                </ul>
+                <p>
+                  Nothing is injected into your rules file.{' '}
+                  <code>grit generate resource</code> leaves it alone: it is
+                  yours, it has a worked example at the top, and a generator
+                  that writes into it would be a generator that has to be able
+                  to take it out again.
+                </p>
+              </div>
+            </div>
+
             {/* v3.520.0 */}
             <div className="mb-12" id="v3.520.0">
               <div className="flex items-center gap-3 mb-4">

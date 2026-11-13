@@ -1,0 +1,313 @@
+// Package rowrules is the access rule for each resource, written as an
+// expression and enforced on the query.
+//
+// Three things in this project decide whether a request is allowed, and they
+// are not alternatives:
+//
+//	internal/authz      may this kind of person use this endpoint at all
+//	internal/rowrules   which rows may they see, as a condition on the query
+//	internal/policies   is this particular loaded record an exception
+//
+// The middle one is this package, and it is the only one that can filter a
+// list. A Go callback over a loaded record cannot: by the time it runs the
+// page has already been chosen, so the caller gets somebody else's rows minus
+// the ones the callback refused, which is a shorter page rather than a correct
+// one.
+//
+// The question it answers is where the bugs live, because it has to be asked
+// again at every place a row can be read or written, and one of them is always
+// missed.
+//
+//	"Order": {
+//	    List:   `@request.auth.id != "" && customer.user_id = @request.auth.id`,
+//	    View:   `customer.user_id = @request.auth.id`,
+//	    Create: `@request.auth.id != ""`,
+//	    Update: `customer.user_id = @request.auth.id && status = "draft"`,
+//	    Delete: `@request.auth.id != "" && status = "draft"`,
+//	}
+//
+// A rule is applied to the query, not checked after the rows come back. For a
+// list that means it filters; for a single record it means the row is not
+// found, which is a 404 rather than a 403. That is deliberate: a 403 on a row
+// you may not read confirms the row exists, and for an invoice number or a
+// user id that is the whole of the information.
+package rowrules
+
+import (
+	"context"
+	"fmt"
+	"sort"
+	"strings"
+	"sync"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/authz"
+	"{{MODULE}}/internal/rules"
+)
+
+// Action is the thing being attempted.
+type Action string
+
+const (
+	List   Action = "list"
+	View   Action = "view"
+	Create Action = "create"
+	Update Action = "update"
+	Delete Action = "delete"
+)
+
+// Rules are the five expressions for one resource.
+//
+// An empty string is no condition: the resource's ordinary authorisation
+// applies and nothing further is added. That is the default, and it is not the
+// same as denying everything, because a project that has not written a policy
+// has not thereby decided nobody may read anything.
+//
+// Use Denied for a rule that refuses everybody, which is a thing you sometimes
+// want to say out loud.
+type Rules struct {
+	List   string
+	View   string
+	Create string
+	Update string
+	Delete string
+}
+
+// Denied is a rule that matches nothing, for a resource only the application
+// itself may write.
+const Denied = `1 = 2`
+
+// For returns the expression for an action.
+func (r Rules) For(action Action) string {
+	switch action {
+	case List:
+		return r.List
+	case View:
+		return r.View
+	case Create:
+		return r.Create
+	case Update:
+		return r.Update
+	case Delete:
+		return r.Delete
+	}
+	return ""
+}
+
+var (
+	mu       sync.RWMutex
+	registry = map[string]Rules{}
+	parsed   = map[string]*rules.Expr{}
+)
+
+// Register records a resource's rules. Called from rules.go, which is where a
+// project writes them.
+func Register(resource string, r Rules) {
+	mu.Lock()
+	defer mu.Unlock()
+	registry[strings.ToLower(resource)] = r
+}
+
+// Of returns a resource's rules.
+func Of(resource string) (Rules, bool) {
+	mu.RLock()
+	defer mu.RUnlock()
+	r, ok := registry[strings.ToLower(resource)]
+	return r, ok
+}
+
+// Resources lists everything registered, sorted.
+func Resources() []string {
+	mu.RLock()
+	defer mu.RUnlock()
+	out := make([]string, 0, len(registry))
+	for name := range registry {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// Validate parses every registered rule and reports the ones that do not.
+//
+// Called at start-up, so a typo in a policy is a line in the log before the
+// first request rather than a 500 during one. A rule that cannot be parsed is
+// not a rule that lets everybody through: Scope refuses the query rather than
+// running it unfiltered, which is the only safe direction for this mistake.
+func Validate() []string {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	var problems []string
+	for _, name := range sortedKeys(registry) {
+		r := registry[name]
+		for _, action := range []Action{List, View, Create, Update, Delete} {
+			expr := r.For(action)
+			if strings.TrimSpace(expr) == "" {
+				continue
+			}
+			if _, err := rules.Parse(expr); err != nil {
+				problems = append(problems, fmt.Sprintf("%s.%s: %v", name, action, err))
+			}
+		}
+	}
+	return problems
+}
+
+// compiled returns the parsed expression for a resource and action, parsing
+// once and keeping it.
+//
+// Expressions in this file are the project's own source, not input, so the
+// cost of parsing is paid at most once per rule for the life of the process.
+func compiled(resource string, action Action) (*rules.Expr, error) {
+	key := strings.ToLower(resource) + "." + string(action)
+
+	mu.RLock()
+	expr, ok := parsed[key]
+	mu.RUnlock()
+	if ok {
+		return expr, nil
+	}
+
+	r, found := Of(resource)
+	if !found {
+		return nil, nil // no policy registered: nothing to add
+	}
+	src := strings.TrimSpace(r.For(action))
+	if src == "" {
+		return nil, nil
+	}
+
+	expr, err := rules.Parse(src)
+	if err != nil {
+		return nil, fmt.Errorf("policy %s.%s: %w", resource, action, err)
+	}
+
+	mu.Lock()
+	parsed[key] = expr
+	mu.Unlock()
+	return expr, nil
+}
+
+// Scope adds a resource's rule for an action to a query.
+//
+// The model is needed because the rule is compiled against its schema: that is
+// what makes `status = "draft"` a column rather than a string, and what
+// refuses a rule naming a field the model does not have.
+//
+// A query with no policy is returned untouched, so this costs nothing on a
+// resource that has not declared one.
+func Scope(ctx context.Context, query *gorm.DB, resource string, action Action, model any) (*gorm.DB, error) {
+	expr, err := compiled(resource, action)
+	if err != nil {
+		return nil, err
+	}
+	if expr == nil || expr.Empty() {
+		return query, nil
+	}
+
+	// The application acting on its own behalf is not subject to a rule about
+	// what a caller may see. A job that sends tomorrow's invoices reads every
+	// invoice, and a rule saying "only your own" would make it send none.
+	if actor, ok := authz.ActorFrom(ctx); ok && actor.Admin {
+		return query, nil
+	}
+
+	schema, err := rules.SchemaOf(query, model)
+	if err != nil {
+		return nil, err
+	}
+	compiledSQL, err := expr.Compile(schema, ContextFrom(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("policy %s.%s: %w", resource, action, err)
+	}
+	return query.Where(compiledSQL.SQL, compiledSQL.Args...), nil
+}
+
+// Allow answers a create, where there is no row yet.
+//
+// Only the request half of the language means anything here:
+// `@request.auth.id != ""`, `@request.body.role:isset = false`. A create rule
+// naming a column is a rule about a row that does not exist, and is reported
+// rather than quietly ignored.
+func Allow(ctx context.Context, resource string, action Action, body map[string]any) error {
+	expr, err := compiled(resource, action)
+	if err != nil {
+		return err
+	}
+	if expr == nil || expr.Empty() {
+		return nil
+	}
+	if actor, ok := authz.ActorFrom(ctx); ok && actor.Admin {
+		return nil
+	}
+
+	requestCtx := ContextFrom(ctx)
+	if body != nil {
+		requestCtx = requestCtx.WithBody(body)
+	}
+
+	// Compiled against an empty schema, so any identifier that is not under
+	// @request is an error rather than a column nobody can read.
+	compiledSQL, err := expr.Compile(rules.EmptySchema(), requestCtx)
+	if err != nil {
+		// Almost always the same mistake, so it is worth saying which:
+		// a create rule is evaluated before the row exists, so there is
+		// nothing for a column to be read from.
+		return fmt.Errorf(
+			"rowrules %s.%s is evaluated before the row exists, so it can only talk about the request "+
+				"(@request.auth, @request.body): %w", resource, action, err)
+	}
+	// A create rule has to decide without the database, because there is no
+	// row. Anything that compiled to SQL named a column, which on a create is
+	// a rule about something that does not exist yet.
+	allowed, decided := compiledSQL.Always()
+	if !decided {
+		return fmt.Errorf(
+			"rowrules %s.%s names a column, and a create rule is evaluated before the row exists: "+
+				"use @request.auth or @request.body here", resource, action)
+	}
+	if allowed {
+		return nil
+	}
+	return ErrDenied
+}
+
+// ErrDenied is a create the policy refused.
+//
+// A create is answered 400 rather than 404, because unlike a read there is no
+// row whose existence could be disclosed by saying no.
+var ErrDenied = fmt.Errorf("this action is not allowed by the policy for this resource")
+
+// ContextFrom builds the request half of the expression language from the
+// actor on ctx.
+//
+// Services take a context.Context rather than a gin one, so what a rule can
+// know about the caller is what the auth middleware put on it: the user id,
+// their role, and the permissions they hold. A handler that also has the
+// request body passes it to Allow.
+func ContextFrom(ctx context.Context) *rules.Context {
+	out := rules.NewContext()
+	actor, ok := authz.ActorFrom(ctx)
+	if !ok {
+		return out
+	}
+	auth := map[string]any{"id": actor.UserID}
+	if actor.Admin {
+		auth["role"] = "ADMIN"
+	}
+	if len(actor.Grants) > 0 {
+		auth["grants"] = actor.Grants
+	}
+	return out.WithAuth(auth)
+}
+
+func sortedKeys(m map[string]Rules) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}

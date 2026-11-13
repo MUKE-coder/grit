@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 9 to 15, 2026",
-    count: 37,
+    count: 38,
     entries: [
+      { version: "3.521.0", title: "Row rules: which rows, as a condition on the query" },
       { version: "3.520.0", title: "One rate-limit table for the whole API" },
       { version: "3.519.0", title: "Asking for less, and asking for more" },
       { version: "3.518.0", title: "A query language on every list endpoint" },

@@ -1,0 +1,285 @@
+package rowrules
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/authz"
+	"{{MODULE}}/internal/rules"
+)
+
+type polCustomer struct {
+	ID     string `gorm:"primaryKey" json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (polCustomer) TableName() string { return "pol_customers" }
+
+type polOrder struct {
+	ID         string       `gorm:"primaryKey" json:"id"`
+	Status     string       `json:"status"`
+	Total      int          `json:"total"`
+	UserID     string       `json:"user_id"`
+	CustomerID string       `json:"customer_id"`
+	Customer   *polCustomer `gorm:"foreignKey:CustomerID" json:"customer"`
+	CreatedAt  time.Time    `json:"created_at"`
+}
+
+func (polOrder) TableName() string { return "pol_orders" }
+
+func policyDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+
+	if err := db.AutoMigrate(&polCustomer{}, &polOrder{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []polCustomer{{ID: "c1", UserID: "u1"}, {ID: "c2", UserID: "u2"}} {
+		if err := db.Create(&c).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, o := range []polOrder{
+		{ID: "o1", Status: "draft", Total: 100, UserID: "u1", CustomerID: "c1"},
+		{ID: "o2", Status: "sent", Total: 200, UserID: "u1", CustomerID: "c1"},
+		{ID: "o3", Status: "draft", Total: 300, UserID: "u2", CustomerID: "c2"},
+	} {
+		if err := db.Create(&o).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	return db
+}
+
+// reset clears the registry between tests, since it is package state.
+func reset(t *testing.T) {
+	t.Helper()
+	mu.Lock()
+	registry = map[string]Rules{}
+	parsed = map[string]*rules.Expr{}
+	mu.Unlock()
+}
+
+func asUser(id string) context.Context {
+	return authz.WithActor(context.Background(), authz.Actor{UserID: id})
+}
+
+func asAdmin() context.Context {
+	return authz.WithActor(context.Background(), authz.Actor{UserID: "admin", Admin: true})
+}
+
+func scoped(t *testing.T, db *gorm.DB, ctx context.Context, action Action) []string {
+	t.Helper()
+	query, err := Scope(ctx, db.Model(&polOrder{}), "Order", action, &polOrder{})
+	if err != nil {
+		t.Fatalf("%s: %v", action, err)
+	}
+	var ids []string
+	if err := query.Order("id").Pluck("id", &ids).Error; err != nil {
+		t.Fatalf("%s: %v", action, err)
+	}
+	return ids
+}
+
+func TestAListRuleFiltersTheQuery(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{
+		List: `@request.auth.id != "" && user_id = @request.auth.id`,
+	})
+
+	if got := strings.Join(scoped(t, db, asUser("u1"), List), ","); got != "o1,o2" {
+		t.Errorf("u1 sees %q, want o1,o2", got)
+	}
+	if got := strings.Join(scoped(t, db, asUser("u2"), List), ","); got != "o3" {
+		t.Errorf("u2 sees %q, want o3", got)
+	}
+	if got := strings.Join(scoped(t, db, context.Background(), List), ","); got != "" {
+		t.Errorf("a guest sees %q", got)
+	}
+}
+
+// A rule over a relation, which is the case a hand-written ownership check
+// usually gets wrong: the row does not carry the owner, the row it belongs to
+// does.
+func TestARuleCanCrossARelation(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{List: `customer.user_id = @request.auth.id`})
+
+	if got := strings.Join(scoped(t, db, asUser("u2"), List), ","); got != "o3" {
+		t.Errorf("u2 sees %q through the customer, want o3", got)
+	}
+}
+
+// An admin, and the application acting on its own behalf, are not subject to
+// a rule about what a caller may see. A nightly invoice run reads every
+// invoice, and "only your own" would make it send none.
+func TestAnAdminAndTheApplicationAreNotScoped(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{List: `user_id = @request.auth.id`})
+
+	if got := strings.Join(scoped(t, db, asAdmin(), List), ","); got != "o1,o2,o3" {
+		t.Errorf("an admin sees %q, want every row", got)
+	}
+	if got := strings.Join(scoped(t, db, authz.AsSystem(context.Background()), List), ","); got != "o1,o2,o3" {
+		t.Errorf("a job sees %q, want every row", got)
+	}
+}
+
+// The update rule has to narrow the lookup, so a row somebody may not edit is
+// not found rather than refused. A 403 on a row you may not read confirms it
+// exists.
+func TestAnUpdateRuleNarrowsTheLookup(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{Update: `user_id = @request.auth.id && status = "draft"`})
+
+	ctx := asUser("u1")
+	query, err := Scope(ctx, db.Model(&polOrder{}).Where("id = ?", "o1"), "Order", Update, &polOrder{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var found polOrder
+	if err := query.First(&found).Error; err != nil {
+		t.Errorf("u1 cannot edit their own draft: %v", err)
+	}
+
+	// Their own, but sent rather than draft.
+	query, _ = Scope(ctx, db.Model(&polOrder{}).Where("id = ?", "o2"), "Order", Update, &polOrder{})
+	if err := query.First(&found).Error; !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Errorf("a sent order was editable, or failed for another reason: %v", err)
+	}
+
+	// Somebody else's.
+	query, _ = Scope(ctx, db.Model(&polOrder{}).Where("id = ?", "o3"), "Order", Update, &polOrder{})
+	if err := query.First(&found).Error; !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Errorf("another user's order was editable: %v", err)
+	}
+}
+
+func TestACreateRuleIsAnsweredWithoutTheDatabase(t *testing.T) {
+	reset(t)
+	Register("Order", Rules{Create: `@request.auth.id != ""`})
+
+	if err := Allow(asUser("u1"), "Order", Create, nil); err != nil {
+		t.Errorf("a signed-in caller was refused: %v", err)
+	}
+	if err := Allow(context.Background(), "Order", Create, nil); !errors.Is(err, ErrDenied) {
+		t.Errorf("a guest was allowed to create: %v", err)
+	}
+
+	// The useful one: a field may be submitted but not set.
+	reset(t)
+	Register("User", Rules{Create: `@request.body.role:isset = false`})
+	if err := Allow(asUser("u1"), "User", Create, map[string]any{"email": "a@b.c"}); err != nil {
+		t.Errorf("a create without a role was refused: %v", err)
+	}
+	if err := Allow(asUser("u1"), "User", Create, map[string]any{"role": "ADMIN"}); !errors.Is(err, ErrDenied) {
+		t.Errorf("a create setting its own role was allowed: %v", err)
+	}
+}
+
+// A create rule naming a column is about a row that does not exist. Saying so
+// is better than evaluating it against nothing and letting everybody through.
+func TestACreateRuleNamingAColumnIsReported(t *testing.T) {
+	reset(t)
+	Register("Order", Rules{Create: `status = "draft"`})
+
+	err := Allow(asUser("u1"), "Order", Create, nil)
+	if err == nil {
+		t.Fatal("a create rule naming a column was accepted")
+	}
+	if errors.Is(err, ErrDenied) {
+		t.Error("it was reported as a refusal rather than as a mistake in the rule")
+	}
+	if !strings.Contains(err.Error(), "before the row exists") {
+		t.Errorf("the message does not explain the problem: %v", err)
+	}
+}
+
+func TestAnEmptyRuleAddsNothing(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{List: ""})
+
+	if got := strings.Join(scoped(t, db, asUser("u1"), List), ","); got != "o1,o2,o3" {
+		t.Errorf("an empty rule filtered the query down to %q", got)
+	}
+	// And a resource with no policy at all behaves the same.
+	reset(t)
+	if got := strings.Join(scoped(t, db, asUser("u1"), List), ","); got != "o1,o2,o3" {
+		t.Errorf("an unregistered resource was filtered down to %q", got)
+	}
+}
+
+// A rule that does not parse must refuse the query rather than run it
+// unfiltered. This is the one mistake where failing open would hand every row
+// to everybody, so it fails closed.
+func TestARuleThatDoesNotParseRefusesTheQuery(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{List: `user_id = `})
+
+	if _, err := Scope(asUser("u1"), db.Model(&polOrder{}), "Order", List, &polOrder{}); err == nil {
+		t.Fatal("a broken rule let the query through unfiltered")
+	}
+
+	// And Validate finds it at start-up, before any request.
+	problems := Validate()
+	if len(problems) == 0 {
+		t.Fatal("Validate did not report a rule that does not parse")
+	}
+	if !strings.Contains(problems[0], "order.list") {
+		t.Errorf("the problem does not say which rule: %v", problems)
+	}
+}
+
+// A rule naming a field the model does not have is the same class of mistake
+// and gets the same answer.
+func TestARuleNamingAnUnknownFieldRefusesTheQuery(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{List: `nonsense = 1`})
+
+	_, err := Scope(asUser("u1"), db.Model(&polOrder{}), "Order", List, &polOrder{})
+	if err == nil {
+		t.Fatal("a rule naming an unknown field let the query through")
+	}
+	if !strings.Contains(err.Error(), "nonsense") {
+		t.Errorf("the error does not name the field: %v", err)
+	}
+}
+
+func TestDeniedRefusesEverything(t *testing.T) {
+	reset(t)
+	db := policyDB(t)
+	Register("Order", Rules{List: Denied})
+
+	if got := strings.Join(scoped(t, db, asUser("u1"), List), ","); got != "" {
+		t.Errorf("Denied returned %q", got)
+	}
+	// But still not the application itself.
+	if got := strings.Join(scoped(t, db, asAdmin(), List), ","); got == "" {
+		t.Error("Denied stopped an admin, which is not what it is for")
+	}
+}

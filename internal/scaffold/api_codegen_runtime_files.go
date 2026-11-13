@@ -66,6 +66,13 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "ratelimit", "rules_test.go"): tmpl("api/ratelimit/rules_test.go"),
 		filepath.Join(apiRoot, "internal", "middleware", "ratelimit.go"): tmpl("api/middleware/ratelimit.go"),
 
+		// Access rules, written as expressions and applied to the query. The
+		// engine is internal/rules; this is the registry, the five actions
+		// and the part that decides an unparseable rule refuses the query
+		// rather than running it unfiltered.
+		filepath.Join(apiRoot, "internal", "rowrules", "rowrules.go"):      tmpl("api/rowrules/rowrules.go"),
+		filepath.Join(apiRoot, "internal", "rowrules", "rowrules_test.go"): tmpl("api/rowrules/rowrules_test.go"),
+
 		// The expression engine: one parser and one compiler, used by
 		// ?filter= on a list endpoint and by a declared access rule. Both
 		// resolve every identifier against the model's own GORM schema and
@@ -102,6 +109,13 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "docx", "docx.go"):      tmpl("api/docx/docx.go"),
 		filepath.Join(apiRoot, "internal", "docx", "report.go"):    tmpl("api/docx/report.go"),
 		filepath.Join(apiRoot, "internal", "docx", "docx_test.go"): tmpl("api/docx/docx_test.go"),
+	}
+
+	// The project's own row rules. Created once and never overwritten,
+	// because grit generate injects into it and somebody's rules live there.
+	// See writeRowRules.
+	if err := writeRowRules(root, opts); err != nil {
+		return err
 	}
 
 	for path, content := range files {

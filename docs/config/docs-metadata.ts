@@ -483,6 +483,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Twenty-seven skills that teach an AI assistant to build with Grit, plus the reference material they read: what each one does, when it fires, and how grit skills install puts them in your agent.',
   },
+  '/docs/security/row-rules': {
+    title: 'Row rules',
+    description:
+      'One expression per resource per action, applied to the query rather than checked after the rows come back: a list is filtered and a single record is not found, which is a 404 rather than a 403. How they sit beside authz and policies, why an empty rule adds nothing, why a create rule can only talk about the request, and why a rule that does not parse fails closed.',
+  },
   '/docs/security/rate-limits': {
     title: 'Rate limits',
     description:

@@ -1122,7 +1122,10 @@ func (g *Generator) serviceSource(names Names) string {
 	if p.hasFiles {
 		imports += "\n\t\"" + g.Module + "/internal/files\""
 	}
-	imports += "\n\t\"" + g.Module + "/internal/models\"\n\t\"" + g.Module + "/internal/paginate\"\n\t\"" + g.Module + "/internal/respond\""
+	// rowrules unconditionally, like authz above it: the row rule for each
+	// action is applied on every resource, and a resource that has declared
+	// none gets its query back untouched.
+	imports += "\n\t\"" + g.Module + "/internal/models\"\n\t\"" + g.Module + "/internal/paginate\"\n\t\"" + g.Module + "/internal/respond\"" + "\n\t\"" + g.Module + "/internal/rowrules\""
 	// The expander names money.Money, so a resource with a price imports it.
 	if strings.Contains(p.expandEmbedded, "money.Money") {
 		imports += "\n\t\"" + g.Module + "/internal/money\""
@@ -1359,6 +1362,21 @@ func (s *{{Pascal}}Service) db(ctx context.Context) *gorm.DB {
 	return s.DB.WithContext(ctx)
 }
 {{WRITE_HELPER}}
+// rows applies this resource's row rules to a query.
+//
+// internal/rowrules holds a condition per action, written as an expression
+// over this model's own fields, and this is where it reaches the SQL. A
+// resource with no rule declared gets its query back untouched, which is how
+// the project behaved before it had any.
+//
+// Applied to the query rather than checked afterwards: for a list that filters
+// it, and for one record it means the row is not found. That is a 404 rather
+// than a 403, and deliberately so, because a 403 on a row you may not read
+// confirms the row exists.
+func (s *{{Pascal}}Service) rows(ctx context.Context, query *gorm.DB, action rowrules.Action) (*gorm.DB, error) {
+	return rowrules.Scope(ctx, query, "{{Pascal}}", action, &models.{{Pascal}}{})
+}
+
 // List returns one page of {{plural}}.
 //
 //	archived "true" or "1"   only archived rows
@@ -1379,6 +1397,11 @@ func (s *{{Pascal}}Service) List(ctx context.Context, p paginate.Params, archive
 		query = query.Where("archived_at IS NULL")
 	}
 {{OWNER_SCOPE}}
+	query, err := s.rows(ctx, query, rowrules.List)
+	if err != nil {
+		return paginate.Result[models.{{Pascal}}]{}, err
+	}
+
 	return paginate.List[models.{{Pascal}}](query, p, {{camel}}ListConfig)
 }
 
@@ -1416,8 +1439,12 @@ func (s *{{Pascal}}Service) Export(ctx context.Context, search string, each func
 
 // GetByID returns one {{lower}} with the relations shown beside it.
 func (s *{{Pascal}}Service) GetByID(ctx context.Context, id string) (*models.{{Pascal}}, error) {
+	query, err := s.rows(ctx, s.db(ctx){{PRELOADS}}, rowrules.View)
+	if err != nil {
+		return nil, err
+	}
 	var item models.{{Pascal}}
-	if err := s.db(ctx){{PRELOADS}}.First(&item, "id = ?", id).Error; err != nil {
+	if err := query.First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 {{OWNER_GUARD}}	if d := authz.Inspect(ctx, "{{plural}}.read", &item); !d.Allowed() {
@@ -1431,8 +1458,18 @@ func (s *{{Pascal}}Service) GetByID(ctx context.Context, id string) (*models.{{P
 // ability is what the caller is about to do, "update" or "delete", so a
 // policy can refuse one without refusing the other.
 func (s *{{Pascal}}Service) load(ctx context.Context, id, ability string) (*models.{{Pascal}}, error) {
+	// The row rule for the action about to happen, so a row this caller may
+	// not change is not found rather than refused.
+	action := rowrules.Update
+	if ability == "delete" {
+		action = rowrules.Delete
+	}
+	query, err := s.rows(ctx, s.db(ctx), action)
+	if err != nil {
+		return nil, err
+	}
 	var item models.{{Pascal}}
-	if err := s.db(ctx).First(&item, "id = ?", id).Error; err != nil {
+	if err := query.First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 {{OWNER_GUARD}}	// A policy rule narrows this further than the route's permission did.

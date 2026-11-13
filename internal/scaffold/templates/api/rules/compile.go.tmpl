@@ -16,6 +16,21 @@ type Compiled struct {
 	Args []any
 }
 
+// Always reports an expression that needed no database at all: every operand
+// resolved in Go, so the answer is yes or no rather than a set of rows.
+//
+// That is how a create rule is answered. `@request.auth.id != ""` has no
+// column in it, so it compiles to a constant and there is nothing to run.
+func (c Compiled) Always() (value bool, decided bool) {
+	switch c.SQL {
+	case alwaysTrue:
+		return true, true
+	case alwaysFalse:
+		return false, true
+	}
+	return false, false
+}
+
 // alwaysTrue and alwaysFalse are what a comparison between two values known in
 // Go compiles to. `@request.body.role:isset = false` has no column in it at
 // all, and the answer is decided before the query runs.
@@ -797,6 +812,14 @@ func strftimeToPostgres(format string) string {
 
 func unknownName(s *Schema, name string, pos int) error {
 	known := s.Names()
+	if len(known) == 0 {
+		// An empty schema: the expression is being evaluated where there is
+		// no row, which is a create rule. Listing nothing would read as a
+		// model with no fields.
+		return fmt.Errorf(
+			"%q at position %d is a column, and this expression is evaluated with no row to read it from",
+			name, pos)
+	}
 	if len(known) > 12 {
 		known = known[:12]
 	}

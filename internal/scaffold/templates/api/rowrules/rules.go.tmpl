@@ -1,0 +1,53 @@
+package rowrules
+
+// This file is yours.
+//
+// It holds the condition each resource puts on its own rows. For "may this
+// kind of person use this endpoint", see internal/authz; for "is this
+// particular record an exception", see internal/policies. Only the rules here
+// can filter a list, because only these are applied to the query.
+//
+// Each resource gets five rules, one per action. An empty rule adds no
+// condition: the resource's ordinary authorisation applies and nothing
+// further happens, which is what every resource starts with. Filling one in
+// is how you say "and only these rows".
+//
+//	Register("Order", Rules{
+//	    List:   `@request.auth.id != "" && user_id = @request.auth.id`,
+//	    View:   `user_id = @request.auth.id`,
+//	    Create: `@request.auth.id != ""`,
+//	    Update: `user_id = @request.auth.id && status = "draft"`,
+//	    Delete: `user_id = @request.auth.id && status = "draft"`,
+//	})
+//
+// The language is the one ?filter= uses, documented at /docs/backend/filtering.
+// Briefly:
+//
+//	user_id = @request.auth.id        the row belongs to the caller
+//	author.country = "UG"             a condition on a related row
+//	members.user_id ?= @request.auth.id   any one of the related rows
+//	status != "archived" && total > 0
+//	created_at >= @monthStart
+//	@request.body.role:changed = false    may be submitted, may not be altered
+//
+// Three things worth knowing before you write one:
+//
+//  1. A rule is applied to the query, not checked afterwards. For a list it
+//     filters; for one record it means the row is not found, which is a 404
+//     rather than a 403. A 403 on a row you may not read confirms the row
+//     exists, and for an invoice number that is the whole of the information.
+//
+//  2. An ADMIN, and the application acting on its own behalf in a job or a
+//     command, are not subject to these. A nightly invoice run reads every
+//     invoice, and "only your own" would make it send none.
+//
+//  3. A create rule is evaluated before the row exists, so it can only talk
+//     about the request: @request.auth and @request.body. Naming a column
+//     there is reported rather than quietly ignored.
+//
+// Every rule is parsed at start-up. A rule that does not parse is a line in
+// the log before the first request, and the query it guards is refused rather
+// than run unfiltered.
+func init() {
+	// grit:policies
+}

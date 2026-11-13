@@ -1008,6 +1008,12 @@
     "keywords": "one table labelled rules whole api instead limit written each route request matched then method class action prefix so handler tomorrow bounded whether not anybody thought about classes audiences turning off credential rule has no audience docs security rate limits"
   },
   {
+    "title": "Row rules",
+    "href": "/docs/security/row-rules",
+    "section": "Security & Testing",
+    "keywords": "one expression per resource action applied query rather than checked after rows come back list filtered single record not found 404 403 they sit beside authz policies empty rule adds nothing create only talk about request does parse fails closed docs security row rules"
+  },
+  {
     "title": "Scout: scanning your own app",
     "href": "/docs/security/scout",
     "section": "Security & Testing",

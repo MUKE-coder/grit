@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.521.0 - November 13, 2026
+
+### Row rules: which rows, as a condition on the query
+
+Roles answer whether somebody may use an endpoint. This answers the question after it, and it is where the bugs live, because it has to be asked again at every place a row can be read or written and one of them is always missed.
+
+`{`// internal/rowrules/rules.go Register("Order", Rules{ List: \`@request.auth.id != "" && user_id = @request.auth.id\`, View: \`user_id = @request.auth.id\`, Create: \`@request.auth.id != ""\`, Update: \`user_id = @request.auth.id && status = "draft"\`, Delete: \`user_id = @request.auth.id && status = "draft"\`, })`}` The language is the one `?filter=` uses, so a rule can cross a relation, quantify over many related rows, or talk about the request. Every generated service applies its own rules at four sites: the list, the single read, and the load that an update and a delete both go through.
+
+#### Three layers, not three alternatives
+
+`{`internal/authz may this kind of person use this endpoint at all internal/rowrules which rows may they see, as a condition on the query internal/policies is this particular loaded record an exception`}` The middle one is new and it is the only one that can filter a list. A Go callback over a loaded record cannot: by the time it runs the page has already been chosen, so the caller gets somebody else's rows minus the ones the callback refused, which is a shorter page rather than a correct one. It is called `rowrules` and not `policy` because this project already has `policies`, and two packages a letter apart is a trap for every future reader.
+
+#### The decisions inside it
+
+- Applied to the query, so a record you may not touch is **not found** rather than refused. A 403 on a row you may not read confirms the row exists.
+- An empty rule adds nothing, which is the default. A project that has not written a rule has not decided nobody may read anything. `Denied` says the other thing out loud.
+- An admin, and the application acting on its own behalf in a job, are not subject to them. A nightly invoice run reads every invoice.
+- A create rule is evaluated before the row exists, so naming a column there is reported with a message saying why, rather than quietly ignored.
+- A rule that does not parse **refuses the query** rather than running it unfiltered, and every rule is parsed at start-up so a typo is a line in the log before the first request.
+
+Nothing is injected into your rules file. `grit generate resource` leaves it alone: it is yours, it has a worked example at the top, and a generator that writes into it would be a generator that has to be able to take it out again.
+
+
 ## v3.520.0 - November 13, 2026
 
 ### One rate-limit table for the whole API

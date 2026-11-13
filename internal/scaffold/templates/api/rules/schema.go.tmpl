@@ -201,6 +201,22 @@ func SchemaOf(db *gorm.DB, model any) (*Schema, error) {
 	return s, nil
 }
 
+// EmptySchema resolves no identifier at all.
+//
+// For a rule evaluated where there is no row: a create. Every operand under
+// @request still resolves, because those are answered in Go, and anything
+// else is refused with "unknown field", which is the correct answer to a
+// create rule naming a column of the row it is about to create.
+func EmptySchema() *Schema {
+	return &Schema{
+		Table:     "",
+		Dialect:   "sqlite",
+		fields:    map[string]*Field{},
+		relations: map[string]*Relation{},
+		deny:      map[string]bool{},
+	}
+}
+
 // Restrict returns a copy of the schema that resolves only the given names.
 //
 // This is what a list endpoint hands to a caller's ?filter=: the model may
