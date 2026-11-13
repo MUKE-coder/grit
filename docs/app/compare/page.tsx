@@ -39,6 +39,15 @@ export default function ComparePage() {
           choose. No trashing other tools; several of them inspired Grit.
         </p>
 
+        <p className="mb-12 max-w-2xl leading-relaxed text-muted-foreground">
+          Not sure what you are choosing between yet? The{' '}
+          <Link href="/i" className="text-accent hover:underline">
+            guides to choosing a Go stack
+          </Link>{' '}
+          cover the decision itself: full-stack frameworks, routers, admin panels, and moving from
+          Laravel.
+        </p>
+
         <div className="grid gap-3 sm:grid-cols-2">
           {comparisons.map((c) => (
             <Link

@@ -170,6 +170,28 @@ export function llmsIndex(): string {
     parts.push('')
   }
 
+  parts.push('## Choosing a stack')
+  parts.push('')
+  parts.push(
+    `- [Full-stack frameworks for Go](${BASE}/i/go-full-stack-framework): Buffalo, Beego, Bud, templ with HTMX, Encore, PocketBase and Grit, with what each leaves you to build and which are dormant.`,
+  )
+  parts.push(
+    `- [Go web frameworks](${BASE}/i/go-web-framework): net/http, Chi, Gin, Echo and Fiber, where the router ends, and the list of things none of them provide.`,
+  )
+  parts.push(
+    `- [Admin panels for Go](${BASE}/i/go-admin-panel): GoAdmin, go-admin, QOR, PocketBase, hosted tools and generated admins, compared on where the schema lives.`,
+  )
+  parts.push(
+    `- [A Go backend with a React frontend](${BASE}/i/go-react-stack): type drift, auth across two origins, the dev proxy, and one deployment artefact or two.`,
+  )
+  parts.push(
+    `- [Laravel to Go](${BASE}/i/laravel-alternative-go): every part of Laravel mapped to its nearest Go equivalent, including the four gaps with no good answer.`,
+  )
+  parts.push(
+    `- [CRUD generators for Go](${BASE}/i/go-crud-generator): sqlc, ent, GORM gen, goa and full-stack scaffolders, and what each one writes.`,
+  )
+  parts.push('')
+
   parts.push('## Optional')
   parts.push('')
   parts.push(`- [Changelog](${BASE}/docs/changelog): every release, newest first.`)
