@@ -50,6 +50,11 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		// a compiled expression on the query.
 		filepath.Join(apiRoot, "internal", "paginate", "filter.go"):      tmpl("api/paginate/filter.go"),
 		filepath.Join(apiRoot, "internal", "paginate", "filter_test.go"): tmpl("api/paginate/filter_test.go"),
+		// ?fields= projects the marshalled rows; ?expand= adds a Preload per
+		// relation, resolved through the same schema the filter uses.
+		filepath.Join(apiRoot, "internal", "paginate", "project.go"):      tmpl("api/paginate/project.go"),
+		filepath.Join(apiRoot, "internal", "paginate", "expand.go"):       tmpl("api/paginate/expand.go"),
+		filepath.Join(apiRoot, "internal", "paginate", "project_test.go"): tmpl("api/paginate/project_test.go"),
 
 		// The expression engine: one parser and one compiler, used by
 		// ?filter= on a list endpoint and by a declared access rule. Both

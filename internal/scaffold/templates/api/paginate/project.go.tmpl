@@ -1,0 +1,191 @@
+package paginate
+
+import (
+	"encoding/json"
+	"strings"
+)
+
+// ?fields=, the sparse half of a list request.
+//
+//	GET /api/v1/orders?fields=id,total,customer.name
+//
+// A list screen showing four columns does not need forty, and a mobile client
+// on a slow connection pays for every one it throws away. On a table with a
+// long description or a JSON blob, naming four fields is the difference
+// between a 2 MB page and a 20 kB one.
+
+// MaxFields caps how many paths one request may name. Generous for a screen
+// and far below the point where projecting costs more than sending.
+const MaxFields = 50
+
+// parseFields reads ?fields=, keeping the paths that are plausibly paths.
+//
+// Nothing here is checked against the model, and that is deliberate: a field
+// the response does not have is simply absent from the projection, which is
+// the same thing the client would see if it asked for everything and read
+// the key itself. There is no information in the difference, so there is
+// nothing to leak and nothing to reject.
+func parseFields(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	seen := map[string]bool{}
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" || seen[part] || len(part) > 120 {
+			continue
+		}
+		// A path, not an expression: letters, digits, underscore and dots.
+		valid := true
+		for _, r := range part {
+			switch {
+			case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z',
+				r >= '0' && r <= '9', r == '_', r == '.':
+			default:
+				valid = false
+			}
+		}
+		if !valid {
+			continue
+		}
+		seen[part] = true
+		out = append(out, part)
+		if len(out) >= MaxFields {
+			break
+		}
+	}
+	return out
+}
+
+// MarshalJSON writes the envelope, projected when the request asked for
+// particular fields.
+//
+// Implemented here rather than with a SELECT, because a partial SELECT fills
+// the struct's other fields with their zero values and they serialise
+// anyway: the client asks for two columns and receives forty, thirty-eight
+// of them lies. Projecting the marshalled document is the only way to leave a
+// field out rather than blank it.
+func (r Result[T]) MarshalJSON() ([]byte, error) {
+	// The named type, so this does not call itself.
+	type envelope struct {
+		Data any  `json:"data"`
+		Meta Meta `json:"meta"`
+	}
+
+	if len(r.fields) == 0 {
+		data := any(r.Data)
+		if r.Data == nil {
+			// An empty list is [], never null: a client that maps over the
+			// response should not have to check first.
+			data = []T{}
+		}
+		return json.Marshal(envelope{Data: data, Meta: r.Meta})
+	}
+
+	rows, err := projectSlice(r.Data, r.fields)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(envelope{Data: rows, Meta: r.Meta})
+}
+
+// WithFields returns the result projected to the named paths, for a handler
+// that builds its own.
+func (r Result[T]) WithFields(fields []string) Result[T] {
+	r.fields = fields
+	return r
+}
+
+// projectSlice marshals the rows and keeps only the paths asked for.
+func projectSlice[T any](rows []T, fields []string) ([]map[string]any, error) {
+	raw, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	var all []map[string]any
+	if err := json.Unmarshal(raw, &all); err != nil {
+		// Not a list of objects, so there is nothing to project. Returning
+		// the error would turn a harmless query parameter into a 500.
+		return nil, err
+	}
+	out := make([]map[string]any, 0, len(all))
+	for _, row := range all {
+		out = append(out, pick(row, fields))
+	}
+	return out, nil
+}
+
+// ProjectOne is the same thing for a single-record response, so a detail
+// endpoint can honour ?fields= with one line.
+func ProjectOne(record any, fields []string) (any, error) {
+	if len(fields) == 0 {
+		return record, nil
+	}
+	raw, err := json.Marshal(record)
+	if err != nil {
+		return nil, err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return record, nil
+	}
+	return pick(obj, fields), nil
+}
+
+// pick keeps the named paths, walking into nested objects for a dotted one.
+//
+// "customer.name" keeps customer, containing only name. Two paths into the
+// same object merge rather than replace, so customer.name and customer.email
+// give one customer with both.
+func pick(row map[string]any, fields []string) map[string]any {
+	out := map[string]any{}
+	for _, path := range fields {
+		head, rest, nested := strings.Cut(path, ".")
+		value, ok := row[head]
+		if !ok {
+			continue
+		}
+		if !nested {
+			out[head] = value
+			continue
+		}
+
+		switch child := value.(type) {
+		case map[string]any:
+			existing, _ := out[head].(map[string]any)
+			if existing == nil {
+				existing = map[string]any{}
+			}
+			for k, v := range pick(child, []string{rest}) {
+				existing[k] = v
+			}
+			out[head] = existing
+		case []any:
+			// A list of related rows: the path applies to each of them.
+			existing, _ := out[head].([]any)
+			projected := make([]any, 0, len(child))
+			for i, item := range child {
+				obj, ok := item.(map[string]any)
+				if !ok {
+					projected = append(projected, item)
+					continue
+				}
+				var merged map[string]any
+				if i < len(existing) {
+					merged, _ = existing[i].(map[string]any)
+				}
+				if merged == nil {
+					merged = map[string]any{}
+				}
+				for k, v := range pick(obj, []string{rest}) {
+					merged[k] = v
+				}
+				projected = append(projected, merged)
+			}
+			out[head] = projected
+		}
+	}
+	return out
+}

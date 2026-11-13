@@ -16,8 +16,10 @@ export default function FilteringPage() {
         <h1 className="text-4xl font-bold tracking-tight mb-4">Filter expressions</h1>
         <p className="text-lg text-muted-foreground leading-relaxed">
           Every generated list endpoint accepts <code>?filter=</code>, an expression over the
-          model&apos;s own fields. It is the difference between adding a query parameter for each
-          new question and answering questions nobody asked you about in advance.
+          model&apos;s own fields, plus <code>?fields=</code> to ask for less, <code>?expand=</code>{' '}
+          to ask for more and <code>?skip_total=1</code> to skip the count. Between them they are
+          the difference between adding a query parameter for each new question and answering
+          questions nobody asked you about in advance.
         </p>
       </div>
 
@@ -228,6 +230,66 @@ lower(name) = "ada"`}
           <code>password</code>, <code>token</code>, <code>secret</code>, <code>api_key</code> and
           the rest. <code>password ~ &quot;$2a$10$ab&quot;</code> reads a hash one character at a
           time, and a whitelist that forgot to exclude it would not stop that.
+        </p>
+
+        <h2>Asking for less: ?fields=</h2>
+        <p>
+          A list screen showing four columns does not need forty, and a phone on a slow connection
+          pays for every one it throws away.
+        </p>
+        <CodeBlock
+          language="bash"
+          code={`GET /api/v1/orders?fields=id,total,customer.name`}
+        />
+        <CodeBlock
+          language="json"
+          code={`{ "data": [ { "id": "o1", "total": 500, "customer": { "name": "Ada" } } ] }`}
+        />
+        <p>
+          The projection is applied to the marshalled document, not to the <code>SELECT</code>. A
+          partial select leaves the struct&apos;s other fields at their zero values and they
+          serialise anyway: the client asks for two columns and receives forty, thirty-eight of
+          them untrue. A field that was not asked for is <strong>absent</strong>, which is the only
+          honest way to send less.
+        </p>
+        <p>
+          Dotted paths walk into an expanded relation, and two paths into the same object merge, so{' '}
+          <code>customer.name,customer.email</code> gives one customer with both. Nothing is
+          checked against the model: a path the response does not have is simply missing from the
+          projection, which is what the client would see if it asked for everything and read the
+          key itself.
+        </p>
+
+        <h2>Asking for more: ?expand=</h2>
+        <p>
+          Without it, a list of orders carries <code>customer_id</code> and the client makes one
+          request per row to turn it into a name. That is the N+1 problem moved onto the network,
+          where it is slower and nobody can see it in a profiler.
+        </p>
+        <CodeBlock
+          language="bash"
+          code={`GET /api/v1/orders?expand=customer,lines.product`}
+        />
+        <p>
+          Each name is resolved against the model&apos;s own schema and translated into the
+          association GORM knows, so the client writes <code>line_items.product</code> the way the
+          JSON spells it and <code>Preload</code> receives <code>LineItems.Product</code>. A
+          relation the model does not declare is a 422 naming the ones it does, rather than an
+          error from inside the ORM with the caller&apos;s string in it.
+        </p>
+        <CodeBlock
+          language="go"
+          code={`var orderListConfig = paginate.Config{
+	// Empty means every relation the model declares, which is right for an
+	// authenticated endpoint: those rows are already reachable at their own
+	// URLs. Set it on a public one, where expanding a relation is how a row
+	// nobody may read arrives inside one they may.
+	Expandable: map[string]bool{"customer": true},
+}`}
+        />
+        <p>
+          At most six relations per request and three levels deep. Each one is another query, and
+          a client that can ask for forty can make one request cost forty.
         </p>
 
         <h2>Skipping the count</h2>

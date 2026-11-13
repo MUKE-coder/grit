@@ -57,7 +57,15 @@ func (k RelKind) Multi() bool { return k == RelHasMany || k == RelMany2Many }
 
 // Relation is a path an expression may walk: author.name, comments.approved.
 type Relation struct {
+	// Name is what GORM calls the association, which is what Preload wants.
 	Name string
+
+	// Public is what the client writes: the JSON name where the field has
+	// one. The two differ on every relation a generated model declares
+	// (Supplier against supplier), and an error listing the Go spelling
+	// tells somebody to type a name the API does not accept.
+	Public string
+
 	Kind RelKind
 
 	// Table is the related table.
@@ -246,6 +254,22 @@ func (s *Schema) Relation(name string) (*Relation, bool) {
 	return r, ok
 }
 
+// RelationNames lists the relations, sorted, for the error that follows an
+// expand nobody declared.
+func (s *Schema) RelationNames() []string {
+	seen := map[string]bool{}
+	var out []string
+	for key, rel := range s.relations {
+		if s.deny[key] || seen[rel.Public] {
+			continue
+		}
+		seen[rel.Public] = true
+		out = append(out, rel.Public)
+	}
+	sortStrings(out)
+	return out
+}
+
 // Names lists everything an expression may use here, sorted, for the error
 // message that follows an unknown field.
 func (s *Schema) Names() []string {
@@ -268,7 +292,7 @@ func (s *Schema) Names() []string {
 		if s.deny[key] || (s.allow != nil && !s.allow[key]) {
 			continue
 		}
-		add(r.Name)
+		add(r.Public)
 	}
 	sortStrings(out)
 	return out
@@ -362,9 +386,14 @@ func relationOf(db *gorm.DB, name string, rel *schema.Relationship) *Relation {
 	if rel.FieldSchema == nil {
 		return nil
 	}
+	public := relJSONName(rel)
+	if public == "" {
+		public = name
+	}
 	r := &Relation{
-		Name:  name,
-		Table: rel.FieldSchema.Table,
+		Name:   name,
+		Public: public,
+		Table:  rel.FieldSchema.Table,
 		db:    db,
 		model: reflect.New(rel.FieldSchema.ModelType).Interface(),
 	}

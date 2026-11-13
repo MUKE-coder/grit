@@ -1,0 +1,291 @@
+package paginate
+
+import (
+	"encoding/json"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+)
+
+type projCustomer struct {
+	ID    string `gorm:"primaryKey" json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func (projCustomer) TableName() string { return "proj_customers" }
+
+type projLine struct {
+	ID      string `gorm:"primaryKey" json:"id"`
+	OrderID string `json:"order_id"`
+	SKU     string `json:"sku"`
+	Qty     int    `json:"qty"`
+}
+
+func (projLine) TableName() string { return "proj_lines" }
+
+type projOrder struct {
+	ID         string        `gorm:"primaryKey" json:"id"`
+	Reference  string        `json:"reference"`
+	Total      int           `json:"total"`
+	Notes      string        `json:"notes"`
+	CustomerID string        `json:"customer_id"`
+	Customer   *projCustomer `gorm:"foreignKey:CustomerID" json:"customer,omitempty"`
+	Lines      []projLine    `gorm:"foreignKey:OrderID" json:"lines,omitempty"`
+}
+
+func (projOrder) TableName() string { return "proj_orders" }
+
+func projDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+
+	if err := db.AutoMigrate(&projCustomer{}, &projLine{}, &projOrder{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&projCustomer{ID: "c1", Name: "Ada", Email: "ada@example.com"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&projOrder{
+		ID: "o1", Reference: "ORD-1", Total: 500,
+		Notes: strings.Repeat("a long note ", 50), CustomerID: "c1",
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range []projLine{
+		{ID: "l1", OrderID: "o1", SKU: "SKU-1", Qty: 2},
+		{ID: "l2", OrderID: "o1", SKU: "SKU-2", Qty: 1},
+	} {
+		if err := db.Create(&line).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	return db
+}
+
+// listJSON runs a request the way a handler does and returns the bytes that
+// would reach the client, because the projection happens in MarshalJSON and a
+// test that reads Result.Data would not see it at all.
+func listJSON(t *testing.T, db *gorm.DB, query url.Values, cfg Config) map[string]any {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("GET", "/api/v1/orders?"+query.Encode(), nil)
+
+	res, err := List[projOrder](db.Model(&projOrder{}), Bind(c), cfg)
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	raw, err := json.Marshal(res)
+	if err != nil {
+		t.Fatalf("marshalling the envelope: %v", err)
+	}
+	var out map[string]any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		t.Fatalf("the envelope is not an object: %v", err)
+	}
+	return out
+}
+
+func firstRow(t *testing.T, body map[string]any) map[string]any {
+	t.Helper()
+	rows, ok := body["data"].([]any)
+	if !ok || len(rows) == 0 {
+		t.Fatalf("no rows in %v", body)
+	}
+	row, ok := rows[0].(map[string]any)
+	if !ok {
+		t.Fatalf("the first row is not an object: %v", rows[0])
+	}
+	return row
+}
+
+func keysOf(m map[string]any) []string {
+	var out []string
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
+}
+
+func TestFieldsKeepsOnlyWhatWasAskedFor(t *testing.T) {
+	db := projDB(t)
+	cfg := Config{DefaultSort: "id", DefaultOrder: "asc"}
+
+	full := firstRow(t, listJSON(t, db, url.Values{}, cfg))
+	if len(full) < 5 {
+		t.Fatalf("the unprojected row has %d keys, so this test proves nothing: %v", len(full), keysOf(full))
+	}
+
+	row := firstRow(t, listJSON(t, db, url.Values{"fields": {"id,reference"}}, cfg))
+	if len(row) != 2 {
+		t.Errorf("projected row has %d keys, want 2: %v", len(row), keysOf(row))
+	}
+	if row["id"] != "o1" || row["reference"] != "ORD-1" {
+		t.Errorf("the values are wrong: %v", row)
+	}
+
+	// Absent, not blank. A partial SELECT would have sent notes as "", which
+	// is a claim about the row rather than a smaller answer.
+	if _, present := row["notes"]; present {
+		t.Error("a field that was not asked for is still in the response")
+	}
+}
+
+func TestFieldsWalksIntoAnExpandedRelation(t *testing.T) {
+	db := projDB(t)
+	cfg := Config{DefaultSort: "id", DefaultOrder: "asc"}
+
+	row := firstRow(t, listJSON(t, db, url.Values{
+		"expand": {"customer,lines"},
+		"fields": {"id,customer.name,lines.sku"},
+	}, cfg))
+
+	customer, ok := row["customer"].(map[string]any)
+	if !ok {
+		t.Fatalf("customer was not expanded: %v", row)
+	}
+	if customer["name"] != "Ada" {
+		t.Errorf("customer.name is %v", customer["name"])
+	}
+	if _, present := customer["email"]; present {
+		t.Error("customer.email came back from a projection that did not ask for it")
+	}
+
+	lines, ok := row["lines"].([]any)
+	if !ok || len(lines) != 2 {
+		t.Fatalf("lines were not expanded: %v", row["lines"])
+	}
+	first, _ := lines[0].(map[string]any)
+	if first["sku"] == nil {
+		t.Errorf("lines.sku was dropped: %v", first)
+	}
+	if _, present := first["qty"]; present {
+		t.Error("lines.qty came back from a projection that did not ask for it")
+	}
+}
+
+func TestTwoPathsIntoOneObjectMerge(t *testing.T) {
+	db := projDB(t)
+	cfg := Config{DefaultSort: "id", DefaultOrder: "asc"}
+
+	row := firstRow(t, listJSON(t, db, url.Values{
+		"expand": {"customer"},
+		"fields": {"customer.name,customer.email"},
+	}, cfg))
+
+	customer, ok := row["customer"].(map[string]any)
+	if !ok {
+		t.Fatalf("customer missing: %v", row)
+	}
+	if customer["name"] != "Ada" || customer["email"] != "ada@example.com" {
+		t.Errorf("the second path replaced the first instead of merging: %v", customer)
+	}
+}
+
+func TestExpandLoadsTheRelation(t *testing.T) {
+	db := projDB(t)
+	cfg := Config{DefaultSort: "id", DefaultOrder: "asc"}
+
+	// Without expand the relation is absent, which is what omitempty is for.
+	plain := firstRow(t, listJSON(t, db, url.Values{}, cfg))
+	if _, present := plain["customer"]; present {
+		t.Error("the relation came back without being asked for")
+	}
+
+	expanded := firstRow(t, listJSON(t, db, url.Values{"expand": {"customer"}}, cfg))
+	customer, ok := expanded["customer"].(map[string]any)
+	if !ok {
+		t.Fatalf("expand did not load the relation: %v", expanded)
+	}
+	if customer["name"] != "Ada" {
+		t.Errorf("the wrong row was loaded: %v", customer)
+	}
+}
+
+func TestExpandIsResolvedAgainstTheModel(t *testing.T) {
+	db := projDB(t)
+	cfg := Config{DefaultSort: "id", DefaultOrder: "asc"}
+	gin.SetMode(gin.TestMode)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("GET", "/api/v1/orders?"+url.Values{"expand": {"nonsense"}}.Encode(), nil)
+
+	_, err := List[projOrder](db.Model(&projOrder{}), Bind(c), cfg)
+	if err == nil {
+		t.Fatal("an unknown relation was passed to Preload")
+	}
+	if !strings.Contains(err.Error(), "can expand") {
+		t.Errorf("the error does not say what can be expanded: %v", err)
+	}
+
+	// And a whitelist narrows it further, for an endpoint where expanding is
+	// how a row nobody may read arrives inside one they may.
+	narrow := Config{DefaultSort: "id", DefaultOrder: "asc", Expandable: map[string]bool{"lines": true}}
+	c2, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c2.Request = httptest.NewRequest("GET", "/api/v1/orders?"+url.Values{"expand": {"customer"}}.Encode(), nil)
+	if _, err := List[projOrder](db.Model(&projOrder{}), Bind(c2), narrow); err == nil {
+		t.Error("a relation outside Expandable was expanded anyway")
+	}
+}
+
+func TestEmptyDataIsAListNotNull(t *testing.T) {
+	db := projDB(t)
+	cfg := Config{DefaultSort: "id", DefaultOrder: "asc"}
+
+	body := listJSON(t, db, url.Values{"page": {"9"}}, cfg)
+	rows, ok := body["data"].([]any)
+	if !ok {
+		t.Fatalf("data is %T, want a list: a client that maps over it should not have to check", body["data"])
+	}
+	if len(rows) != 0 {
+		t.Errorf("page 9 has %d rows", len(rows))
+	}
+}
+
+func TestLimitsOnFieldsAndExpand(t *testing.T) {
+	var many []string
+	for i := 0; i < MaxFields+20; i++ {
+		many = append(many, "f"+string(rune('a'+i%26))+string(rune('a'+i/26)))
+	}
+	if got := len(parseFields(strings.Join(many, ","))); got > MaxFields {
+		t.Errorf("parseFields kept %d paths, over the %d limit", got, MaxFields)
+	}
+
+	var deep []string
+	for i := 0; i < MaxExpand+5; i++ {
+		deep = append(deep, "rel"+string(rune('a'+i)))
+	}
+	if got := len(parseExpand(strings.Join(deep, ","))); got > MaxExpand {
+		t.Errorf("parseExpand kept %d paths, over the %d limit", got, MaxExpand)
+	}
+
+	// Too deep is dropped rather than truncated: half a path is a different
+	// request from the one that was made.
+	if got := parseExpand("a.b.c.d"); len(got) != 0 {
+		t.Errorf("a path %d levels deep was kept: %v", MaxExpandDepth+1, got)
+	}
+
+	// Anything that is not a path is not a path.
+	if got := parseFields(`id,(select 1),name`); strings.Join(got, ",") != "id,name" {
+		t.Errorf("parseFields kept something that is not a field path: %v", got)
+	}
+}

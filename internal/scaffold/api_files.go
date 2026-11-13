@@ -3198,6 +3198,25 @@ type Params struct {
 	// context; nil is a guest.
 	Rules *rules.Context
 
+	// Fields is ?fields=, the paths to keep in each row:
+	//
+	//	?fields=id,total,customer.name
+	//
+	// Applied to the marshalled document rather than to the SELECT, because
+	// a partial SELECT leaves the struct's other fields at their zero values
+	// and they serialise anyway: the client asks for two columns and gets
+	// forty, thirty-eight of them untrue. See project.go.
+	Fields []string
+
+	// Expand is ?expand=, the relations to load with the page:
+	//
+	//	?expand=customer,lines.product
+	//
+	// Without it a list of orders carries customer_id and the client makes
+	// one request per row to turn it into a name, which is the N+1 problem
+	// moved onto the network where nobody can see it. See expand.go.
+	Expand []string
+
 	// SkipTotal drops the COUNT from an offset page.
 	//
 	// The count is the expensive half of offset pagination: the page itself
@@ -3320,6 +3339,14 @@ type Config struct {
 	// already has from the category it fetched.
 	InFilterable map[string]bool
 
+	// Expandable whitelists the relations ?expand= may name.
+	//
+	// Empty means every relation the model declares, which is right for an
+	// authenticated endpoint: the related rows are already reachable at
+	// their own URLs. Set it on a public endpoint, where expanding a
+	// relation is how a row nobody may read arrives inside one they may.
+	Expandable map[string]bool
+
 	// FilterFields whitelists the fields ?filter= may name, when the union
 	// of Searchable, Sortable, Filterable, RangeFilterable and InFilterable
 	// is not the right answer.
@@ -3385,6 +3412,12 @@ type Meta struct {
 type Result[T any] struct {
 	Data []T  ` + "`" + `json:"data"` + "`" + `
 	Meta Meta ` + "`" + `json:"meta"` + "`" + `
+
+	// fields is ?fields=, carried here so MarshalJSON can project the rows.
+	// Unexported, so it is not itself part of the envelope, and so that a
+	// handler returning a Result built by hand gets the whole row unless it
+	// says otherwise with WithFields.
+	fields []string
 }
 
 // coerceFilterValue turns a query-string value into something the column can
@@ -3453,6 +3486,8 @@ func Bind(c *gin.Context) Params {
 		CursorMode:   c.Query("mode") == "cursor" || c.Query("cursor") != "",
 		Filter:       filter,
 		Rules:        ruleContext(c, filter != ""),
+		Fields:       parseFields(c.Query("fields")),
+		Expand:       parseExpand(c.Query("expand")),
 		SkipTotal:    isTruthy(c.Query("skip_total")),
 		DateField:    dateField,
 		DateFrom:     dateFrom,
@@ -3470,6 +3505,7 @@ func Bind(c *gin.Context) Params {
 var reservedParams = map[string]bool{
 	"page": true, "page_size": true, "search": true,
 	"sort_by": true, "sort_order": true, "cursor": true,
+	"filter": true, "fields": true, "expand": true, "skip_total": true,
 	"date_field": true, "date_from": true, "date_to": true,
 	"mode": true,
 	"created_since": true, "created_from": true, "created_to": true,
@@ -3864,12 +3900,27 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 		return Result[T]{}, err
 	}
 
+	// ?expand=, which adds a Preload per relation. Before the cursor branch
+	// for the same reason.
+	query, err = applyExpand[T](query, p, cfg)
+	if err != nil {
+		return Result[T]{}, err
+	}
+
 	// Either the handler insists, or the request asked.
 	if cfg.CursorMode || p.CursorMode {
-		return listCursor[T](query, p, cfg, sortBy, sortOrder)
+		cursored, err := listCursor[T](query, p, cfg, sortBy, sortOrder)
+		if err != nil {
+			return cursored, err
+		}
+		// A keyset page is projected like any other. Set here rather than
+		// inside listCursor so there is one place that decides.
+		cursored.fields = p.Fields
+		return cursored, nil
 	}
 
 	var result Result[T]
+	result.fields = p.Fields
 
 	// Count first (before Order/Offset/Limit so Count reflects the whole
 	// match), unless the caller said not to: see Params.SkipTotal.

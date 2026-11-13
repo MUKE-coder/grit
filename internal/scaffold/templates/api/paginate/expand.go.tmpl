@@ -1,0 +1,132 @@
+package paginate
+
+import (
+	"strings"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/rules"
+)
+
+// ?expand=, the relations half of a list request.
+//
+//	GET /api/v1/orders?expand=customer,lines.product
+//
+// Without it a list of orders carries customer_id and the client makes one
+// request per row to turn it into a name. That is the N+1 problem moved onto
+// the network, where it is slower and nobody can see it in a profiler.
+//
+// Each name is resolved against the model's own GORM schema, so an expand a
+// model does not declare is refused rather than reaching Preload, where it
+// would be an error with the caller's string in it.
+
+// MaxExpand caps how many relations one request may ask for, and how deep.
+// Each one is another query, and a client that can ask for forty can make one
+// request cost forty.
+const (
+	MaxExpand      = 6
+	MaxExpandDepth = 3
+)
+
+// parseExpand reads ?expand= into the paths to resolve.
+func parseExpand(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	seen := map[string]bool{}
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" || seen[part] {
+			continue
+		}
+		if strings.Count(part, ".")+1 > MaxExpandDepth {
+			continue
+		}
+		seen[part] = true
+		out = append(out, part)
+		if len(out) >= MaxExpand {
+			break
+		}
+	}
+	return out
+}
+
+// applyExpand adds a Preload for every relation the request asked for.
+//
+// A request with no expand is returned untouched, so this costs nothing on
+// the requests that do not use it: no schema parse, no allocation.
+func applyExpand[T any](query *gorm.DB, p Params, cfg Config) (*gorm.DB, error) {
+	if len(p.Expand) == 0 {
+		return query, nil
+	}
+
+	var zero T
+	schema, err := rules.SchemaOf(query, &zero)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, path := range p.Expand {
+		resolved, err := resolveExpand(schema, path, cfg)
+		if err != nil {
+			return nil, &FilterError{err: err}
+		}
+		query = query.Preload(resolved)
+	}
+	return query, nil
+}
+
+// resolveExpand turns a path written in the client's spelling into the one
+// GORM knows, hop by hop.
+//
+// The client writes line_items.product, because that is what the JSON calls
+// them; Preload wants LineItems.Product. Resolving rather than passing the
+// string through is also what makes an unknown relation a 422 naming the ones
+// that exist, instead of a 500 from deep inside the ORM.
+func resolveExpand(schema *rules.Schema, path string, cfg Config) (string, error) {
+	var parts []string
+	current := schema
+
+	for _, hop := range strings.Split(path, ".") {
+		if current == nil {
+			return "", expandError(schema, path)
+		}
+		rel, ok := current.Relation(hop)
+		if !ok {
+			return "", expandError(current, hop)
+		}
+		if len(cfg.Expandable) > 0 && len(parts) == 0 && !cfg.Expandable[strings.ToLower(hop)] {
+			return "", expandError(current, hop)
+		}
+		parts = append(parts, rel.Name)
+
+		target, err := rel.Target()
+		if err != nil {
+			// The next hop cannot be checked, which is only a problem if
+			// there is one.
+			current = nil
+			continue
+		}
+		current = target
+	}
+	return strings.Join(parts, "."), nil
+}
+
+func expandError(schema *rules.Schema, name string) error {
+	known := schema.RelationNames()
+	if len(known) == 0 {
+		return &expandNotFound{name: name, known: "this model has no relations to expand"}
+	}
+	return &expandNotFound{name: name, known: "this endpoint can expand: " + strings.Join(known, ", ")}
+}
+
+type expandNotFound struct {
+	name  string
+	known string
+}
+
+func (e *expandNotFound) Error() string {
+	return "cannot expand " + e.name + " (" + e.known + ")"
+}

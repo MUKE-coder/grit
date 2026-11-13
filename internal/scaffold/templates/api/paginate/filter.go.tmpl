@@ -47,9 +47,11 @@ func (e *FilterError) ErrorCode() respond.Code { return respond.CodeValidationEr
 // Empty means no restriction, which is what a hand-written handler gets if it
 // sets none of them. That is the right default for this project's own code
 // and the wrong one for a public endpoint, which is why --public sets it.
-func (c Config) filterNames() []string {
+func (c Config) filterNames() (names []string, derived bool) {
 	if len(c.FilterFields) > 0 {
-		return c.FilterFields
+		// Said explicitly, so it is the whole answer. Nothing is added to a
+		// list somebody wrote on purpose.
+		return c.FilterFields, false
 	}
 	var out []string
 	seen := map[string]bool{}
@@ -76,7 +78,7 @@ func (c Config) filterNames() []string {
 	for name := range c.InFilterable {
 		add(name)
 	}
-	return out
+	return out, true
 }
 
 // applyFilter compiles ?filter= against the model and adds it to the query.
@@ -94,7 +96,20 @@ func applyFilter[T any](query *gorm.DB, p Params, cfg Config) (*gorm.DB, error) 
 	if err != nil {
 		return nil, err
 	}
-	if allowed := cfg.filterNames(); len(allowed) > 0 {
+	if allowed, derived := cfg.filterNames(); len(allowed) > 0 {
+		if derived {
+			// The relations as well, when the list was derived rather than
+			// written. A relation is already readable through ?expand=, so
+			// filtering across one discloses nothing that asking for it
+			// would not, and without this `supplier.country = "UG"` is
+			// refused on every generated resource: the Filterable map the
+			// generator writes holds columns, and a relation is not one.
+			//
+			// Not when FilterFields was set. There somebody decided what a
+			// stranger may ask about, and adding to that list silently is
+			// the opposite of what they were doing.
+			allowed = append(allowed, schema.RelationNames()...)
+		}
 		schema = schema.Restrict(allowed...)
 	}
 

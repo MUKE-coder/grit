@@ -23,6 +23,23 @@ Also worth knowing:
 ---
 
 
+## v3.519.0 - November 13, 2026
+
+### Asking for less, and asking for more
+
+`?fields=` and `?expand=`, on every generated list endpoint, beside the `?filter=` that landed in v3.518.0.
+
+`{`GET /api/v1/orders?fields=id,total,customer.name GET /api/v1/orders?expand=customer,lines.product`}` A list screen showing four columns does not need forty, and a phone on a slow connection pays for every one it throws away. The projection is applied to the marshalled document rather than to the `SELECT`, because a partial select leaves the struct's other fields at their zero values and they serialise anyway: the client asks for two columns and receives forty, thirty-eight of them untrue. A field that was not asked for is **absent**, which is the only honest way to send less. Dotted paths walk into an expanded relation, and two paths into the same object merge.
+
+`?expand=` is the other half. Without it a list of orders carries `customer_id` and the client makes one request per row to turn it into a name, which is the N+1 problem moved onto the network where nobody can see it. Each name is resolved against the model's own schema and translated into the association GORM knows, so the client writes `line_items.product` the way the JSON spells it and `Preload` gets `LineItems.Product`. An unknown relation is a 422 naming the ones that exist rather than an error from inside the ORM. At most six per request, three levels deep.
+
+#### And a filter can now cross a relation
+
+`supplier.country = "UG"` was refused on every generated resource, because the whitelist a filter is held to is derived from the `Filterable` map, and that map holds columns: a relation is not one. A derived whitelist now includes the model's relations, since a relation is already readable through `?expand=` and filtering across one discloses nothing that asking for it would not. A whitelist written out by hand in `FilterFields` is left exactly as written, because somebody decided that list on purpose.
+
+Verified over HTTP against a generated `Part` belonging to a `Supplier`: projection, expansion, both together, and a filter across the relation.
+
+
 ## v3.518.0 - November 13, 2026
 
 ### A query language on every list endpoint

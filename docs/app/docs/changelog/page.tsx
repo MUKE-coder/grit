@@ -72,6 +72,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.519.0 */}
+            <div className="mb-12" id="v3.519.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.519.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Asking for less, and asking for more</h3>
+                <p>
+                  <code>?fields=</code> and <code>?expand=</code>, on every
+                  generated list endpoint, beside the{' '}
+                  <code>?filter=</code> that landed in v3.518.0.
+                </p>
+                <pre><code>{`GET /api/v1/orders?fields=id,total,customer.name
+GET /api/v1/orders?expand=customer,lines.product`}</code></pre>
+                <p>
+                  A list screen showing four columns does not need forty, and a
+                  phone on a slow connection pays for every one it throws away.
+                  The projection is applied to the marshalled document rather
+                  than to the <code>SELECT</code>, because a partial select
+                  leaves the struct&apos;s other fields at their zero values
+                  and they serialise anyway: the client asks for two columns
+                  and receives forty, thirty-eight of them untrue. A field that
+                  was not asked for is <strong>absent</strong>, which is the
+                  only honest way to send less. Dotted paths walk into an
+                  expanded relation, and two paths into the same object merge.
+                </p>
+                <p>
+                  <code>?expand=</code> is the other half. Without it a list of
+                  orders carries <code>customer_id</code> and the client makes
+                  one request per row to turn it into a name, which is the N+1
+                  problem moved onto the network where nobody can see it. Each
+                  name is resolved against the model&apos;s own schema and
+                  translated into the association GORM knows, so the client
+                  writes <code>line_items.product</code> the way the JSON
+                  spells it and <code>Preload</code> gets{' '}
+                  <code>LineItems.Product</code>. An unknown relation is a 422
+                  naming the ones that exist rather than an error from inside
+                  the ORM. At most six per request, three levels deep.
+                </p>
+                <h4>And a filter can now cross a relation</h4>
+                <p>
+                  <code>supplier.country = &quot;UG&quot;</code> was refused on
+                  every generated resource, because the whitelist a filter is
+                  held to is derived from the <code>Filterable</code> map, and
+                  that map holds columns: a relation is not one. A derived
+                  whitelist now includes the model&apos;s relations, since a
+                  relation is already readable through <code>?expand=</code>{' '}
+                  and filtering across one discloses nothing that asking for it
+                  would not. A whitelist written out by hand in{' '}
+                  <code>FilterFields</code> is left exactly as written, because
+                  somebody decided that list on purpose.
+                </p>
+                <p>
+                  Verified over HTTP against a generated{' '}
+                  <code>Part</code> belonging to a <code>Supplier</code>:{' '}
+                  projection, expansion, both together, and a filter across the
+                  relation.
+                </p>
+              </div>
+            </div>
+
             {/* v3.518.0 */}
             <div className="mb-12" id="v3.518.0">
               <div className="flex items-center gap-3 mb-4">
