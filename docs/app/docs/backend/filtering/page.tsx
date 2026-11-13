@@ -231,6 +231,22 @@ lower(name) = "ada"`}
           the rest. <code>password ~ &quot;$2a$10$ab&quot;</code> reads a hash one character at a
           time, and a whitelist that forgot to exclude it would not stop that.
         </p>
+        <p>
+          That list is a guess about names, though, and it is only a backstop. A column called{' '}
+          <code>recovery_phrase</code> is on nobody&apos;s list, and the filter reads it a character
+          at a time just as happily. Declare it on the model instead:
+        </p>
+        <CodeBlock
+          language="bash"
+          code={`grit generate resource Wallet label:string phrase:text:sensitive`}
+        />
+        <p>
+          <Link href="/docs/concepts/field-types">A sensitive column</Link> is written and never
+          read back. The expression engine refuses the name in a filter, a sort and a row rule; the
+          model&apos;s <code>MarshalJSON</code> drops the key, so no response carries it; and it is
+          not an admin column, not in the export and not searchable. <code>grit doctor</code> points
+          out columns that look like secrets and have not said so.
+        </p>
 
         <h2>Asking for less: ?fields=</h2>
         <p>

@@ -51,6 +51,9 @@ type rulePost struct {
 	Published bool          `json:"published"`
 	CreatedAt time.Time     `json:"created_at"`
 	Secret    string         `gorm:"column:password" json:"password"`
+	// On no denylist anybody wrote. If this is refused, it is refused
+	// because the column said so.
+	Phrase    string         `gorm:"column:recovery_phrase" json:"recovery_phrase" sensitive:"true"`
 	Labels    datatypes.JSON `gorm:"column:labels" json:"labels"`
 	Settings  datatypes.JSON `gorm:"column:settings" json:"settings"`
 	AuthorID  string        `json:"author_id"`
@@ -383,6 +386,18 @@ func TestDeniedAndUnknownFieldsAreRefused(t *testing.T) {
 	}
 	if _, err := CompileFilter(`nonsense = 1`, schema, NewContext()); err == nil {
 		t.Error("an unknown field compiled")
+	}
+
+	// And the column that declares itself. Nothing in defaultDenied matches
+	// recovery_phrase, so this is the tag doing the work: take the tag off
+	// the fixture above and both of these compile.
+	for _, expr := range []string{
+		`recovery_phrase ~ "aband"`,
+		`recovery_phrase != ""`,
+	} {
+		if _, err := CompileFilter(expr, schema, NewContext()); err == nil {
+			t.Errorf("%s compiled: a sensitive column is an oracle, and the response never has to contain it", expr)
+		}
 	}
 
 	// The error has to say what IS allowed, or the caller is guessing.

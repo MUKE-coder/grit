@@ -200,6 +200,23 @@ type Field struct {
 	// modifier, on string, text and richtext fields only.
 	Encrypted bool `yaml:"encrypted,omitempty"`
 
+	// Sensitive marks a column that may be written and must never be read
+	// back: a recovery phrase, an answer to a security question, a shared
+	// secret somebody pastes in once.
+	//
+	// It is one declaration with five consequences, which is the reason it is
+	// a declaration rather than five decisions. The rules engine refuses to
+	// resolve the name, so no filter, sort or row rule can use it as an
+	// oracle. It is not an admin table column and not a filter. The export
+	// does not carry it. Search does not match it. And the model's own
+	// MarshalJSON leaves it out, so no response contains it, including the
+	// one that immediately follows the write.
+	//
+	// It stays in the create and update schemas: a value you can never set is
+	// not a column, it is a comment. The edit form shows it empty, the same
+	// way every password field in the world does.
+	Sensitive bool `yaml:"sensitive,omitempty"`
+
 	// ShowWhen makes the field conditional: it belongs to the record only
 	// while another field holds a particular value. From the when= modifier,
 	// cycle:select:...:when=kind=recurring.
@@ -967,6 +984,12 @@ func (f Field) IsSearchable() bool {
 	if f.Encrypted {
 		return false
 	}
+	// A column nothing may read back is not one a `?search=` should confirm
+	// by returning the row. That is the same oracle a filter would be, with a
+	// friendlier query parameter.
+	if f.Sensitive {
+		return false
+	}
 	switch FieldType(f.Type) {
 	case FieldString, FieldText, FieldSlug, FieldRichtext,
 		FieldEmail, FieldURL, FieldDomain, FieldTel:
@@ -1002,6 +1025,30 @@ func (f Field) VectorTag() string {
 		return strconv.Itoa(dim)
 	}
 	return ""
+}
+
+// HasSensitive reports whether any field is declared sensitive, which is
+// what decides whether the model carries a MarshalJSON at all. A model with
+// none pays nothing for the feature.
+func HasSensitive(fields []Field) bool {
+	for _, f := range fields {
+		if f.Sensitive {
+			return true
+		}
+	}
+	return false
+}
+
+// SensitiveJSONNames are the JSON keys a response must never carry, in the
+// order the fields were declared.
+func SensitiveJSONNames(fields []Field) []string {
+	var out []string
+	for _, f := range fields {
+		if f.Sensitive {
+			out = append(out, toSnakeCase(f.Name))
+		}
+	}
+	return out
 }
 
 // NeedsVectorsImport reports whether the model needs internal/vectors.

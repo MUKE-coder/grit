@@ -219,6 +219,11 @@ type GoField struct {
 	Owner      bool
 	ServerSet  bool
 
+	// Sensitive is the column saying it may be written and never read back,
+	// from its sensitive tag. The create and update schemas keep it; the row
+	// type and the entity schema drop it, because the API does not send it.
+	Sensitive bool
+
 	// Omitempty is whether the json tag carries omitempty, which is the
 	// column saying the key may be absent rather than null. extractTag drops
 	// everything after the comma, so this is read separately.
@@ -287,6 +292,7 @@ func parseGoStructs(filePath string) ([]GoStruct, error) {
 					goField.Slug = extractTag(tag, "slug")
 					goField.Owner = extractTag(tag, "owner") == "true"
 					goField.ServerSet = extractTag(tag, "server") == "true"
+					goField.Sensitive = extractTag(tag, "sensitive") == "true"
 				}
 
 				// Skip fields with json:"-"
@@ -412,6 +418,14 @@ func buildTSType(s GoStruct) string {
 			// Always optional: an association is in the response when the
 			// query preloaded it and absent when it did not.
 			fields.WriteString(fmt.Sprintf("  %s?: %s;\n", f.JSONName, tsType))
+			continue
+		}
+
+		if f.Sensitive {
+			// Never in a response, so never in the interface that describes
+			// one. Leaving it in made `item.recovery_phrase` compile and
+			// then be undefined at runtime, which is the drift this file
+			// exists to prevent.
 			continue
 		}
 
@@ -590,6 +604,11 @@ func buildZodSchema(s GoStruct) string {
 	// them.
 	var entityFields strings.Builder
 	for _, f := range s.Fields {
+		if f.Sensitive {
+			// The create and update schemas above still have it. This one
+			// validates a response, and the response does not carry it.
+			continue
+		}
 		// Keyed by the JSON tag, like the create and update pair above and
 		// like everything the API actually sends. This one was camelCase too,
 		// and it is the schema you validate a response against, so it

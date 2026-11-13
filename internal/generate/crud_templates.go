@@ -432,6 +432,11 @@ type %sLinks struct {
 		if f.IsRelationship() {
 			continue
 		}
+		// export reads the Go field by reflection, so it would happily put a
+		// column the API refuses to send into a spreadsheet somebody emails.
+		if f.Sensitive {
+			continue
+		}
 		header := strings.ReplaceAll(toPascalCase(f.Name), "ID", " ID")
 		format := ""
 		switch {

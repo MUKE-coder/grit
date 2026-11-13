@@ -124,6 +124,11 @@ type Schema struct {
 }
 
 // defaultDenied are never filterable, under any name they are declared with.
+//
+// A guess about names, and it is only a backstop. The column itself says so
+// with `sensitive:"true"`, which SchemaOf reads below, and that is the one
+// that holds for a column called recovery_phrase or security_answer or
+// anything else nobody thought to list here.
 var defaultDenied = []string{
 	"password", "password_hash", "passwordhash",
 	"token", "refresh_token", "reset_token", "verification_token",
@@ -183,6 +188,18 @@ func SchemaOf(db *gorm.DB, model any) (*Schema, error) {
 		// is a puzzle rather than a safety measure.
 		s.fields[strings.ToLower(field.Name)] = field
 		s.fields[strings.ToLower(f.DBName)] = field
+
+		// The column says it is written and never read back, so no expression
+		// may resolve it. A filter is a read: `recovery_phrase ~ "aband"` and
+		// then `~ "abandon"` recovers the value one character at a time, and
+		// the response never has to contain it for that to work.
+		//
+		// Denied under both spellings, because deny is consulted by name and
+		// an attacker gets to choose which one to send.
+		if f.Tag.Get("sensitive") == "true" {
+			s.deny[strings.ToLower(field.Name)] = true
+			s.deny[strings.ToLower(f.DBName)] = true
+		}
 	}
 
 	for name, rel := range stmt.Schema.Relationships.Relations {

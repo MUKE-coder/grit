@@ -72,6 +72,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.525.0 */}
+            <div className="mb-12" id="v3.525.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.525.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A column can say it is a secret</h3>
+                <p>
+                  The expression engine that shipped in v3.518.0 carries a list
+                  of column names it will never let a filter touch:{' '}
+                  <code>password</code>, <code>token</code>, <code>secret</code>,{' '}
+                  <code>api_key</code> and a dozen spellings of those. That list
+                  is a guess about what people call things, and it is wrong the
+                  moment somebody writes <code>recovery_phrase</code>.
+                </p>
+                <p>
+                  A filter is a read. <code>recovery_phrase ~ &quot;aband&quot;</code>{' '}
+                  returns the row or it does not, and the value never has to
+                  appear in the response for that to recover it one character at
+                  a time. The only thing standing between an attacker and a
+                  column was whether its name had occurred to me.
+                </p>
+
+                <h4>One declaration</h4>
+                <CodeBlock
+                  language="bash"
+                  code={`grit generate resource Wallet label:string phrase:text:sensitive`}
+                />
+                <p>
+                  The column is written and never read back, and five things
+                  follow from the one word:
+                </p>
+                <ul>
+                  <li>
+                    The model gets a <code>MarshalJSON</code> that drops the key.
+                    Not from a list, not from the body answering the write that
+                    set it, not from a webhook payload, not from an audit event.
+                    Every one of those marshals the model, so that is the one
+                    place that has to be right.
+                  </li>
+                  <li>
+                    The rules engine refuses to resolve the name in a filter, a
+                    sort or a row rule.
+                  </li>
+                  <li>It is not an admin table column and not a filter.</li>
+                  <li>It is not in the CSV or XLSX export.</li>
+                  <li>
+                    It is not searchable, so <code>?search=</code> cannot confirm
+                    it by returning the row either.
+                  </li>
+                </ul>
+                <p>
+                  The create and update schemas keep it, so a form can still set
+                  it. A value you can never write is a comment, not a column. The
+                  row type and the entity schema drop it, because those describe
+                  a response.
+                </p>
+
+                <h4>And a check for the ones that have not said so</h4>
+                <p>
+                  <code>grit doctor</code> gained{' '}
+                  <code>secret-column-not-declared</code>: a column whose name
+                  ends in <code>_token</code>, <code>_secret</code>,{' '}
+                  <code>_password</code>, <code>_api_key</code>, or that is a
+                  recovery phrase or a security answer, and that the API returns.
+                  It matches on the end of the name rather than anywhere in it,
+                  so <code>token_count</code> and <code>secret_santa</code> stay
+                  quiet, and it skips a column already stored encrypted, which is
+                  the fix the PII check recommends.
+                </p>
+                <p>
+                  <code>:sensitive</code> is not <code>:encrypted</code>. One is
+                  about a database dump and still sends the value over the API;
+                  the other is about the response and still stores plaintext. They
+                  combine.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Borrowed from Pagoda, which marks an Ent field sensitive and
+                  lets the generated admin omit it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.524.1 */}
             <div className="mb-12" id="v3.524.1">
               <div className="flex items-center gap-3 mb-4">

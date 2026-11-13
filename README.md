@@ -345,7 +345,7 @@ the admin input.
 | `belongs_to` `one_to_one` | `string` | a UUID foreign key plus an index |
 | `many_to_many` | `[]string` | junction table and a picker |
 
-**Modifiers:** `:unique` `:optional` `:encrypted` `:slug:<source>` `:belongs_to:<Model>`
+**Modifiers:** `:unique` `:optional` `:encrypted` `:sensitive` `:slug:<source>` `:belongs_to:<Model>`
 `:many_to_many:<Model>` `:select:a=A|b=B` `:file:image`
 
 [Full reference](https://gritframework.dev/docs/concepts/field-types)

@@ -74,6 +74,10 @@ var checks = []struct {
 	{"database-not-durable", checkDatabaseProvider},
 	{"tenant-sso-no-organization", checkTenantSSOProvisioning},
 	{"pii-column-not-encrypted", checkPII},
+	// A column named like a secret that the API returns, and that an
+	// expression can filter on. The rules engine's own denylist is a guess
+	// about names; this is the prompt to stop relying on it.
+	{"secret-column-not-declared", checkSensitiveColumns},
 	// A bool that can never be saved as false, which stores "unticked" as
 	// "ticked" with no error anywhere (grit#179).
 	{"bool-default-true", checkBoolDefaultTrue},
@@ -137,6 +141,10 @@ type field struct {
 	Go   string // the Go field name
 	Type string // the Go type, as written
 	JSON string // the json tag, which is the column name
+	// Sensitive is the column declaring that it is written and never read
+	// back. Read from the line rather than from fieldRe, which stops at the
+	// json tag and never sees the rest.
+	Sensitive bool
 }
 
 type model struct {
@@ -309,7 +317,12 @@ func parseModels(src string) []*model {
 			}
 			m.Source += line + "\n"
 			if f := fieldRe.FindStringSubmatch(line); f != nil {
-				col := field{Go: f[1], Type: f[2], JSON: f[3]}
+				col := field{
+					Go:        f[1],
+					Type:      f[2],
+					JSON:      f[3],
+					Sensitive: strings.Contains(line, `sensitive:"true"`),
+				}
 				m.Fields = append(m.Fields, col)
 				m.byGo[col.Go] = col
 			}

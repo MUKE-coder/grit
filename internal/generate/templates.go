@@ -112,6 +112,12 @@ func (g *Generator) writeGoModel(names Names) error {
 		}
 	}
 	std := []string{`"time"`}
+	// A model with a sensitive column carries a MarshalJSON that drops the
+	// key. "encoding/json" sorts before everything else here, and sort.Strings
+	// below puts it there.
+	if HasSensitive(fields) {
+		std = append(std, `"encoding/json"`)
+	}
 	// A tenant-owned auto-number refuses the write when there is no
 	// organization on the context, and that refusal is an fmt.Errorf.
 	if hasSlug || isTree || (hasAuto && g.Definition.TenantOwned) {
@@ -467,6 +473,12 @@ func (g *Generator) writeGoModel(names Names) error {
 		if f.ServerSet {
 			tags += ` server:"true"`
 		}
+		// Written, never read back. MarshalJSON below drops the key, and the
+		// rules engine reads this tag off GORM's parsed schema to refuse the
+		// name in a filter, a sort or a row rule.
+		if f.Sensitive {
+			tags += ` sensitive:"true"`
+		}
 		if f.IsSlug() {
 			source := toSnakeCase(f.SlugSource)
 			if source == "" {
@@ -607,6 +619,7 @@ func (m *%s) GetOwnerID() string {
 	}
 	content += g.erasureModelInit(names)
 	content += g.confidentialModelInit(names)
+	content += sensitiveMarshalJSON(names, fields)
 
 	// Path resolution, the cycle refusal, and the two accessors a breadcrumb
 	// needs. Reparenting lives in the tree service instead: a move rewrites a
@@ -1212,6 +1225,12 @@ func (g *Generator) buildTSInterfaceFields() string {
 			result += fmt.Sprintf("  %s?: any[];\n", toSnakeCase(f.Name))
 			continue
 		}
+		if f.Sensitive {
+			// Absent from every response, so absent from the type that
+			// describes one. The create and update schemas still have it:
+			// this says what comes back, not what goes in.
+			continue
+		}
 		result += fmt.Sprintf("  %s: %s;\n", toSnakeCase(f.Name), f.TSType())
 	}
 	return result
@@ -1254,6 +1273,13 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		// operator can tell from looking at it. It stays in the API and in the
 		// shared type; it is not a column (grit#191).
 		if f.IsVector() {
+			continue
+		}
+
+		// Declared sensitive, so the API never sends it. A column for it
+		// would be a column of blanks, and a sortable one would be a column
+		// of blanks that reorders the table by a value nobody can see.
+		if f.Sensitive {
 			continue
 		}
 
@@ -1458,6 +1484,9 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	// Build filter definitions (auto-detect boolean and select-like fields)
 	filters := ""
 	for _, f := range g.Definition.Fields {
+		if f.Sensitive {
+			continue
+		}
 		if FieldType(f.Type) == FieldBool {
 			filterKey := toSnakeCase(f.Name)
 			filterLabel := strings.Join(splitPascal(toPascalCase(f.Name)), " ")

@@ -259,7 +259,7 @@ func PromptInteractive(name string) (*ResourceDefinition, error) {
 	fmt.Printf("  Defining fields for %s\n", name)
 	fmt.Println("  Enter fields as name:type[:modifiers] (e.g., title:string, slug:slug:name)")
 	fmt.Printf("  Valid types: %s\n", strings.Join(ValidFieldTypes(), ", "))
-	fmt.Println("  Valid modifiers: unique, required, optional, auto, encrypted")
+	fmt.Println("  Valid modifiers: unique, required, optional, auto, encrypted, sensitive")
 	fmt.Println("  Slug fields: slug:slug (auto-detect source) or slug:slug:name (explicit source)")
 	fmt.Println("  Relationships: category:belongs_to or author:belongs_to:User, tags:many_to_many:Tag")
 	fmt.Println("  Press Enter with no input when done.")
@@ -889,6 +889,7 @@ func parseFieldInput(input string) (Field, error) {
 	// Parse optional modifiers (parts[2], parts[3], etc.). Index-based so `auto`
 	// can consume an optional prefix that follows it (name:string:auto:INV).
 	encrypted := false
+	sensitive := false
 	var showWhen *FieldCondition
 	mods := parts[2:]
 
@@ -939,6 +940,8 @@ func parseFieldInput(input string) (Field, error) {
 			}
 		case "encrypted":
 			encrypted = true
+		case "sensitive":
+			sensitive = true
 		case "":
 			// ignore empty modifiers
 		default:
@@ -951,7 +954,7 @@ func parseFieldInput(input string) (Field, error) {
 				showWhen = cond
 				continue
 			}
-			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional, auto, encrypted, when=<field>=<value>)", mod, name)
+			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional, auto, encrypted, sensitive, when=<field>=<value>)", mod, name)
 		}
 	}
 
@@ -963,6 +966,18 @@ func parseFieldInput(input string) (Field, error) {
 		}
 		if unique {
 			return Field{}, fmt.Errorf("field %q: an encrypted column cannot be unique: every write produces different ciphertext, so the index could never catch a duplicate", name)
+		}
+	}
+
+	if sensitive {
+		// A column nothing may read back has to be one somebody could have
+		// typed. Marking a relationship or a file sensitive would hide the
+		// association from every response while the admin still rendered a
+		// picker for it, which is a screen that cannot work.
+		switch typ {
+		case "string", "text", "richtext", "json":
+		default:
+			return Field{}, fmt.Errorf("field %q: sensitive is only valid on string, text, richtext and json fields (got %q)", name, typ)
 		}
 	}
 
@@ -982,6 +997,7 @@ func parseFieldInput(input string) (Field, error) {
 		Auto:           auto,
 		AutoPrefix:     autoPrefix,
 		Encrypted:      encrypted,
+		Sensitive:      sensitive,
 		ShowWhen:       showWhen,
 		DefaultCountry: defaultCountry,
 		Max:            ratingMax,
@@ -994,7 +1010,7 @@ func isFieldModifier(s string) bool {
 		return true
 	}
 	switch strings.ToLower(s) {
-	case "unique", "required", "optional", "auto", "encrypted":
+	case "unique", "required", "optional", "auto", "encrypted", "sensitive":
 		return true
 	}
 	return false

@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.525.0 - November 13, 2026
+
+### A column can say it is a secret
+
+The expression engine that shipped in v3.518.0 carries a list of column names it will never let a filter touch: `password`, `token`, `secret`, `api_key` and a dozen spellings of those. That list is a guess about what people call things, and it is wrong the moment somebody writes `recovery_phrase`.
+
+A filter is a read. `recovery_phrase ~ "aband"` returns the row or it does not, and the value never has to appear in the response for that to recover it one character at a time. The only thing standing between an attacker and a column was whether its name had occurred to me.
+
+#### One declaration
+
+```bash
+grit generate resource Wallet label:string phrase:text:sensitive
+```
+
+The column is written and never read back, and five things follow from the one word:
+
+- The model gets a `MarshalJSON` that drops the key. Not from a list, not from the body answering the write that set it, not from a webhook payload, not from an audit event. Every one of those marshals the model, so that is the one place that has to be right.
+- The rules engine refuses to resolve the name in a filter, a sort or a row rule.
+- It is not an admin table column and not a filter.
+- It is not in the CSV or XLSX export.
+- It is not searchable, so `?search=` cannot confirm it by returning the row either.
+
+The create and update schemas keep it, so a form can still set it. A value you can never write is a comment, not a column. The row type and the entity schema drop it, because those describe a response.
+
+#### And a check for the ones that have not said so
+
+`grit doctor` gained `secret-column-not-declared`: a column whose name ends in `_token`, `_secret`, `_password`, `_api_key`, or that is a recovery phrase or a security answer, and that the API returns. It matches on the end of the name rather than anywhere in it, so `token_count` and `secret_santa` stay quiet, and it skips a column already stored encrypted, which is the fix the PII check recommends.
+
+`:sensitive` is not `:encrypted`. One is about a database dump and still sends the value over the API; the other is about the response and still stores plaintext. They combine.
+
+Borrowed from Pagoda, which marks an Ent field sensitive and lets the generated admin omit it.
+
+
 ## v3.524.1 - November 13, 2026
 
 ### Two upgrades that left a project not compiling

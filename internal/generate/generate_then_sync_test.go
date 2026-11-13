@@ -34,7 +34,7 @@ func TestGenerateThenSyncChangesNothing(t *testing.T) {
 	root := setupMinimalProject(t, module)
 
 	def, err := ParseInlineFields("Product",
-		"name:string,body:text,price:money,cover:file,gallery:files,status:select:draft|live,tags:string_array,rank:int,live:bool,due:datetime")
+		"name:string,body:text,price:money,cover:file,gallery:files,status:select:draft|live,tags:string_array,rank:int,live:bool,due:datetime,secret_key:text:sensitive")
 	if err != nil {
 		t.Fatalf("ParseInlineFields: %v", err)
 	}

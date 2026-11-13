@@ -293,8 +293,21 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 	if dim := f.VectorTag(); dim != "" {
 		tags += fmt.Sprintf(` vector:"%s"`, dim)
 	}
+	// The same tag the struct builder writes. Without it the column would be
+	// filterable, searchable, exported and returned, which is every promise
+	// the modifier makes, broken silently because a second writer did not
+	// know about it.
+	if f.Sensitive {
+		tags += ` sensitive:"true"`
+	}
 	line := fmt.Sprintf("\t%s %s `%s`", goName, f.GoType(), tags)
-	return injectModelLine(path, names.Pascal, line)
+	if err := injectModelLine(path, names.Pascal, line); err != nil {
+		return err
+	}
+	// Rebuilt from the file, not from f: the model may already have had one
+	// sensitive column, and a method that named only the new one would start
+	// returning the old one again.
+	return ensureSensitiveMarshalJSON(path, names.Pascal)
 }
 
 func (g *Generator) injectZodField(names Names, f Field) error {
@@ -323,6 +336,12 @@ func (g *Generator) injectZodField(names Names, f Field) error {
 }
 
 func (g *Generator) injectTSField(names Names, f Field) error {
+	// A sensitive column is never in a response, so it is never in the
+	// interface that describes one. The create and update schemas still get
+	// it, from injectZodField, which is the pair that says what goes in.
+	if f.Sensitive {
+		return nil
+	}
 	path := filepath.Join(g.SharedRoot(), "types", names.Kebab+".ts")
 	return injectAfterAnyAnchor(path,
 		[]string{fmt.Sprintf("export interface %s {", names.Pascal)},
@@ -395,8 +414,14 @@ func (g *Generator) injectAdminField(names Names, f Field) error {
 		if err := injectBefore(path, "// grit:fields:auto-end", formLine); err != nil {
 			return err
 		}
-		if err := injectBefore(path, "// grit:cols:auto-end", colLine); err != nil {
-			return err
+		// The form keeps the field, because a value nobody can set is a
+		// comment. The table does not: the API sends nothing, so the column
+		// would be blanks, and a sortable one would reorder the table by a
+		// value nobody can see.
+		if !f.Sensitive {
+			if err := injectBefore(path, "// grit:cols:auto-end", colLine); err != nil {
+				return err
+			}
 		}
 		injected = true
 	}

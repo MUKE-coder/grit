@@ -39,6 +39,10 @@ func inferField(f GoField, all []GoField) (Field, bool) {
 		// binding:"required" rejects 0 and false, so a required number carries
 		// required:"true" instead, which is a declaration and not a check.
 		Required: strings.Contains(f.Binding, "required") || f.Required,
+		// Carried through every branch below, which is why it is set here:
+		// inferField returns from a dozen places and a flag set at the end
+		// would reach none of them.
+		Sensitive: f.Sensitive,
 	}
 
 	// Required only while a sibling holds a value. The model never carries
