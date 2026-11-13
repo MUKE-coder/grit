@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.524.0"
+var version = "3.524.1"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1983,6 +1983,17 @@ func upgradeCmd() *cobra.Command {
 			// grid methods these checks also cover.
 			if err := scaffold.RepairServiceChecks(); err != nil {
 				color.New(color.FgYellow).Printf("  ⚠ checking what a patch and a bulk action write: %v\n", err)
+			}
+
+			// A field the framework added to a model it ships.
+			//
+			// internal/models is the project's own, so an upgrade leaves it
+			// alone, which is right for every model a project wrote and wrong
+			// for the handful the framework ships: the service beside it IS
+			// rewritten, and a service referencing a field the model does not
+			// declare is a package that will not build.
+			if err := scaffold.RepairFrameworkModels(); err != nil {
+				color.New(color.FgYellow).Printf("  ⚠ carrying framework fields into the models: %v\n", err)
 			}
 
 			// Plugins are part of the project too. Left to a command of its

@@ -91,7 +91,11 @@ func (h *SetupHandler) Create(c *gin.Context) {
 	if user.FirstName == "" {
 		user.FirstName = "Admin"
 	}
-	if err := h.DB.Create(&user).Error; err != nil {
+	// WithContext, as every other write in this project has: the request's
+	// cancellation travels with the query. Written this way rather than left
+	// to the repair that adds it, because a repair that changes a file on the
+	// second upgrade and not the first is an upgrade that is not idempotent.
+	if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Could not create the administrator.")
 		return
 	}

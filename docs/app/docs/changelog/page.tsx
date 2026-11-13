@@ -72,6 +72,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.524.1 */}
+            <div className="mb-12" id="v3.524.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.524.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two upgrades that left a project not compiling</h3>
+                <p>
+                  Both the same shape, and it is the shape worth naming:{' '}
+                  <strong>a framework file that an upgrade rewrites, beside
+                  a project file that it does not.</strong>
+                </p>
+                <h4>A model the framework ships</h4>
+                <p>
+                  <code>internal/services/session.go</code> is framework code
+                  and an upgrade rewrites it.{' '}
+                  <code>internal/models</code> is the project&apos;s own, so an
+                  upgrade leaves it alone, which is right for every model a
+                  project wrote and wrong for the handful the framework ships.
+                  When the service learned about{' '}
+                  <code>Session.RotatedAt</code> in v3.464.0, a project
+                  upgrading into it got a service referencing a field its model
+                  does not declare:
+                </p>
+                <pre><code>{`internal/services/session.go:105: replayed.RotatedAt undefined
+  (type models.Session has no field or method RotatedAt)`}</code></pre>
+                <p>
+                  The field is carried across by a repair now, which is the
+                  only thing allowed to edit a file in{' '}
+                  <code>internal/models</code>, and only when the service
+                  beside it actually uses it.
+                </p>
+                <h4>A function without its import</h4>
+                <p>
+                  The rate-limit table from v3.520.0 reached an existing{' '}
+                  <code>routes.go</code> through the repair that replaces the
+                  auth-limit block. The import it needs lives in the
+                  scaffold&apos;s own template, which an upgrade does not
+                  rewrite for a routes.go the project has edited, so the
+                  project stopped compiling with{' '}
+                  <code>undefined: ratelimit</code>. The repair adds the import
+                  it names, and says so plainly rather than silently if it
+                  cannot.
+                </p>
+                <p>
+                  Both found by the check that upgrades the checked-in example
+                  twice and compares, which is the only test in this repository
+                  that asks what an <em>existing</em> project gets.
+                </p>
+              </div>
+            </div>
+
             {/* v3.524.0 */}
             <div className="mb-12" id="v3.524.0">
               <div className="flex items-center gap-3 mb-4">

@@ -104,5 +104,52 @@ func repairAuthRateLimitSource(src string) (string, []string, []string) {
 	v1.Use(middleware.AuthRateLimit(builtInAuthLimits(cfg.AppEnv == "development")))
 `, 1)
 
-	return out, []string{"the sign-in routes are rate limited whether or not Sentinel is mounted, and the table covers magic links, backup codes, passkey logins and the SSO callbacks"}, nil
+	// And the mount for the table that covers everything else, which is what
+	// bounds a route nobody remembered to list.
+	if !strings.Contains(out, "middleware.RateLimit(rateLimitRules(") {
+		out = strings.Replace(out,
+			"\tv1.Use(middleware.AuthRateLimit(builtInAuthLimits(cfg.AppEnv == \"development\")))\n",
+			"\tv1.Use(middleware.AuthRateLimit(builtInAuthLimits(cfg.AppEnv == \"development\")))\n"+
+				"\n"+
+				"\t// And the table that covers everything else: a rule matches the\n"+
+				"\t// route, then the route without its method, then the class of\n"+
+				"\t// action, then a prefix, so a handler written tomorrow is bounded\n"+
+				"\t// whether or not anybody thought about it. See internal/ratelimit.\n"+
+				"\tv1.Use(middleware.RateLimit(rateLimitRules(cfg.AppEnv == \"development\"), nil))\n", 1)
+	}
+
+	// The import for the package those two lines name.
+	//
+	// rateLimitRules arrived inside routesAuthLimitsFunc above, and without
+	// this the file stops compiling with "undefined: ratelimit" and nothing
+	// pointing at the repair that put it there.
+	fixed, importErr := addRatelimitImport(out, src)
+	if importErr != "" {
+		return src, nil, []string{importErr}
+	}
+	out = fixed
+
+	return out, []string{"the sign-in routes are rate limited whether or not Sentinel is mounted, and the table covers magic links, backup codes, passkey logins and the SSO callbacks; every other route is bounded by internal/ratelimit"}, nil
 }
+
+// addRatelimitImport puts internal/ratelimit in the import block, beside the
+// project's other internal packages.
+//
+// Keyed on internal/paginate, which every routes.go imports and which sorts
+// next to it. A file that does not have it is one this repair should not be
+// editing, and says so rather than writing a file that will not build.
+func addRatelimitImport(out, original string) (string, string) {
+	if strings.Contains(out, "/internal/ratelimit\"") {
+		return out, ""
+	}
+	module := moduleFromImports(original)
+	if module == "" {
+		return out, "routes.go has no recognisable module path, so internal/ratelimit could not be imported: add it by hand or the file will not build"
+	}
+	anchor := "\t\"" + module + "/internal/paginate\"\n"
+	if !strings.Contains(out, anchor) {
+		return out, "routes.go does not import internal/paginate, so internal/ratelimit could not be placed: add it by hand or the file will not build"
+	}
+	return strings.Replace(out, anchor, anchor+"\t\""+module+"/internal/ratelimit\"\n", 1), ""
+}
+

@@ -23,6 +23,25 @@ Also worth knowing:
 ---
 
 
+## v3.524.1 - November 13, 2026
+
+### Two upgrades that left a project not compiling
+
+Both the same shape, and it is the shape worth naming: **a framework file that an upgrade rewrites, beside a project file that it does not.**
+
+#### A model the framework ships
+
+`internal/services/session.go` is framework code and an upgrade rewrites it. `internal/models` is the project's own, so an upgrade leaves it alone, which is right for every model a project wrote and wrong for the handful the framework ships. When the service learned about `Session.RotatedAt` in v3.464.0, a project upgrading into it got a service referencing a field its model does not declare:
+
+`{`internal/services/session.go:105: replayed.RotatedAt undefined (type models.Session has no field or method RotatedAt)`}` The field is carried across by a repair now, which is the only thing allowed to edit a file in `internal/models`, and only when the service beside it actually uses it.
+
+#### A function without its import
+
+The rate-limit table from v3.520.0 reached an existing `routes.go` through the repair that replaces the auth-limit block. The import it needs lives in the scaffold's own template, which an upgrade does not rewrite for a routes.go the project has edited, so the project stopped compiling with `undefined: ratelimit`. The repair adds the import it names, and says so plainly rather than silently if it cannot.
+
+Both found by the check that upgrades the checked-in example twice and compares, which is the only test in this repository that asks what an *existing* project gets.
+
+
 ## v3.524.0 - November 13, 2026
 
 ### A private file in an img tag, and a prune that gives the disk back
