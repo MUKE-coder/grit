@@ -298,6 +298,13 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "ui", "button.tsx"):          adminButtonPrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "input.tsx"):           adminInputPrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveTable.tsx"): adminResponsiveTableComponent(),
+		filepath.Join(adminRoot, "components", "ui", "pill.tsx"):            adminPillPrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "empty-state.tsx"):     adminEmptyStatePrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "segmented.tsx"):       adminSegmentedPrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "tabs-underline.tsx"):  adminUnderlineTabsPrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "radio-card.tsx"):      adminRadioCardPrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "hub-tile.tsx"):        adminHubTilePrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "note.tsx"):            adminNotePrimitive(),
 		filepath.Join(adminRoot, "lib", "export.ts"):                        adminExportLib(),
 		filepath.Join(adminRoot, "hooks", "use-system-health.ts"):           adminUseSystemHealth(),
 

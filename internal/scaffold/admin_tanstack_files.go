@@ -501,6 +501,13 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "chrome", "CommandPalette.tsx"):     nextToTanStack(adminCommandPaletteComponent()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "TopBar.tsx"):             nextToTanStack(adminTopBarComponent()),
 		filepath.Join(adminRoot, "src", "hooks", "use-system-health.ts"):                  nextToTanStack(adminUseSystemHealth()),
+		filepath.Join(adminRoot, "src", "components", "ui", "pill.tsx"):                   nextToTanStack(adminPillPrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "empty-state.tsx"):            nextToTanStack(adminEmptyStatePrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "segmented.tsx"):              nextToTanStack(adminSegmentedPrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "tabs-underline.tsx"):         nextToTanStack(adminUnderlineTabsPrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "radio-card.tsx"):             nextToTanStack(adminRadioCardPrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "hub-tile.tsx"):               nextToTanStack(adminHubTilePrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "note.tsx"):                   nextToTanStack(adminNotePrimitive()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "system-guard.tsx"):       nextToTanStack(adminSystemGuardComponent()),
 		// UserMenu owns the sign-out action; PageHeader is imported by every
 		// system page. Both were missing, so logout did nothing and the system

@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.533.0 - November 14, 2026
+
+### One strip, one primary button, and the dangerous things behind a menu
+
+The second redesign release. The shared vocabulary the remaining pages are written in, proved on the two list pages that use all of it.
+
+#### Four cards became one strip
+
+Four bordered cards with gaps between them is four of everything: four borders, four backgrounds, each announcing itself as a separate object. The numbers belong together and are read together, so they are one card with hairlines between the cells.
+
+Each cell now says what its number counts. Four bare numbers raise the same question four times, and a strip is only worth its space if a reader can answer it without clicking: Total reads &ldquo;All users matching the filters&rdquo;, This Week reads &ldquo;Added in the last 7 days&rdquo;.
+
+#### One primary button per page
+
+Every resource page had two New buttons: one in the page header, one in the table toolbar four inches away, with the same words, the same colour and the same action. Two primary buttons is not twice the affordance, it is a reader working out whether they do the same thing. The header keeps it. Import, Export and Bulk Create stay in the toolbar, because they are other ways in rather than another copy of the main one.
+
+#### Delete and Erase do not sit next to View
+
+The users table showed View, Edit, Delete and{" "} *Erase (GDPR)* side by side in the same grey, which puts &ldquo;remove this person's data permanently&rdquo; one mis-click from &ldquo;look at them&rdquo;, in a row 44px tall repeated down the page.
+
+View and Edit stay. Everything destructive moves into a{" "} `...` menu, in red, and a divider separates Delete from Erase: Delete is reversible and the row comes back from the trash, and nothing below that line does. The menu closes on Escape and on a click outside, and returns focus where it came from.
+
+#### A boolean is a pill, and can choose its words
+
+Down a column of twenty rows, ticks and crosses read as punctuation: the eye finds the shape before the colour and the two shapes are the same size. A filled pill has a silhouette, so a scan finds the odd one out without reading any of them.
+
+Yes and No stay the default, because they are the only pair that is right for every boolean: a contact's{" "} `starred` column saying Inactive is worse than one saying No. A column that knows better says so with{" "} `booleanLabels`, and the generator fills it in for{" "} `active`, `published` and{" "} `archived`.
+
+#### Seven primitives
+
+Pill, empty state, segmented control, underline tabs, radio card, hub tile and note. Each had three or four hand-rolled versions across the panel, differing in padding, in radius, and in whether a state was a word or just a colour. The empty state requires a title and a description, because &ldquo;No data&rdquo; is the most common sentence in an admin panel and the least useful one.
+
+
 ## v3.532.0 - November 13, 2026
 
 ### The admin gets a shell

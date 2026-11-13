@@ -258,6 +258,9 @@ func buildAutoColumnLine(f GoField, key string) string {
 	switch guessFormat(f) {
 	case "boolean":
 		parts = append(parts, `format: "boolean"`)
+		if labels := booleanLabelsFor(f.JSONName); labels != "" {
+			parts = append(parts, labels)
+		}
 	case "currency":
 		parts = append(parts, `format: "currency", currencyPrefix: "$"`)
 	case "date":
@@ -400,4 +403,28 @@ func isSortable(f GoField) bool {
 // isSearchable mirrors Field.IsSearchable() for GoField.
 func isSearchable(f GoField) bool {
 	return f.GoType == "string"
+}
+
+// booleanLabelsFor is the pair of words a boolean column shows, for the
+// handful of column names where Yes and No are not the words anybody uses.
+//
+// Yes/No stays the default because it is the only pair that is never wrong: a
+// contact's "starred" column saying Inactive is worse than one saying No. But
+// a column called "active" saying Yes is a small, constant friction on the
+// page people open most, and the fix is three names.
+//
+// Deliberately short, and deliberately not clever. Guessing from the shape of
+// a name is how a check once skipped every two-word resource, so this matches
+// whole names only: a field called "active_subscription" gets Yes/No, which is
+// correct, rather than Active/Inactive, which would be a sentence fragment.
+func booleanLabelsFor(jsonName string) string {
+	switch jsonName {
+	case "active", "is_active", "enabled", "is_enabled":
+		return `booleanLabels: { true: "Active", false: "Inactive" }`
+	case "published", "is_published":
+		return `booleanLabels: { true: "Published", false: "Draft" }`
+	case "archived", "is_archived":
+		return `booleanLabels: { true: "Archived", false: "Live" }`
+	}
+	return ""
 }

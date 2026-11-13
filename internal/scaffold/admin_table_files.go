@@ -12,7 +12,7 @@ import { ColumnHeader } from "./column-header";
 import { renderCell, getNestedValue } from "./cell-renderers";
 import { TableSkeleton } from "./table-skeleton";
 import { TableEmptyState } from "./table-empty-state";
-import { Eye, ArrowUpRight, Copy, Check } from "@/lib/icons";
+import { Eye, ArrowUpRight, Copy, Check, MoreHorizontal } from "@/lib/icons";
 
 // ClickableCell wraps a rendered cell when the column defines onClick. The two
 // built-ins ("link" → open the row, "copy" → copy the value) get an affordance
@@ -323,69 +323,209 @@ const DataTableRow = memo(function DataTableRow({
       })}
       {hasActions && (
         <td className="px-4 py-3 text-right text-sm">
-          <div className="flex items-center justify-end gap-2">
-            {onView && (
-              <button
-                onClick={() => onView(row)}
-                className="rounded-md p-1.5 text-text-secondary hover:text-info hover:bg-info/10 transition-colors"
-                title={t("table.view", "View")}
-              >
-                <Eye className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {onEdit && (
-              <button
-                onClick={() => onEdit(row)}
-                className="inline-flex min-h-[24px] items-center text-xs text-text-secondary hover:text-accent transition-colors"
-              >
-                {t("form.edit", "Edit")}
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => onDelete(id)}
-                className="inline-flex min-h-[24px] items-center text-xs text-text-secondary hover:text-danger transition-colors"
-              >
-                {t("form.delete", "Delete")}
-              </button>
-            )}
-            {(rowActions ?? [])
-              .filter((a) => !a.visible || a.visible(row))
-              .map((a) =>
+          <RowActions
+            row={row}
+            id={id}
+            columns={columns}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            rowActions={rowActions}
+          />
+        </td>
+      )}
+    </tr>
+  );
+});
+
+/**
+ * A row's actions: the two you reach for, then the rest behind a menu.
+ *
+ * Every action used to sit in the row, in a line, in the same grey. On the
+ * users table that was View, Edit, Delete and Erase (GDPR) side by side,
+ * which puts "remove this person's data permanently" one pixel-accurate
+ * mis-click from "look at them", in a row that is 44px tall and repeated
+ * twenty times down the page.
+ *
+ * So: View and Edit stay, because they are what the actions column is for.
+ * Anything destructive goes in the menu, after a divider, in red. Reaching it
+ * takes a click and a deliberate second one, which is the whole point.
+ */
+function RowActions({
+  row,
+  id,
+  columns,
+  onView,
+  onEdit,
+  onDelete,
+  rowActions,
+}: {
+  row: Record<string, unknown>;
+  id: string;
+  columns: ColumnDefinition[];
+  onView?: (row: Record<string, unknown>) => void;
+  onEdit?: (row: Record<string, unknown>) => void;
+  onDelete?: (id: string) => void;
+  rowActions?: RowActionDefinition[];
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: globalThis.MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const extras = (rowActions ?? []).filter((a) => !a.visible || a.visible(row));
+  const quiet = extras.filter((a) => a.variant !== "danger");
+  const dangerous = extras.filter((a) => a.variant === "danger");
+  const inMenu = quiet.length + dangerous.length + (onDelete ? 1 : 0);
+
+  const itemClass =
+    "flex w-full items-center px-3 py-2 text-left text-[13px] transition-grit ";
+
+  return (
+    <div ref={wrapRef} className="relative flex items-center justify-end gap-1">
+      {onView && (
+        <button
+          type="button"
+          onClick={() => onView(row)}
+          aria-label={t("table.view", "View") + " " + rowName(row, columns)}
+          className="rounded-md p-1.5 text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground"
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+      )}
+      {onEdit && (
+        <button
+          type="button"
+          onClick={() => onEdit(row)}
+          className="rounded-md px-2 py-1 text-[13px] text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground"
+        >
+          {t("form.edit", "Edit")}
+        </button>
+      )}
+
+      {inMenu > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            aria-label={t("table.moreActions", "More actions for") + " " + rowName(row, columns)}
+            className="rounded-md p-1.5 text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+
+          {open && (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-lg border border-border bg-bg-elevated py-1 shadow-lg motion-safe:animate-grit-rise"
+            >
+              {quiet.map((a) =>
                 a.href ? (
                   <Link
                     key={a.label}
+                    role="menuitem"
                     href={a.href(row)}
-                    className={
-                      "text-xs transition-colors " +
-                      (a.variant === "danger"
-                        ? "text-text-secondary hover:text-danger"
-                        : "text-text-secondary hover:text-accent")
-                    }
+                    onClick={() => setOpen(false)}
+                    className={itemClass + "text-text-secondary hover:bg-bg-hover hover:text-foreground"}
                   >
                     {a.label}
                   </Link>
                 ) : (
                   <button
                     key={a.label}
-                    onClick={() => a.onClick?.(row)}
-                    className={
-                      "text-xs transition-colors " +
-                      (a.variant === "danger"
-                        ? "text-text-secondary hover:text-danger"
-                        : "text-text-secondary hover:text-accent")
-                    }
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpen(false);
+                      a.onClick?.(row);
+                    }}
+                    className={itemClass + "text-text-secondary hover:bg-bg-hover hover:text-foreground"}
                   >
                     {a.label}
                   </button>
                 )
               )}
-          </div>
-        </td>
+
+              {/* Destructive actions start here. */}
+              {(onDelete || dangerous.length > 0) && quiet.length > 0 && (
+                <div className="my-1 border-t border-border" />
+              )}
+
+              {onDelete && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    onDelete(id);
+                  }}
+                  className={itemClass + "text-danger hover:bg-danger-soft"}
+                >
+                  {t("form.delete", "Delete")}
+                </button>
+              )}
+
+              {/* And this divider is the one that matters.
+                  Delete is reversible: the row goes to the trash and comes
+                  back. Everything below is not, and on the users table the
+                  item directly under Delete erases a person's data under
+                  Art. 17. Two red words a pixel apart, one undoable and one
+                  not, is a menu that will eventually be misread, so they do
+                  not touch. */}
+              {onDelete && dangerous.length > 0 && (
+                <div className="my-1 border-t border-border" />
+              )}
+
+              {dangerous.map((a) =>
+                a.href ? (
+                  <Link
+                    key={a.label}
+                    role="menuitem"
+                    href={a.href(row)}
+                    onClick={() => setOpen(false)}
+                    className={itemClass + "text-danger hover:bg-danger-soft"}
+                  >
+                    {a.label}
+                  </Link>
+                ) : (
+                  <button
+                    key={a.label}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpen(false);
+                      a.onClick?.(row);
+                    }}
+                    className={itemClass + "text-danger hover:bg-danger-soft"}
+                  >
+                    {a.label}
+                  </button>
+                )
+              )}
+            </div>
+          )}
+        </>
       )}
-    </tr>
+    </div>
   );
-});
+}
 `
 }
 
@@ -492,8 +632,9 @@ export function StackedCell({
 // adminCellRenderers returns the cell renderer functions.
 func adminCellRenderers() string {
 	return `import type { ColumnDefinition } from "@/lib/resource";
-import { Check, X, Play, ExternalLink } from "@/lib/icons";
+import { Play, ExternalLink } from "@/lib/icons";
 import { safeHref } from "@/lib/safe-href";
+import { Pill } from "@/components/ui/pill";
 import { formatDate, formatRelative, formatCurrency } from "@/lib/formatters";
 import { formatMoney, type Money } from "@repo/shared/types";
 import { lazy, Suspense } from "react";
@@ -527,7 +668,7 @@ export function renderCell(
       content = <BadgeCell value={String(value)} config={column.badge} />;
       break;
     case "boolean":
-      content = <BooleanCell value={Boolean(value)} />;
+      content = <BooleanCell value={Boolean(value)} labels={column.booleanLabels} />;
       break;
     case "currency":
       content = <CurrencyCell value={Number(value)} prefix={column.currencyPrefix} />;
@@ -670,23 +811,32 @@ function BadgeCell({
   );
 }
 
-// Yes and No, because this renders every boolean column there is.
+// A boolean, as a pill.
 //
+// Yes and No by default, because this renders every boolean column there is.
 // It used to say Active and Inactive, which reads correctly for a column
 // called "active" and wrongly for all the others: a contact's "starred"
 // column said Inactive, an order's "paid" column said Active. A column whose
-// own header already names the thing only needs the answer.
-function BooleanCell({ value }: { value: boolean }) {
-  return value ? (
-    <span className="inline-flex items-center gap-1 text-success">
-      <Check className="h-3.5 w-3.5" />
-      <span className="text-xs">Yes</span>
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 text-text-muted">
-      <X className="h-3.5 w-3.5" />
-      <span className="text-xs">No</span>
-    </span>
+// own header already names the thing only needs the answer, so a column that
+// wants better words asks for them with booleanLabels.
+//
+// A pill rather than a tick and a word. Down a column of twenty rows, a row
+// of ticks and crosses reads as a column of punctuation: the eye finds the
+// shape before the colour, and the two shapes are the same size. A filled
+// pill has a silhouette, so a scan down the column finds the odd one out
+// without reading any of them.
+function BooleanCell({
+  value,
+  labels,
+}: {
+  value: boolean;
+  labels?: { true: string; false: string };
+}) {
+  const word = value ? (labels?.true ?? "Yes") : (labels?.false ?? "No");
+  return (
+    <Pill tone={value ? "good" : "neutral"} dot>
+      {word}
+    </Pill>
   );
 }
 
@@ -1063,10 +1213,9 @@ func adminTableToolbar() string {
 import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
-import { Search, Plus, Upload, Columns3, LayoutGrid } from "@/lib/icons";
+import { Search, Upload, Columns3, LayoutGrid } from "@/lib/icons";
 import { DateFilter, type DateRange } from "./date-filter";
 import { ExportMenu } from "./export-menu";
-import { buttonClasses } from "@/components/ui/button";
 
 interface TableToolbarProps {
   resource: ResourceDefinition;
@@ -1074,7 +1223,6 @@ interface TableToolbarProps {
   onSearch: (value: string) => void;
   selectedCount: number;
   onBulkDelete?: () => void;
-  onCreate?: () => void;
   allColumns: ColumnDefinition[];
   hiddenColumns: string[];
   onToggleColumn: (key: string) => void;
@@ -1101,7 +1249,6 @@ export function TableToolbar({
   resource,
   search,
   onSearch,
-  onCreate,
   onBulkCreate,
   allColumns,
   hiddenColumns,
@@ -1232,16 +1379,16 @@ export function TableToolbar({
         </button>
       )}
 
-      {/* Create button */}
-      {onCreate && (
-        <button
-          onClick={onCreate}
-          className={buttonClasses({ size: "sm" })}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {t("table.new", "New {name}", { name: resource.label?.singular ?? resource.name })}
-        </button>
-      )}
+      {/* No create button here.
+          There is one in the page header, four inches up and to the right,
+          and there was one here too: the same words, the same colour, the
+          same action, on every resource page in the panel. Two primary
+          buttons is not twice the affordance, it is a reader working out
+          whether they do the same thing. The header is where a page's one
+          action belongs, so this is the one that goes.
+
+          Import, Export and Bulk Create stay. They are other ways in, not
+          another copy of the main one. */}
     </div>
   );
 }

@@ -72,6 +72,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.533.0 */}
+            <div className="mb-12" id="v3.533.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.533.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One strip, one primary button, and the dangerous things behind a menu</h3>
+                <p>
+                  The second redesign release. The shared vocabulary the
+                  remaining pages are written in, proved on the two list pages
+                  that use all of it.
+                </p>
+
+                <h4>Four cards became one strip</h4>
+                <p>
+                  Four bordered cards with gaps between them is four of
+                  everything: four borders, four backgrounds, each announcing
+                  itself as a separate object. The numbers belong together and
+                  are read together, so they are one card with hairlines
+                  between the cells.
+                </p>
+                <p>
+                  Each cell now says what its number counts. Four bare numbers
+                  raise the same question four times, and a strip is only worth
+                  its space if a reader can answer it without clicking: Total
+                  reads &ldquo;All users matching the filters&rdquo;, This Week
+                  reads &ldquo;Added in the last 7 days&rdquo;.
+                </p>
+
+                <h4>One primary button per page</h4>
+                <p>
+                  Every resource page had two New buttons: one in the page
+                  header, one in the table toolbar four inches away, with the
+                  same words, the same colour and the same action. Two primary
+                  buttons is not twice the affordance, it is a reader working
+                  out whether they do the same thing. The header keeps it.
+                  Import, Export and Bulk Create stay in the toolbar, because
+                  they are other ways in rather than another copy of the main
+                  one.
+                </p>
+
+                <h4>Delete and Erase do not sit next to View</h4>
+                <p>
+                  The users table showed View, Edit, Delete and{" "}
+                  <em>Erase (GDPR)</em> side by side in the same grey, which
+                  puts &ldquo;remove this person&apos;s data permanently&rdquo;
+                  one mis-click from &ldquo;look at them&rdquo;, in a row 44px
+                  tall repeated down the page.
+                </p>
+                <p>
+                  View and Edit stay. Everything destructive moves into a{" "}
+                  <code>&hellip;</code> menu, in red, and a divider separates
+                  Delete from Erase: Delete is reversible and the row comes
+                  back from the trash, and nothing below that line does. The
+                  menu closes on Escape and on a click outside, and returns
+                  focus where it came from.
+                </p>
+
+                <h4>A boolean is a pill, and can choose its words</h4>
+                <p>
+                  Down a column of twenty rows, ticks and crosses read as
+                  punctuation: the eye finds the shape before the colour and
+                  the two shapes are the same size. A filled pill has a
+                  silhouette, so a scan finds the odd one out without reading
+                  any of them.
+                </p>
+                <p>
+                  Yes and No stay the default, because they are the only pair
+                  that is right for every boolean: a contact&apos;s{" "}
+                  <code>starred</code> column saying Inactive is worse than one
+                  saying No. A column that knows better says so with{" "}
+                  <code>booleanLabels</code>, and the generator fills it in for{" "}
+                  <code>active</code>, <code>published</code> and{" "}
+                  <code>archived</code>.
+                </p>
+
+                <h4>Seven primitives</h4>
+                <p>
+                  Pill, empty state, segmented control, underline tabs, radio
+                  card, hub tile and note. Each had three or four hand-rolled
+                  versions across the panel, differing in padding, in radius,
+                  and in whether a state was a word or just a colour. The empty
+                  state requires a title and a description, because &ldquo;No
+                  data&rdquo; is the most common sentence in an admin panel and
+                  the least useful one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.532.0 */}
             <div className="mb-12" id="v3.532.0">
               <div className="flex items-center gap-3 mb-4">

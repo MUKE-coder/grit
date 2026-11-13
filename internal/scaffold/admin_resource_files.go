@@ -26,6 +26,16 @@ export interface ColumnDefinition<T = Record<string, unknown>> {
   width?: string;
   format?: ColumnFormat;
   badge?: BadgeConfig;
+  /**
+   * The two words a "boolean" column shows, instead of Yes and No.
+   *
+   * Yes and No are right for every boolean and best for none. A column named
+   * "active" wants Active and Inactive; "published" wants Published and
+   * Draft. The default stays Yes/No because it is the only pair that is never
+   * wrong: a contact's "starred" column saying Inactive is worse than one
+   * saying No.
+   */
+  booleanLabels?: { true: string; false: string };
   currencyPrefix?: string;
   /** How many stars a "rating" column is out of. Defaults to 5. */
   ratingMax?: number;
@@ -1029,7 +1039,15 @@ export const usersResource = defineResource({
           github: { color: "accent", label: "GitHub" },
         },
       },
-      { key: "active", label: "Status", format: "boolean" },
+      {
+        key: "active",
+        label: "Status",
+        format: "boolean",
+        // An account is active or inactive, not yes or no. The default pair
+        // is Yes/No because it is the only one that is right for every
+        // boolean column; this column knows better.
+        booleanLabels: { true: "Active", false: "Inactive" },
+      },
       { key: "created_at", label: "Created", format: "relative", sortable: true },
     ],
     filters: [
@@ -1353,7 +1371,17 @@ function ResourceListView({ resource }: ResourcePageProps) {
     <div>
       <PageHeader
         title={c.pluralName}
-        subtitle={` + "`" + `Manage ${c.pluralName.toLowerCase()}` + "`" + `}
+        // "Manage users" told a reader nothing they could not see from the
+        // title. The count is the one fact worth putting here: it is the
+        // first thing anybody wants from a list page, and it is already
+        // loaded.
+        subtitle={
+          c.isLoading
+            ? ` + "`" + `Manage ${c.pluralName.toLowerCase()}` + "`" + `
+            : ` + "`" + `${c.total.toLocaleString()} ${
+                c.total === 1 ? c.singularName.toLowerCase() : c.pluralName.toLowerCase()
+              }` + "`" + `
+        }
         actions={headerActions}
         stats={c.stats}
         // Clicking a counted card narrows the table to it, and clicking the
@@ -1421,7 +1449,6 @@ function ResourceListView({ resource }: ResourcePageProps) {
           onSearch={c.setSearch}
           selectedCount={c.selection.length}
           onBulkDelete={c.bulkRemove}
-          onCreate={c.can("create") ? c.create : undefined}
           allColumns={c.allColumns}
           hiddenColumns={c.hiddenColumns}
           onToggleColumn={c.toggleColumn}
@@ -2232,11 +2259,45 @@ export function useResourceController<T = Record<string, unknown>>(
     const counts = data?.meta?.counts;
     const count = (name: string) => counts?.[name] ?? "—";
     const loading = isLoading;
+    // Each number says what it counts, under itself.
+    //
+    // Four bare numbers in a row raise the same question four times: 5 of
+    // what, out of what, since when. The strip is only worth its space if a
+    // reader can answer that without clicking anything, and the answer is one
+    // short line per cell.
+    const total = data?.meta?.total;
+    const plural = pluralName.toLowerCase();
     const defaults: StatCard[] = [
-      { label: "Total", value: data?.meta?.total ?? "—", loading, icon: resource.icon || "Package" },
-      { label: "This Week", value: count("created_7d"), loading, icon: "TrendingUp", color: "success" },
-      { label: "This Month", value: count("created_30d"), loading, icon: "Calendar", color: "info" },
-      { label: "Updated Recently", value: count("updated_7d"), loading, icon: "RefreshCw" },
+      {
+        label: "Total",
+        value: total ?? "—",
+        loading,
+        icon: resource.icon || "Package",
+        hint: "All " + plural + " matching the filters",
+      },
+      {
+        label: "This Week",
+        value: count("created_7d"),
+        loading,
+        icon: "TrendingUp",
+        color: "success",
+        hint: "Added in the last 7 days",
+      },
+      {
+        label: "This Month",
+        value: count("created_30d"),
+        loading,
+        icon: "Calendar",
+        color: "info",
+        hint: "Added in the last 30 days",
+      },
+      {
+        label: "Updated Recently",
+        value: count("updated_7d"),
+        loading,
+        icon: "RefreshCw",
+        hint: "Changed in the last 7 days",
+      },
     ];
 
     // Then one card per value of each counted column, from the same response.

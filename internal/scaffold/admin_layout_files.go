@@ -82,6 +82,7 @@ func adminIconMap() string {
   Minimize2,
   Check,
   AlertCircle,
+  Info,
   Loader2,
   Eye,
   EyeOff,
@@ -214,6 +215,7 @@ export const iconMap: Record<string, LucideIcon> = {
   RefreshCw,
   Upload,
   AlertCircle,
+  Info,
   Bug,
   ClipboardList,
   UploadCloud,
@@ -268,6 +270,7 @@ export {
   Minimize2,
   Check,
   AlertCircle,
+  Info,
   Loader2,
   Eye,
   EyeOff,
@@ -554,6 +557,16 @@ export interface StatCard {
   field?: string;
   /** Optional trend delta shown next to value */
   trend?: { value: number; direction: "up" | "down" };
+  /**
+   * One line under the value saying what the number means.
+   *
+   * This is the part that makes a number worth putting on a page. "4" is a
+   * fact; "4, one of them inactive" is something somebody can act on. Without
+   * it a stat strip is four numbers nobody can do anything with.
+   */
+  hint?: string;
+  /** Colours the hint when it reports a state rather than a count. */
+  hintTone?: "muted" | "good" | "warn" | "bad";
   /** Shows the placeholder while a static value is still on its way. */
   loading?: boolean;
   /**
@@ -586,10 +599,20 @@ function StatCardItem({
   stat,
   onFilter,
   active,
+  reserveHint,
 }: {
   stat: StatCard;
   onFilter?: (filter: StatFilter) => void;
   active?: boolean;
+  /**
+   * Whether any cell in this strip has a hint.
+   *
+   * The line is reserved for all of them or for none. Reserved for all, the
+   * four values share a baseline even when only one cell has something to
+   * say. Reserved for none, a strip whose page has not adopted hints yet is
+   * compact instead of carrying four blank lines of dead space.
+   */
+  reserveHint?: boolean;
 }) {
   const color = colorClasses[stat.color || "default"];
   const Icon = stat.icon ? getIcon(stat.icon) : null;
@@ -615,51 +638,66 @@ function StatCardItem({
       ? (getPath(data, stat.field) as string | number | undefined) ?? "—"
       : "—";
 
+  const hintClass =
+    stat.hintTone === "good"
+      ? "text-success"
+      : stat.hintTone === "warn"
+        ? "text-warning"
+        : stat.hintTone === "bad"
+          ? "text-danger"
+          : "text-text-muted";
+
   const body = (
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-            {stat.label}
+    <>
+      {/* The label, in the mono eyebrow the panel uses for machine-ish words.
+          The icon is inline with it rather than a tile floating on the right:
+          at this size a 36px tinted square is the loudest thing in the cell,
+          and it carries nothing the label does not already say. */}
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+        {Icon && <Icon className={"h-3.5 w-3.5 shrink-0 " + color.text} aria-hidden="true" />}
+        <span className="truncate">{stat.label}</span>
+      </p>
+
+      <div className="mt-2 flex items-baseline gap-2">
+        {(isLoading && stat.endpoint) || stat.loading ? (
+          <div className="h-[30px] w-16 animate-pulse rounded bg-bg-hover" />
+        ) : (
+          <p className="text-[30px] font-semibold leading-none tracking-[-0.02em] text-foreground tabular-nums">
+            {typeof value === "number" ? value.toLocaleString() : value}
           </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            {(isLoading && stat.endpoint) || stat.loading ? (
-              <div className="h-7 w-16 rounded bg-bg-hover animate-pulse" />
+        )}
+        {stat.trend && (
+          <span
+            className={` + "`" + `flex items-center gap-0.5 text-xs font-medium ${
+              stat.trend.direction === "up" ? "text-success" : "text-danger"
+            }` + "`" + `}
+          >
+            {stat.trend.direction === "up" ? (
+              <TrendingUp className="h-3 w-3" />
             ) : (
-              <p className="text-2xl font-bold text-foreground tabular-nums">
-                {typeof value === "number" ? value.toLocaleString() : value}
-              </p>
+              <TrendingDown className="h-3 w-3" />
             )}
-            {stat.trend && (
-              <span
-                className={` + "`" + `flex items-center gap-0.5 text-xs font-medium ${
-                  stat.trend.direction === "up" ? "text-success" : "text-danger"
-                }` + "`" + `}
-              >
-                {stat.trend.direction === "up" ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : (
-                  <TrendingDown className="h-3 w-3" />
-                )}
-                {stat.trend.value}%
-              </span>
-            )}
-          </div>
-        </div>
-        {Icon && (
-          <div className={` + "`" + `flex h-9 w-9 items-center justify-center rounded-lg ${color.bg}` + "`" + `}>
-            <Icon className={` + "`" + `h-4 w-4 ${color.text}` + "`" + `} />
-          </div>
+            {stat.trend.value}%
+          </span>
         )}
       </div>
+
+      {/* What the number means. Kept even when this cell has nothing to say,
+          as long as some cell in the strip does, so the values share one
+          baseline instead of sitting at two heights. */}
+      {(stat.hint || reserveHint) && (
+        <p className={"mt-1.5 truncate text-[13px] " + hintClass}>{stat.hint ?? "\u00a0"}</p>
+      )}
+    </>
   );
 
-  const base = "rounded-xl border p-5 text-left transition-colors ";
+  const base = "block h-full px-5 py-4 text-left transition-grit ";
 
-  // A card with nothing to narrow to stays a div, and loses the hover state
-  // with it: a border that lights up under the pointer is a promise, and this
-  // one had nothing behind it.
+  // A cell with nothing to narrow to stays a div, and loses the hover state
+  // with it: a surface that lights up under the pointer is a promise, and
+  // this one had nothing behind it.
   if (!stat.filter || !onFilter) {
-    return <div className={base + "border-border bg-bg-secondary"}>{body}</div>;
+    return <div className={base}>{body}</div>;
   }
 
   return (
@@ -669,10 +707,8 @@ function StatCardItem({
       aria-pressed={active}
       className={
         base +
-        "w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 " +
-        (active
-          ? "border-accent bg-accent/10"
-          : "border-border bg-bg-secondary hover:border-accent/50 hover:bg-bg-hover")
+        "w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent " +
+        (active ? "bg-accent-soft" : "hover:bg-bg-tertiary")
       }
     >
       {body}
@@ -688,28 +724,59 @@ export interface StatFilter {
   value: string;
 }
 
-/** The row of stat cards under a page header. */
+/**
+ * The strip of numbers under a page header.
+ *
+ * One bordered card divided into cells, not four bordered cards with gaps
+ * between them. Four cards is four of everything: four borders, four
+ * backgrounds, four shadows, each announcing itself as a separate object. The
+ * numbers belong together and are read together, and a strip says so with one
+ * border and three hairlines.
+ *
+ * Two-up under 900px, one-up under 520px, where four columns is four columns
+ * of nothing.
+ */
 export function StatCards({
   stats,
   onFilter,
   isFilterActive,
 }: {
   stats: StatCard[];
-  /** Given, every card carrying a filter becomes a button. */
+  /** Given, every cell carrying a filter becomes a button. */
   onFilter?: (filter: StatFilter) => void;
-  /** Whether the table is currently narrowed to that card. */
+  /** Whether the table is currently narrowed to that cell. */
   isFilterActive?: (filter: StatFilter) => boolean;
 }) {
+  if (stats.length === 0) return null;
+
+  const reserveHint = stats.some((stat) => Boolean(stat.hint));
+
   return (
-    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat, i) => (
-        <StatCardItem
-          key={i}
-          stat={stat}
-          onFilter={onFilter}
-          active={stat.filter ? (isFilterActive?.(stat.filter) ?? false) : false}
-        />
-      ))}
+    <div className="mb-8 overflow-hidden rounded-xl border border-border bg-bg-elevated">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, i) => (
+          <div
+            key={i}
+            className={
+              // The dividers are borders on the cells rather than divide-x,
+              // because at two columns the third cell starts a new row and
+              // needs a top border where divide-x would still draw a left one.
+              "min-w-0 border-border " +
+              (i > 0 ? "border-t sm:border-t-0 " : "") +
+              (i % 2 === 1 ? "sm:border-l " : "") +
+              (i >= 2 ? "sm:border-t lg:border-t-0 " : "") +
+              (i >= 1 ? "lg:border-l " : "")
+            }
+          >
+            <StatCardItem
+              stat={stat}
+              onFilter={onFilter}
+              active={stat.filter ? (isFilterActive?.(stat.filter) ?? false) : false}
+              reserveHint={reserveHint}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

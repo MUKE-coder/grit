@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resources } from "@/resources";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useMe } from "@/hooks/use-auth";
 import { getIcon, Search, ChevronRight } from "@/lib/icons";
 
 const OPEN_EVENT = "grit:command-palette";
@@ -64,7 +65,12 @@ const STATIC_ITEMS: ReadonlyArray<Omit<Item, "icon"> & { iconKey: string }> = [
 
 export function CommandPalette() {
   const router = useRouter();
-  const { can, isAdmin, loading: permsLoading } = usePermissions();
+  const { can, isLoading: permsLoading } = usePermissions();
+  const { data: user } = useMe();
+  // The same reading the sidebar uses, so the palette and the rail offer the
+  // same resources. Two different answers to "may this person see it" is how
+  // a link appears in one and not the other.
+  const isAdmin = user?.role === "ADMIN" || user?.role === "EDITOR";
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
