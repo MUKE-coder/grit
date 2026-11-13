@@ -393,9 +393,9 @@ import { useMe } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { CollapsibleSidebar } from "@/components/chrome/CollapsibleSidebar";
 import { SessionWatchdog } from "@/components/chrome/SessionWatchdog";
-import { QuickAccess } from "@/components/chrome/QuickAccess";
+import { TopBar } from "@/components/chrome/TopBar";
+import { CommandPalette } from "@/components/chrome/CommandPalette";
 import { EmailVerifiedBanner } from "@/components/chrome/EmailVerifiedBanner";
-import { Menu } from "@/lib/icons";
 // grit:layout:imports
 
 // v3.29: navbar is gone — pages now drop a <PageHeader> at the top of
@@ -503,35 +503,25 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           Skip to content
         </a>
 
-        {/* Mobile menu button — only shown when the sidebar is hidden
-            on small screens. PageHeader supplies the rest of the chrome. */}
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(true)}
-          aria-label="Open menu"
-          className="fixed top-3 left-3 z-30 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary shadow-sm md:hidden"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
+        {/* The panel's own chrome: where you are, how the system is doing,
+            refresh, theme, notifications, and the menu button on small
+            screens. One strip for the whole admin, instead of a copy of it
+            inside every page's header competing with that page's own title
+            and its one real action. */}
+        <TopBar onOpenMenu={() => setMobileMenuOpen(true)} />
 
         {/* grit:layout:banner */}
         <EmailVerifiedBanner />
-        {/* The bottom padding clears the floating quick-access button, which
-            is 48px at bottom-6 and so reserves the last 72px of the viewport.
-            Nothing reserved it, so the final element on the page sat beneath
-            it: the "Last" pagination button at 1440, the search field at 375.
-            At every width, because the overlap was at every width.
-
-            The menu toggle at the top is not handled here. It overlaps the
-            sticky page header, and a sticky element does not move when its
-            scrolling ancestor gains padding: PageHeader carries that one. */}
-        <main id="main" tabIndex={-1} className="flex-1 px-4 py-6 pb-20 md:px-8 focus:outline-none">
+        {/* No bottom padding reserved any more. It was clearing the floating
+            quick-access button, which offered one action from on top of the
+            last row of whatever was underneath it. Cmd+K offers every action
+            and covers nothing. */}
+        <main id="main" tabIndex={-1} className="flex-1 px-4 py-6 pb-12 md:px-8 focus:outline-none">
           {inBrowser ? children : null}
         </main>
       </div>
 
-      {/* Floating quick-access button (configurable) */}
-      {user && <QuickAccess />}
+      {user && <CommandPalette />}
     </div>
   );
 }

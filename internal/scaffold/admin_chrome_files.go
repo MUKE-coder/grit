@@ -435,21 +435,12 @@ export function NotificationBell() {
 func adminPageHeaderComponent() string {
 	return `"use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RefreshCw, Search, ArrowLeft } from "@/lib/icons";
-import { DarkModeToggle } from "./DarkModeToggle";
-import { UserMenu } from "./UserMenu";
-import { NotificationBell } from "./NotificationBell";
+import { Search, ArrowLeft } from "@/lib/icons";
 import { StatCards, type StatCard, type StatFilter } from "./StatCards";
 import { inputClasses } from "@/components/ui/input";
-
-// Queries that belong to the layout rather than to any page: the signed-in
-// user, their permissions and the notification bell. The refresh button leaves
-// them alone; they have their own lifetimes.
-const CHROME_QUERY_ROOTS = ["me", "my-permissions", "notifications"];
 
 interface PageHeaderProps {
   /** Page title. Required. */
@@ -462,12 +453,14 @@ interface PageHeaderProps {
   searchValue?: string;
   /** Search change handler. */
   onSearchChange?: (value: string) => void;
-  /** Extra action buttons rendered before the always-on chrome (dark, bell, user). */
+  /**
+   * This page's actions, right-aligned beside the title.
+   *
+   * Exactly one of them should be the primary button. Refresh, theme and
+   * notifications are not passed here: they apply to the whole panel and live
+   * in the TopBar.
+   */
   actions?: ReactNode;
-  /** React Query keys to invalidate when the refresh button is pressed. */
-  refreshKeys?: string[];
-  /** Hide the refresh button entirely. */
-  hideRefresh?: boolean;
   /** Override the auto-derived back link. Pass null to suppress it entirely. */
   backHref?: string | null;
   /** Label for the back link. Defaults to "Back to System Hub". */
@@ -504,8 +497,6 @@ export function PageHeader({
   searchValue,
   onSearchChange,
   actions,
-  refreshKeys,
-  hideRefresh,
   backHref,
   backLabel,
   stats,
@@ -513,7 +504,6 @@ export function PageHeader({
   isStatFilterActive,
   insights,
 }: PageHeaderProps) {
-  const queryClient = useQueryClient();
   const pathname = usePathname();
 
   // Every operational surface lives under the System Hub, but each page is
@@ -533,39 +523,19 @@ export function PageHeader({
           ? { href: "/system", label: backLabel ?? "Back to System Hub" }
           : null;
 
-  // Refresh reloads what the page shows, not the chrome around it. With no
-  // filter it also refetched the signed-in user, their permissions and the
-  // notification list, three requests on every click that the page never
-  // asked for, and a permissions refetch briefly re-gates the sidebar.
-  // Pages with hot keys (jobs, files, sentinel) can scope by passing refreshKeys.
-  const onRefresh = () => {
-    if (refreshKeys && refreshKeys.length > 0) {
-      for (const k of refreshKeys) queryClient.invalidateQueries({ queryKey: [k] });
-    } else {
-      queryClient.invalidateQueries({
-        predicate: (query) => !CHROME_QUERY_ROOTS.includes(String(query.queryKey[0])),
-      });
-    }
-  };
-
   return (
     <>
-    {/* v3.31.6: PageHeader is now sticky, pinned to the top of the
-        scrollable main area with a solid background + bottom border so
-        long page content scrolls behind it. -mx-4 md:-mx-8 cancels the
-        main's px-* padding so the bg + border stretch to the edges, and
-        px-* inside brings the content back inside the original gutter. */}
-    <header className="sticky top-0 z-20 -mx-4 mb-6 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:-mx-8">
-      {/* pl-14 on small screens, for the menu toggle.
+    {/* The page's own title block, in the content flow.
+        It used to be sticky chrome with its own background and border,
+        carrying the theme toggle, the bell and the user menu. Those are
+        panel-wide facts and they now live in the TopBar above, which is the
+        sticky one. What is left here is what belongs to this page: where it
+        sits, what it is called, what it is for, and its actions.
 
-          The toggle is fixed at top-3 left-3 and 36px square, so it occupies
-          the first 48px of the viewport in both directions. This header is
-          sticky top-0, which means the two are in exactly the same place as
-          each other at every scroll position, and the toggle has the higher
-          z-index: the page title sat underneath it the moment anybody
-          scrolled. Padding on the scrolling wrapper cannot fix that, because
-          a sticky element does not move with it. */}
-      <div className="flex flex-col gap-4 pl-14 pr-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+        Nothing reserves space for a floating menu button any more either:
+        that button is inside the TopBar's own row. */}
+    <header className="mb-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         {/* Title block — min-w-0 + flex-shrink lets the title wrap
             cleanly when long subtitles share the row with action chrome. */}
         <div className="min-w-0 md:flex-1">
@@ -578,8 +548,12 @@ export function PageHeader({
               {backTo.label}
             </Link>
           )}
-          <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{title}</h1>
-          {subtitle && <p className="mt-1 text-sm text-text-secondary md:line-clamp-2">{subtitle}</p>}
+          <h1 className="truncate text-[28px] font-semibold leading-tight tracking-[-0.03em] text-foreground">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="mt-1.5 max-w-[70ch] text-sm text-text-secondary">{subtitle}</p>
+          )}
         </div>
 
         {/* Search */}
@@ -596,24 +570,14 @@ export function PageHeader({
           </div>
         )}
 
-        {/* Chrome actions — shrink-0 + whitespace-nowrap on the row so
-            action buttons (e.g. "Open full Pulse") don't wrap mid-label. */}
-        <div className="flex shrink-0 items-center justify-end gap-2 whitespace-nowrap">
-          {!hideRefresh && (
-            <button
-              type="button"
-              onClick={onRefresh}
-              aria-label="Refresh"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary hover:bg-bg-hover transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
-          )}
-          <DarkModeToggle />
-          {actions}
-          <NotificationBell />
-          <UserMenu />
-        </div>
+        {/* The page's actions, and only the page's actions.
+            shrink-0 and whitespace-nowrap so a label like "Open full Pulse"
+            does not wrap mid-word when it shares the row with a title. */}
+        {actions && (
+          <div className="flex shrink-0 items-center justify-end gap-2 whitespace-nowrap">
+            {actions}
+          </div>
+        )}
       </div>
     </header>
     {/* The cards are content, not chrome: they scroll away under the header. */}
@@ -646,11 +610,13 @@ import { brand } from "@repo/shared/brand";
 import { useLogout } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useT } from "@/lib/i18n";
+import { openCommandPalette } from "@/components/chrome/CommandPalette";
 import {
   getIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Search,
   LayoutDashboard,
   LayoutGrid,
   Activity,
@@ -674,6 +640,28 @@ import type { User } from "@repo/shared/types";
 // release their dashboard was built from. Update by re-scaffolding or
 // hand-bumping if you carry framework patches locally.
 const GRIT_CLI_VERSION = "v{{GRIT_VERSION}}";
+
+// Which deployment this panel is pointing at, under the app name.
+//
+// Two tabs of the same admin look identical, and the fact worth knowing
+// before you press a destructive button is which database is behind it.
+//
+// Derived from the API URL rather than from an environment variable somebody
+// has to remember to set: a label that is configured separately from the
+// thing it describes is a label that will one day say "staging" on top of
+// production. NEXT_PUBLIC_APP_ENV overrides it when a deployment wants its
+// own word.
+const ENVIRONMENT_LABEL = (() => {
+  const explicit = process.env.NEXT_PUBLIC_APP_ENV;
+  if (explicit) return explicit;
+  try {
+    const host = new URL(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").hostname;
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1") return "local";
+    return host;
+  } catch {
+    return "local";
+  }
+})();
 
 // Internal nav block — pages that exist for every Grit app regardless of
 // which resources were generated. Kept out of the resources registry so
@@ -772,6 +760,18 @@ export function CollapsibleSidebar({
   onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
+
+  // The key cap on the search button.
+  //
+  // Decided after mount, not during render: the server has no platform to
+  // read, so rendering the Mac label on the server and the Windows one in the
+  // browser is a hydration mismatch React discards the whole subtree over.
+  // Ctrl is the default because it is right everywhere except one platform.
+  const [shortcutLabel, setShortcutLabel] = useState("Ctrl K");
+  useEffect(() => {
+    if (/Mac|iPhone|iPad|iPod/.test(navigator.userAgent)) setShortcutLabel("⌘K");
+  }, []);
+
   // A group is open when the reader said so, and otherwise when it holds the
   // page being shown. Worked out during render: copying it into state from an
   // effect rendered the sidebar twice per navigation, and compared the path
@@ -838,30 +838,70 @@ export function CollapsibleSidebar({
           (mobileOpen ? "translate-x-0 " : "-translate-x-full md:translate-x-0 ")
         }
       >
-        {/* Brand row — fixed at top */}
+        {/* Brand row — fixed at top.
+            The second line is the environment. An admin panel in one tab looks
+            exactly like the same panel in another, and the one fact that
+            matters before you press a destructive button is which deployment
+            you are pointing at. Mono, because it is a machine value. */}
         <div className="relative flex h-16 items-center border-b border-border px-3 shrink-0">
-          <Link href="/dashboard" className="flex flex-1 items-center gap-2 overflow-hidden">
+          <Link href="/dashboard" className="flex flex-1 items-center gap-2.5 overflow-hidden">
             <BrandMark collapsed={collapsed} />
             {!collapsed && (
-              <span className="truncate text-base font-bold text-foreground">
-                {brand.name}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-semibold leading-tight text-foreground">
+                  {brand.name}
+                </span>
+                <span className="block truncate font-mono text-[11px] leading-tight text-text-muted">
+                  {ENVIRONMENT_LABEL}
+                </span>
               </span>
             )}
           </Link>
 
+          {/* Inside the brand row, not hanging off the sidebar's edge.
+              It used to be a floating circle at -right-3, which put half of it
+              outside the sidebar. That was invisible against an empty page
+              background and became clutter the moment a top bar appeared
+              underneath it: a control that belongs to the sidebar, drawn on
+              top of the bar that belongs to the page. */}
           <button
             type="button"
             onClick={onToggleCollapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="absolute -right-3 top-1/2 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg-elevated text-text-secondary shadow-sm hover:text-foreground md:flex"
+            className={
+              "hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-muted transition-grit hover:bg-bg-hover hover:text-foreground md:inline-flex " +
+              (collapsed ? "absolute inset-x-0 bottom-1 mx-auto" : "")
+            }
           >
-            {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
 
         {/* Nav — scrollable middle zone. flex-1 + min-h-0 makes it scroll
             instead of pushing the footer off-screen when there are many
             items. Custom scrollbar styles keep the rail subtle. */}
+        {/* Search. A button, not an input: it opens the command palette, and an
+            input that does not take typing is a lie about what will happen.
+            The key cap says how to reach it without the mouse. */}
+        {!collapsed && (
+          <div className="px-2 pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                onMobileClose();
+                openCommandPalette();
+              }}
+              className="flex w-full items-center gap-2 rounded-md border border-border bg-bg-tertiary px-2.5 py-2 text-sm text-text-muted transition-grit hover:border-border-strong hover:text-text-secondary"
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-left">{t("nav.search", "Search or jump to…")}</span>
+              <kbd className="shrink-0 rounded border border-border bg-bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-text-muted">
+                {shortcutLabel}
+              </kbd>
+            </button>
+          </div>
+        )}
+
         <nav className="flex-1 min-h-0 space-y-1 overflow-y-auto px-2 py-3 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent]">
           <SidebarLink
             href="/dashboard"
@@ -1120,24 +1160,69 @@ interface LinkProps {
   active: boolean;
   collapsed: boolean;
   onClick?: () => void;
+  /** A count or a state, right-aligned. "2 off", "3". */
+  badge?: string;
+  /** Colours the badge when it is reporting a problem rather than a count. */
+  badgeTone?: "neutral" | "warn" | "bad";
 }
 
-function SidebarLink({ href, icon, label, active, collapsed, onClick }: LinkProps) {
+function SidebarLink({
+  href,
+  icon,
+  label,
+  active,
+  collapsed,
+  onClick,
+  badge,
+  badgeTone = "neutral",
+}: LinkProps) {
+  // The active item is a filled row with a bar on the sidebar's own edge.
+  //
+  // It was a tinted fill in the accent colour, which put the one saturated
+  // thing on the screen on the item you are already looking at, and left the
+  // label in accent text that reads as a link to somewhere else. A neutral
+  // fill with full-strength text says "you are here" without competing, and
+  // the bar is what you find when you glance at the rail.
+  //
+  // before:-left-2 reaches past the nav's px-2 to the sidebar edge, which is
+  // where the eye tracks it. Inside the padding it reads as part of the
+  // button and stops being a position marker.
+  const bar =
+    "before:absolute before:-left-2 before:top-1/2 before:h-5 before:w-[3px] " +
+    "before:-translate-y-1/2 before:rounded-r-full before:bg-accent before:content-['']";
+
+  const badgeClass =
+    badgeTone === "bad"
+      ? "bg-danger-soft text-danger"
+      : badgeTone === "warn"
+        ? "bg-warning-soft text-warning"
+        : "bg-bg-hover text-text-muted";
+
   return (
     <Link
       href={href}
       onClick={onClick}
       aria-label={collapsed ? label : undefined}
+      aria-current={active ? "page" : undefined}
       title={collapsed ? label : undefined}
       className={
-        "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors " +
+        "relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-grit " +
         (active
-          ? "bg-accent/10 text-accent"
-          : "text-text-secondary hover:bg-bg-hover hover:text-foreground")
+          ? "bg-bg-hover font-medium text-foreground " + bar
+          : "font-normal text-text-secondary hover:bg-bg-hover hover:text-foreground")
       }
     >
       <span className="flex h-5 w-5 shrink-0 items-center justify-center">{icon}</span>
-      {!collapsed && <span className="truncate">{label}</span>}
+      {!collapsed && <span className="flex-1 truncate">{label}</span>}
+      {!collapsed && badge && (
+        <span
+          className={
+            "shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] leading-none " + badgeClass
+          }
+        >
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }

@@ -118,6 +118,20 @@ var nextPublicBuildArgs = []nextPublicVar{
 		Apps:    []string{"admin"},
 		Compose: "${NEXT_PUBLIC_SESSION_COUNTDOWN_MS:-}",
 	},
+	{
+		// The word under the app name in the sidebar. Left unset it is worked
+		// out from the API's hostname, which is right often enough that this
+		// is an override rather than a requirement.
+		//
+		// It still has to be a build arg. The label's whole job is to tell
+		// somebody which deployment they are about to press a destructive
+		// button in, and a label inlined at build time from a default while
+		// the deployment sets it at runtime is a label that says the wrong
+		// thing, confidently, on exactly the screen where that matters most.
+		Name:    "NEXT_PUBLIC_APP_ENV",
+		Apps:    []string{"admin"},
+		Compose: "${NEXT_PUBLIC_APP_ENV:-}",
+	},
 }
 
 // readsVar reports whether an app reads this variable.

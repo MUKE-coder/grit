@@ -204,6 +204,61 @@ func themePaletteCSS() string {
   --danger: #ff6b6b;
   --warning: #fdcb6e;
   --info: #74b9ff;
+}
+
+` + derivedTokenCSS()
+}
+
+// derivedTokenCSS is the second half of the palette: the tokens a theme does
+// not state, worked out from the ones it does.
+//
+// The redesign asks for a recessed input fill, a stronger border, a pressed
+// surface, and a tinted fill and hairline for the accent and each status
+// colour. Written out per theme that is nine more tables of seven values, and
+// the tenth theme somebody adds gets none of them: a pill with no fill is
+// invisible, and nothing reports it. Derived, a new theme gets the whole set
+// from the four colours it already declares.
+//
+// The selector is the load-bearing part. ":root" alone would resolve these
+// once, against the root theme, and a section with its own data-theme would
+// inherit that resolved value while its --accent changed underneath: the bug
+// behind grit#98. "[data-theme]" matches the themed element itself, so each
+// one resolves its own.
+//
+// color-mix into transparent rather than into a surface, because these sit on
+// a card on one screen and on the page on the next, and a fill mixed into one
+// of them is wrong on the other. The toaster's --success-bg and friends below
+// stay opaque on purpose: a toast floats over content and has to hide it.
+func derivedTokenCSS() string {
+	return `/* Derived tokens. Every theme gets these from the colours it declares. */
+:root,
+[data-theme] {
+  /* The fill of an input, a textarea, a select. Recessed from the card it
+     sits on: in a dark theme the page is darker than the card, in a light
+     theme it is the same white or a shade under it, and either way the
+     input's border carries the edge. */
+  --surface-input: var(--bg-primary);
+
+  /* A row that is pressed or selected, one step past --bg-hover. */
+  --bg-pressed: color-mix(in srgb, var(--bg-hover) 92%, var(--text-primary));
+
+  /* The border of something you are pointing at, and of the dashed wells that
+     say a thing is not configured. --border is too quiet to carry either. */
+  --border-strong: color-mix(in srgb, var(--border) 70%, var(--text-muted));
+
+  /* Tinted fill and hairline, per colour. 12% reads as a tint rather than a
+     block at every lightness we ship; 32% is a visible edge that is still
+     quieter than the text it surrounds. */
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 32%, transparent);
+  --success-soft: color-mix(in srgb, var(--success) 12%, transparent);
+  --success-line: color-mix(in srgb, var(--success) 32%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 12%, transparent);
+  --warning-line: color-mix(in srgb, var(--warning) 32%, transparent);
+  --danger-soft: color-mix(in srgb, var(--danger) 12%, transparent);
+  --danger-line: color-mix(in srgb, var(--danger) 32%, transparent);
+  --info-soft: color-mix(in srgb, var(--info) 12%, transparent);
+  --info-line: color-mix(in srgb, var(--info) 32%, transparent);
 }`
 }
 
@@ -324,6 +379,20 @@ const themeTokenMap = `  --color-background: var(--bg-primary);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-info: var(--info);
+
+  --color-surface-input: var(--surface-input);
+  --color-bg-pressed: var(--bg-pressed);
+  --color-border-strong: var(--border-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-info-soft: var(--info-soft);
+  --color-info-line: var(--info-line);
 
   --font-sans: var(--font-display), system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;

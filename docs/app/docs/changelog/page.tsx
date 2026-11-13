@@ -72,6 +72,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.532.0 */}
+            <div className="mb-12" id="v3.532.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.532.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The admin gets a shell</h3>
+                <p>
+                  The first of several releases bringing the admin panel up to
+                  a redesign of all seventeen of its pages. This one is the
+                  frame the rest sit in: the tokens, the sidebar, a top bar,
+                  and a command palette.
+                </p>
+
+                <h4>A top bar, so the page header can be about the page</h4>
+                <p>
+                  Every page&apos;s header carried the theme toggle, the
+                  notification bell and the user menu on the same line as that
+                  page&apos;s own title and its own primary button. The one
+                  control the page existed for was the least prominent thing in
+                  the row, and three panel-wide controls were re-rendered on
+                  every screen.
+                </p>
+                <p>
+                  Those move to a sticky top bar: breadcrumbs derived from the
+                  path, a status pill reading the system&apos;s health, refresh,
+                  theme and notifications. What is left in the page header is
+                  the page: where it sits, what it is called, what it is for,
+                  and its actions.
+                </p>
+
+                <h4>Cmd+K instead of a button that covered the last row</h4>
+                <p>
+                  The floating quick-access button offered one action from on
+                  top of whatever was underneath it, and the page reserved 72px
+                  at the bottom to keep it off the last row. It is gone.{" "}
+                  <code>Cmd+K</code> (or <code>Ctrl+K</code>, or the search
+                  button in the sidebar) opens a palette over every page and
+                  every resource, built from the same registry the sidebar
+                  reads, so a resource generated tomorrow is in it without
+                  anybody adding it.
+                </p>
+
+                <h4>The sidebar says which deployment you are in</h4>
+                <p>
+                  Under the app name, in mono. Two tabs of the same admin look
+                  identical, and the fact worth knowing before pressing a
+                  destructive button is which database is behind it. Worked out
+                  from the API URL rather than a variable somebody has to
+                  remember to set, because a label configured separately from
+                  the thing it describes is a label that will one day say
+                  staging on top of production.
+                </p>
+                <p>
+                  The active nav item changed too: it was a tinted fill in the
+                  accent colour, which put the one saturated thing on the
+                  screen on the item you are already looking at, and left its
+                  label reading like a link to somewhere else. It is a neutral
+                  fill with full-strength text and a bar on the sidebar&apos;s
+                  own edge.
+                </p>
+
+                <h4>Tokens that every theme gets for free</h4>
+                <p>
+                  Tinted fills, hairlines, a stronger border, a pressed surface
+                  and a recessed input fill. Derived from the colours each
+                  theme already declares rather than written out per theme:
+                  eight tables of seven values is eight places to forget, and
+                  the ninth theme somebody adds would get none of them, which
+                  renders as a pill with no fill and reports nothing.
+                </p>
+
+                <h4>And a test for the class of bug this release hit</h4>
+                <p>
+                  The sidebar imported the palette from one path while the
+                  palette shipped at another. Nothing in Go noticed, because
+                  both are strings: the project scaffolded cleanly, the upgrade
+                  reported 192 files updated, and then every page answered 500.
+                  Every <code>@/...</code> an admin template imports is now
+                  checked against the files the admin actually ships, in both
+                  admin shapes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.531.1 */}
             <div className="mb-12" id="v3.531.1">
               <div className="flex items-center gap-3 mb-4">

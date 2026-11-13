@@ -1167,7 +1167,7 @@ export function OptionLibraryPage(_: ResourcePageSlotProps) {
       <PageHeader
         title="Options"
         subtitle="Colour, Size, Memory — shared by every product that offers variants."
-        refreshKeys={["variant-options"]}
+
         backHref={null}
         actions={
           <Button size="sm" onClick={() => setAdding((open) => !open)}>

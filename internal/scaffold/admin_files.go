@@ -287,6 +287,8 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "chrome", "SessionWatchdog.tsx"):    adminSessionWatchdogComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "system-guard.tsx"):       adminSystemGuardComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "QuickAccess.tsx"):        adminQuickAccessComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "CommandPalette.tsx"):     adminCommandPaletteComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "TopBar.tsx"):             adminTopBarComponent(),
 
 		// UI primitives (v3.29) — responsive form/table building blocks.
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveSheet.tsx"): adminResponsiveSheetComponent(),
@@ -297,6 +299,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "ui", "input.tsx"):           adminInputPrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveTable.tsx"): adminResponsiveTableComponent(),
 		filepath.Join(adminRoot, "lib", "export.ts"):                        adminExportLib(),
+		filepath.Join(adminRoot, "hooks", "use-system-health.ts"):           adminUseSystemHealth(),
 
 		// v3.31 UX bundle — toast hook with milliseconds, skeleton, UserCell
 		// table helper, system hub page, full notifications page.
@@ -595,7 +598,7 @@ func adminPackageJSON(opts Options) string {
     "tw-animate-css": "^1.4.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "@react-pdf/renderer": "^4.1.5",
-    "zod": "` + zodVersion + `",
+    "zod": "`+zodVersion+`",
     "@repo/shared": "workspace:*",
     "@repo/upload": "workspace:*"
   },

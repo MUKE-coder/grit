@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.532.0 - November 13, 2026
+
+### The admin gets a shell
+
+The first of several releases bringing the admin panel up to a redesign of all seventeen of its pages. This one is the frame the rest sit in: the tokens, the sidebar, a top bar, and a command palette.
+
+#### A top bar, so the page header can be about the page
+
+Every page's header carried the theme toggle, the notification bell and the user menu on the same line as that page's own title and its own primary button. The one control the page existed for was the least prominent thing in the row, and three panel-wide controls were re-rendered on every screen.
+
+Those move to a sticky top bar: breadcrumbs derived from the path, a status pill reading the system's health, refresh, theme and notifications. What is left in the page header is the page: where it sits, what it is called, what it is for, and its actions.
+
+#### Cmd+K instead of a button that covered the last row
+
+The floating quick-access button offered one action from on top of whatever was underneath it, and the page reserved 72px at the bottom to keep it off the last row. It is gone.{" "} `Cmd+K` (or `Ctrl+K`, or the search button in the sidebar) opens a palette over every page and every resource, built from the same registry the sidebar reads, so a resource generated tomorrow is in it without anybody adding it.
+
+#### The sidebar says which deployment you are in
+
+Under the app name, in mono. Two tabs of the same admin look identical, and the fact worth knowing before pressing a destructive button is which database is behind it. Worked out from the API URL rather than a variable somebody has to remember to set, because a label configured separately from the thing it describes is a label that will one day say staging on top of production.
+
+The active nav item changed too: it was a tinted fill in the accent colour, which put the one saturated thing on the screen on the item you are already looking at, and left its label reading like a link to somewhere else. It is a neutral fill with full-strength text and a bar on the sidebar's own edge.
+
+#### Tokens that every theme gets for free
+
+Tinted fills, hairlines, a stronger border, a pressed surface and a recessed input fill. Derived from the colours each theme already declares rather than written out per theme: eight tables of seven values is eight places to forget, and the ninth theme somebody adds would get none of them, which renders as a pill with no fill and reports nothing.
+
+#### And a test for the class of bug this release hit
+
+The sidebar imported the palette from one path while the palette shipped at another. Nothing in Go noticed, because both are strings: the project scaffolded cleanly, the upgrade reported 192 files updated, and then every page answered 500. Every `@/...` an admin template imports is now checked against the files the admin actually ships, in both admin shapes.
+
+
 ## v3.531.1 - November 13, 2026
 
 ### The architecture list was drawn twice

@@ -395,13 +395,13 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "form-shares.tsx"):       adminTanStackPageRoute("/_dashboard/system/form-shares", "@/pages/system/form-shares"),
 
 		// Lib (same as Next.js versions)
-		filepath.Join(adminRoot, "src", "lib", "api-core.ts"):          adminTanStackAPICore(opts),
+		filepath.Join(adminRoot, "src", "lib", "api-core.ts"):    adminTanStackAPICore(opts),
 		filepath.Join(adminRoot, "src", "lib", "detail-href.ts"): nextToTanStack(adminDetailHrefTS(opts)),
-		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):        adminTanStackAPIClient(),
+		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):  adminTanStackAPIClient(),
 		// api-client.ts imports the marker, so the Vite admin needs the file even
 		// though it has no middleware to read the cookie: it gates in beforeLoad.
-		filepath.Join(adminRoot, "src", "lib", "admin-session.ts"): adminSessionLib(),
-		filepath.Join(adminRoot, "src", "lib", "active-org.ts"):       activeOrgTS(),
+		filepath.Join(adminRoot, "src", "lib", "admin-session.ts"):     adminSessionLib(),
+		filepath.Join(adminRoot, "src", "lib", "active-org.ts"):        activeOrgTS(),
 		filepath.Join(adminRoot, "src", "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"):      adminQueryClient(),
 		filepath.Join(adminRoot, "src", "lib", "utils.ts"):             adminUtils(),
@@ -498,6 +498,9 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "chrome", "CollapsibleSidebar.tsx"): nextToTanStack(adminCollapsibleSidebarComponent(opts)),
 		filepath.Join(adminRoot, "src", "components", "chrome", "QuickAccess.tsx"):        nextToTanStack(adminQuickAccessComponent()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "SessionWatchdog.tsx"):    nextToTanStack(adminSessionWatchdogComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "CommandPalette.tsx"):     nextToTanStack(adminCommandPaletteComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "TopBar.tsx"):             nextToTanStack(adminTopBarComponent()),
+		filepath.Join(adminRoot, "src", "hooks", "use-system-health.ts"):                  nextToTanStack(adminUseSystemHealth()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "system-guard.tsx"):       nextToTanStack(adminSystemGuardComponent()),
 		// UserMenu owns the sign-out action; PageHeader is imported by every
 		// system page. Both were missing, so logout did nothing and the system
@@ -637,7 +640,7 @@ func adminTanStackPackageJSON(opts Options) string {
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.6.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zod": "` + zodVersion + `",
+    "zod": "`+zodVersion+`",
     "@repo/shared": "workspace:*",
     "@repo/upload": "workspace:*"
   },

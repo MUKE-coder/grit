@@ -18,8 +18,16 @@ func adminChromeShapes(src string) map[string]string {
 	}
 }
 
+// Refresh reloads what the page shows, not the panel around it.
+//
+// With no filter it also refetched the signed-in user, their permissions and
+// the notification list: three requests on every click that the page never
+// asked for, and a permissions refetch briefly re-gates the sidebar.
+//
+// The button moved from PageHeader to the TopBar in v3.532.0, which is the
+// only copy of it now, so this follows it there.
 func TestRefreshLeavesChromeQueriesAlone(t *testing.T) {
-	for shape, src := range adminChromeShapes(adminPageHeaderComponent()) {
+	for shape, src := range adminChromeShapes(adminTopBarComponent()) {
 		if strings.Contains(src, "queryClient.invalidateQueries();") {
 			t.Errorf("%s: the refresh button still invalidates every query", shape)
 		}
@@ -28,9 +36,15 @@ func TestRefreshLeavesChromeQueriesAlone(t *testing.T) {
 			"predicate: (query) => !CHROME_QUERY_ROOTS.includes(String(query.queryKey[0])),",
 		} {
 			if !strings.Contains(src, want) {
-				t.Errorf("%s: PageHeader is missing %s", shape, want)
+				t.Errorf("%s: the TopBar is missing %s", shape, want)
 			}
 		}
+	}
+
+	// And it is not in two places. Two refresh buttons is two of them to press
+	// and one of them scoped differently from the other.
+	if strings.Contains(adminPageHeaderComponent(), "CHROME_QUERY_ROOTS") {
+		t.Error("PageHeader still has its own refresh, so the panel has two")
 	}
 }
 
