@@ -45,6 +45,24 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "paginate", "insights_test.go"): tmpl("api/paginate/insights_test.go"),
 		filepath.Join(apiRoot, "internal", "paginate", "count_test.go"):    paginateCountTestGo(),
 		filepath.Join(apiRoot, "internal", "paginate", "search_index.go"):  paginateSearchIndexGo(),
+		// ?filter=, which is the expression half of a list request. The
+		// engine is internal/rules below; this is the twenty lines that put
+		// a compiled expression on the query.
+		filepath.Join(apiRoot, "internal", "paginate", "filter.go"):      tmpl("api/paginate/filter.go"),
+		filepath.Join(apiRoot, "internal", "paginate", "filter_test.go"): tmpl("api/paginate/filter_test.go"),
+
+		// The expression engine: one parser and one compiler, used by
+		// ?filter= on a list endpoint and by a declared access rule. Both
+		// resolve every identifier against the model's own GORM schema and
+		// bind every value, which is the whole of the safety argument.
+		filepath.Join(apiRoot, "internal", "rules", "lex.go"):        tmpl("api/rules/lex.go"),
+		filepath.Join(apiRoot, "internal", "rules", "parse.go"):      tmpl("api/rules/parse.go"),
+		filepath.Join(apiRoot, "internal", "rules", "schema.go"):     tmpl("api/rules/schema.go"),
+		filepath.Join(apiRoot, "internal", "rules", "compile.go"):    tmpl("api/rules/compile.go"),
+		filepath.Join(apiRoot, "internal", "rules", "context.go"):    tmpl("api/rules/context.go"),
+		filepath.Join(apiRoot, "internal", "rules", "macros.go"):     tmpl("api/rules/macros.go"),
+		filepath.Join(apiRoot, "internal", "rules", "values.go"):     tmpl("api/rules/values.go"),
+		filepath.Join(apiRoot, "internal", "rules", "rules_test.go"): tmpl("api/rules/rules_test.go"),
 		filepath.Join(apiRoot, "internal", "imports", "limit.go"):          importsLimitGo(),
 		filepath.Join(apiRoot, "internal", "imports", "limit_test.go"):     importsLimitTestGo(),
 		filepath.Join(apiRoot, "internal", "events", "events.go"):          apiEventsGo(),

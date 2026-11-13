@@ -1,0 +1,254 @@
+package paginate
+
+import (
+	"errors"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/respond"
+)
+
+type filterRow struct {
+	ID        string    `gorm:"primaryKey" json:"id"`
+	Title     string    `json:"title"`
+	Status    string    `json:"status"`
+	Views     int       `json:"views"`
+	OwnerID   string    `json:"owner_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (filterRow) TableName() string { return "filter_rows" }
+
+func filterDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One connection: a second one to ":memory:" is a second, empty database.
+	sqlDB.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+
+	if err := db.AutoMigrate(&filterRow{}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	rows := []filterRow{
+		{ID: "r1", Title: "Alpha", Status: "active", Views: 10, OwnerID: "u1", CreatedAt: now},
+		{ID: "r2", Title: "Beta", Status: "draft", Views: 200, OwnerID: "u2", CreatedAt: now},
+		{ID: "r3", Title: "Gamma", Status: "active", Views: 0, OwnerID: "u1", CreatedAt: now},
+	}
+	for i := range rows {
+		if err := db.Create(&rows[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	return db
+}
+
+// listWith runs a real request through Bind and List, which is the path a
+// generated handler takes. Testing applyFilter on its own would skip the two
+// places this has actually broken: the query parameter never being read, and
+// the whitelist being derived from the wrong set.
+func listWith(t *testing.T, db *gorm.DB, query url.Values, cfg Config) (Result[filterRow], error) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	// Encoded, not pasted: an expression has spaces and quotation marks in
+	// it, and a request line does not.
+	c.Request = httptest.NewRequest("GET", "/api/v1/rows?"+query.Encode(), nil)
+
+	return List[filterRow](db.Model(&filterRow{}), Bind(c), cfg)
+}
+
+// filterQuery is the common case: one ?filter= and nothing else.
+func filterQuery(expr string) url.Values {
+	if expr == "" {
+		return url.Values{}
+	}
+	return url.Values{"filter": {expr}}
+}
+
+func ids(res Result[filterRow]) string {
+	var out []string
+	for _, row := range res.Data {
+		out = append(out, row.ID)
+	}
+	return strings.Join(out, ",")
+}
+
+func TestFilterExpressionsReachTheQuery(t *testing.T) {
+	db := filterDB(t)
+	cfg := Config{
+		Sortable:    map[string]bool{"created_at": true, "views": true},
+		Filterable:  map[string]bool{"status": true, "owner_id": true},
+		Searchable:  []string{"title"},
+		DefaultSort: "id", DefaultOrder: "asc",
+	}
+
+	for _, c := range []struct {
+		filter string
+		want   string
+	}{
+		{`status = "active"`, "r1,r3"},
+		{`views > 5`, "r1,r2"},
+		{`status = "active" && views > 5`, "r1"},
+		{`title ~ "amm"`, "r3"},
+		{`status = "draft" || views = 0`, "r2,r3"},
+		// No filter at all still returns everything, which is the check that
+		// this costs nothing on the requests that do not use it.
+		{``, "r1,r2,r3"},
+	} {
+		res, err := listWith(t, db, filterQuery(c.filter), cfg)
+		if err != nil {
+			t.Errorf("%s: %v", c.filter, err)
+			continue
+		}
+		if got := ids(res); got != c.want {
+			t.Errorf("%s\n  got  %q\n  want %q", c.filter, got, c.want)
+		}
+	}
+}
+
+func TestFilterIsHeldToTheEndpointsOwnWhitelist(t *testing.T) {
+	db := filterDB(t)
+
+	// An endpoint that admits it can be sorted by views and filtered by
+	// status accepts expressions over those, and nothing else.
+	narrow := Config{
+		Sortable:    map[string]bool{"views": true},
+		Filterable:  map[string]bool{"status": true},
+		DefaultSort: "id", DefaultOrder: "asc",
+	}
+	if _, err := listWith(t, db, filterQuery(`status = "active"`), narrow); err != nil {
+		t.Errorf("a whitelisted field was refused: %v", err)
+	}
+	_, err := listWith(t, db, filterQuery(`owner_id = "u1"`), narrow)
+	if err == nil {
+		t.Fatal("a field outside the whitelist was accepted")
+	}
+
+	// And the refusal is the caller's fault, not the server's: 422 with the
+	// parser's message, which is what makes the language usable.
+	var coded respond.Coded
+	if !errors.As(err, &coded) {
+		t.Fatalf("a bad filter is not a coded error, so it answers 500: %v", err)
+	}
+	if coded.ErrorCode() != respond.CodeValidationError {
+		t.Errorf("a bad filter answers %s, want %s", coded.ErrorCode(), respond.CodeValidationError)
+	}
+	if !strings.Contains(err.Error(), "owner_id") {
+		t.Errorf("the message does not name the field that was refused: %v", err)
+	}
+}
+
+func TestRequestOperandsComeFromTheRequest(t *testing.T) {
+	db := filterDB(t)
+	cfg := Config{
+		Filterable:  map[string]bool{"owner_id": true, "status": true},
+		DefaultSort: "id", DefaultOrder: "asc",
+	}
+
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest("GET", "/api/v1/rows?"+filterQuery(`owner_id = @request.auth.id`).Encode(), nil)
+	c.Set("user_id", "u1")
+	c.Set("user_role", "USER")
+
+	res, err := List[filterRow](db.Model(&filterRow{}), Bind(c), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ids(res); got != "r1,r3" {
+		t.Errorf("@request.auth.id selected %q, want r1,r3", got)
+	}
+
+	// A guest resolves it to the empty string rather than failing, so the
+	// same rule selects nothing instead of erroring.
+	guest, _ := gin.CreateTestContext(httptest.NewRecorder())
+	guest.Request = httptest.NewRequest("GET", "/api/v1/rows?"+filterQuery(`owner_id = @request.auth.id`).Encode(), nil)
+	res, err = List[filterRow](db.Model(&filterRow{}), Bind(guest), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ids(res); got != "" {
+		t.Errorf("a guest selected %q", got)
+	}
+}
+
+func TestSkipTotalDropsTheCount(t *testing.T) {
+	db := filterDB(t)
+	cfg := Config{DefaultSort: "id", DefaultOrder: "asc"}
+
+	full, err := listWith(t, db, url.Values{"page_size": {"2"}}, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if full.Meta.Total != 3 {
+		t.Errorf("total is %d, want 3", full.Meta.Total)
+	}
+	if full.Meta.Pages != 2 {
+		t.Errorf("pages is %d, want 2", full.Meta.Pages)
+	}
+
+	skipped, err := listWith(t, db, url.Values{"page_size": {"2"}, "skip_total": {"1"}}, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if skipped.Meta.Total != 0 {
+		t.Errorf("skip_total still counted: total is %d", skipped.Meta.Total)
+	}
+	// The rows are the same; only the envelope is cheaper.
+	if ids(skipped) != ids(full) {
+		t.Errorf("skip_total changed the page: %q vs %q", ids(skipped), ids(full))
+	}
+	// A full page means there may be another, which is what replaces pages.
+	if !skipped.Meta.HasMore {
+		t.Error("a full page with skip_total should say there may be more")
+	}
+
+	last, err := listWith(t, db, url.Values{"page": {"2"}, "page_size": {"2"}, "skip_total": {"1"}}, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if last.Meta.HasMore {
+		t.Error("a short page says there is more")
+	}
+}
+
+func TestAFilterCannotReachTheSQL(t *testing.T) {
+	db := filterDB(t)
+	cfg := Config{Filterable: map[string]bool{"status": true}, DefaultSort: "id", DefaultOrder: "asc"}
+
+	// The value is a value, whatever is in it.
+	res, err := listWith(t, db, filterQuery(`status = "active\" OR 1=1 --"`), cfg)
+	if err != nil {
+		t.Fatalf("an injected value should be a string, not an error: %v", err)
+	}
+	if got := ids(res); got != "" {
+		t.Errorf("an injected value selected %q", got)
+	}
+
+	// And the table is still there afterwards, which is the blunt version of
+	// the same question.
+	var count int64
+	if err := db.Model(&filterRow{}).Count(&count).Error; err != nil || count != 3 {
+		t.Errorf("the table has %d rows and err %v", count, err)
+	}
+}

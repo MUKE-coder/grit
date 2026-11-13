@@ -1,0 +1,110 @@
+package paginate
+
+import (
+	"strings"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/rules"
+)
+
+// ?filter=, the expression half of a list request.
+//
+// The equality filters above it answer "status is pending". This answers the
+// questions that needed a new endpoint before:
+//
+//	?filter=status = "active" && views > 100
+//	?filter=author.country = "UG" || tags.label ?= "urgent"
+//	?filter=created_at >= @monthStart && total:length > 0
+//
+// What makes it safe is not the parser, it is the schema: every identifier is
+// resolved against the model's own GORM schema and refused if the model does
+// not declare it, and every value is a bound parameter. See internal/rules.
+
+// FilterError is a filter this endpoint cannot run, as opposed to a database
+// that failed.
+//
+// It carries an error code, so respond.WriteError answers 422 with the
+// parser's message rather than 500 with "Failed to fetch". A caller who wrote
+// `stauts = "x"` gets told the field does not exist and which ones do, which
+// is the difference between a usable query language and a guessing game.
+type FilterError struct{ err error }
+
+func (e *FilterError) Error() string           { return e.err.Error() }
+func (e *FilterError) Unwrap() error           { return e.err }
+func (e *FilterError) ErrorCode() respond.Code { return respond.CodeValidationError }
+
+// filterNames is the set of fields ?filter= may name on this endpoint.
+//
+// Config.FilterFields when the handler says so. Otherwise the union of what
+// the endpoint already admits it can filter, sort and search on, because an
+// endpoint that will sort by a column has already decided that column is
+// public. Deriving it means a new resource gets expression filtering from the
+// Filterable map the generator writes anyway, with nothing further to
+// remember.
+//
+// Empty means no restriction, which is what a hand-written handler gets if it
+// sets none of them. That is the right default for this project's own code
+// and the wrong one for a public endpoint, which is why --public sets it.
+func (c Config) filterNames() []string {
+	if len(c.FilterFields) > 0 {
+		return c.FilterFields
+	}
+	var out []string
+	seen := map[string]bool{}
+	add := func(name string) {
+		name = strings.ToLower(strings.TrimSpace(name))
+		if name == "" || seen[name] {
+			return
+		}
+		seen[name] = true
+		out = append(out, name)
+	}
+	for _, name := range c.Searchable {
+		add(name)
+	}
+	for name := range c.Sortable {
+		add(name)
+	}
+	for name := range c.Filterable {
+		add(name)
+	}
+	for name := range c.RangeFilterable {
+		add(name)
+	}
+	for name := range c.InFilterable {
+		add(name)
+	}
+	return out
+}
+
+// applyFilter compiles ?filter= against the model and adds it to the query.
+//
+// A query with no filter is returned untouched, so this costs nothing on the
+// requests that do not use it: no schema parse, no allocation.
+func applyFilter[T any](query *gorm.DB, p Params, cfg Config) (*gorm.DB, error) {
+	expr := strings.TrimSpace(p.Filter)
+	if expr == "" {
+		return query, nil
+	}
+
+	var zero T
+	schema, err := rules.SchemaOf(query, &zero)
+	if err != nil {
+		return nil, err
+	}
+	if allowed := cfg.filterNames(); len(allowed) > 0 {
+		schema = schema.Restrict(allowed...)
+	}
+
+	ctx := p.Rules
+	if ctx == nil {
+		ctx = rules.NewContext()
+	}
+	compiled, err := rules.CompileFilter(expr, schema, ctx)
+	if err != nil {
+		return nil, &FilterError{err: err}
+	}
+	return query.Where(compiled.SQL, compiled.Args...), nil
+}

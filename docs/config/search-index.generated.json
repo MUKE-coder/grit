@@ -156,6 +156,12 @@
     "keywords": "ship behind flags grit featureflag model memory engine isenabled variant percentage rollouts allow block lists date windows sticky per user bucketing variants exposure log admin crud docs backend feature testing"
   },
   {
+    "title": "Filter expressions",
+    "href": "/docs/backend/filtering",
+    "section": "Backend (Go API)",
+    "keywords": "filter every generated list endpoint expression model docs backend filtering expressions"
+  },
+  {
     "title": "Handlers",
     "href": "/docs/backend/handlers",
     "section": "Backend (Go API)",

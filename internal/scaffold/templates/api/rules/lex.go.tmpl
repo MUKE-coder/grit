@@ -1,0 +1,298 @@
+// Package rules parses and compiles filter expressions.
+//
+// One expression language, two jobs. As `?filter=` on a list endpoint it is a
+// query the caller writes; as an access rule it is a condition the project
+// declares, and the same compiler turns both into a parameterised SQL fragment
+// over a model's GORM schema.
+//
+//	status = "active" && created >= @monthStart
+//	@request.auth.id != "" && author.id = @request.auth.id
+//	@request.body.role:changed = false
+//	tags:length > 2 && comments.approved ?= true
+//
+// Nothing a caller writes reaches SQL as text. Identifiers are resolved against
+// the model's own GORM schema and rejected if the model does not declare them;
+// every value is a bound parameter. That is the whole safety argument, and it
+// is why the schema is read from GORM rather than from a list somebody keeps in
+// step by hand.
+package rules
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"unicode"
+)
+
+// tokenKind is what a token is, which is all the parser needs to know.
+type tokenKind int
+
+const (
+	tokEOF tokenKind = iota
+	tokIdent
+	tokString
+	tokNumber
+	tokTrue
+	tokFalse
+	tokNull
+	tokLParen
+	tokRParen
+	tokComma
+	tokAnd
+	tokOr
+	tokOp
+)
+
+func (k tokenKind) String() string {
+	switch k {
+	case tokEOF:
+		return "end of expression"
+	case tokIdent:
+		return "identifier"
+	case tokString:
+		return "string"
+	case tokNumber:
+		return "number"
+	case tokTrue, tokFalse:
+		return "boolean"
+	case tokNull:
+		return "null"
+	case tokLParen:
+		return "("
+	case tokRParen:
+		return ")"
+	case tokComma:
+		return ","
+	case tokAnd:
+		return "&&"
+	case tokOr:
+		return "||"
+	case tokOp:
+		return "operator"
+	}
+	return "token"
+}
+
+type token struct {
+	kind tokenKind
+	text string
+	pos  int
+}
+
+// operators, longest first so that ?>= is never read as ?> followed by =.
+//
+// The ? prefix means "at least one of": on a field that can hold many values,
+// a plain operator requires every one of them to match and the ? form requires
+// one. On a single-valued field the two are the same.
+var operators = []string{
+	"?!~", "?>=", "?<=", "?!=",
+	"?=", "?>", "?<", "?~",
+	"!~", ">=", "<=", "!=",
+	"=", ">", "<", "~",
+}
+
+// MaxLength is the longest expression that will be parsed.
+//
+// A filter arrives in a query string from anybody at all, and parsing is work.
+// The limit is generous for a written query and far below what it takes to
+// make the parser expensive.
+const MaxLength = 3500
+
+// MaxExpressions caps how many comparisons one expression may contain, for the
+// same reason: each one becomes a SQL fragment, and a query with ten thousand
+// ORs is a denial of service written in a language we accept.
+const MaxExpressions = 200
+
+// MaxDepth caps relation traversal. author.company.owner.name is four, and
+// each level is another correlated subquery.
+const MaxDepth = 6
+
+type lexer struct {
+	src  string
+	pos  int
+	toks []token
+}
+
+// lex turns the source into tokens, or says where it stopped and why.
+func lex(src string) ([]token, error) {
+	if len(src) > MaxLength {
+		return nil, fmt.Errorf("expression is %d characters, over the %d limit", len(src), MaxLength)
+	}
+	l := &lexer{src: src}
+	for {
+		tok, err := l.next()
+		if err != nil {
+			return nil, err
+		}
+		l.toks = append(l.toks, tok)
+		if tok.kind == tokEOF {
+			return l.toks, nil
+		}
+	}
+}
+
+func (l *lexer) next() (token, error) {
+	l.skipSpaceAndComments()
+	if l.pos >= len(l.src) {
+		return token{kind: tokEOF, pos: l.pos}, nil
+	}
+
+	start := l.pos
+	c := l.src[l.pos]
+
+	switch {
+	case c == '(':
+		l.pos++
+		return token{kind: tokLParen, text: "(", pos: start}, nil
+	case c == ')':
+		l.pos++
+		return token{kind: tokRParen, text: ")", pos: start}, nil
+	case c == ',':
+		l.pos++
+		return token{kind: tokComma, text: ",", pos: start}, nil
+	case strings.HasPrefix(l.src[l.pos:], "&&"):
+		l.pos += 2
+		return token{kind: tokAnd, text: "&&", pos: start}, nil
+	case strings.HasPrefix(l.src[l.pos:], "||"):
+		l.pos += 2
+		return token{kind: tokOr, text: "||", pos: start}, nil
+	case c == '"' || c == '\'':
+		return l.lexString()
+	}
+
+	for _, op := range operators {
+		if strings.HasPrefix(l.src[l.pos:], op) {
+			l.pos += len(op)
+			return token{kind: tokOp, text: op, pos: start}, nil
+		}
+	}
+
+	if c == '-' || c == '+' || (c >= '0' && c <= '9') {
+		return l.lexNumber()
+	}
+	if isIdentStart(rune(c)) {
+		return l.lexIdent()
+	}
+	return token{}, fmt.Errorf("unexpected character %q at position %d", string(c), start)
+}
+
+func (l *lexer) skipSpaceAndComments() {
+	for l.pos < len(l.src) {
+		if unicode.IsSpace(rune(l.src[l.pos])) {
+			l.pos++
+			continue
+		}
+		// A line comment, which is how a declared rule carries its reason.
+		if strings.HasPrefix(l.src[l.pos:], "//") {
+			end := strings.IndexByte(l.src[l.pos:], '\n')
+			if end < 0 {
+				l.pos = len(l.src)
+				return
+			}
+			l.pos += end + 1
+			continue
+		}
+		return
+	}
+}
+
+// lexString reads a single or double quoted string, with backslash escapes.
+func (l *lexer) lexString() (token, error) {
+	start := l.pos
+	quote := l.src[l.pos]
+	l.pos++
+
+	var sb strings.Builder
+	for l.pos < len(l.src) {
+		c := l.src[l.pos]
+		if c == '\\' && l.pos+1 < len(l.src) {
+			nextChar := l.src[l.pos+1]
+			switch nextChar {
+			case 'n':
+				sb.WriteByte('\n')
+			case 't':
+				sb.WriteByte('\t')
+			case 'r':
+				sb.WriteByte('\r')
+			default:
+				sb.WriteByte(nextChar)
+			}
+			l.pos += 2
+			continue
+		}
+		if c == quote {
+			l.pos++
+			return token{kind: tokString, text: sb.String(), pos: start}, nil
+		}
+		sb.WriteByte(c)
+		l.pos++
+	}
+	return token{}, fmt.Errorf("unterminated string starting at position %d", start)
+}
+
+func (l *lexer) lexNumber() (token, error) {
+	start := l.pos
+	if l.src[l.pos] == '-' || l.src[l.pos] == '+' {
+		l.pos++
+	}
+	seenDot := false
+	for l.pos < len(l.src) {
+		c := l.src[l.pos]
+		if c >= '0' && c <= '9' {
+			l.pos++
+			continue
+		}
+		if c == '.' && !seenDot {
+			// Not a decimal point if what follows is not a digit: that is a
+			// field path, and the number ended one character ago.
+			if l.pos+1 >= len(l.src) || l.src[l.pos+1] < '0' || l.src[l.pos+1] > '9' {
+				break
+			}
+			seenDot = true
+			l.pos++
+			continue
+		}
+		break
+	}
+	text := l.src[start:l.pos]
+	if _, err := strconv.ParseFloat(text, 64); err != nil {
+		return token{}, fmt.Errorf("%q at position %d is not a number", text, start)
+	}
+	return token{kind: tokNumber, text: text, pos: start}, nil
+}
+
+// lexIdent reads a field path, a macro or a keyword.
+//
+// One token covers author.company.name, @request.body.role:changed and
+// tags:length, because the parts after the first are meaningless on their own
+// and splitting them would only mean rejoining them.
+func (l *lexer) lexIdent() (token, error) {
+	start := l.pos
+	for l.pos < len(l.src) {
+		c := rune(l.src[l.pos])
+		if isIdentStart(c) || unicode.IsDigit(c) || c == '.' || c == ':' {
+			// A trailing dot belongs to nothing: stop before it rather than
+			// accept "author." as a path.
+			if c == '.' && (l.pos+1 >= len(l.src) || !isIdentStart(rune(l.src[l.pos+1]))) {
+				break
+			}
+			l.pos++
+			continue
+		}
+		break
+	}
+	text := l.src[start:l.pos]
+	switch strings.ToLower(text) {
+	case "true":
+		return token{kind: tokTrue, text: text, pos: start}, nil
+	case "false":
+		return token{kind: tokFalse, text: text, pos: start}, nil
+	case "null", "nil":
+		return token{kind: tokNull, text: text, pos: start}, nil
+	}
+	return token{kind: tokIdent, text: text, pos: start}, nil
+}
+
+func isIdentStart(c rune) bool {
+	return unicode.IsLetter(c) || c == '_' || c == '@' || c == '$'
+}

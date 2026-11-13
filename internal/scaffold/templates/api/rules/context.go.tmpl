@@ -1,0 +1,210 @@
+package rules
+
+import (
+	"strings"
+	"time"
+)
+
+// Request contexts, which is where in the system a rule is being asked.
+//
+// The same rule can be evaluated for an ordinary API call, for a token
+// refresh, or for a file download, and some conditions only make sense in one
+// of them. `@request.context = "protectedFile"` is how a rule says "this one
+// is about the download, not the record".
+const (
+	ContextDefault       = "default"
+	ContextOAuth2        = "oauth2"
+	ContextOTP           = "otp"
+	ContextPassword      = "password"
+	ContextRealtime      = "realtime"
+	ContextProtectedFile = "protectedFile"
+	ContextBatch         = "batch"
+)
+
+// Context is everything an expression can know about the caller, as opposed
+// to about the row.
+//
+// Nothing in here reaches SQL as text. A @request operand resolves to a value
+// in Go and is bound as a parameter, so a header holding a quote mark is a
+// string with a quote mark in it.
+type Context struct {
+	// Auth is the signed-in record, flattened: "id", "email", "role". Empty
+	// for a guest, which is what makes `@request.auth.id != ""` the idiom for
+	// "signed in".
+	Auth map[string]any
+
+	// Body is what the caller submitted, by JSON name. Uploaded files are not
+	// in here, matching what :isset can honestly answer about them.
+	Body map[string]any
+
+	// Original is the record as it stands before this write, which is what
+	// :changed compares against. Nil on create, where every submitted field
+	// is a change.
+	Original map[string]any
+
+	Query   map[string]string
+	Headers map[string]string
+	Method  string
+
+	// Context is one of the constants above.
+	Context string
+
+	// Now fixes the moment every macro in one expression resolves against, so
+	// that @todayStart and @todayEnd in the same rule cannot land either side
+	// of midnight.
+	Now time.Time
+}
+
+// NewContext returns a context for a guest, with the clock set.
+func NewContext() *Context {
+	return &Context{
+		Auth:    map[string]any{},
+		Body:    map[string]any{},
+		Query:   map[string]string{},
+		Headers: map[string]string{},
+		Method:  "GET",
+		Context: ContextDefault,
+		Now:     time.Now().UTC(),
+	}
+}
+
+// WithAuth returns the context with the signed-in record attached.
+func (c *Context) WithAuth(auth map[string]any) *Context {
+	if c == nil {
+		c = NewContext()
+	}
+	clone := *c
+	clone.Auth = lowerKeys(auth)
+	return &clone
+}
+
+// WithBody returns the context with the submitted fields attached.
+func (c *Context) WithBody(body map[string]any) *Context {
+	if c == nil {
+		c = NewContext()
+	}
+	clone := *c
+	clone.Body = lowerKeys(body)
+	return &clone
+}
+
+// WithOriginal returns the context with the record as it stands, which is what
+// :changed needs.
+func (c *Context) WithOriginal(original map[string]any) *Context {
+	if c == nil {
+		c = NewContext()
+	}
+	clone := *c
+	clone.Original = lowerKeys(original)
+	return &clone
+}
+
+// In returns the context tagged as running somewhere other than an ordinary
+// API call.
+func (c *Context) In(where string) *Context {
+	if c == nil {
+		c = NewContext()
+	}
+	clone := *c
+	clone.Context = where
+	return &clone
+}
+
+// AuthID is the signed-in record's id, or "" for a guest.
+func (c *Context) AuthID() string {
+	if c == nil {
+		return ""
+	}
+	if v, ok := c.Auth["id"]; ok {
+		return toString(v)
+	}
+	return ""
+}
+
+// resolve answers a @request path: auth.id, body.title, query.page,
+// headers.x_token, method, context.
+//
+// The second return says whether the path exists at all, which is a different
+// question from whether its value is empty, and the difference is exactly what
+// :isset is for.
+func (c *Context) resolve(path []string) (any, bool) {
+	if c == nil || len(path) == 0 {
+		return nil, false
+	}
+	head := strings.ToLower(path[0])
+	rest := path[1:]
+
+	switch head {
+	case "method":
+		return c.Method, true
+	case "context":
+		if c.Context == "" {
+			return ContextDefault, true
+		}
+		return c.Context, true
+	case "auth":
+		return lookupPath(c.Auth, rest)
+	case "body", "data":
+		return lookupPath(c.Body, rest)
+	case "query":
+		if len(rest) == 0 {
+			return nil, false
+		}
+		v, ok := c.Query[strings.ToLower(strings.Join(rest, "."))]
+		return v, ok
+	case "headers", "header":
+		if len(rest) == 0 {
+			return nil, false
+		}
+		// X-Api-Token is written x_api_token, because a hyphen is an operator
+		// everywhere else in the language.
+		key := strings.ToLower(strings.Join(rest, "."))
+		key = strings.ReplaceAll(key, "-", "_")
+		v, ok := c.Headers[key]
+		return v, ok
+	}
+	return nil, false
+}
+
+// original answers the same path against the record as it stands.
+func (c *Context) original(path []string) (any, bool) {
+	if c == nil || len(path) < 2 {
+		return nil, false
+	}
+	if strings.ToLower(path[0]) != "body" && strings.ToLower(path[0]) != "data" {
+		return nil, false
+	}
+	return lookupPath(c.Original, path[1:])
+}
+
+// lookupPath walks a nested map, so that @request.auth.profile.country works
+// on a record whose JSON nests.
+func lookupPath(m map[string]any, path []string) (any, bool) {
+	if len(path) == 0 {
+		return nil, false
+	}
+	var cur any = m
+	for _, part := range path {
+		asMap, ok := cur.(map[string]any)
+		if !ok {
+			return nil, false
+		}
+		cur, ok = asMap[strings.ToLower(part)]
+		if !ok {
+			return nil, false
+		}
+	}
+	return cur, true
+}
+
+func lowerKeys(m map[string]any) map[string]any {
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		if nested, ok := v.(map[string]any); ok {
+			out[strings.ToLower(k)] = lowerKeys(nested)
+			continue
+		}
+		out[strings.ToLower(k)] = v
+	}
+	return out
+}

@@ -1,0 +1,805 @@
+package rules
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Compiled is an expression turned into SQL.
+//
+// SQL is a fragment for a WHERE clause with ? placeholders, and Args are its
+// values in order, so the whole thing goes straight into gorm's Where.
+type Compiled struct {
+	SQL  string
+	Args []any
+}
+
+// alwaysTrue and alwaysFalse are what a comparison between two values known in
+// Go compiles to. `@request.body.role:isset = false` has no column in it at
+// all, and the answer is decided before the query runs.
+const (
+	alwaysTrue  = "1 = 1"
+	alwaysFalse = "1 = 0"
+)
+
+// Compile turns a parsed expression into SQL over a schema.
+//
+// An empty expression compiles to a condition that matches everything, so a
+// caller can hand the result to Where unconditionally.
+func (e *Expr) Compile(s *Schema, ctx *Context) (Compiled, error) {
+	if e.Empty() {
+		return Compiled{SQL: alwaysTrue}, nil
+	}
+	if s == nil {
+		return Compiled{}, fmt.Errorf("rules: no schema to compile %q against", e.text)
+	}
+	if ctx == nil {
+		ctx = NewContext()
+	}
+	if ctx.Now.IsZero() {
+		ctx.Now = time.Now().UTC()
+	}
+
+	c := &compiler{schema: s, ctx: ctx, dialect: s.Dialect}
+	sql, args, err := c.node(e.root)
+	if err != nil {
+		return Compiled{}, err
+	}
+
+	// A @collection reference becomes its own EXISTS, hoisted out and ANDed
+	// on. Collected rather than inlined because several references to one
+	// table have to land in a single subquery, or "the same order row" turns
+	// into "any two order rows".
+	if len(c.collections) > 0 {
+		for _, sub := range c.collectionSQL() {
+			sql = "(" + sql + ") AND " + sub.SQL
+			args = append(args, sub.Args...)
+		}
+	}
+	return Compiled{SQL: sql, Args: args}, nil
+}
+
+// CompileFilter parses and compiles in one step, which is what a list endpoint
+// wants: it has a string from a query parameter and nothing to cache.
+func CompileFilter(src string, s *Schema, ctx *Context) (Compiled, error) {
+	e, err := Parse(src)
+	if err != nil {
+		return Compiled{}, err
+	}
+	return e.Compile(s, ctx)
+}
+
+type compiler struct {
+	schema  *Schema
+	ctx     *Context
+	dialect string
+
+	aliases int
+
+	// collections holds the conditions gathered per @collection alias.
+	collections map[string]*collectionRef
+	order       []string
+}
+
+type collectionRef struct {
+	table string
+	alias string
+	parts []string
+	args  []any
+}
+
+func (c *compiler) nextAlias() string {
+	c.aliases++
+	return "rt" + strconv.Itoa(c.aliases)
+}
+
+func (c *compiler) node(n node) (string, []any, error) {
+	switch v := n.(type) {
+	case groupNode:
+		left, leftArgs, err := c.node(v.left)
+		if err != nil {
+			return "", nil, err
+		}
+		right, rightArgs, err := c.node(v.right)
+		if err != nil {
+			return "", nil, err
+		}
+		joiner := " AND "
+		if v.op == tokOr {
+			joiner = " OR "
+		}
+		return "(" + left + joiner + right + ")", append(leftArgs, rightArgs...), nil
+	case notNode:
+		inner, args, err := c.node(v.inner)
+		if err != nil {
+			return "", nil, err
+		}
+		return "NOT (" + inner + ")", args, nil
+	case compareNode:
+		return c.compare(v)
+	}
+	return "", nil, fmt.Errorf("rules: cannot compile %T", n)
+}
+
+// compare is where every condition is actually produced.
+func (c *compiler) compare(n compareNode) (string, []any, error) {
+	anyOf := strings.HasPrefix(n.op, "?")
+	op := strings.TrimPrefix(n.op, "?")
+
+	// A @collection reference on either side becomes a condition inside that
+	// collection's subquery, and TRUE out here.
+	if n.left.kind == operandCollection || n.right.kind == operandCollection {
+		return c.collectionCompare(n, op, anyOf)
+	}
+
+	// Both sides decidable in Go: no column is involved, so neither is SQL.
+	leftConst, leftKnown, err := c.constant(n.left)
+	if err != nil {
+		return "", nil, err
+	}
+	rightConst, rightKnown, err := c.constant(n.right)
+	if err != nil {
+		return "", nil, err
+	}
+	if leftKnown && rightKnown {
+		ok, err := compareValues(leftConst, op, rightConst)
+		if err != nil {
+			return "", nil, err
+		}
+		if ok {
+			return alwaysTrue, nil, nil
+		}
+		return alwaysFalse, nil, nil
+	}
+
+	// One side is a column. Normalise so the column is on the left, flipping
+	// the operator if it was the other way round.
+	left, right := n.left, n.right
+	if leftKnown {
+		left, right = n.right, n.left
+		op = flipOperator(op)
+	}
+
+	if left.kind != operandField && left.kind != operandFunc {
+		return "", nil, fmt.Errorf("%q at position %d has nothing this database can compare", left.raw, left.pos)
+	}
+
+	return c.fieldCompare(c.schema, c.schema.Table, left, op, right, anyOf)
+}
+
+// fieldCompare resolves a field path against a schema and emits the condition,
+// walking into a subquery for every relation hop on the way.
+func (c *compiler) fieldCompare(s *Schema, table string, left operand, op string, right operand, anyOf bool) (string, []any, error) {
+	if left.kind == operandFunc {
+		fnSQL, fnArgs, err := c.function(s, table, left)
+		if err != nil {
+			return "", nil, err
+		}
+		rhs, rhsArgs, err := c.value(right, likeKind(op, KindNumber))
+		if err != nil {
+			return "", nil, err
+		}
+		if isLike(op) {
+			rhsArgs = likePattern(rhsArgs)
+		}
+		sql, err := applyOperator(c.dialect, fnSQL, op, rhs)
+		if err != nil {
+			return "", nil, err
+		}
+		return sql, append(fnArgs, rhsArgs...), nil
+	}
+
+	// One name: a column on this table.
+	if len(left.path) == 1 {
+		return c.columnCompare(s, table, left, op, right, anyOf)
+	}
+
+	// More than one: the first is a relation, and the rest is the condition
+	// to apply over there.
+	relName := left.path[0]
+	rel, ok := s.Relation(relName)
+	if !ok {
+		// A JSON column with a path into it is the other way a dotted name
+		// can be legitimate.
+		if f, isField := s.Field(relName); isField && f.Kind == KindJSON {
+			return c.jsonPathCompare(table, f, left, op, right)
+		}
+		return "", nil, unknownName(s, relName, left.pos)
+	}
+
+	target, err := rel.Target()
+	if err != nil {
+		return "", nil, err
+	}
+
+	alias := c.nextAlias()
+	join, joinArgs := c.joinCondition(rel, table, alias)
+
+	inner := left
+	inner.path = left.path[1:]
+	cond, condArgs, err := c.fieldCompare(target, alias, inner, op, right, anyOf)
+	if err != nil {
+		return "", nil, err
+	}
+
+	args := append(joinArgs, condArgs...)
+	sub := "SELECT 1 FROM " + c.quote(rel.Table) + " " + alias + " WHERE " + join + " AND "
+
+	// Match-all is the default over a relation that can hold many rows: the
+	// condition has to hold for every one of them, which is "there is none
+	// for which it does not hold". ?op asks for one instead.
+	if rel.Kind.Multi() && !anyOf {
+		return "NOT EXISTS (" + sub + "NOT (" + cond + "))", args, nil
+	}
+	return "EXISTS (" + sub + cond + ")", args, nil
+}
+
+// columnCompare emits a condition over one column of one table.
+func (c *compiler) columnCompare(s *Schema, table string, left operand, op string, right operand, anyOf bool) (string, []any, error) {
+	name := left.path[0]
+	f, ok := s.Field(name)
+	if !ok {
+		// A relation compared directly is a comparison against its key, which
+		// is what `author = "u_1"` ought to mean.
+		if rel, isRel := s.Relation(name); isRel {
+			inner := left
+			inner.path = []string{name, c.keyNameOf(rel)}
+			return c.fieldCompare(s, table, inner, op, right, anyOf)
+		}
+		return "", nil, unknownName(s, name, left.pos)
+	}
+
+	col := c.quote(table) + "." + c.quote(f.Column)
+
+	// :length counts, and what it counts depends on what the column holds.
+	if left.has("length") {
+		lengthSQL, err := c.jsonLength(col, f)
+		if err != nil {
+			return "", nil, err
+		}
+		rhs, args, err := c.value(right, KindNumber)
+		if err != nil {
+			return "", nil, err
+		}
+		sql, err := applyOperator(c.dialect, lengthSQL, op, rhs)
+		return sql, args, err
+	}
+
+	// :each applies the condition to every item of a list column.
+	if left.has("each") || (f.Multi && f.Kind == KindJSON) {
+		return c.eachCompare(col, f, left, op, right, anyOf)
+	}
+
+	if left.has("lower") {
+		col = "LOWER(" + col + ")"
+	}
+
+	rhs, args, err := c.value(right, likeKind(op, f.Kind))
+	if err != nil {
+		return "", nil, err
+	}
+	if isLike(op) {
+		args = likePattern(args)
+	}
+	if left.has("lower") && rhs != "NULL" {
+		rhs = "LOWER(" + rhs + ")"
+	}
+
+	sql, err := applyOperator(c.dialect, col, op, rhs)
+	if err != nil {
+		return "", nil, err
+	}
+	return sql, args, nil
+}
+
+// eachCompare quantifies over the items of a JSON array column.
+func (c *compiler) eachCompare(col string, f *Field, left operand, op string, right operand, anyOf bool) (string, []any, error) {
+	rhs, args, err := c.value(right, KindString)
+	if err != nil {
+		return "", nil, err
+	}
+	if isLike(op) {
+		args = likePattern(args)
+	}
+
+	var item, from string
+	switch c.dialect {
+	case "postgres":
+		item = "elem"
+		from = "jsonb_array_elements_text(" + col + "::jsonb) AS elem"
+	case "mysql":
+		// MySQL has no lateral json_each; JSON_CONTAINS answers the common
+		// case and anything else is refused rather than answered wrongly.
+		if op != "=" {
+			return "", nil, fmt.Errorf(
+				":each on MySQL supports = only, not %s (the dialect has no row-wise JSON expansion)", op)
+		}
+		sql := "JSON_CONTAINS(" + col + ", JSON_QUOTE(" + rhs + "))"
+		if !anyOf {
+			return "", nil, fmt.Errorf(":each with a match-all operator is not supported on MySQL; use ?= ")
+		}
+		return sql, args, nil
+	default: // sqlite
+		item = "value"
+		from = "json_each(" + col + ")"
+	}
+
+	if left.has("lower") {
+		item = "LOWER(" + item + ")"
+		if rhs != "NULL" {
+			rhs = "LOWER(" + rhs + ")"
+		}
+	}
+	cond, err := applyOperator(c.dialect, item, op, rhs)
+	if err != nil {
+		return "", nil, err
+	}
+
+	sub := "SELECT 1 FROM " + from + " WHERE "
+	if anyOf {
+		return "EXISTS (" + sub + cond + ")", args, nil
+	}
+	return "NOT EXISTS (" + sub + "NOT (" + cond + "))", args, nil
+}
+
+// jsonPathCompare reads inside a JSON column: settings.theme = "dark".
+func (c *compiler) jsonPathCompare(table string, f *Field, left operand, op string, right operand) (string, []any, error) {
+	col := c.quote(table) + "." + c.quote(f.Column)
+	path := "$." + strings.Join(left.path[1:], ".")
+
+	var extract string
+	switch c.dialect {
+	case "postgres":
+		extract = "jsonb_extract_path_text(" + col + "::jsonb" + jsonPathArgs(left.path[1:]) + ")"
+	case "mysql":
+		extract = "JSON_UNQUOTE(JSON_EXTRACT(" + col + ", " + quoteLiteral(path) + "))"
+	default:
+		extract = "json_extract(" + col + ", " + quoteLiteral(path) + ")"
+	}
+
+	if left.has("lower") {
+		extract = "LOWER(" + extract + ")"
+	}
+	rhs, args, err := c.value(right, KindString)
+	if err != nil {
+		return "", nil, err
+	}
+	if isLike(op) {
+		args = likePattern(args)
+	}
+	if left.has("lower") && rhs != "NULL" {
+		rhs = "LOWER(" + rhs + ")"
+	}
+	sql, err := applyOperator(c.dialect, extract, op, rhs)
+	return sql, args, err
+}
+
+// jsonLength counts the items of a list, whether the list is a JSON array
+// column or the rows of a relation.
+func (c *compiler) jsonLength(col string, f *Field) (string, error) {
+	if f.Kind != KindJSON && !f.Multi {
+		return "", fmt.Errorf(":length only means something on a list; %s holds one value", f.Name)
+	}
+	switch c.dialect {
+	case "postgres":
+		return "jsonb_array_length(" + col + "::jsonb)", nil
+	case "mysql":
+		return "JSON_LENGTH(" + col + ")", nil
+	default:
+		return "json_array_length(" + col + ")", nil
+	}
+}
+
+// joinCondition is the ON clause that ties a relation's subquery to its parent
+// row.
+func (c *compiler) joinCondition(rel *Relation, parent, alias string) (string, []any) {
+	if rel.JoinTable != "" {
+		joinAlias := alias + "j"
+		var parts []string
+		for _, pair := range rel.JoinOurs {
+			parts = append(parts, c.quote(joinAlias)+"."+c.quote(pair[0])+" = "+c.quote(parent)+"."+c.quote(pair[1]))
+		}
+		for _, pair := range rel.JoinTheirs {
+			parts = append(parts, c.quote(joinAlias)+"."+c.quote(pair[0])+" = "+c.quote(alias)+"."+c.quote(pair[1]))
+		}
+		return "EXISTS (SELECT 1 FROM " + c.quote(rel.JoinTable) + " " + c.quote(joinAlias) +
+			" WHERE " + strings.Join(parts, " AND ") + ")", nil
+	}
+
+	var parts []string
+	for _, pair := range rel.Pairs {
+		// pair is (our column, their column) for both directions, because
+		// relationOf already sorted out which side holds the key.
+		parts = append(parts, c.quote(alias)+"."+c.quote(pair[1])+" = "+c.quote(parent)+"."+c.quote(pair[0]))
+	}
+	return strings.Join(parts, " AND "), nil
+}
+
+// keyNameOf is the column to compare against when a relation is named without
+// a field: author = "u_1" means author's key.
+func (c *compiler) keyNameOf(rel *Relation) string {
+	if len(rel.Pairs) > 0 {
+		return rel.Pairs[0][1]
+	}
+	if len(rel.JoinTheirs) > 0 {
+		return rel.JoinTheirs[0][1]
+	}
+	return "id"
+}
+
+// collectionCompare gathers a condition into the subquery for its table.
+func (c *compiler) collectionCompare(n compareNode, op string, anyOf bool) (string, []any, error) {
+	ref := n.left
+	other := n.right
+	flipped := false
+	if ref.kind != operandCollection {
+		ref, other = n.right, n.left
+		op = flipOperator(op)
+		flipped = true
+	}
+	_ = flipped
+
+	if other.kind == operandCollection {
+		return "", nil, fmt.Errorf("two @collection operands at position %d cannot be compared to each other", n.pos)
+	}
+
+	// @collection.<table>.<column>, with an optional :alias on the table so
+	// the same table can be joined twice.
+	table := ref.path[0]
+	alias := table
+	if idx := strings.IndexByte(table, '@'); idx >= 0 {
+		table, alias = table[:idx], table[idx+1:]
+	}
+	column := strings.Join(ref.path[1:], "_")
+
+	if c.collections == nil {
+		c.collections = map[string]*collectionRef{}
+	}
+	entry, ok := c.collections[alias]
+	if !ok {
+		entry = &collectionRef{table: table, alias: "rc_" + sanitiseIdent(alias)}
+		c.collections[alias] = entry
+		c.order = append(c.order, alias)
+	}
+
+	rhs, args, err := c.value(other, KindString)
+	if err != nil {
+		return "", nil, err
+	}
+	if isLike(op) {
+		args = likePattern(args)
+	}
+	col := c.quote(entry.alias) + "." + c.quote(sanitiseIdent(column))
+	cond, err := applyOperator(c.dialect, col, op, rhs)
+	if err != nil {
+		return "", nil, err
+	}
+	entry.parts = append(entry.parts, cond)
+	entry.args = append(entry.args, args...)
+
+	// The comparison itself is satisfied out here; the real condition lives in
+	// the subquery that Compile hoists on.
+	_ = anyOf
+	return alwaysTrue, nil, nil
+}
+
+// collectionSQL turns the gathered references into one EXISTS per table.
+func (c *compiler) collectionSQL() []Compiled {
+	out := make([]Compiled, 0, len(c.order))
+	for _, key := range c.order {
+		entry := c.collections[key]
+		sql := "EXISTS (SELECT 1 FROM " + c.quote(sanitiseIdent(entry.table)) + " " + c.quote(entry.alias) +
+			" WHERE " + strings.Join(entry.parts, " AND ") + ")"
+		out = append(out, Compiled{SQL: sql, Args: entry.args})
+	}
+	return out
+}
+
+// value turns the right-hand side into SQL: a placeholder and its argument for
+// anything known in Go, or a column reference for a field.
+func (c *compiler) value(o operand, want Kind) (string, []any, error) {
+	v, known, err := c.constant(o)
+	if err != nil {
+		return "", nil, err
+	}
+	if known {
+		if v == nil {
+			return "NULL", nil, nil
+		}
+		return "?", []any{coerce(v, want)}, nil
+	}
+
+	switch o.kind {
+	case operandField:
+		// Comparing one column to another on the same row.
+		if len(o.path) != 1 {
+			return "", nil, fmt.Errorf(
+				"%q at position %d walks a relation on the right of an operator, which this compiler does not join", o.raw, o.pos)
+		}
+		f, ok := c.schema.Field(o.path[0])
+		if !ok {
+			return "", nil, unknownName(c.schema, o.path[0], o.pos)
+		}
+		return c.quote(c.schema.Table) + "." + c.quote(f.Column), nil, nil
+	case operandFunc:
+		return c.function(c.schema, c.schema.Table, o)
+	}
+	return "", nil, fmt.Errorf("%q at position %d is not a value", o.raw, o.pos)
+}
+
+// constant resolves an operand that does not need the database: a literal, a
+// macro, or anything under @request.
+func (c *compiler) constant(o operand) (any, bool, error) {
+	switch o.kind {
+	case operandLiteral:
+		return o.literal, true, nil
+
+	case operandMacro:
+		return macroValue(o.path[0], c.ctx.Now), true, nil
+
+	case operandRequest:
+		// :isset asks whether the caller sent the field at all, which is a
+		// question about the request and never about a row.
+		if o.has("isset") {
+			_, ok := c.ctx.resolve(o.path)
+			return ok, true, nil
+		}
+		// :changed asks whether the caller sent it AND it differs from what
+		// is stored. On a create there is nothing stored, so any submitted
+		// field is a change.
+		if o.has("changed") {
+			submitted, sent := c.ctx.resolve(o.path)
+			if !sent {
+				return false, true, nil
+			}
+			existing, had := c.ctx.original(o.path)
+			if !had {
+				return true, true, nil
+			}
+			return !sameValue(submitted, existing), true, nil
+		}
+
+		v, ok := c.ctx.resolve(o.path)
+		if !ok {
+			// A field the caller did not send is empty rather than an error,
+			// which is what makes `@request.auth.id != ""` work for a guest.
+			return "", true, nil
+		}
+		if o.has("length") {
+			return lengthOf(v), true, nil
+		}
+		if o.has("lower") {
+			return strings.ToLower(toString(v)), true, nil
+		}
+		return v, true, nil
+	}
+	return nil, false, nil
+}
+
+// function compiles the calls the language defines.
+func (c *compiler) function(s *Schema, table string, o operand) (string, []any, error) {
+	switch o.name {
+	case "geodistance":
+		return c.geoDistance(s, table, o)
+	case "strftime":
+		return c.strftime(s, table, o)
+	case "lower":
+		if len(o.args) != 1 {
+			return "", nil, fmt.Errorf("lower() takes one argument")
+		}
+		inner, args, err := c.value(o.args[0], KindString)
+		if err != nil {
+			return "", nil, err
+		}
+		return "LOWER(" + inner + ")", args, nil
+	}
+	return "", nil, fmt.Errorf("unknown function %s() at position %d (known: geoDistance, strftime, lower)", o.name, o.pos)
+}
+
+// geoDistance is the haversine distance in kilometres.
+//
+// Written out rather than delegated to a dialect function because there is no
+// one spelling: PostGIS is an extension, SQLite's math functions are a compile
+// flag, and the formula is six lines.
+func (c *compiler) geoDistance(s *Schema, table string, o operand) (string, []any, error) {
+	if len(o.args) != 4 {
+		return "", nil, fmt.Errorf("geoDistance(lonA, latA, lonB, latB) takes four arguments, got %d", len(o.args))
+	}
+	parts := make([]string, 4)
+	var args []any
+	for i, arg := range o.args {
+		sql, a, err := c.argValue(s, table, arg)
+		if err != nil {
+			return "", nil, err
+		}
+		parts[i] = sql
+		args = append(args, a...)
+	}
+	lonA, latA, lonB, latB := parts[0], parts[1], parts[2], parts[3]
+
+	// 6371 km, the mean earth radius.
+	expr := "(6371 * 2 * ASIN(SQRT(" +
+		"POWER(SIN(RADIANS(" + latB + " - " + latA + ") / 2), 2) + " +
+		"COS(RADIANS(" + latA + ")) * COS(RADIANS(" + latB + ")) * " +
+		"POWER(SIN(RADIANS(" + lonB + " - " + lonA + ") / 2), 2)" +
+		")))"
+	return expr, args, nil
+}
+
+// strftime formats a date. SQLite has it; the others are given the nearest
+// spelling that returns the same string.
+func (c *compiler) strftime(s *Schema, table string, o operand) (string, []any, error) {
+	if len(o.args) < 2 {
+		return "", nil, fmt.Errorf("strftime(format, value) takes at least two arguments")
+	}
+	format, ok := o.args[0].literal.(string)
+	if !ok {
+		return "", nil, fmt.Errorf("strftime's first argument has to be a literal format string")
+	}
+	value, args, err := c.argValue(s, table, o.args[1])
+	if err != nil {
+		return "", nil, err
+	}
+
+	switch c.dialect {
+	case "postgres":
+		return "to_char(" + value + "::timestamp, " + quoteLiteral(strftimeToPostgres(format)) + ")", args, nil
+	case "mysql":
+		return "DATE_FORMAT(" + value + ", " + quoteLiteral(format) + ")", args, nil
+	default:
+		return "strftime(" + quoteLiteral(format) + ", " + value + ")", args, nil
+	}
+}
+
+// argValue resolves a function argument, which may be a column on the table
+// the function is being evaluated against.
+func (c *compiler) argValue(s *Schema, table string, o operand) (string, []any, error) {
+	if o.kind == operandField && len(o.path) == 1 {
+		if f, ok := s.Field(o.path[0]); ok {
+			return c.quote(table) + "." + c.quote(f.Column), nil, nil
+		}
+		return "", nil, unknownName(s, o.path[0], o.pos)
+	}
+	if o.kind == operandField && len(o.path) == 2 {
+		// A geoPoint stored as a JSON object: address.lat.
+		if f, ok := s.Field(o.path[0]); ok && f.Kind == KindJSON {
+			col := c.quote(table) + "." + c.quote(f.Column)
+			switch c.dialect {
+			case "postgres":
+				return "(jsonb_extract_path_text(" + col + "::jsonb, " + quoteLiteral(o.path[1]) + "))::double precision", nil, nil
+			case "mysql":
+				return "JSON_EXTRACT(" + col + ", " + quoteLiteral("$."+o.path[1]) + ")", nil, nil
+			default:
+				return "json_extract(" + col + ", " + quoteLiteral("$."+o.path[1]) + ")", nil, nil
+			}
+		}
+	}
+	return c.value(o, KindNumber)
+}
+
+// applyOperator writes one comparison, including the two cases SQL spells
+// differently from everything else: NULL, and pattern matching.
+func applyOperator(dialect, left, op, right string) (string, error) {
+	if right == "NULL" {
+		switch op {
+		case "=":
+			return left + " IS NULL", nil
+		case "!=":
+			return left + " IS NOT NULL", nil
+		default:
+			return "", fmt.Errorf("null can only be compared with = or !=, not %s", op)
+		}
+	}
+
+	switch op {
+	case "=", "!=", ">", ">=", "<", "<=":
+		// A column that is NULL is not equal to anything, including by !=,
+		// which surprises everybody. `status != "draft"` is taken to include
+		// rows with no status at all, because that is what the sentence says.
+		if op == "!=" {
+			return "(" + left + " " + op + " " + right + " OR " + left + " IS NULL)", nil
+		}
+		return left + " " + op + " " + right, nil
+	case "~", "!~":
+		like := "LIKE"
+		if dialect == "postgres" {
+			// Case-insensitive everywhere, which is what a "contains"
+			// operator is taken to mean. SQLite's LIKE already is for ASCII.
+			like = "ILIKE"
+		}
+		if op == "!~" {
+			return "(" + left + " NOT " + like + " " + right + " OR " + left + " IS NULL)", nil
+		}
+		return left + " " + like + " " + right, nil
+	}
+	return "", fmt.Errorf("unknown operator %q", op)
+}
+
+// likeKind keeps a pattern a string. `code ~ "12"` against an integer column
+// would otherwise coerce the pattern to the number 12 and then try to wrap
+// wildcards around it.
+func likeKind(op string, want Kind) Kind {
+	if isLike(op) {
+		return KindString
+	}
+	return want
+}
+
+func flipOperator(op string) string {
+	switch op {
+	case ">":
+		return "<"
+	case ">=":
+		return "<="
+	case "<":
+		return ">"
+	case "<=":
+		return ">="
+	}
+	return op
+}
+
+func (c *compiler) quote(ident string) string {
+	ident = sanitiseIdent(ident)
+	if c.dialect == "mysql" {
+		return "`" + ident + "`"
+	}
+	return `"` + ident + `"`
+}
+
+// sanitiseIdent is belt and braces. Identifiers reaching here come from GORM's
+// parsed schema, not from the caller, but a column name is the one thing in
+// this file that is not a bound parameter, so it is filtered anyway.
+func sanitiseIdent(s string) string {
+	var sb strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '_':
+			sb.WriteRune(r)
+		}
+	}
+	return sb.String()
+}
+
+// quoteLiteral is for the few places a constant has to be inline rather than
+// bound: a strftime format, a JSON path. Both are checked by the parser to be
+// literals, and the quoting is here so that a quote mark in one cannot end the
+// string.
+func quoteLiteral(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
+}
+
+func jsonPathArgs(path []string) string {
+	var sb strings.Builder
+	for _, p := range path {
+		sb.WriteString(", ")
+		sb.WriteString(quoteLiteral(p))
+	}
+	return sb.String()
+}
+
+// strftimeToPostgres maps the handful of strftime formats that are worth
+// supporting onto to_char patterns.
+func strftimeToPostgres(format string) string {
+	replacements := []struct{ from, to string }{
+		{"%Y", "YYYY"}, {"%m", "MM"}, {"%d", "DD"},
+		{"%H", "HH24"}, {"%M", "MI"}, {"%S", "SS"},
+		{"%j", "DDD"}, {"%W", "IW"},
+	}
+	out := format
+	for _, r := range replacements {
+		out = strings.ReplaceAll(out, r.from, r.to)
+	}
+	return out
+}
+
+func unknownName(s *Schema, name string, pos int) error {
+	known := s.Names()
+	if len(known) > 12 {
+		known = known[:12]
+	}
+	return fmt.Errorf("unknown field %q at position %d (this endpoint accepts: %s)",
+		name, pos, strings.Join(known, ", "))
+}

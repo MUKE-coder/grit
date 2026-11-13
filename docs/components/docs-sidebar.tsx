@@ -153,6 +153,7 @@ const navItems: NavItem[] = [
       { title: 'Seeders', href: '/docs/backend/seeders' },
       { title: 'RBAC & Roles', href: '/docs/backend/rbac' },
       { title: 'Workflows (State Machines)', href: '/docs/backend/workflows' },
+      { title: 'Filter Expressions', href: '/docs/backend/filtering' },
       { title: 'API Documentation', href: '/docs/backend/api-docs' },
       { title: 'Pulse (Observability)', href: '/docs/backend/pulse' },
       { title: 'Health Checks', href: '/docs/backend/health' },

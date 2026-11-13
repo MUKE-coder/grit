@@ -1,0 +1,101 @@
+package rules
+
+import (
+	"strings"
+	"time"
+)
+
+// Macros are the dates an expression can name without writing one out.
+//
+// Every one of them resolves in Go, at the moment the request is compiled, and
+// arrives in the SQL as a bound parameter. That is deliberate: the alternative
+// is emitting each dialect's own date arithmetic, which is four spellings of
+// the same thing and a different answer on each of them.
+//
+// All are UTC, so a rule means the same thing wherever the server runs.
+var macroNames = []string{
+	"@now",
+	"@second", "@minute", "@hour", "@weekday", "@day", "@month", "@year",
+	"@yesterday", "@tomorrow",
+	"@todayStart", "@todayEnd",
+	"@monthStart", "@monthEnd",
+	"@yearStart", "@yearEnd",
+	"@weekStart", "@weekEnd",
+}
+
+func knownMacro(name string) bool {
+	for _, m := range macroNames {
+		if strings.EqualFold(m, name) {
+			return true
+		}
+	}
+	return false
+}
+
+// MacroNames lists the macros, for a help message or a docs page.
+func MacroNames() []string {
+	out := make([]string, len(macroNames))
+	copy(out, macroNames)
+	return out
+}
+
+// macroValue resolves a macro against a moment.
+//
+// The numeric ones (@day, @month) are the parts of that moment as integers,
+// which is what makes `strftime('%m', created) = @month` work. The rest are
+// instants.
+func macroValue(name string, at time.Time) any {
+	at = at.UTC()
+	switch strings.ToLower(name) {
+	case "@now":
+		return at
+	case "@second":
+		return at.Second()
+	case "@minute":
+		return at.Minute()
+	case "@hour":
+		return at.Hour()
+	case "@weekday":
+		return int(at.Weekday())
+	case "@day":
+		return at.Day()
+	case "@month":
+		return int(at.Month())
+	case "@year":
+		return at.Year()
+	case "@yesterday":
+		return startOfDay(at.AddDate(0, 0, -1))
+	case "@tomorrow":
+		return startOfDay(at.AddDate(0, 0, 1))
+	case "@todaystart":
+		return startOfDay(at)
+	case "@todayend":
+		return endOfDay(at)
+	case "@weekstart":
+		// Monday, because a week that starts on Sunday surprises most of the
+		// world and every ISO date function.
+		offset := (int(at.Weekday()) + 6) % 7
+		return startOfDay(at.AddDate(0, 0, -offset))
+	case "@weekend":
+		offset := (int(at.Weekday()) + 6) % 7
+		return endOfDay(at.AddDate(0, 0, 6-offset))
+	case "@monthstart":
+		return time.Date(at.Year(), at.Month(), 1, 0, 0, 0, 0, time.UTC)
+	case "@monthend":
+		return time.Date(at.Year(), at.Month(), 1, 0, 0, 0, 0, time.UTC).
+			AddDate(0, 1, 0).Add(-time.Nanosecond)
+	case "@yearstart":
+		return time.Date(at.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+	case "@yearend":
+		return time.Date(at.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC).Add(-time.Nanosecond)
+	}
+	return nil
+}
+
+func startOfDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func endOfDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, int(time.Second-time.Nanosecond), time.UTC)
+}

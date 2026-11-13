@@ -1,0 +1,437 @@
+package rules
+
+import (
+	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
+)
+
+// Kind is the shape of a field, which decides how a literal beside it is
+// coerced and which operators mean anything.
+type Kind int
+
+const (
+	KindString Kind = iota
+	KindNumber
+	KindBool
+	KindTime
+	KindJSON
+	KindBytes
+)
+
+// Field is one column an expression may name.
+type Field struct {
+	// Name is what an expression writes: the JSON name where the model has
+	// one, because that is the name the client already knows from the
+	// responses it is filtering.
+	Name string
+
+	// Column is the database column, taken from GORM, never from the caller.
+	Column string
+
+	Kind Kind
+
+	// Multi marks a column holding many values (a JSON array), where a plain
+	// operator means "all of them" and ?op means "any of them".
+	Multi bool
+}
+
+// RelKind is how two tables are joined.
+type RelKind int
+
+const (
+	RelBelongsTo RelKind = iota
+	RelHasOne
+	RelHasMany
+	RelMany2Many
+)
+
+// Multi reports whether the relation can hold more than one row, which is what
+// makes the ? operators mean something different from the plain ones.
+func (k RelKind) Multi() bool { return k == RelHasMany || k == RelMany2Many }
+
+// Relation is a path an expression may walk: author.name, comments.approved.
+type Relation struct {
+	Name string
+	Kind RelKind
+
+	// Table is the related table.
+	Table string
+
+	// Pairs are the columns that join the two tables, as (ours, theirs).
+	Pairs [][2]string
+
+	// JoinTable and its pairs are set for many2many only.
+	JoinTable  string
+	JoinOurs   [][2]string // (join table column, our column)
+	JoinTheirs [][2]string // (join table column, their column)
+
+	// model is the related model, so the next hop can be resolved lazily.
+	// Walking every relation eagerly would build the whole object graph for a
+	// filter that names one field.
+	model any
+	db    *gorm.DB
+
+	once   sync.Once
+	target *Schema
+	err    error
+}
+
+// Target resolves the related schema, once.
+func (r *Relation) Target() (*Schema, error) {
+	r.once.Do(func() {
+		r.target, r.err = SchemaOf(r.db, r.model)
+	})
+	return r.target, r.err
+}
+
+// Schema is the set of names an expression may use against one model.
+//
+// Built from GORM's own parsed schema, which is the point: the model is the
+// only description of the table anybody maintains, so there is no second list
+// to drift. A name the model does not declare is not a column, it is a typo or
+// an attack, and either way the answer is the same.
+type Schema struct {
+	Table   string
+	Dialect string
+
+	fields    map[string]*Field
+	relations map[string]*Relation
+
+	// deny holds names that resolve but must never be filterable, whatever
+	// the model says. A password hash is a column like any other, and
+	// `password ~ "$2a$10$ab"` is an oracle that reads it one character at a
+	// time.
+	deny map[string]bool
+
+	// allow, when set, is a whitelist: nothing outside it resolves. Left nil
+	// for a declared rule, which is this project's own source and may name
+	// anything the model has.
+	allow map[string]bool
+}
+
+// defaultDenied are never filterable, under any name they are declared with.
+var defaultDenied = []string{
+	"password", "password_hash", "passwordhash",
+	"token", "refresh_token", "reset_token", "verification_token",
+	"secret", "api_key", "apikey", "private_key",
+	"totp_secret", "two_factor_secret", "recovery_codes",
+}
+
+var schemaCache sync.Map // reflect.Type -> *Schema
+
+// SchemaOf reads a model's fields and relations from GORM.
+//
+// Cached per type, because parsing is reflection over every field and a list
+// endpoint would otherwise pay for it on every request.
+func SchemaOf(db *gorm.DB, model any) (*Schema, error) {
+	if db == nil {
+		return nil, fmt.Errorf("rules: SchemaOf needs a database handle")
+	}
+	t := reflect.TypeOf(model)
+	for t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t == nil {
+		return nil, fmt.Errorf("rules: SchemaOf needs a model, not nil")
+	}
+	if cached, ok := schemaCache.Load(t); ok {
+		return cached.(*Schema), nil
+	}
+
+	stmt := &gorm.Statement{DB: db}
+	if err := stmt.Parse(model); err != nil {
+		return nil, fmt.Errorf("rules: reading the schema of %s: %w", t.Name(), err)
+	}
+
+	s := &Schema{
+		Table:     stmt.Schema.Table,
+		Dialect:   dialectOf(db),
+		fields:    map[string]*Field{},
+		relations: map[string]*Relation{},
+		deny:      map[string]bool{},
+	}
+	for _, name := range defaultDenied {
+		s.deny[name] = true
+	}
+
+	for _, f := range stmt.Schema.Fields {
+		if f.DBName == "" {
+			continue // an association placeholder, handled below
+		}
+		field := &Field{
+			Name:   fieldName(f),
+			Column: f.DBName,
+			Kind:   kindOf(f),
+			Multi:  isMultiValued(f),
+		}
+		// Both spellings resolve. A client that has only ever seen JSON knows
+		// createdAt or created_at depending on the tag, and refusing the other
+		// is a puzzle rather than a safety measure.
+		s.fields[strings.ToLower(field.Name)] = field
+		s.fields[strings.ToLower(f.DBName)] = field
+	}
+
+	for name, rel := range stmt.Schema.Relationships.Relations {
+		r := relationOf(db, name, rel)
+		if r != nil {
+			s.relations[strings.ToLower(name)] = r
+			// The field name as JSON spells it, so `author.name` works for a
+			// model whose field is Author with json:"author".
+			if jsonName := strings.ToLower(relJSONName(rel)); jsonName != "" {
+				s.relations[jsonName] = r
+			}
+		}
+	}
+
+	schemaCache.Store(t, s)
+	return s, nil
+}
+
+// Restrict returns a copy of the schema that resolves only the given names.
+//
+// This is what a list endpoint hands to a caller's ?filter=: the model may
+// have forty columns and the endpoint may be willing to be filtered on six.
+func (s *Schema) Restrict(names ...string) *Schema {
+	allow := make(map[string]bool, len(names))
+	for _, n := range names {
+		allow[strings.ToLower(n)] = true
+	}
+	clone := *s
+	clone.allow = allow
+	return &clone
+}
+
+// Deny adds names that must never resolve, on top of the defaults.
+func (s *Schema) Deny(names ...string) *Schema {
+	clone := *s
+	clone.deny = map[string]bool{}
+	for k, v := range s.deny {
+		clone.deny[k] = v
+	}
+	for _, n := range names {
+		clone.deny[strings.ToLower(n)] = true
+	}
+	return &clone
+}
+
+// Field resolves a name, or says it does not exist.
+func (s *Schema) Field(name string) (*Field, bool) {
+	key := strings.ToLower(name)
+	if s.deny[key] {
+		return nil, false
+	}
+	if s.allow != nil && !s.allow[key] {
+		return nil, false
+	}
+	f, ok := s.fields[key]
+	return f, ok
+}
+
+// Relation resolves a relation name.
+func (s *Schema) Relation(name string) (*Relation, bool) {
+	key := strings.ToLower(name)
+	if s.deny[key] {
+		return nil, false
+	}
+	if s.allow != nil && !s.allow[key] {
+		return nil, false
+	}
+	r, ok := s.relations[key]
+	return r, ok
+}
+
+// Names lists everything an expression may use here, sorted, for the error
+// message that follows an unknown field.
+func (s *Schema) Names() []string {
+	seen := map[string]bool{}
+	var out []string
+	add := func(n string) {
+		if n == "" || seen[n] {
+			return
+		}
+		seen[n] = true
+		out = append(out, n)
+	}
+	for key, f := range s.fields {
+		if s.deny[key] || (s.allow != nil && !s.allow[key]) {
+			continue
+		}
+		add(f.Name)
+	}
+	for key, r := range s.relations {
+		if s.deny[key] || (s.allow != nil && !s.allow[key]) {
+			continue
+		}
+		add(r.Name)
+	}
+	sortStrings(out)
+	return out
+}
+
+func fieldName(f *schema.Field) string {
+	if tag := f.Tag.Get("json"); tag != "" {
+		name := strings.Split(tag, ",")[0]
+		if name != "" && name != "-" {
+			return name
+		}
+	}
+	return f.DBName
+}
+
+func relJSONName(rel *schema.Relationship) string {
+	if rel.Field == nil {
+		return ""
+	}
+	if tag := rel.Field.Tag.Get("json"); tag != "" {
+		name := strings.Split(tag, ",")[0]
+		if name != "" && name != "-" {
+			return name
+		}
+	}
+	return ""
+}
+
+var timeType = reflect.TypeOf(time.Time{})
+
+func kindOf(f *schema.Field) Kind {
+	// GORM's own answer first. A datatypes.JSON is a named []byte, and
+	// reflection cannot tell that from a blob, so :length and :each refused
+	// to work on precisely the columns they exist for.
+	switch strings.ToLower(string(f.DataType)) {
+	case "json", "jsonb":
+		return KindJSON
+	case "bool":
+		return KindBool
+	case "time":
+		return KindTime
+	case "bytes":
+		return KindBytes
+	case "int", "uint", "float":
+		return KindNumber
+	}
+
+	t := f.FieldType
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t == timeType {
+		return KindTime
+	}
+	switch t.Kind() {
+	case reflect.Bool:
+		return KindBool
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		// A []byte is a slice of uint8 and is not a number.
+		if t.Kind() == reflect.Uint8 && f.FieldType.Kind() == reflect.Slice {
+			return KindBytes
+		}
+		return KindNumber
+	case reflect.Slice, reflect.Array, reflect.Map:
+		if t.Elem().Kind() == reflect.Uint8 {
+			return KindBytes
+		}
+		return KindJSON
+	case reflect.Struct:
+		return KindJSON
+	}
+	return KindString
+}
+
+// isMultiValued marks a column that stores a list, which is what gives the ?
+// operators something to quantify over.
+func isMultiValued(f *schema.Field) bool {
+	t := f.FieldType
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Slice && t.Kind() != reflect.Array {
+		return false
+	}
+	return t.Elem().Kind() != reflect.Uint8 // []byte is one value
+}
+
+func relationOf(db *gorm.DB, name string, rel *schema.Relationship) *Relation {
+	if rel.FieldSchema == nil {
+		return nil
+	}
+	r := &Relation{
+		Name:  name,
+		Table: rel.FieldSchema.Table,
+		db:    db,
+		model: reflect.New(rel.FieldSchema.ModelType).Interface(),
+	}
+
+	switch rel.Type {
+	case schema.BelongsTo:
+		r.Kind = RelBelongsTo
+	case schema.HasOne:
+		r.Kind = RelHasOne
+	case schema.HasMany:
+		r.Kind = RelHasMany
+	case schema.Many2Many:
+		r.Kind = RelMany2Many
+	default:
+		return nil
+	}
+
+	if rel.JoinTable != nil {
+		r.JoinTable = rel.JoinTable.Table
+		for _, ref := range rel.References {
+			if ref.PrimaryKey == nil || ref.ForeignKey == nil {
+				continue
+			}
+			// OwnPrimaryKey marks the half that points back at us.
+			if ref.OwnPrimaryKey {
+				r.JoinOurs = append(r.JoinOurs, [2]string{ref.ForeignKey.DBName, ref.PrimaryKey.DBName})
+			} else {
+				r.JoinTheirs = append(r.JoinTheirs, [2]string{ref.ForeignKey.DBName, ref.PrimaryKey.DBName})
+			}
+		}
+		if len(r.JoinOurs) == 0 || len(r.JoinTheirs) == 0 {
+			return nil
+		}
+		return r
+	}
+
+	for _, ref := range rel.References {
+		if ref.PrimaryKey == nil || ref.ForeignKey == nil {
+			continue
+		}
+		if ref.OwnPrimaryKey {
+			// We hold the primary key; they hold the foreign key.
+			r.Pairs = append(r.Pairs, [2]string{ref.PrimaryKey.DBName, ref.ForeignKey.DBName})
+		} else {
+			// We hold the foreign key; they hold the primary key.
+			r.Pairs = append(r.Pairs, [2]string{ref.ForeignKey.DBName, ref.PrimaryKey.DBName})
+		}
+	}
+	if len(r.Pairs) == 0 {
+		return nil
+	}
+	return r
+}
+
+func dialectOf(db *gorm.DB) string {
+	if db == nil || db.Dialector == nil {
+		return "sqlite"
+	}
+	return strings.ToLower(db.Dialector.Name())
+}
+
+// sortStrings is sort.Strings, kept here so the package has one import fewer
+// and the helper is obvious at the call site.
+func sortStrings(s []string) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j] < s[j-1]; j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
+	}
+}

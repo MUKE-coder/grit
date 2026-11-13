@@ -72,6 +72,102 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.518.0 */}
+            <div className="mb-12" id="v3.518.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.518.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A query language on every list endpoint</h3>
+                <p>
+                  Until now a list endpoint answered the questions somebody
+                  thought of when they generated it: page, search, sort, a
+                  date range, and equality on whichever columns made it into
+                  the <code>Filterable</code> map. Anything else was a new
+                  query parameter, a new branch in the handler, and a release.
+                </p>
+                <p>
+                  Every generated list endpoint now takes{' '}
+                  <code>?filter=</code>, an expression over the model&apos;s
+                  own fields:
+                </p>
+                <pre><code>{`GET /api/v1/machines?filter=status = "active" && hours > 100
+GET /api/v1/orders?filter=total >= 500 && created_at >= @monthStart
+GET /api/v1/posts?filter=author.country = "UG" || tags.label ?= "urgent"
+GET /api/v1/invoices?filter=paid_at = null && due_at < @now`}</code></pre>
+                <p>
+                  Relation paths walk as deep as six hops and compile to
+                  correlated subqueries, so a filter over a has-many does not
+                  multiply the rows the way a join would.{' '}
+                  <code>comments.approved = true</code> asks whether every
+                  comment is approved; <code>?=</code> asks whether any is.{' '}
+                  <code>@request.auth.id</code>, <code>@request.query.x</code>{' '}
+                  and <code>@request.headers.x_id</code> are what the server
+                  knows about the caller, and{' '}
+                  <code>@monthStart</code> and its fourteen relatives resolve
+                  in Go so a rule means the same thing on every database.
+                </p>
+                <h4>What makes it safe is the schema, not the parser</h4>
+                <p>
+                  Every identifier is resolved against the model&apos;s GORM
+                  schema, which is the only description of the table anybody
+                  maintains, so there is no second list to keep in step. A
+                  name the model does not declare is refused with the names it
+                  does:
+                </p>
+                <pre><code>{`unknown field "nonsense" at position 0
+  (this endpoint accepts: created_at, hours, id, name, serial, status)`}</code></pre>
+                <p>
+                  That is a <strong>422, not a 500</strong>: the caller&apos;s
+                  sentence is wrong, not the server. Every value is a bound
+                  parameter, so a filter with a quotation mark in it is a
+                  string with a quotation mark in it. Columns that look like
+                  credentials are never filterable whatever the model calls
+                  them, because <code>password ~ &quot;$2a$10$ab&quot;</code>{' '}
+                  reads a hash one character at a time and a whitelist that
+                  forgot to exclude it would not stop that.
+                </p>
+                <h4>Which fields, without anything new to remember</h4>
+                <p>
+                  The union of what the endpoint already admits it can be
+                  searched, sorted and filtered on. An endpoint willing to
+                  sort by a column has already decided the column is public,
+                  so a generated resource gets this from the{' '}
+                  <code>Filterable</code> map the generator writes anyway.{' '}
+                  <code>Config.FilterFields</code> says it explicitly, which
+                  is what you want on anything served without authentication.
+                </p>
+                <h4>And a cheaper page</h4>
+                <p>
+                  <code>?skip_total=1</code> drops the <code>COUNT</code> from
+                  an offset page. The page is a <code>LIMIT</code> over an
+                  index; the total is a scan of everything that matched, and
+                  on a large filtered table it is most of the request.{' '}
+                  <code>meta.has_more</code> answers the only question a next
+                  button has.
+                </p>
+                <p>
+                  The engine is <code>internal/rules</code> in your project:
+                  a tokeniser, a parser and a compiler, with eleven tests that
+                  run the generated SQL against a real database rather than
+                  comparing it to a string. It is the same engine that will
+                  evaluate a declared access rule.
+                </p>
+                <p>
+                  The allocation budget in{' '}
+                  <code>internal/handlers/perf_test.go</code> caught the first
+                  version of this at 54 allocations per list request against a
+                  budget of 50: it was building the request context on every
+                  request, filter or no filter. It is built when there is an
+                  expression to evaluate, which is what the budget is for.
+                </p>
+              </div>
+            </div>
+
             {/* v3.517.1 */}
             <div className="mb-12" id="v3.517.1">
               <div className="flex items-center gap-3 mb-4">

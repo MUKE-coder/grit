@@ -23,6 +23,35 @@ Also worth knowing:
 ---
 
 
+## v3.518.0 - November 13, 2026
+
+### A query language on every list endpoint
+
+Until now a list endpoint answered the questions somebody thought of when they generated it: page, search, sort, a date range, and equality on whichever columns made it into the `Filterable` map. Anything else was a new query parameter, a new branch in the handler, and a release.
+
+Every generated list endpoint now takes `?filter=`, an expression over the model's own fields:
+
+`{`GET /api/v1/machines?filter=status = "active" && hours > 100 GET /api/v1/orders?filter=total >= 500 && created_at >= @monthStart GET /api/v1/posts?filter=author.country = "UG" || tags.label ?= "urgent" GET /api/v1/invoices?filter=paid_at = null && due_at Relation paths walk as deep as six hops and compile to correlated subqueries, so a filter over a has-many does not multiply the rows the way a join would. `comments.approved = true` asks whether every comment is approved; `?=` asks whether any is. `@request.auth.id`, `@request.query.x` and `@request.headers.x_id` are what the server knows about the caller, and `@monthStart` and its fourteen relatives resolve in Go so a rule means the same thing on every database.
+
+#### What makes it safe is the schema, not the parser
+
+Every identifier is resolved against the model's GORM schema, which is the only description of the table anybody maintains, so there is no second list to keep in step. A name the model does not declare is refused with the names it does:
+
+`{`unknown field "nonsense" at position 0 (this endpoint accepts: created_at, hours, id, name, serial, status)`}` That is a **422, not a 500**: the caller's sentence is wrong, not the server. Every value is a bound parameter, so a filter with a quotation mark in it is a string with a quotation mark in it. Columns that look like credentials are never filterable whatever the model calls them, because `password ~ "$2a$10$ab"` reads a hash one character at a time and a whitelist that forgot to exclude it would not stop that.
+
+#### Which fields, without anything new to remember
+
+The union of what the endpoint already admits it can be searched, sorted and filtered on. An endpoint willing to sort by a column has already decided the column is public, so a generated resource gets this from the `Filterable` map the generator writes anyway. `Config.FilterFields` says it explicitly, which is what you want on anything served without authentication.
+
+#### And a cheaper page
+
+`?skip_total=1` drops the `COUNT` from an offset page. The page is a `LIMIT` over an index; the total is a scan of everything that matched, and on a large filtered table it is most of the request. `meta.has_more` answers the only question a next button has.
+
+The engine is `internal/rules` in your project: a tokeniser, a parser and a compiler, with eleven tests that run the generated SQL against a real database rather than comparing it to a string. It is the same engine that will evaluate a declared access rule.
+
+The allocation budget in `internal/handlers/perf_test.go` caught the first version of this at 54 allocations per list request against a budget of 50: it was building the request context on every request, filter or no filter. It is built when there is an expression to evaluate, which is what the budget is for.
+
+
 ## v3.517.1 - November 13, 2026
 
 ### grit doctor could not be run on a single project

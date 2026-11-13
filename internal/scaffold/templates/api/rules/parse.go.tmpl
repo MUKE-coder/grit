@@ -1,0 +1,342 @@
+package rules
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+// node is one piece of a parsed expression.
+type node interface{ isNode() }
+
+// groupNode is && or || over two sides.
+type groupNode struct {
+	op    tokenKind // tokAnd or tokOr
+	left  node
+	right node
+}
+
+// compareNode is the only thing that produces SQL: two operands and an
+// operator between them.
+type compareNode struct {
+	op    string
+	left  operand
+	right operand
+	pos   int
+}
+
+// notNode is a parenthesised group the parser never produces directly. It
+// exists so the compiler can invert a condition for match-all semantics.
+type notNode struct{ inner node }
+
+func (groupNode) isNode()   {}
+func (compareNode) isNode() {}
+func (notNode) isNode()     {}
+
+// operandKind says how an operand resolves: to a column, to a value known at
+// request time, or to a function over other operands.
+type operandKind int
+
+const (
+	operandField operandKind = iota
+	operandLiteral
+	operandRequest
+	operandMacro
+	operandFunc
+	operandCollection
+)
+
+// operand is one side of a comparison.
+type operand struct {
+	kind operandKind
+
+	// path is the identifier as written, split on dots: author.name is
+	// ["author", "name"]. For a @request operand the leading @request is
+	// dropped, so @request.auth.id is ["auth", "id"].
+	path []string
+
+	// modifiers are the :suffixes, in the order written.
+	modifiers []string
+
+	// literal is the value for operandLiteral. nil means null.
+	literal any
+
+	// name and args are the call for operandFunc.
+	name string
+	args []operand
+
+	// raw is the identifier as the author wrote it, for error messages.
+	raw string
+
+	pos int
+}
+
+// Expr is a parsed expression, ready to compile against a schema.
+type Expr struct {
+	root  node
+	text  string
+	count int
+}
+
+// Text returns the expression as it was written.
+func (e *Expr) Text() string { return e.text }
+
+// Parse reads an expression. It does not look at any schema, so a parse error
+// is about the expression itself: a missing bracket, an unknown operator, a
+// comparison with nothing on one side.
+//
+// An empty expression is not an error and matches everything, which is what
+// lets a rule distinguish "no condition" from "no access": the absence of a
+// rule is the caller's decision, not this package's.
+func Parse(src string) (*Expr, error) {
+	src = strings.TrimSpace(src)
+	if src == "" {
+		return &Expr{text: ""}, nil
+	}
+
+	toks, err := lex(src)
+	if err != nil {
+		return nil, err
+	}
+
+	p := &parser{toks: toks, src: src}
+	root, err := p.parseOr()
+	if err != nil {
+		return nil, err
+	}
+	if tok := p.peek(); tok.kind != tokEOF {
+		return nil, fmt.Errorf("unexpected %s %q at position %d", tok.kind, tok.text, tok.pos)
+	}
+	if p.comparisons > MaxExpressions {
+		return nil, fmt.Errorf("expression has %d comparisons, over the %d limit", p.comparisons, MaxExpressions)
+	}
+	return &Expr{root: root, text: src, count: p.comparisons}, nil
+}
+
+// MustParse is Parse for an expression written in this project's own source,
+// where a parse error is a programming mistake rather than bad input.
+func MustParse(src string) *Expr {
+	e, err := Parse(src)
+	if err != nil {
+		panic("rules: " + err.Error() + " in " + strconv.Quote(src))
+	}
+	return e
+}
+
+// Empty reports whether the expression has no condition, and so matches every
+// row.
+func (e *Expr) Empty() bool { return e == nil || e.root == nil }
+
+type parser struct {
+	toks        []token
+	src         string
+	pos         int
+	comparisons int
+}
+
+func (p *parser) peek() token  { return p.toks[p.pos] }
+func (p *parser) advance() token {
+	tok := p.toks[p.pos]
+	if tok.kind != tokEOF {
+		p.pos++
+	}
+	return tok
+}
+
+func (p *parser) parseOr() (node, error) {
+	left, err := p.parseAnd()
+	if err != nil {
+		return nil, err
+	}
+	for p.peek().kind == tokOr {
+		p.advance()
+		right, err := p.parseAnd()
+		if err != nil {
+			return nil, err
+		}
+		left = groupNode{op: tokOr, left: left, right: right}
+	}
+	return left, nil
+}
+
+func (p *parser) parseAnd() (node, error) {
+	left, err := p.parseComparison()
+	if err != nil {
+		return nil, err
+	}
+	for p.peek().kind == tokAnd {
+		p.advance()
+		right, err := p.parseComparison()
+		if err != nil {
+			return nil, err
+		}
+		left = groupNode{op: tokAnd, left: left, right: right}
+	}
+	return left, nil
+}
+
+func (p *parser) parseComparison() (node, error) {
+	// A parenthesised group, which is the only way to change precedence.
+	if p.peek().kind == tokLParen {
+		open := p.advance()
+		inner, err := p.parseOr()
+		if err != nil {
+			return nil, err
+		}
+		if p.peek().kind != tokRParen {
+			return nil, fmt.Errorf("unclosed ( at position %d", open.pos)
+		}
+		p.advance()
+		return inner, nil
+	}
+
+	left, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+
+	tok := p.peek()
+	if tok.kind != tokOp {
+		return nil, fmt.Errorf(
+			"expected an operator after %q at position %d, found %s: every condition is written as `left OPERATOR right`",
+			left.raw, left.pos, tok.kind)
+	}
+	p.advance()
+
+	right, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+
+	p.comparisons++
+	if p.comparisons > MaxExpressions {
+		return nil, fmt.Errorf("expression has more than %d comparisons, over the limit", MaxExpressions)
+	}
+	return compareNode{op: tok.text, left: left, right: right, pos: tok.pos}, nil
+}
+
+func (p *parser) parseOperand() (operand, error) {
+	tok := p.advance()
+	switch tok.kind {
+	case tokString:
+		return operand{kind: operandLiteral, literal: tok.text, raw: tok.text, pos: tok.pos}, nil
+	case tokNumber:
+		n, err := strconv.ParseFloat(tok.text, 64)
+		if err != nil {
+			return operand{}, fmt.Errorf("%q at position %d is not a number", tok.text, tok.pos)
+		}
+		// Whole numbers compare as integers, so that id = 3 does not become
+		// id = 3.0 and miss on a strict dialect.
+		if n == float64(int64(n)) {
+			return operand{kind: operandLiteral, literal: int64(n), raw: tok.text, pos: tok.pos}, nil
+		}
+		return operand{kind: operandLiteral, literal: n, raw: tok.text, pos: tok.pos}, nil
+	case tokTrue:
+		return operand{kind: operandLiteral, literal: true, raw: tok.text, pos: tok.pos}, nil
+	case tokFalse:
+		return operand{kind: operandLiteral, literal: false, raw: tok.text, pos: tok.pos}, nil
+	case tokNull:
+		return operand{kind: operandLiteral, literal: nil, raw: tok.text, pos: tok.pos}, nil
+	case tokIdent:
+		return p.identOperand(tok)
+	case tokEOF:
+		return operand{}, fmt.Errorf("expression ends after an operator, with nothing to compare against")
+	}
+	return operand{}, fmt.Errorf("unexpected %s %q at position %d", tok.kind, tok.text, tok.pos)
+}
+
+// identOperand turns one identifier token into an operand, including a
+// function call when the next token opens a bracket.
+func (p *parser) identOperand(tok token) (operand, error) {
+	raw := tok.text
+
+	if p.peek().kind == tokLParen {
+		p.advance()
+		call := operand{kind: operandFunc, name: strings.ToLower(raw), raw: raw, pos: tok.pos}
+		if p.peek().kind == tokRParen {
+			p.advance()
+			return call, nil
+		}
+		for {
+			arg, err := p.parseOperand()
+			if err != nil {
+				return operand{}, err
+			}
+			call.args = append(call.args, arg)
+			if p.peek().kind == tokComma {
+				p.advance()
+				continue
+			}
+			break
+		}
+		if p.peek().kind != tokRParen {
+			return operand{}, fmt.Errorf("unclosed ( in call to %s at position %d", raw, tok.pos)
+		}
+		p.advance()
+		if len(call.args) > 8 {
+			return operand{}, fmt.Errorf("%s takes at most 8 arguments", raw)
+		}
+		return call, nil
+	}
+
+	// Split the modifiers off, then the path.
+	parts := strings.Split(raw, ":")
+	path := strings.Split(parts[0], ".")
+	mods := parts[1:]
+	for _, m := range mods {
+		if !knownModifier(m) {
+			return operand{}, fmt.Errorf(
+				"unknown modifier :%s at position %d (known: isset, changed, length, each, lower)", m, tok.pos)
+		}
+	}
+
+	op := operand{path: path, modifiers: mods, raw: raw, pos: tok.pos}
+
+	switch {
+	case strings.EqualFold(path[0], "@request"):
+		if len(path) < 2 {
+			return operand{}, fmt.Errorf("@request on its own at position %d is not a value", tok.pos)
+		}
+		op.kind = operandRequest
+		op.path = path[1:]
+	case strings.EqualFold(path[0], "@collection"):
+		if len(path) < 3 {
+			return operand{}, fmt.Errorf(
+				"@collection needs a table and a column at position %d, as @collection.orders.user_id", tok.pos)
+		}
+		op.kind = operandCollection
+		op.path = path[1:]
+	case strings.HasPrefix(path[0], "@"):
+		if len(path) > 1 {
+			return operand{}, fmt.Errorf("%s at position %d is a macro and has no fields", path[0], tok.pos)
+		}
+		if !knownMacro(path[0]) {
+			return operand{}, fmt.Errorf("unknown macro %s at position %d", path[0], tok.pos)
+		}
+		op.kind = operandMacro
+	default:
+		op.kind = operandField
+		if len(path) > MaxDepth {
+			return operand{}, fmt.Errorf("%q walks %d relations, over the %d limit", raw, len(path)-1, MaxDepth)
+		}
+	}
+	return op, nil
+}
+
+func knownModifier(m string) bool {
+	switch strings.ToLower(m) {
+	case "isset", "changed", "length", "each", "lower":
+		return true
+	}
+	return false
+}
+
+// has reports whether the operand carries a modifier.
+func (o operand) has(mod string) bool {
+	for _, m := range o.modifiers {
+		if strings.EqualFold(m, mod) {
+			return true
+		}
+	}
+	return false
+}

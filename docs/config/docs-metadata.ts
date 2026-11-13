@@ -483,6 +483,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Twenty-seven skills that teach an AI assistant to build with Grit, plus the reference material they read: what each one does, when it fires, and how grit skills install puts them in your agent.',
   },
+  '/docs/backend/filtering': {
+    title: 'Filter expressions',
+    description:
+      'A query language on every generated list endpoint: ?filter= is an expression over the fields of the model itself, compiled against its GORM schema so an unknown name is a 422 listing the known ones and every value is bound. Operators, relation paths, @request, date macros, :isset and :changed, and ?skip_total.',
+  },
   '/docs/backend/health': {
     title: 'Health checks',
     description:

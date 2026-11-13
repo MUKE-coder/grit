@@ -3158,6 +3158,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+
+	"{{MODULE}}/internal/rules"
 )
 
 // Defaults applied when the request query is empty or out of range.
@@ -3179,6 +3181,32 @@ type Params struct {
 	SortBy    string
 	SortOrder string
 	Cursor    string // opaque base64 from a previous Result.Meta.NextCursor
+
+	// Filter is ?filter=, an expression over this model's own fields:
+	//
+	//	status = "active" && views > 100
+	//	author.country = "UG" || tags.label ?= "urgent"
+	//	created_at >= @monthStart
+	//
+	// Compiled by internal/rules against the model's GORM schema, so a name
+	// the model does not declare is a 422 naming the ones it does, and every
+	// value is bound. See paginate/filter.go.
+	Filter string
+
+	// Rules is what the expression knows about the caller: @request.auth.id,
+	// @request.query.x, @request.headers.x. Built by Bind from the gin
+	// context; nil is a guest.
+	Rules *rules.Context
+
+	// SkipTotal drops the COUNT from an offset page.
+	//
+	// The count is the expensive half of offset pagination: the page itself
+	// is a LIMIT over an index, and the total is a scan of everything that
+	// matched. A client rendering "next" and "previous" rather than numbered
+	// pages never reads it, and on a large filtered table that is most of the
+	// request. meta.total comes back 0, with meta.has_more saying whether
+	// there is another page.
+	SkipTotal bool
 
 	// CursorMode asks for keyset pagination on this request.
 	//
@@ -3292,6 +3320,16 @@ type Config struct {
 	// already has from the category it fetched.
 	InFilterable map[string]bool
 
+	// FilterFields whitelists the fields ?filter= may name, when the union
+	// of Searchable, Sortable, Filterable, RangeFilterable and InFilterable
+	// is not the right answer.
+	//
+	// Left empty, that union is used, because an endpoint that will sort by
+	// a column has already decided the column is public. Set it explicitly
+	// on anything served without authentication, where the question is not
+	// "can this be ordered by" but "may a stranger ask about it".
+	FilterFields []string
+
 	DefaultSort  string // fallback sort column (defaults to "created_at")
 	DefaultOrder string // fallback sort order (defaults to "desc")
 
@@ -3395,6 +3433,10 @@ func Bind(c *gin.Context) Params {
 		pageSize = DefaultPageSize
 	}
 
+	// Read once: whether there is a filter decides whether the request
+	// context is worth building at all. See ruleContext.
+	filter := c.Query("filter")
+
 	dateField := c.Query("date_field")
 	if dateField == "" {
 		dateField = "created_at"
@@ -3409,6 +3451,9 @@ func Bind(c *gin.Context) Params {
 		SortOrder:    c.Query("sort_order"),
 		Cursor:       c.Query("cursor"),
 		CursorMode:   c.Query("mode") == "cursor" || c.Query("cursor") != "",
+		Filter:       filter,
+		Rules:        ruleContext(c, filter != ""),
+		SkipTotal:    isTruthy(c.Query("skip_total")),
 		DateField:    dateField,
 		DateFrom:     dateFrom,
 		DateTo:       dateTo,
@@ -3811,6 +3856,14 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 		query = query.Where(clause, args...)
 	}
 
+	// ?filter=, the expression. Applied after the whitelisted equality
+	// filters and before the branch into cursor mode, so both kinds of page
+	// see the same rows.
+	query, err := applyFilter[T](query, p, cfg)
+	if err != nil {
+		return Result[T]{}, err
+	}
+
 	// Either the handler insists, or the request asked.
 	if cfg.CursorMode || p.CursorMode {
 		return listCursor[T](query, p, cfg, sortBy, sortOrder)
@@ -3818,9 +3871,12 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 
 	var result Result[T]
 
-	// Count first (before Order/Offset/Limit so Count reflects the whole match).
-	if err := countTotal(query, &result.Meta.Total); err != nil {
-		return result, err
+	// Count first (before Order/Offset/Limit so Count reflects the whole
+	// match), unless the caller said not to: see Params.SkipTotal.
+	if !p.SkipTotal {
+		if err := countTotal(query, &result.Meta.Total); err != nil {
+			return result, err
+		}
 	}
 	if len(p.Counts) > 0 {
 		counts, err := countWindows(query, p.Counts)
@@ -3861,8 +3917,73 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	if result.Meta.Total > 0 && p.PageSize > 0 {
 		result.Meta.Pages = int(math.Ceil(float64(result.Meta.Total) / float64(p.PageSize)))
 	}
+	if p.SkipTotal {
+		// Without a total, pages and "is there a next one" are unanswerable
+		// from the envelope. A full page is taken to mean there may be more,
+		// which is one request's worth of over-estimate at the very end and
+		// the same thing every cursor API does.
+		result.Meta.HasMore = len(result.Data) == p.PageSize
+	}
 
 	return result, nil
+}
+
+// ruleContext is what a filter expression may know about the caller.
+//
+// Read from the gin context rather than from the auth package, because
+// pagination is imported by every handler and must not drag authentication in
+// behind it. The keys are the ones the auth middleware sets.
+//
+// Built only when there is an expression to evaluate. Copying every query
+// parameter and every header into two maps is four allocations and a walk of
+// both, on every list request in the application, and the large majority of
+// them carry no ?filter= at all. The allocation budget in the handlers'
+// perf_test caught this at 54 against a budget of 50, which is exactly what
+// it is for.
+func ruleContext(c *gin.Context, wanted bool) *rules.Context {
+	if !wanted {
+		return nil
+	}
+	ctx := rules.NewContext()
+	ctx.Method = c.Request.Method
+
+	if id := c.GetString("user_id"); id != "" {
+		auth := map[string]any{"id": id}
+		if email := c.GetString("user_email"); email != "" {
+			auth["email"] = email
+		}
+		if role := c.GetString("user_role"); role != "" {
+			auth["role"] = role
+		}
+		if roles, ok := c.Get("user_roles"); ok {
+			auth["roles"] = roles
+		}
+		ctx = ctx.WithAuth(auth)
+	}
+
+	for key, values := range c.Request.URL.Query() {
+		if len(values) > 0 {
+			ctx.Query[strings.ToLower(key)] = values[0]
+		}
+	}
+	for key, values := range c.Request.Header {
+		if len(values) > 0 {
+			// X-Api-Token is read as x_api_token: a hyphen is an operator
+			// everywhere else in the expression language.
+			name := strings.ToLower(strings.ReplaceAll(key, "-", "_"))
+			ctx.Headers[name] = values[0]
+		}
+	}
+	return ctx
+}
+
+// isTruthy reads the flags a client spells however it likes.
+func isTruthy(v string) bool {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
 }
 
 // maxCounts caps ?counts=, so one request cannot ask for any number of COUNTs.

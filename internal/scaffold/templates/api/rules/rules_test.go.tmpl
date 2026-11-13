@@ -1,0 +1,490 @@
+package rules
+
+import (
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+)
+
+// The models under test.
+//
+// Deliberately not this project's own models: the compiler reads whatever
+// GORM parsed, and a fixture with one of every shape (a belongs-to, a
+// has-many, a many-to-many, a JSON array, a time, a nested JSON object) says
+// more about the compiler than one real table would.
+
+type ruleAuthor struct {
+	ID      string `gorm:"primaryKey" json:"id"`
+	Name    string `json:"name"`
+	Country string `json:"country"`
+}
+
+func (ruleAuthor) TableName() string { return "rule_authors" }
+
+type ruleTag struct {
+	ID    string       `gorm:"primaryKey" json:"id"`
+	Label string       `json:"label"`
+	Posts []rulePost   `gorm:"many2many:rule_post_tags" json:"posts"`
+}
+
+func (ruleTag) TableName() string { return "rule_tags" }
+
+type ruleComment struct {
+	ID       string `gorm:"primaryKey" json:"id"`
+	PostID   string `json:"post_id"`
+	Body     string `json:"body"`
+	Approved bool   `json:"approved"`
+}
+
+func (ruleComment) TableName() string { return "rule_comments" }
+
+type rulePost struct {
+	ID        string        `gorm:"primaryKey" json:"id"`
+	Title     string        `json:"title"`
+	Status    string        `json:"status"`
+	Views     int           `json:"views"`
+	Published bool          `json:"published"`
+	CreatedAt time.Time     `json:"created_at"`
+	Secret    string         `gorm:"column:password" json:"password"`
+	Labels    datatypes.JSON `gorm:"column:labels" json:"labels"`
+	Settings  datatypes.JSON `gorm:"column:settings" json:"settings"`
+	AuthorID  string        `json:"author_id"`
+	Author    *ruleAuthor   `gorm:"foreignKey:AuthorID" json:"author"`
+	Comments  []ruleComment `gorm:"foreignKey:PostID" json:"comments"`
+	Tags      []ruleTag     `gorm:"many2many:rule_post_tags" json:"tags"`
+}
+
+func (rulePost) TableName() string { return "rule_posts" }
+
+// ruleDB is a real SQLite database with real rows, because the only honest
+// test of a SQL compiler is a database executing what it produced. A test
+// that compares the generated string against a string I also wrote agrees
+// with whatever I generated, including the wrong thing.
+func ruleDB(t *testing.T) *gorm.DB {
+	t.Helper()
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatalf("opening the test database: %v", err)
+	}
+	// Every connection to ":memory:" is its own empty database, so the pool
+	// has to hold exactly one or half the queries find no tables.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+
+	if err := db.AutoMigrate(&ruleAuthor{}, &ruleTag{}, &ruleComment{}, &rulePost{}); err != nil {
+		t.Fatalf("migrating: %v", err)
+	}
+
+	jan := time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
+	now := time.Now().UTC()
+
+	authors := []ruleAuthor{
+		{ID: "a1", Name: "Ada", Country: "UG"},
+		{ID: "a2", Name: "Grace", Country: "US"},
+	}
+	for i := range authors {
+		if err := db.Create(&authors[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tags := []ruleTag{{ID: "t1", Label: "go"}, {ID: "t2", Label: "sql"}}
+	for i := range tags {
+		if err := db.Create(&tags[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	posts := []rulePost{
+		{
+			ID: "p1", Title: "Lorem ipsum", Status: "active", Views: 10, Published: true,
+			CreatedAt: now, Secret: "hunter2", Labels: datatypes.JSON(`["go","sql"]`),
+			Settings: datatypes.JSON(`{"theme":"dark","locale":"en"}`), AuthorID: "a1",
+		},
+		{
+			ID: "p2", Title: "Dolor sit", Status: "draft", Views: 200, Published: false,
+			CreatedAt: jan, Secret: "hunter3", Labels: datatypes.JSON(`["go"]`),
+			Settings: datatypes.JSON(`{"theme":"light","locale":"fr"}`), AuthorID: "a2",
+		},
+		{
+			ID: "p3", Title: "Amet", Status: "active", Views: 0, Published: true,
+			CreatedAt: jan, Secret: "hunter4", Labels: datatypes.JSON(`[]`),
+			Settings: datatypes.JSON(`{"theme":"dark","locale":"sw"}`), AuthorID: "a1",
+		},
+	}
+	for i := range posts {
+		if err := db.Create(&posts[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	comments := []ruleComment{
+		{ID: "c1", PostID: "p1", Body: "first", Approved: true},
+		{ID: "c2", PostID: "p1", Body: "second", Approved: true},
+		{ID: "c3", PostID: "p2", Body: "spam", Approved: false},
+	}
+	for i := range comments {
+		if err := db.Create(&comments[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := db.Model(&posts[0]).Association("Tags").Append(&tags[0], &tags[1]); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Model(&posts[1]).Association("Tags").Append(&tags[0]); err != nil {
+		t.Fatal(err)
+	}
+
+	return db
+}
+
+// matching runs an expression and returns the ids it selected, which is the
+// only result that matters.
+func matching(t *testing.T, db *gorm.DB, filter string, ctx *Context) []string {
+	t.Helper()
+
+	schema, err := SchemaOf(db, &rulePost{})
+	if err != nil {
+		t.Fatalf("schema: %v", err)
+	}
+	compiled, err := CompileFilter(filter, schema, ctx)
+	if err != nil {
+		t.Fatalf("compiling %q: %v", filter, err)
+	}
+
+	var ids []string
+	query := db.Model(&rulePost{}).Where(compiled.SQL, compiled.Args...).Order("id")
+	if err := query.Pluck("id", &ids).Error; err != nil {
+		t.Fatalf("running %q\n  sql:  %s\n  args: %v\n  err:  %v", filter, compiled.SQL, compiled.Args, err)
+	}
+	return ids
+}
+
+func joined(ids []string) string { return strings.Join(ids, ",") }
+
+func TestComparisonsSelectTheRightRows(t *testing.T) {
+	db := ruleDB(t)
+	ctx := NewContext()
+
+	for _, c := range []struct {
+		filter string
+		want   string
+	}{
+		{``, "p1,p2,p3"},
+		{`status = "active"`, "p1,p3"},
+		{`status != "active"`, "p2"},
+		{`views > 5`, "p1,p2"},
+		{`views >= 10`, "p1,p2"},
+		{`views < 10`, "p3"},
+		{`views <= 10`, "p1,p3"},
+		{`published = true`, "p1,p3"},
+		{`published = false`, "p2"},
+		{`title ~ "lorem"`, "p1"},
+		{`title ~ "o"`, "p1,p2"},
+		{`title !~ "o"`, "p3"},
+		{`title ~ "Lorem%"`, "p1"},
+		{`status = "active" && views > 5`, "p1"},
+		{`status = "draft" || views = 0`, "p2,p3"},
+		{`(status = "active" || status = "draft") && published = true`, "p1,p3"},
+		// The operand order does not change the meaning.
+		{`5 < views`, "p1,p2"},
+		{`"active" = status`, "p1,p3"},
+		// Comments are part of the language, not of the data.
+		{"status = \"active\" // only the live ones\n", "p1,p3"},
+	} {
+		if got := joined(matching(t, db, c.filter, ctx)); got != c.want {
+			t.Errorf("%s\n  got  %q\n  want %q", c.filter, got, c.want)
+		}
+	}
+}
+
+func TestRelationsAreWalked(t *testing.T) {
+	db := ruleDB(t)
+	ctx := NewContext()
+
+	for _, c := range []struct {
+		filter string
+		want   string
+	}{
+		// belongs-to: one row over there, so ? changes nothing.
+		{`author.name = "Ada"`, "p1,p3"},
+		{`author.country = "US"`, "p2"},
+		{`author.id = "a1" && status = "active"`, "p1,p3"},
+		// A relation named without a field means its key.
+		{`author = "a2"`, "p2"},
+		// has-many, match-any: at least one comment is approved.
+		{`comments.approved ?= true`, "p1"},
+		{`comments.body ?= "spam"`, "p2"},
+		// has-many, match-all: every comment is approved. p3 has none, and
+		// "all of nothing" is true, which is the same answer SQL gives.
+		{`comments.approved = true`, "p1,p3"},
+		// many-to-many, through the join table.
+		{`tags.label ?= "sql"`, "p1"},
+		{`tags.label ?= "go"`, "p1,p2"},
+	} {
+		if got := joined(matching(t, db, c.filter, ctx)); got != c.want {
+			t.Errorf("%s\n  got  %q\n  want %q", c.filter, got, c.want)
+		}
+	}
+}
+
+func TestRequestOperandsResolveInGo(t *testing.T) {
+	db := ruleDB(t)
+
+	guest := NewContext()
+	ada := NewContext().WithAuth(map[string]any{"id": "a1", "role": "USER"})
+
+	// The idiom for "signed in", which has to select nothing for a guest and
+	// everything for a user.
+	if got := joined(matching(t, db, `@request.auth.id != ""`, guest)); got != "" {
+		t.Errorf("a guest matched %q", got)
+	}
+	if got := joined(matching(t, db, `@request.auth.id != ""`, ada)); got != "p1,p2,p3" {
+		t.Errorf("a signed-in user matched %q, want every row", got)
+	}
+
+	// Ownership, which is the rule nearly every project writes first.
+	if got := joined(matching(t, db, `author.id = @request.auth.id`, ada)); got != "p1,p3" {
+		t.Errorf("ownership selected %q, want p1,p3", got)
+	}
+
+	// A header and a query parameter, neither of which is ever SQL.
+	ctx := NewContext()
+	ctx.Headers["x_tenant"] = "draft"
+	ctx.Query["status"] = "active"
+	if got := joined(matching(t, db, `status = @request.headers.x_tenant`, ctx)); got != "p2" {
+		t.Errorf("header filter selected %q", got)
+	}
+	if got := joined(matching(t, db, `status = @request.query.status`, ctx)); got != "p1,p3" {
+		t.Errorf("query filter selected %q", got)
+	}
+
+	// A value carrying SQL is a value.
+	ctx.Query["status"] = `active" OR 1=1 --`
+	if got := joined(matching(t, db, `status = @request.query.status`, ctx)); got != "" {
+		t.Errorf("an injected value selected %q; it is a string, not syntax", got)
+	}
+}
+
+func TestIssetAndChangedDecideWithoutTheDatabase(t *testing.T) {
+	db := ruleDB(t)
+
+	sent := NewContext().WithBody(map[string]any{"role": "ADMIN", "title": "same"})
+	sent = sent.WithOriginal(map[string]any{"role": "USER", "title": "same"})
+
+	// :isset is about the request, so the condition is decided before the
+	// query runs and selects everything or nothing.
+	if got := joined(matching(t, db, `@request.body.role:isset = false`, sent)); got != "" {
+		t.Error("a request that sent role passed a rule forbidding it")
+	}
+	if got := joined(matching(t, db, `@request.body.role:isset = true`, sent)); got != "p1,p2,p3" {
+		t.Errorf("a request that sent role failed :isset = true, got %q", got)
+	}
+	missing := NewContext().WithBody(map[string]any{"title": "x"})
+	if got := joined(matching(t, db, `@request.body.role:isset = false`, missing)); got != "p1,p2,p3" {
+		t.Errorf("a request that sent no role failed :isset = false, got %q", got)
+	}
+
+	// :changed is the useful one: the field may be submitted as long as it
+	// is not being altered, which is how an update form that posts every
+	// field is allowed while a privilege escalation is not.
+	if got := joined(matching(t, db, `@request.body.role:changed = false`, sent)); got != "" {
+		t.Error("role was changed from USER to ADMIN and :changed said it was not")
+	}
+	if got := joined(matching(t, db, `@request.body.title:changed = false`, sent)); got != "p1,p2,p3" {
+		t.Error("title was submitted unchanged and :changed said it changed")
+	}
+
+	// On a create there is nothing stored, so anything submitted is a change.
+	created := NewContext().WithBody(map[string]any{"role": "ADMIN"})
+	if got := joined(matching(t, db, `@request.body.role:changed = true`, created)); got != "p1,p2,p3" {
+		t.Error("a field submitted on create should count as changed")
+	}
+}
+
+func TestModifiers(t *testing.T) {
+	db := ruleDB(t)
+	ctx := NewContext()
+
+	for _, c := range []struct {
+		filter string
+		want   string
+	}{
+		// :length over a JSON array column.
+		{`labels:length = 2`, "p1"},
+		{`labels:length > 0`, "p1,p2"},
+		{`labels:length = 0`, "p3"},
+		// :each over the same column.
+		{`labels:each ?= "sql"`, "p1"},
+		{`labels:each ?= "go"`, "p1,p2"},
+		// match-all: every label is "go". p3 has none, which is vacuously true.
+		{`labels:each = "go"`, "p2,p3"},
+		// :lower, for a comparison that should not care about case.
+		{`status:lower = "ACTIVE"`, "p1,p3"},
+		// A path into a JSON object column.
+		{`settings.theme = "dark"`, "p1,p3"},
+		{`settings.locale = "fr"`, "p2"},
+	} {
+		if got := joined(matching(t, db, c.filter, ctx)); got != c.want {
+			t.Errorf("%s\n  got  %q\n  want %q", c.filter, got, c.want)
+		}
+	}
+}
+
+func TestMacrosResolveToInstants(t *testing.T) {
+	db := ruleDB(t)
+	ctx := NewContext()
+
+	// p1 was created now; p2 and p3 in January 2026.
+	got := joined(matching(t, db, `created_at >= @todayStart`, ctx))
+	if got != "p1" {
+		t.Errorf("@todayStart selected %q, want p1", got)
+	}
+	if got := joined(matching(t, db, `created_at < @todayStart`, ctx)); got != "p2,p3" {
+		t.Errorf("before today selected %q", got)
+	}
+	if got := joined(matching(t, db, `created_at <= @now`, ctx)); got != "p1,p2,p3" {
+		t.Errorf("@now selected %q, want every row", got)
+	}
+
+	// Every macro resolves to something, which is the check that the list in
+	// macros.go and the switch below it have not drifted apart.
+	for _, name := range MacroNames() {
+		if macroValue(name, time.Now()) == nil {
+			t.Errorf("%s resolves to nothing", name)
+		}
+	}
+}
+
+func TestDeniedAndUnknownFieldsAreRefused(t *testing.T) {
+	db := ruleDB(t)
+	schema, err := SchemaOf(db, &rulePost{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A password column is a column, and `password ~ "$2a$"` reads it one
+	// character at a time. It is denied whatever the model calls it.
+	if _, err := CompileFilter(`password ~ "hunter"`, schema, NewContext()); err == nil {
+		t.Error("the password column was filterable")
+	}
+	if _, err := CompileFilter(`nonsense = 1`, schema, NewContext()); err == nil {
+		t.Error("an unknown field compiled")
+	}
+
+	// The error has to say what IS allowed, or the caller is guessing.
+	_, err = CompileFilter(`nonsense = 1`, schema, NewContext())
+	if !strings.Contains(err.Error(), "this endpoint accepts") {
+		t.Errorf("the error does not list the fields: %v", err)
+	}
+
+	// A restricted schema is the list endpoint's own whitelist.
+	limited := schema.Restrict("status", "views")
+	if _, err := CompileFilter(`status = "active"`, limited, NewContext()); err != nil {
+		t.Errorf("a whitelisted field was refused: %v", err)
+	}
+	if _, err := CompileFilter(`title = "x"`, limited, NewContext()); err == nil {
+		t.Error("a field outside the whitelist compiled")
+	}
+}
+
+func TestParseErrorsSayWhereAndWhy(t *testing.T) {
+	for _, c := range []struct{ src, contains string }{
+		{`status =`, "nothing to compare"},
+		{`status`, "expected an operator"},
+		{`(status = "a"`, "unclosed"},
+		{`status = "a`, "unterminated string"},
+		{`status:bogus = "a"`, "unknown modifier"},
+		{`status # "a"`, "unexpected character"},
+		{`created > @notamacro`, "unknown macro"},
+		{`status = "a" && `, "nothing to compare"},
+	} {
+		_, err := Parse(c.src)
+		if err == nil {
+			t.Errorf("%q parsed without error", c.src)
+			continue
+		}
+		if !strings.Contains(err.Error(), c.contains) {
+			t.Errorf("%q said %q, want something about %q", c.src, err.Error(), c.contains)
+		}
+	}
+}
+
+func TestLimitsAreEnforced(t *testing.T) {
+	long := strings.Repeat(`status = "a" || `, 1) + strings.Repeat(`x`, MaxLength)
+	if _, err := Parse(long); err == nil || !strings.Contains(err.Error(), "limit") {
+		t.Errorf("an over-long expression was accepted: %v", err)
+	}
+
+	var sb strings.Builder
+	for i := 0; i <= MaxExpressions; i++ {
+		if i > 0 {
+			sb.WriteString(" || ")
+		}
+		sb.WriteString(`status = "a"`)
+	}
+	if _, err := Parse(sb.String()); err == nil || !strings.Contains(err.Error(), "limit") {
+		t.Errorf("an expression with too many comparisons was accepted: %v", err)
+	}
+
+	deep := "a.b.c.d.e.f.g.h = 1"
+	if _, err := Parse(deep); err == nil || !strings.Contains(err.Error(), "limit") {
+		t.Errorf("a path walking too many relations was accepted: %v", err)
+	}
+}
+
+func TestNullComparisons(t *testing.T) {
+	db := ruleDB(t)
+	// An empty author id is not null, but the != case is the one that bites:
+	// a NULL column is not "not equal" to anything in SQL, and a reader of
+	// the expression expects it to be.
+	if got := joined(matching(t, db, `author_id != "a1"`, NewContext())); got != "p2" {
+		t.Errorf("!= selected %q, want p2", got)
+	}
+	schema, err := SchemaOf(db, &rulePost{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	compiled, err := CompileFilter(`author_id = null`, schema, NewContext())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(compiled.SQL, "IS NULL") {
+		t.Errorf("= null did not become IS NULL: %s", compiled.SQL)
+	}
+}
+
+func TestEveryValueIsBound(t *testing.T) {
+	db := ruleDB(t)
+	schema, err := SchemaOf(db, &rulePost{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	compiled, err := CompileFilter(`status = "active" && views > 10 && title ~ "x"`, schema, NewContext())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The values must not appear in the SQL text at all: that is the whole
+	// safety argument, and it is cheap to assert.
+	for _, literal := range []string{"active", "10", "x"} {
+		if strings.Contains(compiled.SQL, literal) {
+			t.Errorf("the value %q is inlined in the SQL rather than bound:\n%s", literal, compiled.SQL)
+		}
+	}
+	if len(compiled.Args) != 3 {
+		t.Errorf("got %d bound arguments, want 3: %v", len(compiled.Args), compiled.Args)
+	}
+}

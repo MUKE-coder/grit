@@ -1,0 +1,295 @@
+package rules
+
+import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// coerce converts a value known in Go into something the driver can bind
+// against a column of the given kind.
+//
+// A query string gives every value as text, so `page > 5` arrives with "5" on
+// the right. Binding that against an integer column compares a number with a
+// string, which on Postgres is an error and on SQLite is silently false.
+func coerce(v any, want Kind) any {
+	if v == nil {
+		return nil
+	}
+	switch want {
+	case KindNumber:
+		if n, ok := toNumber(v); ok {
+			return n
+		}
+	case KindBool:
+		if b, ok := toBool(v); ok {
+			return b
+		}
+	case KindTime:
+		if t, ok := toTime(v); ok {
+			return t
+		}
+	case KindString:
+		switch v.(type) {
+		case string, []byte:
+			return v
+		case time.Time:
+			return v
+		}
+		return toString(v)
+	}
+	return v
+}
+
+// likePattern turns the right-hand side of ~ into a LIKE pattern.
+//
+// Without a wildcard of its own the value is taken to mean "contains", which
+// is what the operator is for. A value that already has one is left alone, so
+// `title ~ "Lorem%"` still means "starts with".
+func likePattern(args []any) []any {
+	if len(args) != 1 {
+		return args
+	}
+	s, ok := args[0].(string)
+	if !ok {
+		s = toString(args[0])
+	}
+	if strings.ContainsAny(s, "%_") {
+		return []any{s}
+	}
+	// A literal backslash would otherwise escape the character after it.
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	return []any{"%" + s + "%"}
+}
+
+func isLike(op string) bool { return op == "~" || op == "!~" }
+
+// compareValues decides a comparison with no column in it, which is how
+// :isset and :changed conditions resolve.
+func compareValues(left any, op string, right any) (bool, error) {
+	if left == nil || right == nil {
+		switch op {
+		case "=":
+			return left == nil && right == nil, nil
+		case "!=":
+			return (left == nil) != (right == nil), nil
+		}
+		return false, fmt.Errorf("null can only be compared with = or !=, not %s", op)
+	}
+
+	// Booleans compare as booleans, so that `:isset = false` is not a string
+	// comparison between "false" and "false" that happens to work.
+	lb, lIsBool := toBool(left)
+	rb, rIsBool := toBool(right)
+	if lIsBool && rIsBool {
+		switch op {
+		case "=":
+			return lb == rb, nil
+		case "!=":
+			return lb != rb, nil
+		}
+		return false, fmt.Errorf("booleans can only be compared with = or !=, not %s", op)
+	}
+
+	ln, lIsNum := toNumber(left)
+	rn, rIsNum := toNumber(right)
+	if lIsNum && rIsNum {
+		switch op {
+		case "=":
+			return ln == rn, nil
+		case "!=":
+			return ln != rn, nil
+		case ">":
+			return ln > rn, nil
+		case ">=":
+			return ln >= rn, nil
+		case "<":
+			return ln < rn, nil
+		case "<=":
+			return ln <= rn, nil
+		}
+	}
+
+	ls, rs := toString(left), toString(right)
+	switch op {
+	case "=":
+		return ls == rs, nil
+	case "!=":
+		return ls != rs, nil
+	case ">":
+		return ls > rs, nil
+	case ">=":
+		return ls >= rs, nil
+	case "<":
+		return ls < rs, nil
+	case "<=":
+		return ls <= rs, nil
+	case "~":
+		return strings.Contains(strings.ToLower(ls), strings.ToLower(strings.Trim(rs, "%"))), nil
+	case "!~":
+		return !strings.Contains(strings.ToLower(ls), strings.ToLower(strings.Trim(rs, "%"))), nil
+	}
+	return false, fmt.Errorf("unknown operator %q", op)
+}
+
+// sameValue is what :changed asks: did this submitted field actually differ
+// from what is stored.
+//
+// Compared as JSON rather than with ==, because the same value arrives from a
+// request body as float64 and from the database as int64, and two equal
+// values that are not identically typed are still not a change.
+func sameValue(a, b any) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	if an, ok := toNumber(a); ok {
+		if bn, ok := toNumber(b); ok {
+			return an == bn
+		}
+	}
+	if at, ok := toTime(a); ok {
+		if bt, ok := toTime(b); ok {
+			return at.Equal(bt)
+		}
+	}
+	if reflect.DeepEqual(a, b) {
+		return true
+	}
+	aj, errA := json.Marshal(a)
+	bj, errB := json.Marshal(b)
+	if errA == nil && errB == nil {
+		return string(aj) == string(bj)
+	}
+	return toString(a) == toString(b)
+}
+
+// lengthOf counts a value the way :length means it: items in a list, entries
+// in an object, characters in a string.
+func lengthOf(v any) int {
+	if v == nil {
+		return 0
+	}
+	switch t := v.(type) {
+	case string:
+		return len(t)
+	case []any:
+		return len(t)
+	case map[string]any:
+		return len(t)
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array, reflect.Map, reflect.String:
+		return rv.Len()
+	}
+	return 0
+}
+
+func toString(v any) string {
+	switch t := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return t
+	case []byte:
+		return string(t)
+	case bool:
+		return strconv.FormatBool(t)
+	case time.Time:
+		return t.UTC().Format(time.RFC3339Nano)
+	case float64:
+		if t == float64(int64(t)) {
+			return strconv.FormatInt(int64(t), 10)
+		}
+		return strconv.FormatFloat(t, 'f', -1, 64)
+	case float32:
+		return toString(float64(t))
+	case int:
+		return strconv.Itoa(t)
+	case int64:
+		return strconv.FormatInt(t, 10)
+	}
+	return fmt.Sprintf("%v", v)
+}
+
+func toNumber(v any) (float64, bool) {
+	switch t := v.(type) {
+	case int:
+		return float64(t), true
+	case int8:
+		return float64(t), true
+	case int16:
+		return float64(t), true
+	case int32:
+		return float64(t), true
+	case int64:
+		return float64(t), true
+	case uint:
+		return float64(t), true
+	case uint8:
+		return float64(t), true
+	case uint16:
+		return float64(t), true
+	case uint32:
+		return float64(t), true
+	case uint64:
+		return float64(t), true
+	case float32:
+		return float64(t), true
+	case float64:
+		return t, true
+	case string:
+		n, err := strconv.ParseFloat(strings.TrimSpace(t), 64)
+		return n, err == nil
+	}
+	return 0, false
+}
+
+func toBool(v any) (bool, bool) {
+	switch t := v.(type) {
+	case bool:
+		return t, true
+	case string:
+		switch strings.ToLower(strings.TrimSpace(t)) {
+		case "true", "1":
+			return true, true
+		case "false", "0":
+			return false, true
+		}
+	}
+	return false, false
+}
+
+// timeLayouts are what a date arrives as: from JSON, from a query string, from
+// a database that stores it as text.
+var timeLayouts = []string{
+	time.RFC3339Nano,
+	time.RFC3339,
+	"2006-01-02 15:04:05.999999999 -0700 MST",
+	"2006-01-02 15:04:05.999999",
+	"2006-01-02 15:04:05",
+	"2006-01-02T15:04:05",
+	"2006-01-02",
+}
+
+func toTime(v any) (time.Time, bool) {
+	switch t := v.(type) {
+	case time.Time:
+		return t, true
+	case *time.Time:
+		if t == nil {
+			return time.Time{}, false
+		}
+		return *t, true
+	case string:
+		for _, layout := range timeLayouts {
+			if parsed, err := time.Parse(layout, strings.TrimSpace(t)); err == nil {
+				return parsed, true
+			}
+		}
+	}
+	return time.Time{}, false
+}
