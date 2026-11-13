@@ -23,6 +23,17 @@ Also worth knowing:
 ---
 
 
+## v3.517.1 - November 13, 2026
+
+### grit doctor could not be run on a single project
+
+It looked for the Go module in `apps/api` or at the project root. A `--single` project keeps it in `api/`, with the frontend owning the root, so every run ended on the first line:
+
+`no Go API at my-app: run grit doctor inside a Grit project` Thirty checks, none of which ran. The command whose whole job is finding problems was the one that could not be started, on an entire architecture.
+
+This is the seventh place the same question was answered by hand. v3.516.0 found six of them in the generator and made one resolver the only implementation; doctor has its own because it is deliberately file-only and offline, and it was missed. It now probes the directory rather than reading `grit.json`, so a project scaffolded before the module moved into `api/` still reads correctly.
+
+
 ## v3.517.0 - November 13, 2026
 
 ### An admin panel that is the whole app

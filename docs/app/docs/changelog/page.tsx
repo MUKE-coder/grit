@@ -72,6 +72,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.517.1 */}
+            <div className="mb-12" id="v3.517.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.517.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit doctor could not be run on a single project</h3>
+                <p>
+                  It looked for the Go module in <code>apps/api</code> or at the
+                  project root. A <code>--single</code> project keeps it in{' '}
+                  <code>api/</code>, with the frontend owning the root, so every
+                  run ended on the first line:
+                </p>
+                <pre><code>no Go API at my-app: run grit doctor inside a Grit project</code></pre>
+                <p>
+                  Thirty checks, none of which ran. The command whose whole job
+                  is finding problems was the one that could not be started, on
+                  an entire architecture.
+                </p>
+                <p>
+                  This is the seventh place the same question was answered by
+                  hand. v3.516.0 found six of them in the generator and made one
+                  resolver the only implementation; doctor has its own because
+                  it is deliberately file-only and offline, and it was missed.
+                  It now probes the directory rather than reading{' '}
+                  <code>grit.json</code>, so a project scaffolded before the
+                  module moved into <code>api/</code> still reads correctly.
+                </p>
+              </div>
+            </div>
+
             {/* v3.517.0 */}
             <div className="mb-12" id="v3.517.0">
               <div className="flex items-center gap-3 mb-4">
