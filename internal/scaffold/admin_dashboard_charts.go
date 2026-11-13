@@ -62,7 +62,22 @@ export function SeverityPieChart({ data }: { data: SeveritySlice[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart>
-        <Pie data={data} dataKey="value" innerRadius={40} outerRadius={70} paddingAngle={2}>
+        {/* Radii as percentages, not pixels.
+            40 and 70 were absolute, so in any box narrower than 140px the
+            donut was drawn wider than the box and clipped: it rendered as a
+            thick C with the right-hand side missing.
+
+            And no padding angle on a single slice. The gap it leaves between
+            slices becomes a notch in an otherwise closed ring when there is
+            only one, which reads as a rendering fault rather than as a
+            hundred percent. */}
+        <Pie
+          data={data}
+          dataKey="value"
+          innerRadius="56%"
+          outerRadius="96%"
+          paddingAngle={data.length > 1 ? 2 : 0}
+        >
           {data.map((s, i) => <Cell key={i} fill={s.color} />)}
         </Pie>
         <Tooltip

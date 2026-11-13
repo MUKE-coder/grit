@@ -23,6 +23,31 @@ Also worth knowing:
 ---
 
 
+## v3.534.0 - November 14, 2026
+
+### The dashboard, and a donut that stopped making things up
+
+The third redesign release. The dashboard's four tiles are the same strip the resource pages use, its quick-access tiles say what is in each resource, and the severity chart is a quarter of the size it was.
+
+#### A chart that invented a number
+
+With no events in the last 24 hours, the severity donut was handed `[{ name: "Info", value: 1 }]`: a made-up data point, so it had something to draw. A quiet day and a day with one sign-in rendered identically, and nothing on the card said which you were looking at.
+
+It now shows an empty state when there is nothing, and the real counts when there is something, with all three severities listed even at nought. A legend that grows a row when the first warning arrives moves everything under it, and &ldquo;Critical 0&rdquo; is an answer somebody wanted.
+
+#### And one that was drawn outside its box
+
+The donut's radii were absolute pixels, 40 and 70, so in any box narrower than 140px it was drawn wider than the box and clipped: a thick C with the right-hand side missing. Percentages now. The padding angle is also dropped when there is a single slice, where the gap between slices became a notch in a closed ring.
+
+#### Tiles that say something
+
+Quick access read &ldquo;Manage blogs&rdquo; under a tile titled Blogs, which is the title again as a verb. It reads &ldquo;4 blogs&rdquo; now, and the System hub tile reads &ldquo;6 healthy &middot; 2 off&rdquo;, from the same health query the top bar and the sidebar badge read. The counts come from the hook the per-resource widgets further down the page already use, with the same parameters, so React Query serves both from one request.
+
+#### One strip frame
+
+The dashboard's tiles and a resource page's stat cells are different things: one is a link, the other fetches a count and can narrow a table. The border, the radius, the hairlines and the fold points are identical, and were about to be written twice, so they are a component.
+
+
 ## v3.533.0 - November 14, 2026
 
 ### One strip, one primary button, and the dangerous things behind a menu

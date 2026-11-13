@@ -305,6 +305,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "ui", "radio-card.tsx"):      adminRadioCardPrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "hub-tile.tsx"):        adminHubTilePrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "note.tsx"):            adminNotePrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "stat-strip.tsx"):      adminStatStripPrimitive(),
 		filepath.Join(adminRoot, "lib", "export.ts"):                        adminExportLib(),
 		filepath.Join(adminRoot, "hooks", "use-system-health.ts"):           adminUseSystemHealth(),
 

@@ -508,6 +508,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "ui", "radio-card.tsx"):             nextToTanStack(adminRadioCardPrimitive()),
 		filepath.Join(adminRoot, "src", "components", "ui", "hub-tile.tsx"):               nextToTanStack(adminHubTilePrimitive()),
 		filepath.Join(adminRoot, "src", "components", "ui", "note.tsx"):                   nextToTanStack(adminNotePrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "stat-strip.tsx"):             nextToTanStack(adminStatStripPrimitive()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "system-guard.tsx"):       nextToTanStack(adminSystemGuardComponent()),
 		// UserMenu owns the sign-out action; PageHeader is imported by every
 		// system page. Both were missing, so logout did nothing and the system

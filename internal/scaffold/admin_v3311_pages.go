@@ -90,8 +90,16 @@ import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { LiveClock } from "@/components/chrome/LiveClock";
 import { SkeletonCards } from "@/components/ui/Skeleton";
-import { DateFilter, type DateRange } from "@/components/tables/date-filter";
+import { StatStrip } from "@/components/ui/stat-strip";
+import { DateFilter, dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
 import { ResourceWidgetsRow } from "@/components/dashboard/ResourceWidgetsRow";
+import {
+  useResourceDashboardStats,
+  type ResourceDashboardStats,
+} from "@/hooks/use-resource";
+import type { ResourceDefinition } from "@/lib/resource";
+import { useSystemHealth } from "@/hooks/use-system-health";
+import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/lib/api-client";
 import {
   Activity as ActivityIcon, ArrowUpRight,
@@ -204,19 +212,34 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
+  const health = useSystemHealth();
+  // All three severities, always, with their real counts.
+  //
+  // This used to answer an empty 24 hours with [{ name: "Info", value: 1 }]:
+  // a made-up data point, so that the donut had something to draw. A chart
+  // that invents a number to avoid looking empty is worse than an empty
+  // chart, because a reader cannot tell the difference. An empty state says
+  // it plainly instead.
+  //
+  // The legend keeps all three rows even at nought. A legend that grows a row
+  // when the first warning arrives moves everything under it, and "Critical 0"
+  // is an answer somebody wanted.
   const severitySeries = useMemo(() => {
     const s = activityStats.data;
-    if (!s || s.total === 0) {
-      return [
-        { name: "Info", value: 1, color: "var(--info)" },
-      ];
-    }
     return [
-      { name: "Info",     value: s.info,     color: "var(--info)"    },
-      { name: "Warn",     value: s.warn,     color: "var(--warning)" },
-      { name: "Critical", value: s.critical, color: "var(--danger)"  },
-    ].filter((d) => d.value > 0);
+      { name: "Info", value: s?.info ?? 0, color: "var(--info)" },
+      { name: "Warning", value: s?.warn ?? 0, color: "var(--warning)" },
+      { name: "Critical", value: s?.critical ?? 0, color: "var(--danger)" },
+    ];
   }, [activityStats.data]);
+
+  const severityTotal = severitySeries.reduce((sum, d) => sum + d.value, 0);
+
+  // The donut can only draw slices it has. The legend shows the zeros.
+  const severitySlices = useMemo(
+    () => severitySeries.filter((d) => d.value > 0),
+    [severitySeries],
+  );
 
   const statsLoading = userCount.isLoading || activityStats.isLoading;
 
@@ -244,7 +267,7 @@ export default function DashboardPage() {
       {statsLoading ? (
         <SkeletonCards count={4} />
       ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <StatStrip className="mb-2">
           {canViewUsers && (
             <StatTile
               label="Users"
@@ -281,14 +304,16 @@ export default function DashboardPage() {
             accent="default"
             sublabel="modules registered"
           />
-        </div>
+        </StatStrip>
       )}
 
       {/* Activity row. There is no per-day event count endpoint, so the
           "past 7 days" chart that used to sit here plotted random numbers.
           It is gone rather than faked: the feed and the 24 hour severity mix
           below are both read from /api/user-activity. */}
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      {/* items-start, or the shorter card stretches to the taller one and
+          leaves several hundred pixels of empty card under its legend. */}
+      <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-bg-elevated lg:col-span-2">
           <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
             <div>
@@ -331,27 +356,49 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-bg-elevated p-5">
-          <div className="mb-4">
+        {/* The severity mix.
+            The chart was 192px tall and full width, which made a three-value
+            breakdown the largest object on the dashboard, and it sat above a
+            legend rather than beside one, so the card was twice as tall as it
+            needed to be and still left a gap under it. Chart on the left,
+            legend on the right, both inside one row. */}
+        <div className="flex flex-col rounded-xl border border-border bg-bg-elevated">
+          <header className="border-b border-border px-5 py-3.5">
             <p className="text-sm font-semibold text-foreground">Severity mix</p>
-            <p className="text-xs text-text-muted">Past 24 hours</p>
-          </div>
-          <div className="h-48 w-full">
-            <Suspense fallback={<ChartPlaceholder />}>
-              <SeverityPieChart data={severitySeries} />
-            </Suspense>
-          </div>
-          <ul className="mt-2 space-y-1.5 text-xs">
-            {severitySeries.map((s) => (
-              <li key={s.name} className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-text-secondary">
-                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: s.color }} />
-                  {s.name}
-                </span>
-                <span className="font-semibold text-foreground">{s.value}</span>
-              </li>
-            ))}
-          </ul>
+            <p className="text-xs text-text-muted">
+              Past 24 hours
+              {severityTotal > 0 && " · " + severityTotal + (severityTotal === 1 ? " event" : " events")}
+            </p>
+          </header>
+          {severityTotal === 0 ? (
+            <EmptyState
+              icon={<ActivityIcon className="h-5 w-5" />}
+              title="Nothing in the last 24 hours"
+              description="Sign-ins, writes and security events are counted here as they happen."
+            />
+          ) : (
+            <div className="flex items-center gap-4 px-5 py-4">
+              <div className="h-28 w-28 shrink-0">
+                <Suspense fallback={<ChartPlaceholder />}>
+                  <SeverityPieChart data={severitySlices} />
+                </Suspense>
+              </div>
+              <ul className="min-w-0 flex-1 space-y-2 text-xs">
+                {severitySeries.map((s) => (
+                  <li key={s.name} className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2 text-text-secondary">
+                      <span
+                        className="inline-block h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: s.color }}
+                      />
+                      <span className="truncate">{s.name}</span>
+                    </span>
+                    <span className="shrink-0 font-semibold text-foreground tabular-nums">{s.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
@@ -359,24 +406,9 @@ export default function DashboardPage() {
       <div className="mt-6">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">Quick access</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {visibleResources.slice(0, 8).map((r) => {
-            const Icon = getIcon(r.icon);
-            return (
-              <Link
-                key={r.slug}
-                href={"/resources/" + r.slug}
-                className="group rounded-xl border border-border bg-bg-elevated p-4 transition-colors hover:bg-bg-hover"
-              >
-                <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <p className="text-sm font-semibold text-foreground group-hover:text-accent">
-                  {r.label?.plural ?? r.name}
-                </p>
-                <p className="text-xs text-text-muted">Manage {(r.label?.plural ?? r.slug).toLowerCase()}</p>
-              </Link>
-            );
-          })}
+          {visibleResources.slice(0, 8).map((r) => (
+            <QuickAccessTile key={r.slug} resource={r} dateRange={dateRange} />
+          ))}
           {(permsLoading || isSuper) && (
             <Link
               href="/system"
@@ -386,7 +418,14 @@ export default function DashboardPage() {
                 <Shield className="h-4 w-4" />
               </div>
               <p className="text-sm font-semibold text-foreground group-hover:text-accent">System hub</p>
-              <p className="text-xs text-text-muted">Jobs, files, security, observability</p>
+              <p className="text-xs text-text-muted">
+                {health.summary.healthy > 0 || health.summary.off > 0
+                  ? health.summary.healthy +
+                    " healthy" +
+                    (health.summary.off > 0 ? " · " + health.summary.off + " off" : "") +
+                    (health.summary.degraded > 0 ? " · " + health.summary.degraded + " degraded" : "")
+                  : "Jobs, files, security, observability"}
+              </p>
             </Link>
           )}
         </div>
@@ -431,11 +470,14 @@ interface StatTileProps {
   sublabelTone?: "success" | "danger" | "muted";
 }
 
-const accentClass: Record<StatTileProps["accent"], string> = {
-  default: "bg-accent/10 text-accent",
-  info: "bg-info/10 text-info",
-  warning: "bg-warning/10 text-warning",
-  danger: "bg-danger/10 text-danger",
+// The icon is inline with the label now, not a tinted tile, so only its
+// colour is needed. At 14px a tinted square was the loudest thing in the
+// cell and said nothing the label did not.
+const accentTextClass: Record<StatTileProps["accent"], string> = {
+  default: "text-accent",
+  info: "text-info",
+  warning: "text-warning",
+  danger: "text-danger",
 };
 
 const sublabelClass: Record<NonNullable<StatTileProps["sublabelTone"]>, string> = {
@@ -444,23 +486,83 @@ const sublabelClass: Record<NonNullable<StatTileProps["sublabelTone"]>, string> 
   muted: "text-text-muted",
 };
 
+// One quick-access tile.
+//
+// Its own component so it can read the resource's count. The sub-line used to
+// say "Manage blogs" under a tile titled Blogs, which is the title again as a
+// verb: a reader learns nothing from it and the row of tiles is a menu.
+//
+// The count comes from useResourceDashboardStats with the same endpoint and
+// the same params the per-resource widgets further down the page pass, so
+// React Query serves both from one request. A different param here would
+// quietly double the dashboard's requests, which is the kind of cost that
+// does not show up until somebody has twelve resources.
+function QuickAccessTile({
+  resource,
+  dateRange,
+}: {
+  resource: ResourceDefinition;
+  dateRange: DateRange;
+}) {
+  const Icon = getIcon(resource.icon);
+  const { data } = useResourceDashboardStats(
+    resource.endpoint,
+    dateRangeToQueryParams(dateRange),
+    pickTotalOnly,
+  );
+  const plural = (resource.label?.plural ?? resource.slug).toLowerCase();
+  const singular = (resource.label?.singular ?? resource.name).toLowerCase();
+
+  return (
+    <Link
+      href={"/resources/" + resource.slug}
+      className="group rounded-xl border border-border bg-bg-elevated p-4 transition-grit hover:border-border-strong"
+    >
+      <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-bg-hover text-text-secondary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <p className="text-sm font-semibold text-foreground group-hover:text-accent">
+        {resource.label?.plural ?? resource.name}
+      </p>
+      <p className="text-xs text-text-muted">
+        {data === undefined
+          ? "Manage " + plural
+          : data.toLocaleString() + " " + (data === 1 ? singular : plural)}
+      </p>
+    </Link>
+  );
+}
+
+// The tile needs one number out of the shared response.
+function pickTotalOnly(stats: ResourceDashboardStats) {
+  return stats.total;
+}
+
+// One cell of the strip at the top of the dashboard.
+//
+// The same shape as a resource page's stat cell: mono eyebrow with the icon
+// inline, a large tabular number, and a line saying what it means. It is a
+// link, which is the one difference, and the arrow appears on hover to say
+// so without taking a column of its own at rest.
 function StatTile({ label, value, icon, href, accent, sublabel, sublabelTone = "muted" }: StatTileProps) {
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-border bg-bg-elevated p-4 transition-colors hover:bg-bg-hover"
+      className="group block h-full px-5 py-4 transition-grit hover:bg-bg-tertiary"
     >
-      <div className="flex items-center justify-between">
-        <span className={"inline-flex h-9 w-9 items-center justify-center rounded-lg " + accentClass[accent]}>
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+        <span className={"shrink-0 " + accentTextClass[accent]} aria-hidden="true">
           {icon}
         </span>
-        <ArrowUpRight className="h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
-      </div>
-      <p className="mt-3 text-xs font-medium uppercase tracking-wide text-text-muted">{label}</p>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      {sublabel && (
-        <p className={"mt-1 text-xs " + sublabelClass[sublabelTone]}>{sublabel}</p>
-      )}
+        <span className="truncate">{label}</span>
+        <ArrowUpRight className="ml-auto h-3.5 w-3.5 shrink-0 opacity-0 transition-grit group-hover:opacity-100" />
+      </p>
+      <p className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.02em] text-foreground tabular-nums">
+        {value}
+      </p>
+      <p className={"mt-1.5 truncate text-[13px] " + sublabelClass[sublabelTone]}>
+        {sublabel ?? "\u00a0"}
+      </p>
     </Link>
   );
 }

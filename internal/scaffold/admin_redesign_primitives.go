@@ -442,3 +442,59 @@ export function Note({
 }
 `
 }
+
+// adminStatStripPrimitive is components/ui/stat-strip.tsx.
+//
+// The frame only: one bordered card, its cells divided by hairlines, folding
+// to two columns and then to one. What goes in a cell is the caller's
+// business, because there are two kinds. A resource page's cell fetches a
+// count and can narrow the table to it; the dashboard's cell is a link to
+// another page. The border, the radius, the dividers and the fold points are
+// the same for both, and were about to be written twice.
+func adminStatStripPrimitive() string {
+	return `import type { ReactNode } from "react";
+
+/**
+ * One bordered card divided into cells.
+ *
+ * Not four cards with gaps: four cards is four borders, four backgrounds and
+ * four shadows, each announcing itself as a separate object, when the numbers
+ * belong together and are read together.
+ *
+ * The dividers are borders on the cells rather than divide-x, because at two
+ * columns the third cell starts a new row and needs a top border where
+ * divide-x would still draw a left one.
+ */
+export function StatStrip({
+  children,
+  className = "",
+}: {
+  children: ReactNode[];
+  className?: string;
+}) {
+  const cells = children.filter(Boolean);
+  if (cells.length === 0) return null;
+
+  return (
+    <div className={"overflow-hidden rounded-xl border border-border bg-bg-elevated " + className}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {cells.map((cell, i) => (
+          <div
+            key={i}
+            className={
+              "min-w-0 border-border " +
+              (i > 0 ? "border-t sm:border-t-0 " : "") +
+              (i % 2 === 1 ? "sm:border-l " : "") +
+              (i >= 2 ? "sm:border-t lg:border-t-0 " : "") +
+              (i >= 1 ? "lg:border-l " : "")
+            }
+          >
+            {cell}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+`
+}

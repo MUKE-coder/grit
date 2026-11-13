@@ -545,6 +545,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { resourceKeys } from "@/hooks/use-resource";
 import { getIcon, TrendingUp, TrendingDown } from "@/lib/icons";
+import { StatStrip } from "@/components/ui/stat-strip";
 
 export interface StatCard {
   label: string;
@@ -752,32 +753,17 @@ export function StatCards({
   const reserveHint = stats.some((stat) => Boolean(stat.hint));
 
   return (
-    <div className="mb-8 overflow-hidden rounded-xl border border-border bg-bg-elevated">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, i) => (
-          <div
-            key={i}
-            className={
-              // The dividers are borders on the cells rather than divide-x,
-              // because at two columns the third cell starts a new row and
-              // needs a top border where divide-x would still draw a left one.
-              "min-w-0 border-border " +
-              (i > 0 ? "border-t sm:border-t-0 " : "") +
-              (i % 2 === 1 ? "sm:border-l " : "") +
-              (i >= 2 ? "sm:border-t lg:border-t-0 " : "") +
-              (i >= 1 ? "lg:border-l " : "")
-            }
-          >
-            <StatCardItem
-              stat={stat}
-              onFilter={onFilter}
-              active={stat.filter ? (isFilterActive?.(stat.filter) ?? false) : false}
-              reserveHint={reserveHint}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
+    <StatStrip className="mb-8">
+      {stats.map((stat, i) => (
+        <StatCardItem
+          key={i}
+          stat={stat}
+          onFilter={onFilter}
+          active={stat.filter ? (isFilterActive?.(stat.filter) ?? false) : false}
+          reserveHint={reserveHint}
+        />
+      ))}
+    </StatStrip>
   );
 }
 `

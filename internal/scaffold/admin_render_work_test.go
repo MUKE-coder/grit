@@ -107,8 +107,24 @@ func TestDashboardPlotsNoRandomNumbers(t *testing.T) {
 			t.Errorf("the dashboard still contains %q", gone)
 		}
 	}
-	if !strings.Contains(src, "<SeverityPieChart data={severitySeries} />") || !strings.Contains(src, "Recent activity") {
+	if !strings.Contains(src, "<SeverityPieChart data={severitySlices} />") || !strings.Contains(src, "Recent activity") {
 		t.Error("the dashboard lost a widget backed by real data")
+	}
+
+	// And it does not invent one when there is nothing to show.
+	//
+	// An empty 24 hours used to be answered with [{ name: "Info", value: 1 }],
+	// a made-up data point so the donut had something to draw. A chart that
+	// fabricates a number rather than look empty is worse than an empty
+	// chart, because a reader cannot tell which they are looking at. The
+	// empty state says it plainly.
+	if strings.Contains(src, `{ name: "Info", value: 1,`) {
+		t.Error("the severity donut invents an Info event when there are none, so an " +
+			"empty 24 hours is drawn as one that had an event in it")
+	}
+	if !strings.Contains(src, "severityTotal === 0 ? (") {
+		t.Error("the severity card has no empty state, so with no events it draws an " +
+			"empty donut and three zeros rather than saying so")
 	}
 	if strings.Contains(adminDashboardCatalogTS(), "system:activity-7d") {
 		t.Error("dashboard settings still offers the removed chart")
