@@ -23,6 +23,19 @@ Also worth knowing:
 ---
 
 
+## v3.531.1 - November 13, 2026
+
+### The architecture list was drawn twice
+
+On Git Bash, `grit new` showed the architecture picker twice: a stale copy a few lines short and missing `Mobile`, then the live one underneath it, each with its own cursor. Which list the arrow keys were moving through was anyone's guess.
+
+The picker is one form of several groups, and a form is drawn at the height of its tallest group. The architecture list needs nine lines and the theme list twelve. huh learns the terminal's size from a message queued during start-up, which means it arrives after the first frame is already on screen: the form goes up at nine lines and is repainted at twelve. Repainting at a new height means moving the cursor up and erasing, and Git Bash does not reliably erase, so the short frame stayed where it was.
+
+The size is now measured and handed to the form before the first frame, so there is only ever one height to draw and no repaint at a different one to get wrong. The numbers are the same ones huh arrived at on its own: what changed is when they are known, not what they are.
+
+Every picker in `grit new` and `grit setup` goes through the same path now. A test drives the form as the model it is and measures the first frame against the frames after it, with a companion test that fails if the two ever agree for free, so the guard cannot quietly stop testing anything.
+
+
 ## v3.531.0 - November 13, 2026
 
 ### grit generate field reaches the test factory

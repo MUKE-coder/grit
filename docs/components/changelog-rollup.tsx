@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 9 to 15, 2026",
-    count: 49,
+    count: 50,
     entries: [
+      { version: "3.531.1", title: "The architecture list was drawn twice" },
       { version: "3.531.0", title: "grit generate field reaches the test factory" },
       { version: "3.530.0", title: "Two things that floated over the page" },
       { version: "3.529.0", title: "The orphan sweep asks before it deletes, and authorization stops reloading the user" },

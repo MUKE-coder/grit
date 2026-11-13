@@ -455,7 +455,11 @@ func Prompt(o *Options) error {
 		),
 	}
 
-	if err := huh.NewForm(groups...).WithTheme(ui.PromptTheme()).Run(); err != nil {
+	// RunForm, not Run: a form of several groups is drawn at its tallest
+	// group's height, and huh only learns that height from a message that
+	// arrives after the first frame. The repaint at the new height leaves the
+	// first one on screen in Git Bash.
+	if err := ui.RunForm(huh.NewForm(groups...)); err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
 			return ErrCancelled
 		}
@@ -509,7 +513,7 @@ func Confirm(o Options) (bool, error) {
 	printSummary(o)
 
 	create := true
-	err := huh.NewForm(
+	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title("Create this project?").
@@ -517,7 +521,8 @@ func Confirm(o Options) (bool, error) {
 				Negative("Cancel").
 				Value(&create),
 		),
-	).WithTheme(ui.PromptTheme()).Run()
+	)
+	err := ui.RunForm(form)
 	if err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
 			return false, nil
@@ -538,7 +543,7 @@ func AskStar(o Options) (bool, error) {
 		return true, nil
 	}
 	yes := false
-	err := huh.NewForm(
+	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title("Star Grit on GitHub?").
@@ -547,7 +552,8 @@ func AskStar(o Options) (bool, error) {
 				Negative("Not now").
 				Value(&yes),
 		),
-	).WithTheme(ui.PromptTheme()).Run()
+	)
+	err := ui.RunForm(form)
 	if err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
 			return false, nil
@@ -565,7 +571,7 @@ func AskStart(o Options) (bool, error) {
 		return *o.Start, nil
 	}
 	yes := true
-	err := huh.NewForm(
+	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title("Run grit start now?").
@@ -574,7 +580,8 @@ func AskStart(o Options) (bool, error) {
 				Negative("Not yet").
 				Value(&yes),
 		),
-	).WithTheme(ui.PromptTheme()).Run()
+	)
+	err := ui.RunForm(form)
 	if err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
 			return false, nil

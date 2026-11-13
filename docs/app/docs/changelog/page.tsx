@@ -72,6 +72,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.531.1 */}
+            <div className="mb-12" id="v3.531.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.531.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The architecture list was drawn twice</h3>
+                <p>
+                  On Git Bash, <code>grit new</code> showed the architecture
+                  picker twice: a stale copy a few lines short and missing{' '}
+                  <code>Mobile</code>, then the live one underneath it, each
+                  with its own cursor. Which list the arrow keys were moving
+                  through was anyone&apos;s guess.
+                </p>
+                <p>
+                  The picker is one form of several groups, and a form is drawn
+                  at the height of its tallest group. The architecture list
+                  needs nine lines and the theme list twelve. huh learns the
+                  terminal&apos;s size from a message queued during start-up,
+                  which means it arrives after the first frame is already on
+                  screen: the form goes up at nine lines and is repainted at
+                  twelve. Repainting at a new height means moving the cursor up
+                  and erasing, and Git Bash does not reliably erase, so the
+                  short frame stayed where it was.
+                </p>
+                <p>
+                  The size is now measured and handed to the form before the
+                  first frame, so there is only ever one height to draw and no
+                  repaint at a different one to get wrong. The numbers are the
+                  same ones huh arrived at on its own: what changed is when
+                  they are known, not what they are.
+                </p>
+                <p>
+                  Every picker in <code>grit new</code> and{' '}
+                  <code>grit setup</code> goes through the same path now. A test
+                  drives the form as the model it is and measures the first
+                  frame against the frames after it, with a companion test that
+                  fails if the two ever agree for free, so the guard cannot
+                  quietly stop testing anything.
+                </p>
+              </div>
+            </div>
+
             {/* v3.531.0 */}
             <div className="mb-12" id="v3.531.0">
               <div className="flex items-center gap-3 mb-4">

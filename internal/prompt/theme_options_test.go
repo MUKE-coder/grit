@@ -64,9 +64,12 @@ func themeSelectBlock(t *testing.T) string {
 		t.Fatal("no theme select in prompt.go")
 	}
 	rest := s[start:]
-	end := strings.Index(rest, "Value(&theme)")
+	// The form is built in newProjectForm, which takes the destinations as
+	// parameters, so the bind reads Value(theme) and not Value(&theme).
+	end := strings.Index(rest, "Value(theme)")
 	if end < 0 {
-		t.Fatal("the theme select does not bind to &theme")
+		t.Fatal("the theme select does not bind to theme, so this test cannot " +
+			"find where its options end")
 	}
 	return rest[:end]
 }

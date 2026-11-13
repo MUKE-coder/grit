@@ -11,12 +11,15 @@ import (
 // Returns the selected architecture and frontend. Skips prompts for fields
 // that are already set (via CLI flags).
 //
-// All three selects are wrapped in a single huh.Form so the TUI renders
-// exactly once per step instead of three separate render cycles. On
-// terminals with weak ANSI support (Git Bash / MINGW64), individual
-// .Run() calls leave stale frames in the scrollback because cursor-up
-// codes don't fully apply. A Form runs one inline render that cleans up
-// after itself, producing a single tidy block of output.
+// Every picker is one huh.Form rather than a .Run() each, so the TUI renders
+// once per step instead of once per question. On terminals with weak ANSI
+// support (Git Bash / MINGW64), separate .Run() calls leave stale frames in
+// the scrollback because the cursor-up codes do not fully apply.
+//
+// The same weakness is why ui.RunForm, and not form.Run, finishes the job: a
+// form of several groups is drawn at its tallest group's height, and huh only
+// learns that height from a message queued in Init, so the first frame is
+// shorter than the rest. RunForm settles the size before the first frame.
 func RunNewProjectPrompt(opts *scaffold.Options) error {
 	arch := string(opts.Architecture)
 	frontend := string(opts.Frontend)
@@ -24,14 +27,47 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	db := opts.DBProvider
 	storage := opts.StorageDriver
 
+	form := newProjectForm(opts, &arch, &frontend, &theme, &db, &storage)
+
+	// One theme for every picker, from internal/ui: huh's default draws a
+	// coloured border down the whole form and paints the options in its own
+	// palette, which is a second design living beside the one the rest of the
+	// output follows. RunForm also settles the size before the first frame,
+	// which is what stops the list being drawn twice on Git Bash.
+	if err := ui.RunForm(form); err != nil {
+		return err
+	}
+
+	if arch == "full" {
+		// Full is a shorthand, not an architecture. Normalize() turns opts.Full
+		// into triple + web + admin + docs + expo + desktop.
+		opts.Full = true
+	} else {
+		opts.Architecture = scaffold.Architecture(arch)
+	}
+	opts.Frontend = scaffold.Frontend(frontend)
+	opts.Theme = theme
+	opts.DBProvider = db
+	opts.StorageDriver = storage
+	return nil
+}
+
+// newProjectForm builds the pickers.
+//
+// Separate from running them so a test can drive the form as the bubbletea
+// model it is, which is the only way to see what a frame actually measures.
+func newProjectForm(
+	opts *scaffold.Options,
+	arch, frontend, theme, db, storage *string,
+) *huh.Form {
 	// "full" is a sentinel, not an Architecture enum: it maps to opts.Full,
 	// which Normalize() expands to triple + web + admin + docs + expo + desktop.
 	needsFrontend := func() bool {
-		a := scaffold.Architecture(arch)
-		return arch == "full" || a == scaffold.ArchSingle || a == scaffold.ArchDouble || a == scaffold.ArchTriple
+		a := scaffold.Architecture(*arch)
+		return *arch == "full" || a == scaffold.ArchSingle || a == scaffold.ArchDouble || a == scaffold.ArchTriple
 	}
 
-	form := huh.NewForm(
+	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Key("arch").
@@ -44,7 +80,7 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 					huh.NewOption("API Only — Go API (no frontend)", string(scaffold.ArchAPI)),
 					huh.NewOption("Mobile — API + Expo (React Native)", string(scaffold.ArchMobile)),
 				).
-				Value(&arch),
+				Value(arch),
 		).WithHideFunc(func() bool { return opts.Architecture != "" }),
 
 		huh.NewGroup(
@@ -55,7 +91,7 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 					huh.NewOption("Next.js — SSR, SEO, App Router", string(scaffold.FrontendNext)),
 					huh.NewOption("TanStack Router — Vite, fast builds, small bundle (SPA)", string(scaffold.FrontendTanStack)),
 				).
-				Value(&frontend),
+				Value(frontend),
 		).WithHideFunc(func() bool {
 			return opts.Frontend != "" || !needsFrontend()
 		}),
@@ -84,7 +120,7 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 					huh.NewOption("Mono — a fine grid beside a panel of proof, black/white (Inter)", "mono"),
 					huh.NewOption("Emerald — a form beside a customer quote, green (Inter)", "emerald"),
 				).
-				Value(&theme),
+				Value(theme),
 		).WithHideFunc(func() bool {
 			return opts.Theme != "" || !needsFrontend()
 		}),
@@ -106,7 +142,7 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 				Title("Select database").
 				Description("Written to .env as DB_PROVIDER. Change it later by editing that line.").
 				Options(databaseOptions()...).
-				Value(&db),
+				Value(db),
 		).WithHideFunc(func() bool { return opts.DBProvider != "" }),
 
 		// Where uploads go. Asked of every architecture for the same reason as
@@ -128,30 +164,9 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 				Title("Select file storage").
 				Description("Written to .env as STORAGE_DRIVER. s3, r2 and b2 need credentials before uploads work.").
 				Options(storageOptions()...).
-				Value(&storage),
+				Value(storage),
 		).WithHideFunc(func() bool { return opts.StorageDriver != "" }),
 	)
-
-	// One theme for every picker, from internal/ui: huh's default draws a
-	// coloured border down the whole form and paints the options in its own
-	// palette, which is a second design living beside the one the rest of the
-	// output follows.
-	if err := form.WithTheme(ui.PromptTheme()).Run(); err != nil {
-		return err
-	}
-
-	if arch == "full" {
-		// Full is a shorthand, not an architecture. Normalize() turns opts.Full
-		// into triple + web + admin + docs + expo + desktop.
-		opts.Full = true
-	} else {
-		opts.Architecture = scaffold.Architecture(arch)
-	}
-	opts.Frontend = scaffold.Frontend(frontend)
-	opts.Theme = theme
-	opts.DBProvider = db
-	opts.StorageDriver = storage
-	return nil
 }
 
 // storageOptions builds the picker's list from the providers the flag accepts.
