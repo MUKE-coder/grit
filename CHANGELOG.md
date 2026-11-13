@@ -23,6 +23,27 @@ Also worth knowing:
 ---
 
 
+## v3.531.0 - November 13, 2026
+
+### grit generate field reaches the test factory
+
+Adding a column updated the model, the handler, the service, the schemas, the type and the admin screen, and left the test factory alone. It was the one generated file the command did not touch.
+
+A new NOT NULL column therefore broke every test that creates a fixture, with a constraint error pointing at the factory rather than at the command that caused it. A nullable one was worse: every fixture quietly got the zero value, so the tests passed while describing a record nobody would ever save.
+
+The factory now carries the same kind of marker the admin definition and the routes file already had, and the value comes from the generator's own `factoryValue`, so a field type added tomorrow produces the same fixture whichever command wrote it.
+
+One case worth naming: the counter. The generator only writes `n := next()` when a field interpolates it, decided from the fields the resource had at generation time, so a column added later can be the first one that needs it. Without the declaration the injected value referenced an undefined `n` and the factory package stopped compiling, which breaks the build of every test in the project.
+
+#### And the drift check stops reporting a file it should not
+
+`generated-file-behind-its-source` was reporting the generated handler test after a field was added. Reading it settles the question: it builds fixtures with `factory.CreateX`, sends empty maps for its update assertions, and names one field in the bulk-edit patch. A new column changes none of that.
+
+Safe to exclude because the failure mode is loud. Rename or remove the field it names and the patch targets a column the API does not have, so the test fails on the next run. The silent wrong answer is what the check is for, and a test cannot produce one.
+
+Together these mean the supported way to add a column finishes with `grit doctor` clean, which it did not before. A check that reports something the framework itself causes on its own happy path is a check people learn to ignore, and it takes the real findings with it.
+
+
 ## v3.530.0 - November 13, 2026
 
 ### Two things that floated over the page

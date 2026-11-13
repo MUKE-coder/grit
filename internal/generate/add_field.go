@@ -118,6 +118,13 @@ func AddField(resourceName, spec string) error {
 	}
 	g.injectImportField(names, f)
 	g.injectServiceSort(names, f)
+	// The fixtures. Last, and not fatal: by here the column is in the model,
+	// the API and the admin, and a factory that could not be edited is worth
+	// a line of output rather than an error that makes the command look like
+	// it did nothing.
+	if err := g.injectFactoryField(names, f); err != nil {
+		fmt.Printf("  • the test factory was not updated: %v\n", err)
+	}
 	return nil
 }
 

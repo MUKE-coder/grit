@@ -72,6 +72,73 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.531.0 */}
+            <div className="mb-12" id="v3.531.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.531.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit generate field reaches the test factory</h3>
+                <p>
+                  Adding a column updated the model, the handler, the service,
+                  the schemas, the type and the admin screen, and left the test
+                  factory alone. It was the one generated file the command did
+                  not touch.
+                </p>
+                <p>
+                  A new NOT NULL column therefore broke every test that creates
+                  a fixture, with a constraint error pointing at the factory
+                  rather than at the command that caused it. A nullable one was
+                  worse: every fixture quietly got the zero value, so the tests
+                  passed while describing a record nobody would ever save.
+                </p>
+                <p>
+                  The factory now carries the same kind of marker the admin
+                  definition and the routes file already had, and the value
+                  comes from the generator&apos;s own{' '}
+                  <code>factoryValue</code>, so a field type added tomorrow
+                  produces the same fixture whichever command wrote it.
+                </p>
+                <p>
+                  One case worth naming: the counter. The generator only writes{' '}
+                  <code>n := next()</code> when a field interpolates it, decided
+                  from the fields the resource had at generation time, so a
+                  column added later can be the first one that needs it. Without
+                  the declaration the injected value referenced an undefined{' '}
+                  <code>n</code> and the factory package stopped compiling,
+                  which breaks the build of every test in the project.
+                </p>
+
+                <h4>And the drift check stops reporting a file it should not</h4>
+                <p>
+                  <code>generated-file-behind-its-source</code> was reporting
+                  the generated handler test after a field was added. Reading it
+                  settles the question: it builds fixtures with{' '}
+                  <code>factory.CreateX</code>, sends empty maps for its update
+                  assertions, and names one field in the bulk-edit patch. A new
+                  column changes none of that.
+                </p>
+                <p>
+                  Safe to exclude because the failure mode is loud. Rename or
+                  remove the field it names and the patch targets a column the
+                  API does not have, so the test fails on the next run. The
+                  silent wrong answer is what the check is for, and a test
+                  cannot produce one.
+                </p>
+                <p>
+                  Together these mean the supported way to add a column finishes
+                  with <code>grit doctor</code> clean, which it did not before.
+                  A check that reports something the framework itself causes on
+                  its own happy path is a check people learn to ignore, and it
+                  takes the real findings with it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.530.0 */}
             <div className="mb-12" id="v3.530.0">
               <div className="flex items-center gap-3 mb-4">

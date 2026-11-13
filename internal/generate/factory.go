@@ -108,6 +108,11 @@ func (g *Generator) factorySource(names Names) string {
 	}
 	fmt.Fprintf(&b, "\trecord := &models.%s{\n", names.Pascal)
 	b.WriteString(assignments)
+	// The anchor `grit generate field` injects before, so a column added to
+	// an existing resource reaches the fixtures too. Without it the factory
+	// was the one generated file that command did not touch, and a new
+	// NOT NULL column broke every test that creates one.
+	b.WriteString("\t\t// grit:factory:auto-end\n")
 	b.WriteString("\t}\n\n")
 	b.WriteString("\tfor _, apply := range overrides {\n\t\tapply(record)\n\t}\n")
 	b.WriteString("\treturn record\n}\n\n")

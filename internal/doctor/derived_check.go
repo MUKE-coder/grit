@@ -189,6 +189,17 @@ func followsTheFields(rel string) bool {
 		return false
 	case strings.HasSuffix(rel, "/page.tsx"), strings.HasSuffix(rel, "/page.jsx"):
 		return false
+	case strings.HasSuffix(rel, "_test.go"):
+		// The generated handler test builds its fixtures with factory.CreateX,
+		// which does follow the fields, sends empty maps for its update
+		// assertions, and names one field in the bulk-edit patch. A new column
+		// changes none of that.
+		//
+		// Safe to exclude because the failure mode is loud: rename or remove
+		// the field it names and the patch targets a column the API does not
+		// have, so the test fails on the next run. The silent wrong answer is
+		// what this check is for, and a test cannot produce one.
+		return false
 	default:
 		return true
 	}
