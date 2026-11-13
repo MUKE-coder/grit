@@ -23,6 +23,21 @@ Also worth knowing:
 ---
 
 
+## v3.537.0 - November 14, 2026
+
+### The account page was 8,900 pixels long
+
+Nine stacked cards and every session you have ever opened. Reaching the danger zone meant scrolling past every form on the page, and nothing at the top said the page even had one. It is 3,000 pixels now.
+
+#### A section nav that stays put
+
+Profile, Security, Sessions, Danger zone, sticky down the left at 1024px and up. Hidden below that, where a second column costs more than it gives and the browser's own find is faster.
+
+#### Five sessions, then the rest on request
+
+Every sign-in makes a session, so a developer who has been working on a project all afternoon opened this page to two dozen rows that all said &ldquo;Chrome on Windows&rdquo;: three thousand pixels of a page they came to for one of them. The current device sorts first, because it is the one you are least likely to want to revoke and the one you need to recognise to avoid revoking it.
+
+
 ## v3.536.0 - November 14, 2026
 
 ### Activity, cron, and pages that say why they are empty

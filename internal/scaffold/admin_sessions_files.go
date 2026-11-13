@@ -15,6 +15,8 @@ package scaffold
 func adminActiveSessions() string {
 	return `"use client";
 
+import { useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { Monitor, Smartphone, Loader2, LogOut, ShieldCheck } from "@/lib/icons";
@@ -98,6 +100,20 @@ export function ActiveSessions() {
   const sessions = data ?? [];
   const others = sessions.filter((s) => !s.current).length;
 
+  // Show a handful, then offer the rest.
+  //
+  // Every sign-in makes a session, so a developer who has been working on
+  // the project all afternoon opens this page to two dozen rows that all say
+  // "Chrome on Windows", which is three thousand pixels of a page somebody
+  // came to for one of them. The current device is always first, because it
+  // is the one you are least likely to want to revoke and the one you need
+  // to recognise to avoid revoking it.
+  const VISIBLE = 5;
+  const [showAll, setShowAll] = useState(false);
+  const ordered = [...sessions].sort((a, b) => Number(b.current) - Number(a.current));
+  const shown = showAll ? ordered : ordered.slice(0, VISIBLE);
+  const hidden = ordered.length - shown.length;
+
   return (
     <div className="space-y-3">
       {isLoading ? (
@@ -109,7 +125,7 @@ export function ActiveSessions() {
         <p className="py-6 text-sm text-text-secondary">No active sessions.</p>
       ) : (
         <ul className="space-y-2">
-          {sessions.map((s) => {
+          {shown.map((s) => {
             const device = describeDevice(s.user_agent);
             const Icon = device.mobile ? Smartphone : Monitor;
             return (
@@ -156,6 +172,16 @@ export function ActiveSessions() {
             );
           })}
         </ul>
+      )}
+
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="w-full rounded-lg border border-dashed border-border-strong py-2 text-sm text-text-secondary transition-grit hover:border-accent-line hover:text-foreground"
+        >
+          Show {hidden} more {hidden === 1 ? "session" : "sessions"}
+        </button>
       )}
 
       {others > 0 && (

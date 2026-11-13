@@ -142,11 +142,39 @@ export default function AccountPage() {
     <div>
       <PageHeader title="Account" subtitle="Your details, how you sign in, and where you are signed in." />
 
+      <div className="lg:grid lg:grid-cols-[180px_minmax(0,1fr)] lg:gap-8">
+        {/* Where you are in a page that is nine cards long.
+            Without it, reaching the danger zone means scrolling past every
+            form on the page, and there is no way to tell from the top that
+            the page even has one. Hidden under 1024px, where a second column
+            costs more than it gives and the browser's own find is faster. */}
+        <nav aria-label="Account sections" className="hidden lg:block">
+          <ul className="sticky top-[76px] space-y-0.5 text-sm">
+            {[
+              { href: "#profile", label: "Profile" },
+              { href: "#security", label: "Security" },
+              { href: "#devices", label: "Sessions" },
+              { href: "#danger", label: "Danger zone" },
+            ].map((item) => (
+              <li key={item.href}>
+                <a
+                  href={item.href}
+                  className="block rounded-md px-3 py-1.5 text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="min-w-0">
+
       {/* Hero card — Profile Picture section with explicit header so the
           user knows what the Upload New button replaces. Layout: gradient
           banner up top, avatar floating half-out, name/email/role next to
           it, prominent Upload New CTA on the right. */}
-      <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+      <section id="profile" className="mb-6 scroll-mt-24 overflow-hidden rounded-2xl border border-border bg-bg-elevated">
         <header className="border-b border-border px-6 py-4">
           <p className="text-sm font-semibold text-foreground">Profile Picture</p>
           <p className="mt-0.5 text-xs text-text-muted">
@@ -352,7 +380,7 @@ export default function AccountPage() {
           that did it is the one that could have undone it. The API refuses it,
           and this says so rather than offering a button that returns 403 after
           somebody has typed their password into the dialog behind it. */}
-      <section className="mt-6 rounded-2xl border border-danger/30 bg-danger/5 p-6">
+      <section id="danger" className="mt-6 scroll-mt-24 rounded-2xl border border-danger-line bg-danger-soft p-6">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-foreground">Close account</p>
@@ -374,6 +402,9 @@ export default function AccountPage() {
           )}
         </div>
       </section>
+
+        </div>
+      </div>
 
       <DeleteAccountDialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} />
     </div>

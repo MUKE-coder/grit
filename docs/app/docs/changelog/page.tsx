@@ -72,6 +72,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.537.0 */}
+            <div className="mb-12" id="v3.537.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.537.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The account page was 8,900 pixels long</h3>
+                <p>
+                  Nine stacked cards and every session you have ever opened.
+                  Reaching the danger zone meant scrolling past every form on
+                  the page, and nothing at the top said the page even had one.
+                  It is 3,000 pixels now.
+                </p>
+
+                <h4>A section nav that stays put</h4>
+                <p>
+                  Profile, Security, Sessions, Danger zone, sticky down the
+                  left at 1024px and up. Hidden below that, where a second
+                  column costs more than it gives and the browser&apos;s own
+                  find is faster.
+                </p>
+
+                <h4>Five sessions, then the rest on request</h4>
+                <p>
+                  Every sign-in makes a session, so a developer who has been
+                  working on a project all afternoon opened this page to two
+                  dozen rows that all said &ldquo;Chrome on Windows&rdquo;:
+                  three thousand pixels of a page they came to for one of them.
+                  The current device sorts first, because it is the one you are
+                  least likely to want to revoke and the one you need to
+                  recognise to avoid revoking it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.536.0 */}
             <div className="mb-12" id="v3.536.0">
               <div className="flex items-center gap-3 mb-4">
