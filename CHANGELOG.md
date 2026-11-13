@@ -23,6 +23,31 @@ Also worth knowing:
 ---
 
 
+## v3.535.0 - November 14, 2026
+
+### The system hub and the health page
+
+The fourth redesign release. Two pages that existed to answer &ldquo;is anything wrong&rdquo; and made you read eight cards to find out.
+
+#### Health opens with the answer
+
+One card at the top: the sentence, the counts, and a bar in those proportions, so the answer arrives before any of the words do. Under it the components are grouped into{" "} **Running** and **Not configured**. A single grid put Redis, which a deployment may run without on purpose, between two working components with only a word in small type to tell them apart.
+
+Each not-configured card carries what turning it on would take, in a dashed well:{" "} `Set REDIS_URL in .env to turn this on`. &ldquo;Off&rdquo; answers what, and leaves why and how.
+
+States are pills now. They were a tick for healthy, a warning triangle for degraded, and small uppercase text for the other two: three different objects for one dimension, two of them colour-only, which is nothing at all to a reader who cannot separate the green from the red.
+
+The header's status pill is gone. It said the same thing as the pill in the top bar and the same thing as the card below it: one sentence, three times, on one screen.
+
+#### The hub filters across every tab
+
+Typing in the filter searches all five tabs, because the reason somebody uses it is that they do not know which tab the thing is under. The tabs carry counts, the tiles say{" "} **Open**, and their status pills are live: System health reads &ldquo;6 healthy &middot; 2 off&rdquo; and, on a deployment without Redis, Background Jobs and Cron read &ldquo;Off &middot; needs Redis&rdquo;.
+
+#### One health query
+
+The top bar pill, the sidebar badge, the dashboard tile, the hub tiles and the health page read one{" "} `useSystemHealth()`. They were separate fetches with separate copies of the response type, which is five requests per page load and, worse, five answers that can differ: the pill saying all clear while a tile two inches below says two components are off.
+
+
 ## v3.534.0 - November 14, 2026
 
 ### The dashboard, and a donut that stopped making things up

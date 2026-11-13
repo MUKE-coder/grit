@@ -26,9 +26,15 @@ import Link from "next/link";
 import { useModules } from "@/hooks/use-modules";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SYSTEM_NAV, INTERNAL_ICON } from "@/components/chrome/CollapsibleSidebar";
+import { HubTile } from "@/components/ui/hub-tile";
+import { UnderlineTabs } from "@/components/ui/tabs-underline";
+import { EmptyState } from "@/components/ui/empty-state";
+import { type PillTone } from "@/components/ui/pill";
+import { inputClasses } from "@/components/ui/input";
+import { useSystemHealth, stateOf } from "@/hooks/use-system-health";
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
-  MessageSquare, Shield, ShieldCheck, TrendingUp, Upload, Link as LinkIcon,
+  MessageSquare, Shield, ShieldCheck, TrendingUp, Upload, Link as LinkIcon, Search,
   UserCheck, Settings, LayoutGrid, KeyRound, Workflow, Server, Trash2,
 } from "@/lib/icons";
 
@@ -127,51 +133,147 @@ export default function SystemHubPage() {
   const tabs: string[] = [...CATEGORIES, ...(extensions.length ? [EXTENSIONS] : [])];
   const [active, setActive] = useState<string>(CATEGORIES[0]);
   const current = tabs.includes(active) ? active : CATEGORIES[0];
+  const [filter, setFilter] = useState("");
+
+  const health = useSystemHealth();
+
+  // Everything on the hub, as one list, so the filter can search across tabs.
+  //
+  // A filter that only searches the tab you are on is a filter you have to
+  // use five times, and the whole reason somebody types into this box is that
+  // they do not know which tab the thing is under.
+  const all: Array<{
+    href: string;
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    category: string;
+  }> = [
+    ...tiles.map((t) => ({
+      href: t.href,
+      icon: t.icon,
+      title: t.title,
+      description: t.description,
+      category: t.category as string,
+    })),
+    ...extensions.map((n) => ({
+      href: n.href,
+      icon: INTERNAL_ICON[n.iconKey] ?? <LayoutGrid className="h-5 w-5" />,
+      title: n.label,
+      description: "Added by a Grit plugin.",
+      category: EXTENSIONS,
+    })),
+  ];
+
+  const query = filter.trim().toLowerCase();
+  const matches = query
+    ? all.filter((t) =>
+        (t.title + " " + t.description + " " + t.category).toLowerCase().includes(query)
+      )
+    : all.filter((t) => t.category === current);
+
+  const countFor = (tab: string) => all.filter((t) => t.category === tab).length;
+
+  // The status line each tile shows, from facts the panel already has.
+  //
+  // A grid of tiles that all say the same static sentence is a menu wearing a
+  // dashboard's clothes. These say what is true now, and the one that matters
+  // most is that a deployment without Redis has two components off on purpose
+  // rather than two things broken.
+  const statusFor = (href: string): { text: string; tone: PillTone } | undefined => {
+    if (href === "/system/health") {
+      if (health.summary.degraded > 0) {
+        return { text: health.summary.degraded + " degraded", tone: "bad" };
+      }
+      if (health.summary.off > 0) {
+        return {
+          text: health.summary.healthy + " healthy · " + health.summary.off + " off",
+          tone: "neutral",
+        };
+      }
+      if (health.summary.healthy > 0) {
+        return { text: health.summary.healthy + " healthy", tone: "good" };
+      }
+      return undefined;
+    }
+    if (href === "/system/jobs" || href === "/system/cron") {
+      const redis = stateOf(health.data?.redis);
+      if (redis === "off") return { text: "Off · needs Redis", tone: "neutral" };
+      if (redis === "degraded") return { text: "Redis degraded", tone: "bad" };
+      return undefined;
+    }
+    return undefined;
+  };
 
   return (
     <div>
       <PageHeader
         title="System"
         subtitle="Every operational surface for this app, grouped. Pick a tab, then a tile."
+        actions={
+          <div className="relative w-full sm:w-72">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              placeholder="Filter every tab…"
+              aria-label="Filter system pages"
+              className={inputClasses({ className: "pl-9 pr-3" })}
+            />
+          </div>
+        }
       />
 
-      {/* Category tabs */}
-      <div className="mb-6 flex flex-wrap gap-1 border-b border-border">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setActive(t)}
-            className={
-              "relative px-4 py-2.5 text-sm font-medium transition-colors " +
-              (current === t ? "text-accent" : "text-text-secondary hover:text-foreground")
-            }
-          >
-            {t}
-            {current === t && (
-              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent" />
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Hidden while filtering: the results span every tab, so highlighting
+          one of them would be a lie about where they came from. */}
+      {!query && (
+        <UnderlineTabs
+          className="mb-6"
+          label="System areas"
+          value={current}
+          onChange={setActive}
+          tabs={tabs.map((t) => ({ value: t, label: t, count: countFor(t) }))}
+        />
+      )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {current === EXTENSIONS
-          ? extensions.map((n) => (
-              <Tile
-                key={n.href}
-                href={n.href}
-                icon={INTERNAL_ICON[n.iconKey] ?? <LayoutGrid className="h-5 w-5" />}
-                title={n.label}
-                description="Added by a Grit plugin."
+      {query && (
+        <p className="mb-4 text-sm text-text-secondary">
+          {matches.length === 0
+            ? "Nothing matches"
+            : matches.length + (matches.length === 1 ? " page" : " pages") + " across every tab"}
+        </p>
+      )}
+
+      {matches.length === 0 ? (
+        <div className="rounded-xl border border-border bg-bg-elevated">
+          <EmptyState
+            icon={<LayoutGrid className="h-5 w-5" />}
+            title={"Nothing matches “" + filter.trim() + "”"}
+            description="Every system page is searched, not only the tab you were on. Try a shorter word."
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {matches.map((t) => {
+            const status = statusFor(t.href);
+            return (
+              <HubTile
+                key={t.href}
+                href={t.href}
+                icon={t.icon}
+                title={t.title}
+                description={t.description}
+                status={status?.text}
+                statusTone={status?.tone}
               />
-            ))
-          : tiles
-              .filter((t) => t.category === current)
-              .map((t) => (
-                <Tile key={t.href} href={t.href} icon={t.icon} title={t.title} description={t.description} />
-              ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <FileText className="hidden" />
     </div>
@@ -194,72 +296,23 @@ import { SkeletonCards } from "@/components/ui/Skeleton";
 import { IconButton } from "@/components/ui/IconButton";
 import { apiClient } from "@/lib/api-client";
 import {
+  summarise,
+  stateOf,
+  type HealthState,
+  type HealthResponse,
+} from "@/hooks/use-system-health";
+import { Note } from "@/components/ui/note";
+import { Pill } from "@/components/ui/pill";
+import {
   CheckCircle, AlertCircle, AlertTriangle, RefreshCw, Database, Mail, Server,
   Activity as ActivityIcon, HardDrive, Zap, FolderOpen, Webhook,
 } from "@/lib/icons";
 
-// The four states /api/health answers in.
-//
-// "off" is a component this deployment never configured, which is not a
-// problem. "unknown" is a probe that could not find out, which is not an
-// accusation either. Only "degraded" is bad news.
-//
-// This page used to reconstruct the state from a boolean, and did it
-// differently per component: Redis read ok === false ? down : ok ? ok :
-// unknown, email read configured ? ok : unknown, and storage was not on the
-// page at all. Nothing here infers a state any more.
-type HealthState = "ok" | "degraded" | "off" | "unknown";
-
-interface Component {
-  state?: HealthState;
-  // The state as a boolean. Kept because an API that has not been upgraded yet
-  // sends only this, and because a load balancer reads it.
-  ok?: boolean;
-  detail?: string;
-  latency_ms?: number;
-  tables?: number;
-  queued?: number;
-  active?: number;
-  configured?: boolean;
-  driver?: string;
-  subscribers?: number;
-  capacity?: number;
-  dropped?: number;
-}
-
-interface HealthResponse {
-  status: HealthState;
-  database?: Component;
-  redis?: Component;
-  api?: Component;
-  jobs?: Component;
-  email?: Component;
-  storage?: Component;
-  events?: Component;
-  // This replica's hub. With several replicas each reports its own share, so
-  // the numbers are per process, not per deployment.
-  realtime?: {
-    connections: number;
-    users: number;
-    channels: number;
-    messages_sent: number;
-    messages_dropped: number;
-    backplane: boolean;
-    backplane_publish_errors: number;
-  };
-}
-
-// stateOf reads a component's state, with a fallback for an API older than it.
-//
-// A component that is not in the response was not reported at all, so unknown.
-// An older API sends only ok, where false covered both "down" and "never
-// configured": unknown is the honest reading, and reading it as down is what
-// put a red card on every machine that runs without Redis.
-function stateOf(component?: Component): HealthState {
-  if (!component) return "unknown";
-  if (component.state) return component.state;
-  return component.ok ? "ok" : "unknown";
-}
+// The shapes and the state reading live with the shared query, in
+// hooks/use-system-health. They were declared here as well, which is two
+// copies of a type that describes one endpoint's response: the pill in the
+// top bar and this page would have disagreed about what "off" means the first
+// time one of them was edited.
 
 interface Card {
   key: string;
@@ -285,6 +338,7 @@ export default function SystemHealthPage() {
   });
 
   const overall: HealthState = isError ? "degraded" : (data?.status ?? "unknown");
+  const summary = summarise(data, isError);
   const cards: Card[] = data ? [
     {
       key: "database",
@@ -366,33 +420,21 @@ export default function SystemHealthPage() {
       <PageHeader
         title="System Health"
         subtitle="Real-time status of every platform component."
+        // One action. The status pill that used to sit beside it said the
+        // same thing as the pill in the top bar and the same thing as the
+        // overall card below, which is the same sentence three times on one
+        // screen.
         actions={
-          <>
-            <span
-              className={
-                "hidden md:inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold " +
-                (overall === "ok"
-                  ? "border-success/30 bg-success/5 text-success"
-                  : "border-warning/30 bg-warning/5 text-warning")
-              }
-            >
-              {overall === "ok"
-                ? <CheckCircle className="h-3.5 w-3.5" />
-                : <AlertTriangle className="h-3.5 w-3.5" />}
-              {overall === "ok" ? "All Systems Operational" : "Degraded, review components"}
-            </span>
-            <IconButton
-              variant="secondary"
-              icon={<RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />}
-              label="Run Health Check"
-              onClick={() => { refetch(); queryClient.invalidateQueries({ queryKey: ["system-health"] }); }}
-            />
-          </>
+          <IconButton
+            icon={<RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />}
+            label="Run health check"
+            onClick={() => { refetch(); queryClient.invalidateQueries({ queryKey: ["system-health"] }); }}
+          />
         }
       />
 
       {isError && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             The API did not answer /api/health. Nothing can be reported about the
@@ -401,24 +443,134 @@ export default function SystemHealthPage() {
         </div>
       )}
 
-      <h2 className="mb-3 text-xl font-bold text-foreground">Infrastructure</h2>
+      {/* The one sentence, and the proportions behind it.
+          The page used to open on a grid of eight cards, which is eight
+          things to read before knowing whether anything is wrong. The bar is
+          the same counts as a shape, so the answer arrives before any of the
+          words do. */}
+      {!isLoading && (
+        <div className="mb-6 rounded-xl border border-border bg-bg-elevated p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span
+                className={
+                  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg " +
+                  (overall === "ok"
+                    ? "bg-success-soft text-success"
+                    : overall === "degraded"
+                      ? "bg-danger-soft text-danger"
+                      : "bg-bg-hover text-text-muted")
+                }
+              >
+                {overall === "ok" ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5" />
+                )}
+              </span>
+              <div>
+                <p className="text-[15px] font-semibold text-foreground">{summary.label}</p>
+                <p className="text-xs text-text-muted">
+                  Re-checked every 30 seconds
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1.5 text-text-secondary">
+                <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
+                <span className="font-semibold text-foreground tabular-nums">{summary.healthy}</span>
+                healthy
+              </span>
+              <span className="flex items-center gap-1.5 text-text-secondary">
+                <span className="h-2 w-2 rounded-full bg-danger" aria-hidden="true" />
+                <span className="font-semibold text-foreground tabular-nums">{summary.degraded}</span>
+                degraded
+              </span>
+              <span className="flex items-center gap-1.5 text-text-secondary">
+                <span className="h-2 w-2 rounded-full bg-border-strong" aria-hidden="true" />
+                <span className="font-semibold text-foreground tabular-nums">
+                  {summary.off + summary.unknown}
+                </span>
+                off
+              </span>
+            </div>
+          </div>
+
+          {/* The same counts, as proportions. */}
+          <div
+            className="mt-4 flex h-1.5 overflow-hidden rounded-full bg-bg-hover"
+            role="img"
+            aria-label={
+              summary.healthy + " healthy, " + summary.degraded + " degraded, " +
+              (summary.off + summary.unknown) + " off"
+            }
+          >
+            {summary.healthy > 0 && (
+              <span className="bg-success" style={{ flexGrow: summary.healthy }} />
+            )}
+            {summary.degraded > 0 && (
+              <span className="bg-danger" style={{ flexGrow: summary.degraded }} />
+            )}
+            {summary.off + summary.unknown > 0 && (
+              <span
+                className="bg-border-strong"
+                style={{ flexGrow: summary.off + summary.unknown }}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <SkeletonCards count={8} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {cards.map((c) => (
-            <HealthCard key={c.key} card={c} />
-          ))}
-        </div>
+        <>
+          {/* Running first, then the ones nobody configured.
+              A single grid put Redis, which this deployment runs without on
+              purpose, between two components that are working, and the only
+              thing distinguishing it was a word in small type. Grouped, the
+              bottom section is read once and then ignored, which is what it
+              deserves. */}
+          <HealthGroup
+            title="Running"
+            cards={cards.filter((c) => c.state === "ok" || c.state === "degraded")}
+          />
+          <HealthGroup
+            title="Not configured"
+            cards={cards.filter((c) => c.state === "off" || c.state === "unknown")}
+          />
+        </>
       )}
 
-      <p className="mt-4 max-w-2xl text-xs text-text-muted">
-        Off is a component this deployment never configured, and unknown is a
-        probe that could not measure one. Neither counts against the status
-        above: only degraded does.
-      </p>
+      <Note className="mt-6 max-w-2xl">
+        <strong className="font-medium text-foreground">Off</strong> means this
+        deployment never configured the component.{" "}
+        <strong className="font-medium text-foreground">Unknown</strong> means a
+        probe could not measure it. Neither counts against the status above: only{" "}
+        <strong className="font-medium text-foreground">degraded</strong> does.
+      </Note>
     </div>
+  );
+}
+
+// One group of component cards, with its count in the heading.
+//
+// Nothing at all is not an empty state here: a deployment with every
+// component configured should simply not show a "Not configured" heading.
+function HealthGroup({ title, cards }: { title: string; cards: Card[] }) {
+  if (cards.length === 0) return null;
+  return (
+    <section className="mb-6">
+      <h2 className="mb-3 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+        {title} · {cards.length}
+      </h2>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {cards.map((c) => (
+          <HealthCard key={c.key} card={c} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -432,34 +584,57 @@ const TONES: Record<HealthState, { card: string; icon: string }> = {
   unknown: { card: "border-border bg-bg-elevated", icon: "text-text-muted" },
 };
 
+// A state is a word, in the same pill the rest of the panel uses.
+//
+// It was a tick for healthy, a warning triangle for degraded, and small
+// uppercase text for the other two: three different objects for one
+// dimension, and two of them colour-only, which is nothing at all to a reader
+// who cannot separate the green from the red.
 function StateBadge({ state }: { state: HealthState }) {
-  if (state === "ok") return <CheckCircle className="h-4 w-4 text-success" />;
-  if (state === "degraded") return <AlertCircle className="h-4 w-4 text-danger" />;
-  // Off and unknown are words, not symbols. A dash beside "off" reads as a
-  // missing value, which is the opposite of what off means here.
-  return (
-    <span className="text-[10px] font-semibold uppercase text-text-muted">
-      {state === "off" ? "Off" : "Unknown"}
-    </span>
-  );
+  if (state === "ok") return <Pill tone="good" dot>Healthy</Pill>;
+  if (state === "degraded") return <Pill tone="bad" dot>Degraded</Pill>;
+  if (state === "off") return <Pill tone="neutral" dot>Off</Pill>;
+  return <Pill tone="neutral" dot>Unknown</Pill>;
 }
+
+// What to do about a component nobody configured.
+//
+// "Off" answers what, and leaves why and how. These two are off on every
+// machine that runs Grit without Redis, which is a supported way to run, so
+// the card says what turning it on would take rather than leaving somebody to
+// search the docs for it.
+const TURN_ON: Record<string, string> = {
+  redis: "Set REDIS_URL in .env to turn this on",
+  jobs: "Turns on when Redis is configured",
+};
 
 function HealthCard({ card }: { card: Card }) {
   const tone = TONES[card.state];
+  const turnOn = TURN_ON[card.key];
 
   return (
-    <div className={"rounded-xl border p-4 " + tone.card}>
-      <div className="mb-3 flex items-center justify-between">
-        <span className={"inline-flex h-9 w-9 items-center justify-center rounded-lg bg-bg-elevated " + tone.icon}>
+    <div className={"flex flex-col rounded-xl border p-4 " + tone.card}>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span
+          className={"inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-bg-elevated " + tone.icon}
+          aria-hidden="true"
+        >
           {card.icon}
         </span>
         <StateBadge state={card.state} />
       </div>
       <p className="text-sm font-semibold text-foreground">{card.label}</p>
-      <p className="mt-1 text-xs text-text-secondary">{card.detail}</p>
+      <p className="mt-1 flex-1 text-xs text-text-secondary">{card.detail}</p>
       {card.meta && (
-        <p className="mt-2 inline-flex items-center gap-1 rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
+        <p className="mt-2 inline-flex w-fit items-center gap-1 rounded bg-bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-text-muted">
           {card.meta}
+        </p>
+      )}
+      {/* Dashed, because it is not a state: it is the next step.
+          A solid well here reads as another fact about the component. */}
+      {turnOn && (
+        <p className="mt-3 rounded-md border border-dashed border-border-strong px-3 py-2 font-mono text-[11.5px] text-text-secondary">
+          {turnOn}
         </p>
       )}
     </div>

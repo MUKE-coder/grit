@@ -113,16 +113,35 @@ func TestHealthPackageIsFrameworkOwned(t *testing.T) {
 }
 
 func TestHealthPageReadsTheStateItIsSent(t *testing.T) {
-	for name, page := range map[string]string{
-		"admin":   adminSystemHealthPage(),
+	// The four states, wherever each surface declares them.
+	//
+	// The admin's moved to hooks/use-system-health in v3.535.0, which is the
+	// one query the top bar, the sidebar badge, the hub tiles and this page
+	// all read: two copies of a type describing one endpoint's response is two
+	// places for "off" to come to mean different things. The desktop client
+	// has its own, because it is a separate application.
+	for name, src := range map[string]string{
+		"admin":   adminUseSystemHealth(),
 		"desktop": desktopClientSystemHealthPage(),
 	} {
-		if !strings.Contains(page, `"ok" | "degraded" | "off" | "unknown"`) {
-			t.Errorf("%s: the page does not know the four states", name)
+		if !strings.Contains(src, `"ok" | "degraded" | "off" | "unknown"`) {
+			t.Errorf("%s: does not know the four states", name)
 		}
-		if !strings.Contains(page, "storage") {
-			t.Errorf("%s: the page still does not report storage", name)
+		if !strings.Contains(src, "storage") {
+			t.Errorf("%s: still does not report storage", name)
 		}
+	}
+
+	// And the page reads them rather than declaring its own.
+	if strings.Contains(adminSystemHealthPage(), `type HealthState =`) {
+		t.Error("the health page declares HealthState again. The shared query already " +
+			"exports it, and two declarations of one endpoint's response is how the " +
+			"pill in the top bar and this page come to disagree about what off means")
+	}
+	if !strings.Contains(adminSystemHealthPage(), `from "@/hooks/use-system-health"`) {
+		t.Error("the health page does not read the shared health query, so it fetches " +
+			"the same endpoint a second time and can report a different answer from " +
+			"the top bar on the same screen")
 	}
 	admin := adminSystemHealthPage()
 	// The guesses that each read the boolean differently.

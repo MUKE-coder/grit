@@ -72,6 +72,76 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.535.0 */}
+            <div className="mb-12" id="v3.535.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.535.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The system hub and the health page</h3>
+                <p>
+                  The fourth redesign release. Two pages that existed to answer
+                  &ldquo;is anything wrong&rdquo; and made you read eight cards
+                  to find out.
+                </p>
+
+                <h4>Health opens with the answer</h4>
+                <p>
+                  One card at the top: the sentence, the counts, and a bar in
+                  those proportions, so the answer arrives before any of the
+                  words do. Under it the components are grouped into{" "}
+                  <strong>Running</strong> and <strong>Not configured</strong>.
+                  A single grid put Redis, which a deployment may run without on
+                  purpose, between two working components with only a word in
+                  small type to tell them apart.
+                </p>
+                <p>
+                  Each not-configured card carries what turning it on would
+                  take, in a dashed well:{" "}
+                  <code>Set REDIS_URL in .env to turn this on</code>.
+                  &ldquo;Off&rdquo; answers what, and leaves why and how.
+                </p>
+                <p>
+                  States are pills now. They were a tick for healthy, a warning
+                  triangle for degraded, and small uppercase text for the other
+                  two: three different objects for one dimension, two of them
+                  colour-only, which is nothing at all to a reader who cannot
+                  separate the green from the red.
+                </p>
+                <p>
+                  The header&apos;s status pill is gone. It said the same thing
+                  as the pill in the top bar and the same thing as the card
+                  below it: one sentence, three times, on one screen.
+                </p>
+
+                <h4>The hub filters across every tab</h4>
+                <p>
+                  Typing in the filter searches all five tabs, because the
+                  reason somebody uses it is that they do not know which tab the
+                  thing is under. The tabs carry counts, the tiles say{" "}
+                  <strong>Open</strong>, and their status pills are live: System
+                  health reads &ldquo;6 healthy &middot; 2 off&rdquo; and, on a
+                  deployment without Redis, Background Jobs and Cron read
+                  &ldquo;Off &middot; needs Redis&rdquo;.
+                </p>
+
+                <h4>One health query</h4>
+                <p>
+                  The top bar pill, the sidebar badge, the dashboard tile, the
+                  hub tiles and the health page read one{" "}
+                  <code>useSystemHealth()</code>. They were separate fetches
+                  with separate copies of the response type, which is five
+                  requests per page load and, worse, five answers that can
+                  differ: the pill saying all clear while a tile two inches
+                  below says two components are off.
+                </p>
+              </div>
+            </div>
+
             {/* v3.534.0 */}
             <div className="mb-12" id="v3.534.0">
               <div className="flex items-center gap-3 mb-4">
