@@ -185,7 +185,10 @@ func inSpans(spans [][2]int, at int) bool {
 // The auth middleware's user lookup, and the three jobs that write.
 const (
 	authUserLookupOld = "\t\tif err := db.Where(\"id = ?\", claims.UserID).First(&user).Error; err != nil {\n"
-	authUserLookupNew = "\t\tif err := db.WithContext(c.Request.Context()).Where(\"id = ?\", claims.UserID).First(&user).Error; err != nil {\n"
+	// dbtx.Use rather than db.WithContext: a batch's sub-request has to read
+	// through the batch's transaction, or it asks the pool for a second
+	// connection that SQLite does not have and the request hangs.
+	authUserLookupNew = "\t\tif err := dbtx.Use(c.Request.Context(), db).Where(\"id = ?\", claims.UserID).First(&user).Error; err != nil {\n"
 )
 
 var workerDBCalls = map[string]string{

@@ -1119,6 +1119,9 @@ func (g *Generator) serviceSource(names Names) string {
 	// authz unconditionally now: the policy check around a loaded row runs for
 	// every resource, owned or not. It used to come in only with --owned-by.
 	imports = "\t\"" + g.Module + "/internal/authz\"\n" + imports
+	// dbtx, for the transaction a batch puts on the context: s.db(ctx)
+	// reads it, and every read and write in the service goes through that.
+	imports = "\t\"" + g.Module + "/internal/dbtx\"\n" + imports
 	if p.hasFiles {
 		imports += "\n\t\"" + g.Module + "/internal/files\""
 	}
@@ -1359,6 +1362,13 @@ var writable{{Pascal}} = map[string]bool{
 // db binds the database to ctx, so whatever a middleware put there reaches
 // GORM's callbacks: the multitenant plugin scopes by it.
 func (s *{{Pascal}}Service) db(ctx context.Context) *gorm.DB {
+	// A batch puts its transaction on the context, and everything one of its
+	// sub-requests does has to happen inside it. Every read and write in this
+	// service goes through here, which is why this is the one place that has
+	// to know. See internal/dbtx.
+	if tx := dbtx.TxFrom(ctx); tx != nil {
+		return tx.WithContext(ctx)
+	}
 	return s.DB.WithContext(ctx)
 }
 {{WRITE_HELPER}}

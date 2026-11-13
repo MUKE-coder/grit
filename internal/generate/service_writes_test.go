@@ -138,6 +138,15 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 			t.Fatalf("%s did not get the row rules", tc.service)
 		}
 
+		// And the batch transaction, which every read and write in the
+		// service has to join: a service writing outside it keeps its rows
+		// when the batch is rolled back, which is the one thing a batch
+		// exists to prevent.
+		out, changed = scaffold.RepairGeneratedServiceBatchTx(out, module)
+		if !changed {
+			t.Fatalf("%s did not get the batch transaction", tc.service)
+		}
+
 		if got := codefmt.Go(out); got != tc.want {
 			t.Errorf("repairing %s did not produce the generated service.\n--- repaired\n%s\n--- generated\n%s", tc.service, got, tc.want)
 		}
@@ -147,6 +156,9 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 		settled := codefmt.Go(out)
 		if again, changed := scaffold.RepairGeneratedServiceWrites(settled, model); changed || again != settled {
 			t.Errorf("repairing %s twice changed it again", tc.service)
+		}
+		if again, changed := scaffold.RepairGeneratedServiceBatchTx(settled, module); changed || again != settled {
+			t.Errorf("repairing %s's batch transaction twice changed it again", tc.service)
 		}
 		if again, changed := scaffold.RepairGeneratedServiceRowRules(settled, module); changed || again != settled {
 			t.Errorf("repairing %s's row rules twice changed it again", tc.service)

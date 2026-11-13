@@ -235,6 +235,8 @@ func apiForRequestGo() string {
 import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/dbtx"
 )
 
 // ForRequest is the handle a read should use.
@@ -253,6 +255,16 @@ import (
 func ForRequest(c *gin.Context, db *gorm.DB) *gorm.DB {
 	if c == nil {
 		return db
+	}
+	// A batch's transaction first, and before anything else here.
+	//
+	// A sub-request inside a batch has to read what the batch has written so
+	// far, which no replica has, and it has to do it on the connection the
+	// batch is holding. On SQLite there is exactly one connection: asking the
+	// pool for a second does not fail, it waits, and the request hangs until
+	// something times out.
+	if tx := dbtx.TxFrom(c.Request.Context()); tx != nil {
+		return tx
 	}
 	if pinned, ok := c.Get("read_your_writes"); ok && pinned == true {
 		return Primary(db)

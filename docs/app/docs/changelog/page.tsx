@@ -72,6 +72,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.522.0 */}
+            <div className="mb-12" id="v3.522.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.522.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>POST /api/v1/batch: many writes, one transaction</h3>
+                <p>
+                  A client creating an order and its six lines makes seven
+                  requests today, and if the fourth fails it has four rows it
+                  has to clean up itself, over a connection that may already
+                  have gone. The only honest answer is a transaction, and a
+                  transaction cannot span seven requests.
+                </p>
+                <pre><code>{`POST /api/v1/batch
+{
+  "requests": [
+    {"method": "POST",  "url": "/api/v1/orders",      "body": {"customer_id": "c1"}},
+    {"method": "POST",  "url": "/api/v1/order-lines", "body": {"sku": "A", "qty": 2}},
+    {"method": "PATCH", "url": "/api/v1/stock/s1",    "body": {"on_hand": 8}}
+  ]
+}`}</code></pre>
+                <p>
+                  Every request is replayed through this application&apos;s own
+                  router, so a batch can only do what the caller could have
+                  done one request at a time: the same routes, the same
+                  permissions, the same row rules, the same validation. There
+                  is no second code path to keep in step, which is the whole
+                  design. One of them answering 400 or above rolls the lot
+                  back and says which, because a batch that half happened is
+                  the state the caller used a batch to avoid.
+                </p>
+                <h4>The part that took the longest</h4>
+                <p>
+                  A batch holds a transaction, and on SQLite that is the only
+                  connection the process has. Anything inside a replayed
+                  request that asks the pool for a second one does not get an
+                  error: it waits. The request hangs until the client gives
+                  up, the connection stays held, and every later request
+                  queues behind it. The server is down and nothing in the log
+                  says why.
+                </p>
+                <p>
+                  It took a goroutine dump to find the last one:{' '}
+                  <code>authz.RoleNamesFor</code>, called from the
+                  authentication middleware two lines after the user lookup
+                  that had already been fixed. Every database read on the way
+                  into a request now goes through{' '}
+                  <code>dbtx.Use</code>, which hands back the batch&apos;s
+                  transaction when there is one.
+                </p>
+                <p>
+                  And a deadline, as a safety net rather than a policy: the
+                  same mistake made again is a clear error in thirty seconds,
+                  naming the batch and saying a request inside it is waiting
+                  for a connection the batch itself is holding. A bug report
+                  rather than a mystery.
+                </p>
+                <h4>Also</h4>
+                <ul>
+                  <li>
+                    A batch cannot contain a batch, and a sub-request cannot
+                    set its own <code>Authorization</code> or{' '}
+                    <code>Cookie</code>: otherwise a batch authenticated as
+                    one person carries a request authenticated as another.
+                  </li>
+                  <li>
+                    A sub-request URL must be a path on this API, checked
+                    before anything runs. Without it a batch is a request
+                    forger: the server would follow an absolute URL, with the
+                    caller&apos;s cookies, from inside the network.
+                  </li>
+                  <li>
+                    Fifty requests per batch, and its own rate rule of three a
+                    second, which was already in the table from v3.520.0.
+                  </li>
+                  <li>
+                    An existing project joins batches through a repair, so an
+                    upgraded resource does not keep writing outside the
+                    transaction.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.521.0 */}
             <div className="mb-12" id="v3.521.0">
               <div className="flex items-center gap-3 mb-4">

@@ -2383,6 +2383,7 @@ import (
 	"gorm.io/gorm"
 
 	"` + "{{MODULE}}" + `/internal/authz"
+	"` + "{{MODULE}}" + `/internal/dbtx"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/respond"
@@ -2429,7 +2430,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// emits the bare value into the WHERE clause and Postgres rejects UUID
 		// primary keys with "trailing junk after numeric literal".
 		var user models.User
-		if err := db.WithContext(c.Request.Context()).Where("id = ?", claims.UserID).First(&user).Error; err != nil {
+		if err := dbtx.Use(c.Request.Context(), db).Where("id = ?", claims.UserID).First(&user).Error; err != nil {
 			respond.Fail(c, respond.CodeUnauthorized, "User not found")
 			c.Abort()
 			return
@@ -2459,7 +2460,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// A failure here is not fatal: the request continues with no grants and
 		// role-name checks still apply, which fails closed rather than 500ing
 		// every route the moment the roles table has a problem.
-		if grants, err := authz.GrantsFor(db, user.ID); err == nil {
+		if grants, err := authz.GrantsFor(dbtx.Use(c.Request.Context(), db), user.ID); err == nil {
 			c.Set("user_grants", grants)
 		}
 
@@ -2477,7 +2478,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// that predates user_roles behaves exactly as before. What it is no
 		// longer is an independent answer. A failure leaves the value set from
 		// the column, which is the old behaviour and fails no more open.
-		if names, err := authz.RoleNamesFor(db, user.ID); err == nil && len(names) > 0 {
+		if names, err := authz.RoleNamesFor(dbtx.Use(c.Request.Context(), db), user.ID); err == nil && len(names) > 0 {
 			c.Set("user_role", names[0])
 			c.Set("user_roles", names)
 		}
@@ -2544,7 +2545,7 @@ func Identify(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		}
 
 		var user models.User
-		if err := db.WithContext(c.Request.Context()).Where("id = ?", claims.UserID).First(&user).Error; err != nil {
+		if err := dbtx.Use(c.Request.Context(), db).Where("id = ?", claims.UserID).First(&user).Error; err != nil {
 			c.Next()
 			return
 		}
@@ -2564,7 +2565,7 @@ func Identify(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		if claims.SessionID != "" {
 			c.Set("session_id", claims.SessionID)
 		}
-		if grants, err := authz.GrantsFor(db, user.ID); err == nil {
+		if grants, err := authz.GrantsFor(dbtx.Use(c.Request.Context(), db), user.ID); err == nil {
 			c.Set("user_grants", grants)
 		}
 
@@ -2582,7 +2583,7 @@ func Identify(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// that predates user_roles behaves exactly as before. What it is no
 		// longer is an independent answer. A failure leaves the value set from
 		// the column, which is the old behaviour and fails no more open.
-		if names, err := authz.RoleNamesFor(db, user.ID); err == nil && len(names) > 0 {
+		if names, err := authz.RoleNamesFor(dbtx.Use(c.Request.Context(), db), user.ID); err == nil && len(names) > 0 {
 			c.Set("user_role", names[0])
 			c.Set("user_roles", names)
 		}
@@ -9376,6 +9377,19 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	})
 
 	mountLegacyAPIAlias(r)
+
+	// POST /api/v1/batch, last, after everything it can reach is mounted.
+	//
+	// It replays each of its requests through this same router, so a batch
+	// can only do what the caller could have done one request at a time: the
+	// same routes, the same permissions, the same row rules, the same
+	// validation. Registered here rather than with the resources because it
+	// needs the finished engine, and because it belongs to no resource.
+	//
+	// Authenticated: a batch is a way to write several things at once, and
+	// there is nothing a guest may write.
+	batch := handlers.NewBatchHandler(db, r)
+	protected.POST("/batch", batch.Execute)
 
 	return r
 }

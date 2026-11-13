@@ -1,0 +1,72 @@
+// Package dbtx carries a transaction on the request context.
+//
+// Its own package, with nothing in it but this, because of who needs it:
+// every generated service, and internal/database. Putting it in database
+// made internal/services import database, which already imports services for
+// one of its seeders, and the two would not compile.
+//
+// A package with no dependencies cannot be in a cycle with anything.
+//
+// This exists for one caller: POST /api/v1/batch, which runs many writes as
+// one. The sub-requests go back through the router and reach the ordinary
+// handlers, so there is nowhere to hand them a transaction by argument. The
+// context is the one thing that travels with a request from end to end.
+//
+// Every generated service reads it. A hand-written handler that queries
+// h.DB directly does not, and will write outside the transaction: use
+// database.ForRequest(c, h.DB), which does.
+package dbtx
+
+import (
+	"context"
+
+	"gorm.io/gorm"
+)
+
+type txKey struct{}
+
+// WithTx returns ctx carrying tx, so everything downstream writes inside it.
+func WithTx(ctx context.Context, tx *gorm.DB) context.Context {
+	if tx == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, txKey{}, tx)
+}
+
+// TxFrom returns the transaction on ctx, or nil.
+//
+// nil rather than a bool, because every caller wants to fall back to its own
+// handle and `if tx := TxFrom(ctx); tx != nil` reads better than the pair.
+func TxFrom(ctx context.Context) *gorm.DB {
+	if ctx == nil {
+		return nil
+	}
+	tx, _ := ctx.Value(txKey{}).(*gorm.DB)
+	return tx
+}
+
+// Use is the handle this request should read and write through.
+//
+// The batch's transaction when there is one, and the handle given otherwise.
+// Every path that touches the database during a request has to go through
+// here or something that does, and not because of tidiness: a batch holds a
+// transaction on one connection, and on SQLite there is exactly one
+// connection. A middleware that asks the pool for a second one while the
+// batch holds the first does not get an error, it waits, and the request
+// hangs until something times out.
+func Use(ctx context.Context, fallback *gorm.DB) *gorm.DB {
+	if tx := TxFrom(ctx); tx != nil {
+		return tx.WithContext(ctx)
+	}
+	if fallback == nil {
+		return nil
+	}
+	return fallback.WithContext(ctx)
+}
+
+// InTx reports whether this request is part of a batch.
+//
+// For the few places that must behave differently inside one: a handler that
+// would otherwise start its own transaction, and anything that enqueues work
+// which must not run until the batch commits.
+func InTx(ctx context.Context) bool { return TxFrom(ctx) != nil }

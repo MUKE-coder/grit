@@ -23,6 +23,30 @@ Also worth knowing:
 ---
 
 
+## v3.522.0 - November 13, 2026
+
+### POST /api/v1/batch: many writes, one transaction
+
+A client creating an order and its six lines makes seven requests today, and if the fourth fails it has four rows it has to clean up itself, over a connection that may already have gone. The only honest answer is a transaction, and a transaction cannot span seven requests.
+
+`{`POST /api/v1/batch { "requests": [ {"method": "POST", "url": "/api/v1/orders", "body": {"customer_id": "c1"}}, {"method": "POST", "url": "/api/v1/order-lines", "body": {"sku": "A", "qty": 2}}, {"method": "PATCH", "url": "/api/v1/stock/s1", "body": {"on_hand": 8}} ] }`}` Every request is replayed through this application's own router, so a batch can only do what the caller could have done one request at a time: the same routes, the same permissions, the same row rules, the same validation. There is no second code path to keep in step, which is the whole design. One of them answering 400 or above rolls the lot back and says which, because a batch that half happened is the state the caller used a batch to avoid.
+
+#### The part that took the longest
+
+A batch holds a transaction, and on SQLite that is the only connection the process has. Anything inside a replayed request that asks the pool for a second one does not get an error: it waits. The request hangs until the client gives up, the connection stays held, and every later request queues behind it. The server is down and nothing in the log says why.
+
+It took a goroutine dump to find the last one: `authz.RoleNamesFor`, called from the authentication middleware two lines after the user lookup that had already been fixed. Every database read on the way into a request now goes through `dbtx.Use`, which hands back the batch's transaction when there is one.
+
+And a deadline, as a safety net rather than a policy: the same mistake made again is a clear error in thirty seconds, naming the batch and saying a request inside it is waiting for a connection the batch itself is holding. A bug report rather than a mystery.
+
+#### Also
+
+- A batch cannot contain a batch, and a sub-request cannot set its own `Authorization` or `Cookie`: otherwise a batch authenticated as one person carries a request authenticated as another.
+- A sub-request URL must be a path on this API, checked before anything runs. Without it a batch is a request forger: the server would follow an absolute URL, with the caller's cookies, from inside the network.
+- Fifty requests per batch, and its own rate rule of three a second, which was already in the table from v3.520.0.
+- An existing project joins batches through a repair, so an upgraded resource does not keep writing outside the transaction.
+
+
 ## v3.521.0 - November 13, 2026
 
 ### Row rules: which rows, as a condition on the query

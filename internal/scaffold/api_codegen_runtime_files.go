@@ -73,6 +73,14 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "rowrules", "rowrules.go"):      tmpl("api/rowrules/rowrules.go"),
 		filepath.Join(apiRoot, "internal", "rowrules", "rowrules_test.go"): tmpl("api/rowrules/rowrules_test.go"),
 
+		// POST /api/v1/batch: many writes, one transaction, replayed through
+		// this application's own router so a batch can only do what the
+		// caller could have done one request at a time. tx.go is how the
+		// transaction reaches them.
+		filepath.Join(apiRoot, "internal", "dbtx", "dbtx.go"):          tmpl("api/dbtx/dbtx.go"),
+		filepath.Join(apiRoot, "internal", "handlers", "batch.go"):     tmpl("api/handlers/batch.go"),
+		filepath.Join(apiRoot, "internal", "handlers", "batch_test.go"): tmpl("api/handlers/batch_test.go"),
+
 		// The expression engine: one parser and one compiler, used by
 		// ?filter= on a list endpoint and by a declared access rule. Both
 		// resolve every identifier against the model's own GORM schema and

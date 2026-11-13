@@ -564,6 +564,7 @@ import (
 
 	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/cache"
+	"{{MODULE}}/internal/dbtx"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/respond"
@@ -587,7 +588,7 @@ func APIKeyOrAuth(db *gorm.DB, jwtAuth gin.HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
-		key, err := services.VerifyAPIKey(db.WithContext(c.Request.Context()), token)
+		key, err := services.VerifyAPIKey(dbtx.Use(c.Request.Context(), db), token)
 		if err != nil {
 			respond.Fail(c, respond.CodeInvalidAPIKey, "That API key is not valid, has expired, or was revoked")
 			return
@@ -616,7 +617,7 @@ func APIKeyOrAuth(db *gorm.DB, jwtAuth gin.HandlerFunc) gin.HandlerFunc {
 		}
 
 		var user models.User
-		if err := db.First(&user, "id = ?", key.UserID).Error; err != nil {
+		if err := dbtx.Use(c.Request.Context(), db).First(&user, "id = ?", key.UserID).Error; err != nil {
 			respond.Fail(c, respond.CodeInvalidAPIKey, "The owner of that key no longer exists")
 			return
 		}
@@ -634,7 +635,7 @@ func APIKeyOrAuth(db *gorm.DB, jwtAuth gin.HandlerFunc) gin.HandlerFunc {
 		c.Set("user_id", user.ID)
 		c.Set("user_email", user.Email)
 		c.Set("user_role", user.Role)
-		if grants, err := authz.GrantsFor(db, user.ID); err == nil {
+		if grants, err := authz.GrantsFor(dbtx.Use(c.Request.Context(), db), user.ID); err == nil {
 			c.Set("user_grants", grants)
 		}
 		// Marked so handlers that must refuse machine callers — anything
@@ -671,7 +672,7 @@ func RequireAPIKey(db *gorm.DB, limiter *cache.Cache) gin.HandlerFunc {
 			return
 		}
 
-		key, err := services.VerifyAPIKey(db.WithContext(c.Request.Context()), token)
+		key, err := services.VerifyAPIKey(dbtx.Use(c.Request.Context(), db), token)
 		if err != nil {
 			respond.Fail(c, respond.CodeInvalidAPIKey, "That API key is not valid, has expired, or was revoked")
 			return

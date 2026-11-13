@@ -657,6 +657,12 @@ func repairGeneratedServiceChecks(root string, opts Options) error {
 			// in rowrules/rules.go has no effect on the resources the project
 			// already had, which is the worst shape a security feature can
 			// fail in.
+			// A batch's transaction, which every read and write has to join
+			// or its rows survive a batch that was rolled back.
+			if joined, ok := RepairGeneratedServiceBatchTx(out, module); ok {
+				out = joined
+				fixed = append(fixed, "this resource joins a batch transaction: POST /api/v1/batch can now write through it, and a rolled-back batch takes its rows with it")
+			}
 			if scoped, ok := RepairGeneratedServiceRowRules(out, module); ok {
 				out = scoped
 				fixed = append(fixed, "this resource applies its row rules: a rule in internal/rowrules now filters its list and narrows its reads and writes, as it already did for anything generated since")
