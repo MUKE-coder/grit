@@ -84,6 +84,9 @@ const (
 		"\t\tStorage:     svc.Storage,\n" +
 		"\t\tJobs:        svc.Jobs,\n" +
 		"\t\tAllowedMIME: handlers.UploadMIMEAllowlist(cfg.UploadAllowedMIME),\n" +
+		// Signs the short-lived keys that let an <img src> show a private
+		// upload. The same secret as every session, so one rotation ends both.
+		"\t\tFileTokenSecret: cfg.JWTSecret,\n" +
 		"\t}\n"
 )
 

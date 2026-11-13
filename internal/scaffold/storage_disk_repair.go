@@ -274,7 +274,15 @@ const (
 	routesUploadDownloadAnchor = "\t\tprotected.GET(\"/uploads/:id\", uploadHandler.GetByID)\n"
 	routesUploadDownload       = routesUploadDownloadAnchor +
 		"\t\t// The file itself, through the API: private files too, on any driver.\n" +
-		"\t\tprotected.GET(\"/uploads/:id/download\", uploadHandler.Download)\n"
+		"\t\tprotected.GET(\"/uploads/:id/download\", uploadHandler.Download)\n" +
+		// A short-lived key for one file, so an <img src> can show a private
+		// upload without the bucket being public. Minted under exactly the
+		// permission the download itself requires.
+		"\t\tprotected.POST(\"/uploads/:id/token\", uploadHandler.Token)\n" +
+		// And the file itself, to a caller holding that key. Unauthenticated
+		// by necessity: a browser asking for an image sends no header. The
+		// token is in the path, so this route cannot be reached without one.
+		"\t\tv1.GET(\"/uploads/:id/file/:token\", uploadHandler.ByToken)\n"
 
 	// .env.example documents the storage settings. The head as it was before
 	// v3.276.0, as v3.276.0 wrote it, and as it is now.

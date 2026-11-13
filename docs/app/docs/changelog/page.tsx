@@ -72,6 +72,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.524.0 */}
+            <div className="mb-12" id="v3.524.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.524.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A private file in an img tag, and a prune that gives the disk back</h3>
+                <h4>Short-lived keys for one file</h4>
+                <p>
+                  An upload is read through an authenticated route scoped to
+                  whoever may see the row. That is right, and it leaves one
+                  thing impossible: putting the file in an{' '}
+                  <code>&lt;img src&gt;</code>, an <code>&lt;embed&gt;</code>,
+                  or a PDF viewer. None of them send an{' '}
+                  <code>Authorization</code> header and none of them ever will.
+                </p>
+                <pre><code>{`POST /api/v1/uploads/u_123/token
+{"data": {"token": "...", "url": "/api/v1/uploads/u_123/file/<token>"}}`}</code></pre>
+                <p>
+                  The key names one upload, is signed, and lasts two minutes.
+                  Minting it requires exactly the permission the download does,
+                  which is what makes it safe to put in a URL: it can only be
+                  obtained by somebody who could already have downloaded the
+                  file.
+                </p>
+                <p>
+                  Serving it is its own unauthenticated route with the token in
+                  the path, rather than a <code>?token=</code> on the existing
+                  download. That route is behind required authentication, so
+                  relaxing it to let the handler decide would put a private
+                  file one mistake away from public on the path that already
+                  works. The first attempt did exactly that and the middleware
+                  refused before the handler ever saw the token, which is how
+                  the design was found.
+                </p>
+                <p>
+                  Signed with the application&apos;s own{' '}
+                  <code>JWT_SECRET</code>, so one rotation ends every
+                  outstanding file link at the moment it signs out every
+                  session. A key for one upload does not work on another, and
+                  editing the expiry breaks the signature.
+                </p>
+                <h4>Pruning the activity log gives the disk back</h4>
+                <p>
+                  Deleting rows does not shrink a database. SQLite puts the
+                  pages on a free list and the file stays as large as it was at
+                  its peak, which on a deployment whose whole point is a small
+                  single file is the opposite of what pruning was for. After a
+                  prune that removed more than twenty thousand entries, the
+                  space is reclaimed: <code>VACUUM</code> on SQLite,{' '}
+                  <code>ANALYZE</code> on Postgres where autovacuum handles the
+                  space and the planner needs telling,{' '}
+                  <code>OPTIMIZE TABLE</code> on MySQL. Best effort always: a
+                  failure there is a larger file, not a lost log.
+                </p>
+                <h4>On an app that updates itself</h4>
+                <p>
+                  Grit already has this where it belongs. A{' '}
+                  <code>grit new-desktop</code> app ships an in-app updater
+                  that swaps its own binary from GitHub Releases, with a modal
+                  and a banner. A server deployment does not get one and should
+                  not: containers are immutable and a systemd unit is replaced
+                  by a deploy, not by the process rewriting itself while
+                  serving traffic.
+                </p>
+                <h4>And two checks that had stopped describing their subject</h4>
+                <ul>
+                  <li>
+                    The sweep asserting the upload handler does not read its
+                    MIME allowlist from the environment banned{' '}
+                    <code>os.Getenv</code> anywhere in the file, so it caught
+                    an unrelated fallback added later. Narrowed to the three
+                    things that were actually wrong.
+                  </li>
+                  <li>
+                    Narrowing it to the setting&apos;s name then matched the
+                    five comments explaining the setting. It guards on{' '}
+                    <code>os.Getenv(&quot;UPLOAD_ALLOWED_MIME&quot;)</code>{' '}
+                    now: a check that matches its own prose passes whatever the
+                    code does.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.523.0 */}
             <div className="mb-12" id="v3.523.0">
               <div className="flex items-center gap-3 mb-4">

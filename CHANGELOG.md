@@ -23,6 +23,34 @@ Also worth knowing:
 ---
 
 
+## v3.524.0 - November 13, 2026
+
+### A private file in an img tag, and a prune that gives the disk back
+
+#### Short-lived keys for one file
+
+An upload is read through an authenticated route scoped to whoever may see the row. That is right, and it leaves one thing impossible: putting the file in an `<img src>`, an `<embed>`, or a PDF viewer. None of them send an `Authorization` header and none of them ever will.
+
+`{`POST /api/v1/uploads/u_123/token {"data": {"token": "...", "url": "/api/v1/uploads/u_123/file/"}}`}` The key names one upload, is signed, and lasts two minutes. Minting it requires exactly the permission the download does, which is what makes it safe to put in a URL: it can only be obtained by somebody who could already have downloaded the file.
+
+Serving it is its own unauthenticated route with the token in the path, rather than a `?token=` on the existing download. That route is behind required authentication, so relaxing it to let the handler decide would put a private file one mistake away from public on the path that already works. The first attempt did exactly that and the middleware refused before the handler ever saw the token, which is how the design was found.
+
+Signed with the application's own `JWT_SECRET`, so one rotation ends every outstanding file link at the moment it signs out every session. A key for one upload does not work on another, and editing the expiry breaks the signature.
+
+#### Pruning the activity log gives the disk back
+
+Deleting rows does not shrink a database. SQLite puts the pages on a free list and the file stays as large as it was at its peak, which on a deployment whose whole point is a small single file is the opposite of what pruning was for. After a prune that removed more than twenty thousand entries, the space is reclaimed: `VACUUM` on SQLite, `ANALYZE` on Postgres where autovacuum handles the space and the planner needs telling, `OPTIMIZE TABLE` on MySQL. Best effort always: a failure there is a larger file, not a lost log.
+
+#### On an app that updates itself
+
+Grit already has this where it belongs. A `grit new-desktop` app ships an in-app updater that swaps its own binary from GitHub Releases, with a modal and a banner. A server deployment does not get one and should not: containers are immutable and a systemd unit is replaced by a deploy, not by the process rewriting itself while serving traffic.
+
+#### And two checks that had stopped describing their subject
+
+- The sweep asserting the upload handler does not read its MIME allowlist from the environment banned `os.Getenv` anywhere in the file, so it caught an unrelated fallback added later. Narrowed to the three things that were actually wrong.
+- Narrowing it to the setting's name then matched the five comments explaining the setting. It guards on `os.Getenv("UPLOAD_ALLOWED_MIME")` now: a check that matches its own prose passes whatever the code does.
+
+
 ## v3.523.0 - November 13, 2026
 
 ### The first run, without a password in the repository

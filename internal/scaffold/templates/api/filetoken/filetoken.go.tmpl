@@ -1,0 +1,102 @@
+// Package filetoken is a short-lived key for one file.
+//
+// Downloads in this project are authenticated and scoped to who may see the
+// row. That is right, and it leaves one thing impossible: putting a file in
+// an <img src>, an <embed>, or a PDF viewer. None of them send an
+// Authorization header, and none of them ever will.
+//
+// The usual answers are both bad. Making the bucket public means the file is
+// readable by anybody who learns the URL, for ever. Proxying every image
+// through the API with a cookie works until the cookie is SameSite=Strict, or
+// the viewer is a third-party script, or the file is large.
+//
+// So: ask for a token, get two minutes, put it in the URL.
+//
+//	POST /api/v1/uploads/u_123/token   ->  {"token": "...", "expires_at": "..."}
+//	GET  /api/v1/uploads/u_123/download?token=...
+//
+// The token names one upload and nothing else. It is not a session, it cannot
+// be used on another file, and it is dead in two minutes, which is longer
+// than a page takes to load and shorter than a URL survives in a chat log.
+package filetoken
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Window is how long a file token is good for.
+//
+// Two minutes: longer than a page takes to load every image on it, shorter
+// than a URL pasted into a chat stays interesting.
+const Window = 2 * time.Minute
+
+// Mint returns a token for one upload, good until now+Window.
+//
+// The secret is the application's own signing key. A token is therefore
+// invalidated by rotating that key, which is the behaviour you want: the same
+// rotation that signs out every session stops every outstanding file link.
+func Mint(secret, uploadID string) (token string, expires time.Time, err error) {
+	if secret == "" {
+		return "", time.Time{}, fmt.Errorf("filetoken: no signing secret")
+	}
+	if uploadID == "" {
+		return "", time.Time{}, fmt.Errorf("filetoken: no upload")
+	}
+	expires = time.Now().Add(Window).UTC()
+	stamp := strconv.FormatInt(expires.Unix(), 10)
+	return stamp + "." + sign(secret, uploadID, stamp), expires, nil
+}
+
+// Valid reports whether a token is this upload's and still inside its window.
+//
+// Both halves matter, and the order does not: a token for another file is
+// refused even inside its window, and an expired token is refused even for
+// the right file. The signature covers the upload id, so neither can be
+// edited without breaking it.
+func Valid(secret, uploadID, token string) bool {
+	if secret == "" || uploadID == "" || token == "" {
+		return false
+	}
+	stamp, mac, found := strings.Cut(token, ".")
+	if !found {
+		return false
+	}
+	unix, err := strconv.ParseInt(stamp, 10, 64)
+	if err != nil {
+		return false
+	}
+	if time.Now().UTC().After(time.Unix(unix, 0).UTC()) {
+		return false
+	}
+	// Constant time: a timing difference on a signature comparison is a
+	// signature forgery measured in requests.
+	return hmac.Equal([]byte(mac), []byte(sign(secret, uploadID, stamp)))
+}
+
+// Expiry is when a token stops working, for a client that wants to refresh
+// before it does rather than after.
+func Expiry(token string) (time.Time, bool) {
+	stamp, _, found := strings.Cut(token, ".")
+	if !found {
+		return time.Time{}, false
+	}
+	unix, err := strconv.ParseInt(stamp, 10, 64)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return time.Unix(unix, 0).UTC(), true
+}
+
+func sign(secret, uploadID, stamp string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	// The separator is part of the message, so a token for upload "a" at time
+	// "1b" cannot be read as one for upload "a1" at time "b".
+	mac.Write([]byte("file\x00" + uploadID + "\x00" + stamp))
+	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}

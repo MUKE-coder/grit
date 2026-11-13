@@ -5110,9 +5110,53 @@ func Prune(ctx context.Context, db *gorm.DB, cutoff time.Time) (int64, error) {
 		n, err := pruneChunk(db.WithContext(ctx), cutoff)
 		total += n
 		if err != nil || n < PruneChunk {
+			if err == nil {
+				reclaim(ctx, db, total)
+			}
 			return total, err
 		}
 	}
+}
+
+// ReclaimAfter is how many deleted entries make it worth reclaiming the space.
+//
+// Below this the work costs more than the pages are worth: a VACUUM rewrites
+// the whole file and holds a lock while it does.
+const ReclaimAfter = 20000
+
+// reclaim gives the disk back after a prune large enough to be worth it.
+//
+// Deleting rows does not shrink a database. SQLite puts the pages on a free
+// list and the file stays as large as it was at its peak, which on a
+// deployment whose whole point is a small single file is the opposite of what
+// pruning was for. Postgres marks the rows dead and leaves it to autovacuum,
+// which handles the space and is slow to update the planner's idea of how big
+// the table is, so an ANALYZE is the useful half there.
+//
+// Best effort, always. A failure here is a larger file, not a lost log, and
+// taking the prune down with it would turn a tidying step into an outage.
+func reclaim(ctx context.Context, db *gorm.DB, removed int64) {
+	if removed < ReclaimAfter || db == nil {
+		return
+	}
+	var statement string
+	switch db.Dialector.Name() {
+	case "sqlite":
+		// Not inside a transaction, which is why this runs after the last
+		// chunk has committed rather than within one.
+		statement = "VACUUM"
+	case "postgres":
+		statement = "ANALYZE activity_logs"
+	case "mysql":
+		statement = "OPTIMIZE TABLE activity_logs"
+	default:
+		return
+	}
+	if err := db.WithContext(ctx).Exec(statement).Error; err != nil {
+		log.Printf("audit: removed %d entries but could not reclaim the space (%s): %v", removed, statement, err)
+		return
+	}
+	log.Printf("audit: removed %d entries and reclaimed the space (%s)", removed, statement)
 }
 
 func pruneChunk(db *gorm.DB, cutoff time.Time) (int64, error) {

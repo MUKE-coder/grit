@@ -1,0 +1,109 @@
+package filetoken
+
+import (
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
+
+const secret = "a-signing-secret-for-the-tests"
+
+func TestATokenIsForOneFileAndTwoMinutes(t *testing.T) {
+	token, expires, err := Mint(secret, "u_1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !Valid(secret, "u_1", token) {
+		t.Fatal("a fresh token was refused for its own upload")
+	}
+
+	// Not another file's, even inside the window. This is the whole point:
+	// a token in a URL is a URL somebody can edit.
+	if Valid(secret, "u_2", token) {
+		t.Error("a token for u_1 worked on u_2")
+	}
+
+	// Not under another key.
+	if Valid("a-different-secret", "u_1", token) {
+		t.Error("a token verified under a key that did not sign it")
+	}
+
+	if d := time.Until(expires); d > Window+time.Second || d < Window-time.Minute {
+		t.Errorf("the window is %s, want about %s", d, Window)
+	}
+}
+
+func TestAnExpiredTokenIsRefused(t *testing.T) {
+	// Built by hand with a stamp in the past, signed correctly. The signature
+	// is valid and the token is still dead, which is the pair that has to
+	// hold: an attacker who can read a token cannot extend it, and one who
+	// can edit the stamp breaks the signature.
+	past := strconv.FormatInt(time.Now().Add(-time.Minute).Unix(), 10)
+	token := past + "." + sign(secret, "u_1", past)
+
+	if Valid(secret, "u_1", token) {
+		t.Error("an expired token still works")
+	}
+}
+
+func TestAnEditedStampBreaksTheSignature(t *testing.T) {
+	token, _, err := Mint(secret, "u_1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stamp, mac, _ := strings.Cut(token, ".")
+	unix, err := strconv.ParseInt(stamp, 10, 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A year later, same signature.
+	forged := strconv.FormatInt(unix+31536000, 10) + "." + mac
+	if Valid(secret, "u_1", forged) {
+		t.Error("a token with an extended expiry was accepted")
+	}
+}
+
+func TestMalformedTokensAreRefusedRatherThanPanicking(t *testing.T) {
+	for _, token := range []string{
+		"", ".", "x", "x.y", "....",
+		"notanumber." + sign(secret, "u_1", "notanumber"),
+		strings.Repeat("9", 400),
+	} {
+		if Valid(secret, "u_1", token) {
+			t.Errorf("%q was accepted", token)
+		}
+	}
+	// And no secret, or no upload, is never valid.
+	if Valid("", "u_1", "1.x") || Valid(secret, "", "1.x") {
+		t.Error("a token verified with nothing to verify it against")
+	}
+	if _, _, err := Mint("", "u_1"); err == nil {
+		t.Error("minting with no secret should fail rather than sign with nothing")
+	}
+}
+
+// The separator has to be part of the message, or a token for upload "a" at
+// time "1b" reads as one for upload "a1" at time "b".
+func TestTheFieldsCannotBeShiftedAcrossTheBoundary(t *testing.T) {
+	if sign(secret, "a", "1b") == sign(secret, "a1", "b") {
+		t.Error("two different (upload, stamp) pairs produced the same signature")
+	}
+}
+
+func TestExpiryReadsTheStamp(t *testing.T) {
+	token, expires, err := Mint(secret, "u_1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := Expiry(token)
+	if !ok {
+		t.Fatal("a valid token has no readable expiry")
+	}
+	if got.Unix() != expires.Unix() {
+		t.Errorf("Expiry says %s, Mint said %s", got, expires)
+	}
+	if _, ok := Expiry("nonsense"); ok {
+		t.Error("a malformed token reported an expiry")
+	}
+}

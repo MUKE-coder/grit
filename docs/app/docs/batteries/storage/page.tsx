@@ -317,6 +317,42 @@ link, err := disk.TemporaryURL(ctx, "contracts/2026/09/contract.pdf", 15*time.Mi
                 </Note>
               </Section>
 
+              <Section title="Showing a private file in an img tag">
+                <P>
+                  An upload is read through <code className={code}>GET /api/v1/uploads/:id/download</code>, which is
+                  authenticated and scoped to whoever may see the row. That is right, and it leaves one thing
+                  impossible: putting the file in an <code className={code}>&lt;img src&gt;</code>, an{' '}
+                  <code className={code}>&lt;embed&gt;</code>, or a PDF viewer. None of them send an{' '}
+                  <code className={code}>Authorization</code> header and none of them ever will.
+                </P>
+                <P>
+                  So ask for a key, and put it in the URL. It names one upload, it is signed, and it lasts two minutes.
+                </P>
+                <CodeBlock language="bash" filename="terminal" code={`POST /api/v1/uploads/u_123/token
+{"data": {
+  "token": "1794560000.Xq7...",
+  "expires_at": "2026-11-13T12:34:56Z",
+  "url": "/api/v1/uploads/u_123/file/1794560000.Xq7..."
+}}`} />
+                <CodeBlock language="tsx" filename="avatar.tsx" code={`const { data } = await api.post(\`/uploads/\${id}/token\`)
+return <img src={data.url} alt="" />`} />
+                <P>
+                  Minting the key requires exactly the permission the download does, which is what makes it safe to put
+                  in a URL: it can only be obtained by somebody who could already have downloaded the file. The serving
+                  route is unauthenticated and takes the token in the path, so it cannot be reached without one, and the
+                  authenticated download beside it is untouched.
+                </P>
+                <P>
+                  The key is signed with the application&apos;s own <code className={code}>JWT_SECRET</code>, so rotating
+                  that invalidates every outstanding file link at the same moment it signs out every session. A key for
+                  one upload does not work on another, and editing the expiry breaks the signature.
+                </P>
+                <Note>
+                  Two minutes is longer than a page takes to load every image on it and shorter than a URL pasted into a
+                  chat stays interesting. A client that keeps a page open refreshes the key rather than holding one.
+                </Note>
+              </Section>
+
               <Section title="Uploads and the presign fallback">
                 <P>
                   The admin and web apps upload in two steps. They optimise an image in the browser, ask for a presigned

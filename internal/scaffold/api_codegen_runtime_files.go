@@ -87,6 +87,11 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "setup", "setup_test.go"):   tmpl("api/setup/setup_test.go"),
 		filepath.Join(apiRoot, "internal", "handlers", "setup.go"):     tmpl("api/handlers/setup.go"),
 
+		// A short-lived key for one file, so an <img src> can show a private
+		// upload without the bucket being public.
+		filepath.Join(apiRoot, "internal", "filetoken", "filetoken.go"):      tmpl("api/filetoken/filetoken.go"),
+		filepath.Join(apiRoot, "internal", "filetoken", "filetoken_test.go"): tmpl("api/filetoken/filetoken_test.go"),
+
 		// The expression engine: one parser and one compiler, used by
 		// ?filter= on a list endpoint and by a declared access rule. Both
 		// resolve every identifier against the model's own GORM schema and

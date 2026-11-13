@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/authz"
+	"{{MODULE}}/internal/filetoken"
 	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/media"
@@ -249,6 +251,13 @@ type UploadHandler struct {
 	// AllowedMIME is the allowlist for an upload whose field sent no accepts.
 	// routes.go builds it with UploadMIMEAllowlist(cfg.UploadAllowedMIME).
 	AllowedMIME map[string]bool
+
+	// FileTokenSecret signs the short-lived keys that let an <img src> show a
+	// private upload. routes.go sets it from cfg.JWTSecret, so rotating that
+	// invalidates every outstanding file link at the same moment it signs out
+	// every session. Empty disables the feature rather than signing with
+	// nothing.
+	FileTokenSecret string
 }
 
 // Create handles file upload via multipart form.
@@ -620,6 +629,95 @@ func (h *UploadHandler) Download(c *gin.Context) {
 		disposition = storage.Inline
 	}
 	storage.ServeFileAs(c, h.Storage.Disk(), upload.Path, disposition, upload.OriginalName)
+}
+
+// ByToken serves one file to a caller holding a short-lived key for it.
+//
+//	GET /api/v1/uploads/u_123/file/<token>
+//
+// Unauthenticated, and that is the point: a browser asking for an image does
+// not send an Authorization header and never will. What stands in for it is
+// the token, which names this one upload, is signed, and lasts two minutes.
+//
+// Its own route rather than a ?token= on the download above, because that
+// route is behind required authentication: relaxing it so the handler could
+// decide would put a private file one mistake away from public, on the path
+// that already works. Here the token is in the URL, so the route cannot be
+// reached without one.
+func (h *UploadHandler) ByToken(c *gin.Context) {
+	if h.Storage == nil {
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured.")
+		return
+	}
+	id := c.Param("id")
+	if !filetoken.Valid(h.signingSecret(), id, c.Param("token")) {
+		// The same answer for an expired token, a forged one, and one minted
+		// for another file: none of them should say which.
+		respond.Fail(c, respond.CodeUnauthorized, "This file link has expired. Ask for a new one.")
+		return
+	}
+
+	// No owner scope, because there is no caller. The token is the
+	// authorisation, and it was minted for somebody who had already passed
+	// that scope on the route below.
+	upload, err := h.uploads().ByID(c.Request.Context(), id, "")
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
+		return
+	}
+	disposition := storage.Inline
+	if c.Query("download") == "true" {
+		disposition = storage.Attachment
+	}
+	storage.ServeFileAs(c, h.Storage.Disk(), upload.Path, disposition, upload.OriginalName)
+}
+
+// Token mints a short-lived key for one upload.
+//
+//	POST /api/v1/uploads/u_123/token
+//	{"data": {"token": "...", "expires_at": "...", "url": "/api/v1/uploads/u_123/file/<token>"}}
+//
+// Authenticated and scoped exactly as the download is, which is what makes
+// the token safe to put in a URL: it can only be obtained by somebody who
+// could already have downloaded the file.
+func (h *UploadHandler) Token(c *gin.Context) {
+	id := c.Param("id")
+
+	upload, err := h.uploads().ByID(c.Request.Context(), id, h.uploadOwner(c, "view"))
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
+		return
+	}
+
+	token, expires, err := filetoken.Mint(h.signingSecret(), upload.ID)
+	if err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Could not mint a link for this file.")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{
+		"token":      token,
+		"expires_at": expires,
+		"url":        "/api/v1/uploads/" + upload.ID + "/file/" + token,
+	}})
+}
+
+// signingSecret is the key file tokens are signed with.
+//
+// The application's own JWT secret, so rotating it invalidates every
+// outstanding file link at the same moment it signs out every session. That
+// is the behaviour you want from a rotation, and it needs no second secret
+// for somebody to forget to set.
+func (h *UploadHandler) signingSecret() string {
+	if h.FileTokenSecret != "" {
+		return h.FileTokenSecret
+	}
+	// The same value config read, for a project whose routes.go predates the
+	// field. Reading the environment here rather than threading config into
+	// this handler, because the alternative is an upgrade that silently
+	// leaves file links unsigned: Mint refuses an empty secret, so the
+	// feature would simply not work and nothing would say why.
+	return os.Getenv("JWT_SECRET")
 }
 
 // Delete removes an upload and its stored file.
