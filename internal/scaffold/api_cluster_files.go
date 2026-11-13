@@ -47,6 +47,14 @@ func writeClusterFiles(root string, opts Options) error {
 		if err := write(filepath.Join(apiRoot, "internal", "authz", "grants.go"), authzGrantsGo()); err != nil {
 			return err
 		}
+		// The tests travel with the code they test. grants.go was rewritten
+		// here and grants_test.go only ever reached a new project, so an
+		// upgraded one ran today's authorization against the assertions of
+		// whatever version it was scaffolded with: the half of the pair that
+		// would notice a regression was the stale half.
+		if err := write(filepath.Join(apiRoot, "internal", "authz", "grants_test.go"), authzGrantsTestGo()); err != nil {
+			return err
+		}
 	}
 	if fileExists(filepath.Join(apiRoot, "internal", "cron", "cron.go")) {
 		if err := repairCronLeader(root, apiRoot, opts.Module()); err != nil {

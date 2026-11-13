@@ -304,9 +304,155 @@ func filesFileRefTestGo() string {
 	return `package files
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
+
+// An upload a record points at is never deleted, however the key is stored.
+//
+// The reporter's scenario (grit#219): a service keeps the key in an ordinary
+// string column and never calls ClaimRefs, so claimed_at stays NULL. The
+// sweep used to read that as "nothing uses this" and delete the object the
+// next day, with the record still pointing at it. On MinIO and then on R2, in
+// production.
+func TestTheSweepKeepsFilesSomethingReferences(t *testing.T) {
+	db := sweepDB(t)
+
+	// Three uploads, all unclaimed and all old enough to sweep.
+	old := time.Now().Add(-48 * time.Hour)
+	for _, u := range []struct{ id, path string }{
+		{"u-logo", "uploads/2026/11/logo.png"},     // a plain string column
+		{"u-json", "uploads/2026/11/avatar.png"},   // inside a JSON blob
+		{"u-gone", "uploads/2026/11/abandoned.png"}, // genuinely nobody's
+	} {
+		if err := db.Exec(
+			"INSERT INTO uploads (id, path, claimed_at, created_at) VALUES (?, ?, NULL, ?)",
+			u.id, u.path, old).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// A record that references two of them, the way code that never heard of
+	// ClaimRefs does it.
+	if err := db.Exec(
+		"INSERT INTO workspaces (id, logo_path, settings) VALUES (?, ?, ?)",
+		"w1", "uploads/2026/11/logo.png",
+		` + "`" + `{"theme":"dark","avatar":"https://cdn.example.com/uploads/2026/11/avatar.png"}` + "`" + `,
+	).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	store := &recordingStore{}
+	n, err := RunOrphanCleanup(context.Background(), db, store, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("RunOrphanCleanup: %v", err)
+	}
+
+	if n != 1 {
+		t.Errorf("deleted %d uploads, want 1: only abandoned.png is nobody's", n)
+	}
+	if len(store.deleted) != 1 || store.deleted[0] != "uploads/2026/11/abandoned.png" {
+		t.Errorf("deleted the objects %v, want only the abandoned one", store.deleted)
+	}
+
+	// The two that are referenced are still there, and claimed, so the next
+	// pass does not pay to look them up again.
+	for _, id := range []string{"u-logo", "u-json"} {
+		var claimed *time.Time
+		var count int64
+		if err := db.Raw("SELECT COUNT(*) FROM uploads WHERE id = ?", id).Scan(&count).Error; err != nil {
+			t.Fatal(err)
+		}
+		if count != 1 {
+			t.Fatalf("%s was deleted; a record still points at it", id)
+		}
+		if err := db.Raw("SELECT claimed_at FROM uploads WHERE id = ?", id).Scan(&claimed).Error; err != nil {
+			t.Fatal(err)
+		}
+		if claimed == nil {
+			t.Errorf("%s survived but is still unclaimed, so every pass re-scans it", id)
+		}
+	}
+}
+
+// A sweep that cannot read the schema treats everything as referenced.
+//
+// The direction of failure is the whole point of grit#219. An orphan that
+// survives another day costs storage; a file deleted because a query failed
+// costs somebody their data, and they find out from a broken image.
+//
+// The connection pool is closed, so every query inside really does fail.
+// The first version of this test made a view over a missing table, which
+// SQLite's migrator never lists, so the sweep read a perfectly good database
+// and the test asserted it had not been able to.
+func TestASweepThatCannotLookKeepsEverything(t *testing.T) {
+	db := sweepDB(t)
+	page := []orphan{
+		{ID: "u1", Path: "uploads/2026/11/a.png"},
+		{ID: "u2", Path: "uploads/2026/11/b.png"},
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sqlDB.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	inUse := referencedKeys(context.Background(), db, page)
+	if len(inUse) != len(page) {
+		t.Fatalf("with an unreadable database, %d of %d uploads were treated as "+
+			"unreferenced; a sweep that cannot see must not delete",
+			len(page)-len(inUse), len(page))
+	}
+}
+
+// sweepDB is a real database with the shape the sweep reads: the uploads
+// table, and a record holding keys the way a hand-written service does.
+func sweepDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One connection: each :memory: connection is its own empty database.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+
+	for _, ddl := range []string{
+		` + "`" + `CREATE TABLE uploads (
+			id TEXT PRIMARY KEY, path TEXT, claimed_at DATETIME, created_at DATETIME
+		)` + "`" + `,
+		` + "`" + `CREATE TABLE workspaces (
+			id TEXT PRIMARY KEY, logo_path TEXT, settings TEXT
+		)` + "`" + `,
+	} {
+		if err := db.Exec(ddl).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	return db
+}
+
+// recordingStore is a Storage that remembers what it was asked to delete.
+type recordingStore struct{ deleted []string }
+
+func (s *recordingStore) Delete(ctx context.Context, key string) error {
+	s.deleted = append(s.deleted, key)
+	return nil
+}
 
 func TestFileRefRoundTrip(t *testing.T) {
 	width := 1920
@@ -459,7 +605,9 @@ func filesLifecycleGo() string {
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -614,6 +762,12 @@ func ClaimRefs(ctx context.Context, db *gorm.DB, record interface{}) {
 		Error
 }
 
+// orphan is one candidate row: the id to delete and the key to look for.
+type orphan struct {
+	ID   string ` + "`gorm:\"column:id\"`" + `
+	Path string ` + "`gorm:\"column:path\"`" + `
+}
+
 // orphanPage is how many orphans one pass of RunOrphanCleanup reads, deletes
 // from storage in one request and deletes from the table in one statement.
 const orphanPage = 1000
@@ -624,10 +778,19 @@ type batchDeleter interface {
 	DeleteMany(ctx context.Context, keys []string) error
 }
 
-// RunOrphanCleanup deletes Upload rows whose key was never claimed by
-// a parent record AND which are older than minAge, with their stored
-// objects. Designed to be called from a daily cron job. Returns the
-// count of rows purged.
+// RunOrphanCleanup deletes Upload rows that nothing references and that are
+// older than minAge, with their stored objects. Designed to be called from a
+// daily cron job. Returns the count of rows purged.
+//
+// "Nothing references" is checked, not assumed. It used to mean
+// claimed_at IS NULL, and claimed_at is only set by ClaimRefs, which only
+// sees *FileRef and FileRefs struct fields and only when a service calls it.
+// A key kept in a plain string column, in a JSON blob, or by any code that
+// did not know about ClaimRefs read as an abandoned upload, and the file was
+// deleted the next day with the record still pointing at it (grit#219).
+//
+// So an unclaimed candidate is now looked for in the project's own tables
+// before anything is deleted, and one that turns up is claimed instead.
 //
 // The minAge buffer matters: an upload immediately followed by a form
 // save has a small window between the POST /api/uploads success and
@@ -640,11 +803,6 @@ type batchDeleter interface {
 func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.Duration) (int, error) {
 	if db == nil {
 		return 0, fmt.Errorf("RunOrphanCleanup: db is required")
-	}
-
-	type orphan struct {
-		ID   string ` + "`gorm:\"column:id\"`" + `
-		Path string ` + "`gorm:\"column:path\"`" + `
 	}
 
 	cutoff := time.Now().Add(-minAge)
@@ -666,13 +824,45 @@ func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.
 		}
 		after = page[len(page)-1].ID
 
+		// Does anything actually reference these? claimed_at only knows about
+		// the services that call ClaimRefs, so this is the question it was
+		// standing in for (grit#219).
+		inUse := referencedKeys(ctx, db, page)
+		if len(inUse) > 0 {
+			// Claimed rather than merely skipped, so the next pass does not
+			// pay to look them up again, and so the admin shows them as
+			// attached rather than as orphans awaiting deletion.
+			used := make([]string, 0, len(inUse))
+			for key := range inUse {
+				used = append(used, key)
+			}
+			if err := db.WithContext(ctx).
+				Table("uploads").
+				Where("path IN ?", used).
+				Update("claimed_at", time.Now()).Error; err != nil {
+				// Not fatal: the point of this pass is to avoid deleting
+				// them, and that has already happened by here.
+				log.Printf("[uploads] could not claim %d referenced upload(s): %v", len(used), err)
+			}
+			log.Printf("[uploads] kept %d upload(s) that records still reference", len(used))
+		}
+
 		ids := make([]string, 0, len(page))
 		keys := make([]string, 0, len(page))
 		for _, o := range page {
+			if inUse[o.Path] {
+				continue
+			}
 			ids = append(ids, o.ID)
 			if o.Path != "" {
 				keys = append(keys, o.Path)
 			}
+		}
+		if len(ids) == 0 {
+			if len(page) < orphanPage {
+				return deleted, nil
+			}
+			continue
 		}
 		// Best-effort, as it always was: a row whose object could not be
 		// deleted (already gone, a permissions issue) is still dropped, so the
@@ -695,6 +885,137 @@ func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.
 			return deleted, nil
 		}
 	}
+}
+
+// referencedKeys is which of these upload paths appear somewhere in the
+// project's own data.
+//
+// One query per text column per pass, rather than one per candidate: the
+// column is narrowed to values that contain an upload prefix, and the
+// substring match happens in Go. A nightly job can afford that.
+//
+// Fails safe. A table or column it cannot read is treated as referencing
+// every candidate, because a sweep that cannot see is a sweep that must not
+// delete. The cost of being wrong in that direction is an orphan that
+// survives another day; the cost of the other direction is somebody's file.
+func referencedKeys(ctx context.Context, db *gorm.DB, page []orphan) map[string]bool {
+	inUse := map[string]bool{}
+	if len(page) == 0 {
+		return inUse
+	}
+
+	keys := make([]string, 0, len(page))
+	prefixes := map[string]bool{}
+	for _, o := range page {
+		if o.Path == "" {
+			continue
+		}
+		keys = append(keys, o.Path)
+		// The folder the key lives under: "uploads" for uploads/2026/x.jpg.
+		// Used to narrow each column to the handful of rows that could
+		// possibly contain one of these.
+		if cut := strings.IndexByte(o.Path, '/'); cut > 0 {
+			prefixes[o.Path[:cut]] = true
+		}
+	}
+	if len(keys) == 0 || len(prefixes) == 0 {
+		return inUse
+	}
+
+	keepAll := func() map[string]bool {
+		for _, key := range keys {
+			inUse[key] = true
+		}
+		return inUse
+	}
+
+	tables, err := db.Migrator().GetTables()
+	if err != nil {
+		log.Printf("[uploads] cannot list tables, so nothing is swept this pass: %v", err)
+		return keepAll()
+	}
+
+	for _, table := range tables {
+		// The uploads table holds the key itself; that is not a reference.
+		if table == "uploads" {
+			continue
+		}
+		columns, err := db.Migrator().ColumnTypes(table)
+		if err != nil {
+			log.Printf("[uploads] cannot read the columns of %s, so nothing is swept "+
+				"this pass: %v", table, err)
+			return keepAll()
+		}
+		for _, column := range columns {
+			if !holdsText(column.DatabaseTypeName()) {
+				continue
+			}
+			name := column.Name()
+			for prefix := range prefixes {
+				var values []string
+				err := db.WithContext(ctx).
+					Table(table).
+					// Quoted through Pluck's column argument rather than
+					// spliced into a string: the names come from the
+					// migrator, but a query built by concatenation is a
+					// habit worth not having.
+					Where(db.Statement.Quote(name)+" LIKE ?", "%"+prefix+"/%").
+					Limit(referenceScanLimit).
+					Pluck(db.Statement.Quote(name), &values).Error
+				if err != nil {
+					// holdsText already said this column is text, so a failure
+					// here is a table that cannot be read: a view over a
+					// missing table, a permissions problem, a dialect quirk.
+					//
+					// Skipping just the column would be the comfortable
+					// choice and the wrong one. It would make the answer
+					// "nothing references these" for data nobody could see,
+					// which is the assumption this whole function exists to
+					// remove. Loud, because a sweep that silently never
+					// deletes is its own failure: storage fills up and the
+					// log is the only place that says why.
+					log.Printf("[uploads] cannot read %s.%s, so nothing is swept this "+
+						"pass: %v", table, name, err)
+					return keepAll()
+				}
+				for _, value := range values {
+					for _, key := range keys {
+						if !inUse[key] && strings.Contains(value, key) {
+							inUse[key] = true
+						}
+					}
+				}
+				if len(inUse) == len(keys) {
+					return inUse // everything on this page is spoken for
+				}
+			}
+		}
+	}
+	return inUse
+}
+
+// referenceScanLimit caps how many values one column contributes to a pass.
+//
+// A column that holds more than this many upload-shaped strings is a column
+// the sweep cannot read exhaustively in reasonable time, and reading a prefix
+// of it would quietly make the answer "not referenced" for everything after
+// the limit. So the limit is high enough that no ordinary project reaches it.
+const referenceScanLimit = 50000
+
+// holdsText reports whether a column could contain an upload key.
+//
+// Matched on the database type name rather than the Go type, because the
+// column may be json, jsonb, text, varchar or citext depending on the
+// dialect, and a key in a JSON settings blob is exactly the case that was
+// losing files.
+func holdsText(dbType string) bool {
+	switch strings.ToLower(dbType) {
+	case "text", "varchar", "character varying", "char", "character",
+		"json", "jsonb", "citext", "longtext", "mediumtext", "tinytext",
+		"nvarchar", "ntext", "clob", "string":
+		return true
+	}
+	return false
 }
 
 // derefPtr unwraps a single level of pointer indirection so callers

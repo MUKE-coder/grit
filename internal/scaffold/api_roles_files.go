@@ -289,7 +289,13 @@ import (
 	"{{MODULE}}/internal/models"
 )
 
-// grantCache memoises user -> grants for the lifetime of a generation.
+// grantCache memoises authorization answers for the lifetime of a generation.
+//
+// Three kinds of entry share it, under distinct key prefixes: a user's grants
+// (the bare user id), a role's grants ("role:"), and a user's role names
+// ("names:"). One map on purpose, because they are invalidated by exactly the
+// same events and a second cache with its own lifetime is a second thing to
+// remember to drop.
 //
 // Authorization runs on every request, so hitting the database twice per call
 // is a real cost. Rather than expire by time (which makes a revoked permission
@@ -422,6 +428,39 @@ func GrantsForRole(db *gorm.DB, roleID string) ([]string, error) {
 // Upper-cased because the role names the routes name are upper-case, and a
 // column holding "admin" should not fail a guard that says "ADMIN".
 func RoleNamesFor(db *gorm.DB, userID string) ([]string, error) {
+	if userID == "" {
+		return nil, nil
+	}
+
+	// Cached beside the grants, under its own key prefix, because it answers
+	// from the same two places and is invalidated by the same events.
+	//
+	// It was the only part of authorization that was not cached, and it cost
+	// two queries on every authenticated request: the join below, and a
+	// second load of the user row that the auth middleware is already holding
+	// (grit#220). Neither showed up in development, because on SQLite two
+	// extra round trips are free.
+	if sharedWatch != nil && sharedWatch.Changed() {
+		dropLocal()
+	}
+	key := "names:" + userID
+	gen := generation.Load()
+	if v, ok := grantCache.Load(key); ok {
+		if c, ok := v.(cachedGrants); ok && c.gen == gen {
+			return c.grants, nil
+		}
+	}
+
+	names, err := resolveRoleNames(db, userID)
+	if err != nil {
+		return nil, err
+	}
+	grantCache.Store(key, cachedGrants{gen: gen, grants: names})
+	return names, nil
+}
+
+// resolveRoleNames is RoleNamesFor without the cache: the two queries.
+func resolveRoleNames(db *gorm.DB, userID string) ([]string, error) {
 	var roles []models.Role
 	err := db.
 		Joins("JOIN user_roles ON user_roles.role_id = roles.id").
@@ -552,6 +591,59 @@ func newDB(t *testing.T) *gorm.DB {
 		t.Fatal(err)
 	}
 	return db
+}
+
+// Role names are cached, and Invalidate has to reach them (grit#220).
+//
+// RoleNamesFor used to run two queries on every authenticated request: the
+// join below, and a second load of the user row the auth middleware was
+// already holding. It answers from the cache now, which is only a safe trade
+// if taking a role away takes effect at once. A permission that lingers
+// because somebody added a cache is the worst kind of performance work.
+func TestTakingARoleAwayTakesEffectImmediately(t *testing.T) {
+	db := newDB(t)
+	authz.Invalidate() // a clean cache: the map is process-wide
+
+	user := models.User{ID: "u1", Email: "a@example.com", Role: "ADMIN"}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	// First call fills the cache from users.role.
+	names, err := authz.RoleNamesFor(db, "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 1 || names[0] != "ADMIN" {
+		t.Fatalf("got %v, want [ADMIN]", names)
+	}
+
+	// Second call must be served from the cache rather than the database,
+	// or the fix did nothing. Proved by changing the row underneath without
+	// invalidating: a cached answer is the stale one.
+	if err := db.Model(&models.User{}).Where("id = ?", "u1").
+		Update("role", "USER").Error; err != nil {
+		t.Fatal(err)
+	}
+	cached, err := authz.RoleNamesFor(db, "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cached) != 1 || cached[0] != "ADMIN" {
+		t.Fatalf("got %v after an uninvalidated change; the answer was not cached, "+
+			"so grit#220 is not actually fixed", cached)
+	}
+
+	// And now the part that makes the cache safe.
+	authz.Invalidate()
+	after, err := authz.RoleNamesFor(db, "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != 1 || after[0] != "USER" {
+		t.Fatalf("got %v after Invalidate, want [USER]: a revoked role is still in "+
+			"force, which is worse than the two queries this replaced", after)
+	}
 }
 
 // A user's role had two stores, and the answer depended on who asked.

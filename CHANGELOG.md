@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.529.0 - November 13, 2026
+
+### The orphan sweep asks before it deletes, and authorization stops reloading the user
+
+#### Files a record was using, deleted the next day
+
+Reported from production twice, on MinIO and then on R2 (grit#219). Every image a hand-written service had uploaded and kept the key for was gone the day after it was uploaded, with the record still pointing at it.
+
+The cause was an assumption rather than a bug in any line. The daily sweep treated `claimed_at IS NULL` as "nothing uses this", and `claimed_at` is only set by `files.ClaimRefs`, which only sees `*FileRef` and `FileRefs` struct fields, and only when a service remembers to call it. A key kept in a plain string column, in a JSON settings blob, or by any code that had not heard of `ClaimRefs`, was indistinguishable from an abandoned upload. Data loss was the default for code that did not opt in.
+
+The sweep now looks. For each page of candidates it scans the project's own tables for text containing the key, keeps anything it finds, and claims it so the next pass does not pay to look again. One query per text column per pass, not one per candidate, with the substring match in Go: a nightly job can afford that, and the alternative is the version that is cheap and loses files.
+
+It fails safe. A table it cannot read is treated as referencing everything, and says so in the log, because a sweep that cannot see must not delete. An orphan that survives another day costs storage; a file deleted because a query failed costs somebody their data, and they find out from a broken image.
+
+#### Two queries on every authenticated request
+
+Found by the query log that shipped in v3.526.0, on its first run (grit#220). `GET /api/users` cost five queries on a warm cache and two of them were `authz.RoleNamesFor`: the join on `user_roles`, and a second load of the same user row the auth middleware had loaded four lines earlier, for its `role` column alone.
+
+It was the only part of authorization that was not cached. `GrantsFor` has had the answer the whole time, and `GrantsForRole` already showed how to reuse it: cache in the same map under a key prefix, inheriting the generation counter, the cluster watch and the single drop path. Revocation stays immediate across replicas, because exactly one thing still drops the cache.
+
+Measured on a running project, before and after: **five queries per request to three**. What is left is the user load and the two the list itself needs.
+
+#### And the tests now travel with the code
+
+`internal/authz/grants.go` is rewritten by `grit upgrade` and `grants_test.go` only ever reached a new project, so an upgraded one ran today's authorization against the assertions of whatever version it was scaffolded with. The half of the pair that would notice a regression was the stale half.
+
+
 ## v3.528.0 - November 13, 2026
 
 ### The admin moves like one thing
