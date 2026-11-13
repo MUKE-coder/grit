@@ -72,6 +72,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.530.0 */}
+            <div className="mb-12" id="v3.530.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.530.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two things that floated over the page</h3>
+                <p>
+                  The admin has two elements that sit above everything, and
+                  both were sitting on top of content.
+                </p>
+                <p>
+                  <strong>The mobile menu toggle covered the page title.</strong>{' '}
+                  It is fixed at <code>top-3 left-3</code> and 36px square, so
+                  it occupies the first 48px of the viewport. The page header is{' '}
+                  <code>sticky top-0</code>, which puts the two in exactly the
+                  same place as each other at every scroll position, and the
+                  toggle has the higher z-index. On every list page, on every
+                  phone, the title was underneath it the moment anybody
+                  scrolled.
+                </p>
+                <p>
+                  <strong>The quick-access button covered the last thing on the
+                  page.</strong> It is fixed at <code>bottom-6</code> and 48px
+                  tall, so it reserves the final 72px of the viewport, and
+                  nothing reserved that space. At 1440 it was the &quot;Last&quot;
+                  pagination button; at 375 it was the search field.
+                </p>
+                <p>
+                  Both are a utility each: left padding on the header at small
+                  widths, bottom padding on <code>&lt;main&gt;</code> at every
+                  width. Desktop is unchanged apart from the bottom, where the
+                  overlap was real too.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The first attempt at the toggle was top padding on{' '}
+                  <code>&lt;main&gt;</code>, which looked right at rest and did
+                  nothing once the page was scrolled: a sticky element pins to
+                  the viewport, not to its parent&apos;s box. The test records
+                  that, so the next person does not try it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.529.0 */}
             <div className="mb-12" id="v3.529.0">
               <div className="flex items-center gap-3 mb-4">

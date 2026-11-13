@@ -23,6 +23,21 @@ Also worth knowing:
 ---
 
 
+## v3.530.0 - November 13, 2026
+
+### Two things that floated over the page
+
+The admin has two elements that sit above everything, and both were sitting on top of content.
+
+**The mobile menu toggle covered the page title.** It is fixed at `top-3 left-3` and 36px square, so it occupies the first 48px of the viewport. The page header is `sticky top-0`, which puts the two in exactly the same place as each other at every scroll position, and the toggle has the higher z-index. On every list page, on every phone, the title was underneath it the moment anybody scrolled.
+
+**The quick-access button covered the last thing on the page.** It is fixed at `bottom-6` and 48px tall, so it reserves the final 72px of the viewport, and nothing reserved that space. At 1440 it was the "Last" pagination button; at 375 it was the search field.
+
+Both are a utility each: left padding on the header at small widths, bottom padding on `<main>` at every width. Desktop is unchanged apart from the bottom, where the overlap was real too.
+
+The first attempt at the toggle was top padding on `<main>`, which looked right at rest and did nothing once the page was scrolled: a sticky element pins to the viewport, not to its parent's box. The test records that, so the next person does not try it.
+
+
 ## v3.529.0 - November 13, 2026
 
 ### The orphan sweep asks before it deletes, and authorization stops reloading the user

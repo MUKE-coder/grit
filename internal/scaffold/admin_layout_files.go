@@ -516,7 +516,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
         {/* grit:layout:banner */}
         <EmailVerifiedBanner />
-        <main id="main" tabIndex={-1} className="flex-1 px-4 py-6 md:px-8 focus:outline-none">
+        {/* The bottom padding clears the floating quick-access button, which
+            is 48px at bottom-6 and so reserves the last 72px of the viewport.
+            Nothing reserved it, so the final element on the page sat beneath
+            it: the "Last" pagination button at 1440, the search field at 375.
+            At every width, because the overlap was at every width.
+
+            The menu toggle at the top is not handled here. It overlaps the
+            sticky page header, and a sticky element does not move when its
+            scrolling ancestor gains padding: PageHeader carries that one. */}
+        <main id="main" tabIndex={-1} className="flex-1 px-4 py-6 pb-20 md:px-8 focus:outline-none">
           {inBrowser ? children : null}
         </main>
       </div>

@@ -556,7 +556,16 @@ export function PageHeader({
         main's px-* padding so the bg + border stretch to the edges, and
         px-* inside brings the content back inside the original gutter. */}
     <header className="sticky top-0 z-20 -mx-4 mb-6 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:-mx-8">
-      <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+      {/* pl-14 on small screens, for the menu toggle.
+
+          The toggle is fixed at top-3 left-3 and 36px square, so it occupies
+          the first 48px of the viewport in both directions. This header is
+          sticky top-0, which means the two are in exactly the same place as
+          each other at every scroll position, and the toggle has the higher
+          z-index: the page title sat underneath it the moment anybody
+          scrolled. Padding on the scrolling wrapper cannot fix that, because
+          a sticky element does not move with it. */}
+      <div className="flex flex-col gap-4 pl-14 pr-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
         {/* Title block — min-w-0 + flex-shrink lets the title wrap
             cleanly when long subtitles share the row with action chrome. */}
         <div className="min-w-0 md:flex-1">
