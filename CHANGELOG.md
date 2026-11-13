@@ -23,6 +23,27 @@ Also worth knowing:
 ---
 
 
+## v3.523.0 - November 13, 2026
+
+### The first run, without a password in the repository
+
+A deployment with nobody who can administer it now mints a one-time link and prints it, instead of waiting for somebody to seed a known email with a known password.
+
+`{` Nobody can sign in to this deployment yet. Open this link within 30m0s to create the first administrator: http://localhost:8080/setup/7e474b648b27b9a6...`}` The link opens a form served by the Go binary itself: one page, no build step, no dependency. That is deliberate rather than lazy. A deployment that cannot be administered is exactly the deployment where the frontend has not been built yet, and a form that is forty lines of HTML does not need a framework to render it.
+
+#### What makes the link safe
+
+- Thirty-two random bytes, compared in constant time against a SHA-256 of itself. The server never holds the secret after it has printed it.
+- Half an hour, then it is dead. It lives in memory, so a restart mints a new one and a link found in an old log is already useless.
+- Spent the moment it creates an administrator, and spent only *after* the row exists: spending first would turn a failed insert into a deployment nobody can get into.
+- The route is not mounted at all once the deployment has an administrator, and the handler checks again before creating one, so two people opening the link at the same time cannot both succeed.
+- The password is held to the same rules as every other password in the project, including the part about reusing the email address.
+
+The seeder is unchanged: ask for `grit seed` and you still get the demo accounts in development. This is for the deployment nobody has seeded, which is every real one.
+
+Found on the way: the sweep that checks every email field has an `autocomplete` knew only React's spelling, so it reported this plain HTML form as missing an attribute it has. A check that cries wolf is a check people learn to ignore.
+
+
 ## v3.522.0 - November 13, 2026
 
 ### POST /api/v1/batch: many writes, one transaction

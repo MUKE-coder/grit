@@ -81,6 +81,12 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "batch.go"):     tmpl("api/handlers/batch.go"),
 		filepath.Join(apiRoot, "internal", "handlers", "batch_test.go"): tmpl("api/handlers/batch_test.go"),
 
+		// The first run: a deployment with no administrator mints a one-time
+		// link instead of seeding a known password.
+		filepath.Join(apiRoot, "internal", "setup", "setup.go"):        tmpl("api/setup/setup.go"),
+		filepath.Join(apiRoot, "internal", "setup", "setup_test.go"):   tmpl("api/setup/setup_test.go"),
+		filepath.Join(apiRoot, "internal", "handlers", "setup.go"):     tmpl("api/handlers/setup.go"),
+
 		// The expression engine: one parser and one compiler, used by
 		// ?filter= on a list endpoint and by a declared access rule. Both
 		// resolve every identifier against the model's own GORM schema and

@@ -1,0 +1,166 @@
+package setup
+
+import (
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+)
+
+type setupUser struct {
+	ID      string `gorm:"primaryKey"`
+	Email   string
+	Role    string
+	Deleted *time.Time `gorm:"column:deleted_at"`
+}
+
+func (setupUser) TableName() string { return "users" }
+
+func setupDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+
+	if err := db.AutoMigrate(&setupUser{}); err != nil {
+		t.Fatal(err)
+	}
+	return db
+}
+
+func TestNeededCountsAdministrators(t *testing.T) {
+	db := setupDB(t)
+
+	needed, err := Needed(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !needed {
+		t.Error("an empty database does not need a first administrator")
+	}
+
+	// A user who is not an administrator is not an administrator.
+	if err := db.Create(&setupUser{ID: "u1", Email: "a@b.c", Role: "USER"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if needed, _ = Needed(db); !needed {
+		t.Error("a deployment with only ordinary users has nobody to administer it")
+	}
+
+	if err := db.Create(&setupUser{ID: "u2", Email: "admin@b.c", Role: "ADMIN"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if needed, _ = Needed(db); needed {
+		t.Error("a deployment with an administrator still asked for one")
+	}
+
+	// And a soft-deleted administrator is not one, or deleting the only
+	// admin leaves a deployment nobody can get into and no way to say so.
+	when := time.Now()
+	if err := db.Model(&setupUser{}).Where("id = ?", "u2").Update("deleted_at", when).Error; err != nil {
+		t.Fatal(err)
+	}
+	if needed, _ = Needed(db); !needed {
+		t.Error("a soft-deleted administrator was counted as one")
+	}
+}
+
+func TestATokenIsGoodOnceAndBriefly(t *testing.T) {
+	token, secret, err := Mint()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(secret) != 64 {
+		t.Errorf("the secret is %d characters; 32 random bytes is 64 hex", len(secret))
+	}
+
+	if !token.Valid(secret) {
+		t.Fatal("a fresh token refused its own secret")
+	}
+	if token.Valid(secret + "x") {
+		t.Error("a token accepted a secret that is not its own")
+	}
+	if token.Valid("") {
+		t.Error("a token accepted an empty secret")
+	}
+
+	// Whitespace from a copied link is trimmed, because that is the shape of
+	// the mistake somebody actually makes.
+	if !token.Valid("  " + secret + "\n") {
+		t.Error("a token refused its own secret with whitespace around it")
+	}
+
+	// Once.
+	token.Spend()
+	if token.Valid(secret) {
+		t.Error("a spent token still works")
+	}
+	if !token.Spent() {
+		t.Error("a spent token does not say so")
+	}
+	if token.Link("http://localhost:8080") != "" {
+		t.Error("a spent token still prints its link")
+	}
+}
+
+func TestATokenExpires(t *testing.T) {
+	token, secret, err := Mint()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Reach in rather than wait half an hour. The window is the point of the
+	// test, not the clock.
+	token.mu.Lock()
+	token.expires = time.Now().Add(-time.Second)
+	token.mu.Unlock()
+
+	if token.Valid(secret) {
+		t.Error("an expired token still works")
+	}
+	if !token.Spent() {
+		t.Error("an expired token does not count as spent")
+	}
+}
+
+func TestTheLinkIsTheSecret(t *testing.T) {
+	token, secret, err := Mint()
+	if err != nil {
+		t.Fatal(err)
+	}
+	link := token.Link("http://localhost:8080/")
+	if !strings.HasSuffix(link, "/setup/"+secret) {
+		t.Errorf("the link is %q, which does not carry the secret", link)
+	}
+	// One slash, whatever the base URL ends with.
+	if strings.Contains(strings.TrimPrefix(link, "http://"), "//") {
+		t.Errorf("the link has a doubled slash: %q", link)
+	}
+}
+
+// Two tokens must never be the same, which is the one property a
+// cryptographic source gives you and a timestamp does not.
+func TestTokensAreNotPredictable(t *testing.T) {
+	seen := map[string]bool{}
+	for i := 0; i < 200; i++ {
+		_, secret, err := Mint()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if seen[secret] {
+			t.Fatalf("two of 200 tokens were identical")
+		}
+		seen[secret] = true
+	}
+}

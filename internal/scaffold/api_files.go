@@ -503,6 +503,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/routes"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/devserver"
+	"` + "{{MODULE}}" + `/internal/setup"
 	"` + "{{MODULE}}" + `/internal/storage"
 	"` + "{{MODULE}}" + `/internal/tracing"
 )
@@ -693,6 +694,28 @@ func main() {
 
 	// grit:main:boot
 	// Setup router
+	// The first run: a deployment with nobody who can administer it.
+	//
+	// Minted before the router is built, because the router only mounts the
+	// setup page when there is a token, and printed after the server is up so
+	// the link is the last thing on the screen rather than the first.
+	//
+	// This is what replaces a seeded admin@example.com with a known password.
+	// The seeder still writes one on request; this is for the deployment
+	// nobody has seeded, which is every real one.
+	var firstRunLink string
+	if needed, err := setup.Needed(db); err != nil {
+		log.Printf("could not check for an administrator: %v", err)
+	} else if needed {
+		token, _, err := setup.Mint()
+		if err != nil {
+			log.Printf("could not mint a setup link: %v", err)
+		} else {
+			routes.EnableFirstRunSetup(token)
+			firstRunLink = token.Link(cfg.AppURL)
+		}
+	}
+
 	router := routes.Setup(db, cfg, svc)
 
 	// Start the SecObs notification poller (turns Sentinel/Pulse findings
@@ -791,6 +814,14 @@ func main() {
 	// Start server in goroutine
 	go func() {
 		log.Printf("Server starting on port %s", cfg.Port)
+		if firstRunLink != "" {
+			log.Println("")
+			log.Println("  Nobody can sign in to this deployment yet.")
+			log.Printf("  Open this link within %s to create the first administrator:", setup.Window)
+			log.Println("")
+			log.Printf("      %s", firstRunLink)
+			log.Println("")
+		}
 ` + serverDashboardLogs + `
 		if cfg.PulseEnabled {
 			log.Printf("Pulse dashboard at http://localhost:%s/pulse/ui/", cfg.Port)
@@ -8160,6 +8191,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/sagas"
 	"` + "{{MODULE}}" + `/internal/paginate"
 	"` + "{{MODULE}}" + `/internal/ratelimit"
+	"` + "{{MODULE}}" + `/internal/setup"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/settings"
 	"` + "{{MODULE}}" + `/internal/tracing"
@@ -9391,8 +9423,34 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	batch := handlers.NewBatchHandler(db, r)
 	protected.POST("/batch", batch.Execute)
 
+	// The first run, when nobody can sign in yet.
+	//
+	// Unauthenticated by necessity and safe by the token: the link is minted
+	// at start-up, printed once, lasts half an hour, is spent the moment it
+	// creates an administrator, and refuses outright as soon as the
+	// deployment has one. Outside /api/ because it is a page, not an
+	// endpoint, and because the page has to be reachable before any frontend
+	// has been built. See internal/setup.
+	if setupToken != nil {
+		setupHandler := &handlers.SetupHandler{DB: db, Token: setupToken}
+		r.GET("/setup/:token", setupHandler.Page)
+		r.POST("/setup/:token", setupHandler.Create)
+	}
+
 	return r
 }
+
+// setupToken is this process's first-run link, or nil when the deployment
+// already has an administrator.
+//
+// A package variable because Setup builds the router and main decides whether
+// a token is needed, and threading it through every call site of Setup would
+// change a signature a dozen projects have already edited.
+var setupToken *setup.Token
+
+// EnableFirstRunSetup arms the setup route with a token, and returns the link
+// to print. Called from main before Setup.
+func EnableFirstRunSetup(token *setup.Token) { setupToken = token }
 
 // mountLegacyAPIAlias keeps unversioned /api/... paths working by re-dispatching
 // them to /api/<APIVersion>/... .

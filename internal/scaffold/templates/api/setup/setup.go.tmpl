@@ -1,0 +1,147 @@
+// Package setup is the first run: a deployment with no administrator yet.
+//
+// The alternative, and what this project did before, is a seeder that writes a
+// known email with a known password. In development that is convenient. In
+// production it is a credential in a repository, and the two differ by an
+// environment variable somebody has to remember to set.
+//
+// So: on a first start with no administrator, the server mints a token that
+// lasts half an hour, prints a link, and will not do anything else until
+// somebody opens it and chooses their own email and password.
+//
+//	Nobody can sign in to this deployment yet.
+//	Open this link within 30 minutes to create the first administrator:
+//
+//	    http://localhost:8080/setup/9f3c2a1e...
+//
+// The token lives in memory and a restart mints a new one, which is the
+// property that matters: a link found in an old log is already dead.
+package setup
+
+import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
+	"strings"
+	"sync"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// Window is how long a setup link is good for.
+//
+// Long enough to read the line, short enough that a link scrolled off a
+// terminal is not a way in tomorrow.
+const Window = 30 * time.Minute
+
+// Token is the one-time secret that lets somebody create the first
+// administrator.
+type Token struct {
+	mu      sync.Mutex
+	hash    []byte
+	expires time.Time
+	used    bool
+
+	// plain is returned once, to be printed. It is not kept after that: the
+	// server holds the hash, as it does for every other credential.
+	plain string
+}
+
+// Needed reports whether this deployment has nobody who can administer it.
+//
+// Counted rather than looked up by email, because "the first administrator"
+// is a question about the table and not about a particular address. A
+// deployment that renamed or deleted admin@example.com has an administrator.
+func Needed(db *gorm.DB) (bool, error) {
+	if db == nil {
+		return false, nil
+	}
+	var count int64
+	if err := db.Table("users").
+		Where("role = ? AND (deleted_at IS NULL)", "ADMIN").
+		Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count == 0, nil
+}
+
+// Mint returns a new token, and the secret to print with it.
+func Mint() (*Token, string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return nil, "", err
+	}
+	secret := hex.EncodeToString(raw)
+	sum := sha256.Sum256([]byte(secret))
+
+	return &Token{
+		hash:    sum[:],
+		expires: time.Now().Add(Window),
+		plain:   secret,
+	}, secret, nil
+}
+
+// Valid reports whether a secret matches this token and the window is open.
+//
+// Constant time, because this is a credential check and a timing difference
+// on a 64-character hex string is a credential leak measured in requests.
+func (t *Token) Valid(secret string) bool {
+	if t == nil {
+		return false
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.used || time.Now().After(t.expires) {
+		return false
+	}
+	sum := sha256.Sum256([]byte(strings.TrimSpace(secret)))
+	return subtle.ConstantTimeCompare(sum[:], t.hash) == 1
+}
+
+// Spend marks the token used, so a link that created an administrator cannot
+// create a second one.
+func (t *Token) Spend() {
+	if t == nil {
+		return
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.used = true
+	t.plain = ""
+}
+
+// Spent reports whether this token has been used or has expired.
+func (t *Token) Spent() bool {
+	if t == nil {
+		return true
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.used || time.Now().After(t.expires)
+}
+
+// Link is the URL to print, or "" once the token is spent.
+func (t *Token) Link(baseURL string) string {
+	if t == nil {
+		return ""
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.used || t.plain == "" {
+		return ""
+	}
+	return strings.TrimRight(baseURL, "/") + "/setup/" + t.plain
+}
+
+// Expires is when the window closes, for the page to say so.
+func (t *Token) Expires() time.Time {
+	if t == nil {
+		return time.Time{}
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.expires
+}

@@ -1,0 +1,228 @@
+package handlers
+
+import (
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/password"
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/setup"
+)
+
+// The first run: a deployment with no administrator.
+//
+// Two routes and one page, served by the Go binary itself. Not by the admin
+// panel, deliberately: the panel is a build artefact that may not be present,
+// and a deployment that cannot be administered is exactly the deployment
+// where the frontend has not been built yet. A form that is forty lines of
+// HTML does not need a framework.
+
+// SetupHandler creates the first administrator, once.
+type SetupHandler struct {
+	DB    *gorm.DB
+	Token *setup.Token
+}
+
+// Page serves the form at /setup/:token.
+func (h *SetupHandler) Page(c *gin.Context) {
+	if h.Token == nil || !h.Token.Valid(c.Param("token")) {
+		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte(setupExpiredHTML))
+		return
+	}
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(setupFormHTML))
+}
+
+type firstAdminRequest struct {
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required,min=12"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
+// Create makes the first administrator and spends the token.
+func (h *SetupHandler) Create(c *gin.Context) {
+	if h.Token == nil || !h.Token.Valid(c.Param("token")) {
+		respond.Fail(c, respond.CodeUnauthorized,
+			"This setup link has expired or has already been used. Restart the server for a new one.")
+		return
+	}
+
+	// Checked again here, not only at start-up. The token is minted once and
+	// the window is half an hour: without this, two people opening the link
+	// at the same time both create an administrator, and the second one is a
+	// second way in that nobody decided on.
+	needed, err := setup.Needed(h.DB)
+	if err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Could not check whether this deployment has an administrator.")
+		return
+	}
+	if !needed {
+		h.Token.Spend()
+		respond.Fail(c, respond.CodeConflict,
+			"This deployment already has an administrator, so this link no longer does anything.")
+		return
+	}
+
+	var req firstAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError,
+			"An email and a password of at least 12 characters: "+err.Error())
+		return
+	}
+	// The same strength rules every other password in this project is held
+	// to, including the parts about reusing the email address.
+	if problems := password.Check(req.Password, req.Email, req.FirstName, req.LastName); len(problems) > 0 {
+		respond.Fail(c, respond.CodeValidationError, strings.Join(problems, " "))
+		return
+	}
+
+	user := models.User{
+		FirstName: strings.TrimSpace(req.FirstName),
+		LastName:  strings.TrimSpace(req.LastName),
+		Email:     strings.ToLower(strings.TrimSpace(req.Email)),
+		Password:  req.Password,
+		Role:      "ADMIN",
+		Active:    true,
+	}
+	if user.FirstName == "" {
+		user.FirstName = "Admin"
+	}
+	if err := h.DB.Create(&user).Error; err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Could not create the administrator.")
+		return
+	}
+
+	// Spent only after the row exists. Spending first would turn a failed
+	// insert into a deployment nobody can administer and no way to try again
+	// short of a restart.
+	h.Token.Spend()
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    gin.H{"email": user.Email},
+		"message": "Administrator created. Sign in with this address.",
+	})
+}
+
+// setupFormHTML is the whole page: one form, no build step, no dependency.
+//
+// The fields are posted to the same path the page was served from, so the
+// token never has to be written into the page body where a browser extension
+// or a screenshot would carry it further than the address bar does.
+const setupFormHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Create the first administrator</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center;
+         background:#0a0a0f; color:#e8e8f0;
+         font:16px/1.5 Onest, system-ui, -apple-system, Segoe UI, sans-serif; }
+  main { width:min(420px, 92vw); padding:32px; background:#111118;
+         border:1px solid #2a2a3a; border-radius:14px; }
+  h1 { margin:0 0 6px; font-size:22px; letter-spacing:-.01em; }
+  p.sub { margin:0 0 24px; color:#9090a8; font-size:14px; }
+  label { display:block; margin:16px 0 6px; font-size:13px; color:#9090a8; }
+  input { width:100%; box-sizing:border-box; padding:11px 13px; border-radius:9px;
+          border:1px solid #2a2a3a; background:#1a1a24; color:#e8e8f0; font-size:15px; }
+  input:focus { outline:2px solid #6c5ce7; outline-offset:1px; border-color:#6c5ce7; }
+  button { width:100%; margin-top:24px; padding:12px; border:0; border-radius:9px;
+           background:#6c5ce7; color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+  button:hover { background:#7c6cf7; }
+  button[disabled] { opacity:.65; cursor:progress; }
+  .msg { margin-top:16px; font-size:14px; min-height:20px; }
+  .msg.bad { color:#ff6b6b; }
+  .msg.good { color:#00b894; }
+  .hint { margin-top:6px; font-size:12px; color:#7c7c96; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Create the first administrator</h1>
+  <p class="sub">Nobody can sign in to this deployment yet. This link works once.</p>
+  <form id="f" autocomplete="on">
+    <label for="first_name">Name</label>
+    <input id="first_name" name="first_name" autocomplete="given-name" placeholder="Ada">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" required autocomplete="username">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required minlength="12" autocomplete="new-password">
+    <p class="hint">At least 12 characters.</p>
+    <button id="go" type="submit">Create administrator</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+  </form>
+</main>
+<script>
+const form = document.getElementById('f');
+const msg = document.getElementById('msg');
+const go = document.getElementById('go');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  go.disabled = true;
+  go.textContent = 'Creating...';
+  msg.className = 'msg';
+  msg.textContent = '';
+  try {
+    const res = await fetch(window.location.pathname, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: form.first_name.value,
+        email: form.email.value,
+        password: form.password.value,
+      }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      msg.className = 'msg bad';
+      msg.textContent = (body.error && body.error.message) || 'That did not work.';
+      go.disabled = false;
+      go.textContent = 'Create administrator';
+      return;
+    }
+    msg.className = 'msg good';
+    msg.textContent = 'Done. Taking you to sign in...';
+    setTimeout(() => { window.location.href = '/login'; }, 1200);
+  } catch (err) {
+    msg.className = 'msg bad';
+    msg.textContent = 'The server did not answer.';
+    go.disabled = false;
+    go.textContent = 'Create administrator';
+  }
+});
+</script>
+</body>
+</html>`
+
+const setupExpiredHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>This link has expired</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center;
+         background:#0a0a0f; color:#e8e8f0;
+         font:16px/1.5 Onest, system-ui, -apple-system, Segoe UI, sans-serif; }
+  main { width:min(460px, 92vw); padding:32px; text-align:center; }
+  h1 { font-size:20px; margin:0 0 10px; }
+  p { color:#9090a8; font-size:14px; margin:0; }
+  code { background:#1a1a24; padding:2px 6px; border-radius:5px; color:#e8e8f0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>This setup link has expired</h1>
+  <p>Restart the server to print a new one, or create an administrator with
+     <code>grit seed</code>.</p>
+</main>
+</body>
+</html>`

@@ -30,7 +30,12 @@ import (
 var (
 	emailInputRe   = regexp.MustCompile(`type="email"`)
 	goFuncRe       = regexp.MustCompile(`func (\w+)\(`)
-	autoCompleteRe = regexp.MustCompile(`autoComplete="([a-z-]+)"`)
+	// Either spelling. React wants autoComplete; plain HTML, which the
+	// first-run setup page is because it is served by the Go binary before
+	// any frontend has been built, wants autocomplete. A sweep that knows
+	// only the JSX casing reports a correct HTML form as a missing attribute,
+	// which teaches people to ignore it.
+	autoCompleteRe = regexp.MustCompile(`(?i)autocomplete="([a-z-]+)"`)
 )
 
 // credentialWords name a form whose email field is the credential's identifier.

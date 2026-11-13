@@ -72,6 +72,79 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.523.0 */}
+            <div className="mb-12" id="v3.523.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.523.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The first run, without a password in the repository</h3>
+                <p>
+                  A deployment with nobody who can administer it now mints a
+                  one-time link and prints it, instead of waiting for somebody
+                  to seed a known email with a known password.
+                </p>
+                <pre><code>{`  Nobody can sign in to this deployment yet.
+  Open this link within 30m0s to create the first administrator:
+
+      http://localhost:8080/setup/7e474b648b27b9a6...`}</code></pre>
+                <p>
+                  The link opens a form served by the Go binary itself: one
+                  page, no build step, no dependency. That is deliberate
+                  rather than lazy. A deployment that cannot be administered
+                  is exactly the deployment where the frontend has not been
+                  built yet, and a form that is forty lines of HTML does not
+                  need a framework to render it.
+                </p>
+                <h4>What makes the link safe</h4>
+                <ul>
+                  <li>
+                    Thirty-two random bytes, compared in constant time against
+                    a SHA-256 of itself. The server never holds the secret
+                    after it has printed it.
+                  </li>
+                  <li>
+                    Half an hour, then it is dead. It lives in memory, so a
+                    restart mints a new one and a link found in an old log is
+                    already useless.
+                  </li>
+                  <li>
+                    Spent the moment it creates an administrator, and spent
+                    only <em>after</em> the row exists: spending first would
+                    turn a failed insert into a deployment nobody can get into.
+                  </li>
+                  <li>
+                    The route is not mounted at all once the deployment has an
+                    administrator, and the handler checks again before
+                    creating one, so two people opening the link at the same
+                    time cannot both succeed.
+                  </li>
+                  <li>
+                    The password is held to the same rules as every other
+                    password in the project, including the part about reusing
+                    the email address.
+                  </li>
+                </ul>
+                <p>
+                  The seeder is unchanged: ask for{' '}
+                  <code>grit seed</code> and you still get the demo accounts in
+                  development. This is for the deployment nobody has seeded,
+                  which is every real one.
+                </p>
+                <p>
+                  Found on the way: the sweep that checks every email field
+                  has an <code>autocomplete</code> knew only React&apos;s
+                  spelling, so it reported this plain HTML form as missing an
+                  attribute it has. A check that cries wolf is a check people
+                  learn to ignore.
+                </p>
+              </div>
+            </div>
+
             {/* v3.522.0 */}
             <div className="mb-12" id="v3.522.0">
               <div className="flex items-center gap-3 mb-4">
