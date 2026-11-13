@@ -585,13 +585,13 @@ export default function AdminDashboard() {
               <a
                 key={r.slug}
                 href={%s/resources/${r.slug}%s}
-                className="group relative rounded-2xl border border-white/5 bg-bg-secondary/60 backdrop-blur-xl p-6 hover:border-accent/30 hover:bg-bg-secondary/80 transition-all overflow-hidden"
+                className="group relative rounded-2xl border border-white/5 bg-bg-secondary/60 backdrop-blur-xl p-6 hover:border-accent/30 hover:bg-bg-secondary/80 transition-grit overflow-hidden"
               >
                 {/* Card glow on hover */}
-                <div className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-accent/0 group-hover:bg-accent/10 blur-2xl transition-all duration-500" />
+                <div className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-accent/0 group-hover:bg-accent/10 blur-2xl transition-grit duration-500" />
 
                 <div className="relative flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 group-hover:bg-accent/20 group-hover:border-accent/30 transition-all">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 group-hover:bg-accent/20 group-hover:border-accent/30 transition-grit">
                     <Icon className="h-6 w-6 text-accent" />
                   </div>
                   <div>
@@ -617,7 +617,7 @@ export default function AdminDashboard() {
             href={API_URL + "/studio"}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-all group"
+            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-grit group"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-info/10 border border-info/20">
               <span className="text-info text-sm font-bold">DB</span>
@@ -631,7 +631,7 @@ export default function AdminDashboard() {
             href={apiUrl("/api/health")}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-all group"
+            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-grit group"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 border border-success/20">
               <span className="text-success text-sm font-bold">OK</span>
@@ -643,7 +643,7 @@ export default function AdminDashboard() {
           </a>
           <a
             href="/system/jobs"
-            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-all group"
+            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-grit group"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning/10 border border-warning/20">
               <span className="text-warning text-sm font-bold">Q</span>
@@ -655,7 +655,7 @@ export default function AdminDashboard() {
           </a>
           <a
             href="/system/files"
-            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-all group"
+            className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-grit group"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
               <span className="text-accent text-sm font-bold">S3</span>

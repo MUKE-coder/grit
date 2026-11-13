@@ -656,6 +656,27 @@ export type ButtonVariant =
 
 export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
+/**
+ * A transient outcome, not a variant.
+ *
+ * A primary button that has just saved is still a primary button, so these
+ * sit on top of whichever variant is in use and are meant to be cleared after
+ * a moment. Hold state="success" for about 1.6s after a save and the button
+ * confirms itself where the person is already looking, which beats a toast in
+ * a corner they are not.
+ */
+export type ButtonState = "idle" | "error" | "success";
+
+const STATES: Record<ButtonState, string> = {
+  idle: "",
+  error:
+    "ring-2 ring-danger ring-offset-1 ring-offset-bg-secondary " +
+    "motion-safe:animate-grit-shake",
+  // Important, because it has to beat the variant's own background for the
+  // moment it is shown.
+  success: "!bg-success !text-white",
+};
+
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
     "bg-accent text-accent-fg hover:bg-accent-hover focus-visible:ring-accent",
@@ -674,14 +695,30 @@ const SIZES: Record<ButtonSize, string> = {
   md: "h-10 gap-2 rounded-lg px-4 text-sm",
   lg: "h-11 gap-2 rounded-lg px-5 text-[15px]",
   // Square. Width is pinned so an icon-only button never collapses to its
-  // glyph and becomes a 16px tap target.
-  icon: "h-10 w-10 gap-0 rounded-lg p-0 text-sm",
+  // glyph and becomes a 16px tap target. 40px is comfortable with a mouse
+  // and misses with a thumb, so the box grows to the 44px floor on a coarse
+  // pointer and the drawn button is unchanged on a desktop.
+  icon:
+    "h-10 w-10 gap-0 rounded-lg p-0 text-sm " +
+    "pointer-coarse:h-11 pointer-coarse:w-11",
 };
 
 const BASE =
-  "inline-flex shrink-0 items-center justify-center font-medium transition-colors " +
+  "inline-flex shrink-0 items-center justify-center font-medium " +
+  // Named properties, never transition-grit. Transform and colour are the two
+  // that cost nothing to animate; transition-grit would quietly pick up width
+  // and height the day a utility adds one, and animating those relayouts the
+  // page every frame.
+  "transition-[color,background-color,border-color,opacity,transform] " +
+  "duration-[var(--t-press)] " +
+  // The press. 0.97 reads as the button taking the click rather than as the
+  // button moving, and motion-safe so it is gone under reduced motion.
+  "motion-safe:active:scale-[0.97] " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-secondary " +
-  "disabled:pointer-events-none disabled:opacity-50";
+  // Disabled fades and stops. Busy does neither: it keeps its colour, because
+  // fading it says "you cannot do this" when the truth is "I am doing it".
+  "disabled:pointer-events-none disabled:opacity-50 " +
+  "aria-busy:pointer-events-none aria-busy:cursor-progress";
 
 /**
  * The class string on its own.
@@ -693,24 +730,50 @@ const BASE =
 export function buttonClasses(opts?: {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  state?: ButtonState;
   className?: string;
 }): string {
   const variant = VARIANTS[opts?.variant ?? "primary"];
   const size = SIZES[opts?.size ?? "md"];
-  return [BASE, variant, size, opts?.className ?? ""].filter(Boolean).join(" ");
+  const state = STATES[opts?.state ?? "idle"];
+  return [BASE, variant, size, state, opts?.className ?? ""]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** Shows a spinner and disables the button. */
+  /** Shows a spinner, sets aria-busy, and stops taking clicks. */
   loading?: boolean;
+  /**
+   * What to say while loading: "Saving", "Sending".
+   *
+   * The spinner is invisible to a screen reader and to anybody who looked
+   * away, so the word is what carries the state. Without it the label sits
+   * there unchanged and an icon is the only signal.
+   */
+  busyLabel?: React.ReactNode;
+  /** A transient outcome. Clear it after a moment. */
+  state?: ButtonState;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
-    { variant, size, loading, disabled, className, children, type, ...rest },
+    {
+      variant,
+      size,
+      loading,
+      busyLabel,
+      state,
+      disabled,
+      className,
+      children,
+      type,
+      onClick,
+      ...rest
+    },
     ref,
   ) {
     return (
@@ -720,12 +783,38 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         // and an unlabelled button inside a form submits it — which is how a
         // Cancel next to a Save ends up saving.
         type={type ?? "button"}
-        disabled={disabled || loading}
-        className={buttonClasses({ variant, size, className })}
+        // disabled only when it really is. A busy button keeps the disabled
+        // attribute off, because that attribute takes it out of the tab
+        // order: a keyboard user who was standing on it when the request
+        // started loses their place and is told nothing about why. aria-busy
+        // says what is happening and the guard below stops the second click.
+        disabled={disabled}
+        aria-disabled={disabled || loading || undefined}
+        aria-busy={loading || undefined}
+        // The busy guard, and it has to live here rather than in
+        // pointer-events, which only stops a mouse. Enter and Space on a
+        // focused button arrive as a click event, and a submit button does
+        // not need an onClick to submit: the browser does it on the default
+        // action. preventDefault is what stops the second submit from the
+        // keyboard.
+        //
+        // Destructured out of rest above, so this is the only onClick on the
+        // element and the spread cannot put the live one back.
+        onClick={(event) => {
+          if (loading) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          onClick?.(event);
+        }}
+        className={buttonClasses({ variant, size, state, className })}
         {...rest}
       >
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {children}
+        {loading && (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        )}
+        {loading && busyLabel ? busyLabel : children}
       </button>
     );
   },

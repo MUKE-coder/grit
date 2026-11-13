@@ -393,7 +393,7 @@ function SubmittingStage({ progress }: { progress: { done: number; total: number
       </p>
       <div className="w-full max-w-sm h-2 rounded-full bg-bg-tertiary overflow-hidden">
         <div
-          className="h-full bg-accent transition-all"
+          className="h-full bg-accent transition-grit"
           style={{ width: pct + "%" }}
         />
       </div>

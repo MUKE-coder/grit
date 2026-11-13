@@ -485,7 +485,7 @@ function RootDropBar({
     >
       <span
         className={
-          "absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-all " +
+          "absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-grit " +
           (active ? "bg-accent" : "bg-border")
         }
       />
@@ -596,7 +596,7 @@ function TreeRow({
           onDrop(dragging, { id: node.id, where: "inside" });
         }}
         className={
-          "group flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-all " +
+          "group flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-grit " +
           (isDragging ? "opacity-40 " : "") +
           (forbidden ? "cursor-no-drop opacity-40 " : "") +
           (isInsideTarget
@@ -767,7 +767,7 @@ function DropBar({
     >
       <span
         className={
-          "absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-all " +
+          "absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-grit " +
           (active ? "bg-accent" : "bg-transparent")
         }
       />

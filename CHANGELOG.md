@@ -23,6 +23,44 @@ Also worth knowing:
 ---
 
 
+## v3.528.0 - November 13, 2026
+
+### The admin moves like one thing
+
+The panel had no easing curve. Every transition in it ran on Tailwind's default at Tailwind's duration, which is not wrong, it is just nobody's decision: a hundred components that each took whatever they were given. It had `transition-all` in thirty-seven places. And `prefers-reduced-motion` appeared nowhere in the entire scaffold, so the one accessibility switch that motion has was simply absent.
+
+#### One curve, set once
+
+```css
+@theme {
+  --default-transition-timing-function: cubic-bezier(0.17, 0.55, 0.55, 1);
+  --default-transition-duration: 180ms;
+}
+```
+
+Every `transition-*` utility in Tailwind v4 reads those two variables, so this reaches every transition already written across the admin without touching a single class string. The sidebar, the table rows, the cards and the dropdowns all move the same way now, and none of their files changed.
+
+#### transition-all, replaced rather than banned
+
+`transition-all` asks the browser to watch every animatable property, so the day a utility adds a width to that element it animates the width too and relayouts the page every frame. Nobody writes that bug; it arrives. All thirty-seven are now `transition-grit`, a named property list with no layout property in it.
+
+One of them was animating `width` for real: the upload progress bar. It moves on `scaleX` now, which the compositor does for free.
+
+#### The button has eight states
+
+It had five. The press is new, at 0.97 over 120ms, which is the only feedback that arrives before the network does. Error and success are new, which are the two always missing.
+
+And the busy state was wrong in the way that matters most: it greyed the button out, which says "you cannot do this" when what happened is "I am doing it". A busy button now keeps its colour, sets `aria-busy`, and takes a `busyLabel` so the word changes from Save to Saving. A spinner says nothing to a screen reader and nothing to anybody who looked away.
+
+It also stops being `disabled` while busy, because that attribute takes it out of the tab order: a keyboard user standing on the button when the request starts loses their place and is told nothing about why.
+
+#### Reduced motion, considered rather than blanket
+
+The usual implementation sets every duration to `0.01ms`, which takes away the colour change on a hover and the fade on a focus ring along with the movement. Those are information, not motion. Here the transition property list is narrowed to the paint properties, so transforms stop and colour feedback survives.
+
+Against the standard at [details that make an app feel premium](https://jb.desishub.com/blog/details-that-make-an-app-feel-premium) . Five tests pin it, including one that fails if a second easing curve appears.
+
+
 ## v3.527.0 - November 13, 2026
 
 ### The manifest knows what each generated file came out of

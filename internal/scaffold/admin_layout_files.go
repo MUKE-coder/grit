@@ -487,7 +487,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       )}
 
       <div
-        className={` + "`" + `flex min-h-screen flex-col transition-all duration-200 ${
+        className={` + "`" + `flex min-h-screen flex-col transition-grit duration-200 ${
           sidebarCollapsed ? "md:ml-16" : "md:ml-64"
         }` + "`" + `}
       >

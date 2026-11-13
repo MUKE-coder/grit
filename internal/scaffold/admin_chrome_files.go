@@ -824,7 +824,7 @@ export function CollapsibleSidebar({
 
       <aside
         className={
-          "fixed top-0 left-0 z-40 flex h-screen flex-col border-r border-border bg-bg-secondary transition-all duration-200 " +
+          "fixed top-0 left-0 z-40 flex h-screen flex-col border-r border-border bg-bg-secondary transition-grit duration-200 " +
           (collapsed ? "w-16 " : "w-64 ") +
           (mobileOpen ? "translate-x-0 " : "-translate-x-full md:translate-x-0 ")
         }

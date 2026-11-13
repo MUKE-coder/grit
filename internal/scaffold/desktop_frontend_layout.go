@@ -113,7 +113,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className={"flex flex-col h-full border-r border-border bg-background transition-all duration-200 " + (collapsed ? "w-16" : "w-56")}>
+    <div className={"flex flex-col h-full border-r border-border bg-background transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 " + (collapsed ? "w-16" : "w-56")}>
       <nav className="flex-1 py-3 space-y-1 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;

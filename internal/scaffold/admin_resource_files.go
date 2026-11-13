@@ -2951,7 +2951,7 @@ export default function AdminDashboard() {
                 <a
                   key={r.slug}
                   href={%s/resources/${r.slug}%s}
-                  className="flex items-center gap-4 rounded-lg border border-border bg-bg-tertiary p-4 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+                  className="flex items-center gap-4 rounded-lg border border-border bg-bg-tertiary p-4 hover:border-accent/30 hover:bg-bg-hover transition-grit group"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                     <Icon className="h-5 w-5 text-accent" />
@@ -2978,7 +2978,7 @@ export default function AdminDashboard() {
               href={API_URL + "/studio"}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-grit group"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info/10">
                 <span className="text-info text-sm font-bold">DB</span>
@@ -2992,7 +2992,7 @@ export default function AdminDashboard() {
               href={apiUrl("/api/health")}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-grit group"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-success/10">
                 <span className="text-success text-sm font-bold">OK</span>
@@ -3004,7 +3004,7 @@ export default function AdminDashboard() {
             </a>
             <a
               href="/system/jobs"
-              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-grit group"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-warning/10">
                 <span className="text-warning text-sm font-bold">Q</span>
@@ -3016,7 +3016,7 @@ export default function AdminDashboard() {
             </a>
             <a
               href="/system/files"
-              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-grit group"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10">
                 <span className="text-accent text-sm font-bold">S3</span>

@@ -1171,7 +1171,7 @@ export function FormStepper({
         <div className="mt-6 mb-4">
           <div className="h-1 w-full rounded-full bg-border">
             <div
-              className="h-1 rounded-full bg-accent transition-all duration-300"
+              className="h-1 rounded-full bg-accent transition-grit duration-300"
               style={{ width: ` + "`" + `${((currentStep + 1) / steps.length) * 100}%` + "`" + ` }}
             />
           </div>
@@ -1295,7 +1295,7 @@ function HorizontalIndicator({
             >
               <div
                 className={` + "`" + `
-                  flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all
+                  flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-grit
                   ${state === "completed"
                     ? "bg-success text-white"
                     : state === "active"
@@ -1369,7 +1369,7 @@ function VerticalIndicator({
               >
                 <div
                   className={` + "`" + `
-                    flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all
+                    flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-grit
                     ${state === "completed"
                       ? "bg-success text-white"
                       : state === "active"

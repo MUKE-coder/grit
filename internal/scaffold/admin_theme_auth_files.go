@@ -514,7 +514,7 @@ function PulseHeroCarousel({ accent, fg, bg, fontDisplay }: { accent: string; fg
               type="button"
               aria-label={"Go to slide " + (i + 1)}
               onClick={() => setIdx(i)}
-              className="h-1.5 rounded-full transition-all"
+              className="h-1.5 rounded-full transition-grit"
               style={{
                 width: i === idx ? 24 : 8,
                 background: i === idx ? accent : "rgba(255,255,255,0.5)",

@@ -204,7 +204,7 @@ export default async function HomePage() {
                 <Link
                   key={blog.id}
                   href={` + blogHref(opts) + `}
-                  className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
+                  className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                 >
                   <div className="h-48 bg-bg-hover overflow-hidden">
                     {blog.image ? (
@@ -340,7 +340,7 @@ function BlogList() {
               <Link
                 key={blog.id}
                 href={` + blogHref(opts) + `}
-                className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
+                className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
               >
                 <div className="h-52 bg-bg-hover overflow-hidden">
                   {blog.image ? (
@@ -493,7 +493,7 @@ export default async function BlogListPage({
               <Link
                 key={blog.id}
                 href={` + blogHref(opts) + `}
-                className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
+                className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
               >
                 <div className="h-52 bg-bg-hover overflow-hidden">
                   {blog.image ? (

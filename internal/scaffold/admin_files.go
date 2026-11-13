@@ -796,7 +796,110 @@ func adminGlobalCSS() string {
 // the same values, and declaring them twice would mean two places to change a
 // colour.
 func adminScreenCSS() string {
-	return `/* Print: isolate the record. Everything is hidden, then only #print-area (the
+	return `/* Motion: one curve, three durations.
+ *
+ * Tailwind v4 routes every transition-* utility through these two variables,
+ * so setting them here is what makes the whole panel move the same way. The
+ * alternative is a duration and an easing on each of two hundred class
+ * strings, which is how an interface ends up feeling assembled rather than
+ * made: nothing is wrong and nothing agrees.
+ *
+ * The curve is the house curve. It leaves quickly and arrives slowly, which
+ * is what reads as responsive rather than sluggish at these durations.
+ *
+ * 180ms is the default because it covers the common case, a thing changing
+ * state in place. The other two are for the cases that are not that, and they
+ * are tokens rather than numbers so a component can say what it is doing:
+ *
+ *   --t-press   a click landing. Under 200ms or it reads as lag.
+ *   --t-enter   something arriving that was not there: a dialog, a new row.
+ */
+@theme {
+  --default-transition-timing-function: cubic-bezier(0.17, 0.55, 0.55, 1);
+  --default-transition-duration: 180ms;
+  --ease-grit: cubic-bezier(0.17, 0.55, 0.55, 1);
+
+  /* Three animations, and deliberately no more. Each one answers a question:
+     a submit was refused, this row is new, that saved. An animation that
+     cannot name its question is decoration, and decoration is what makes an
+     interface feel cheap rather than considered. */
+  --animate-grit-shake: grit-shake 220ms var(--ease-grit);
+  --animate-grit-rise: grit-rise 240ms var(--ease-grit);
+  --animate-grit-saved: grit-saved 1200ms var(--ease-grit);
+}
+
+/* The admin's transition, named.
+ *
+ * Replaces transition-grit, which asks the browser to watch every animatable
+ * property: the day a utility adds a width or a padding to the element, it
+ * starts animating that too and relayouts the page every frame. Nobody
+ * writes that bug, it arrives.
+ *
+ * All three properties, like Tailwind's own transition-* utilities. Setting
+ * only transition-property looks right and is not: the duration falls back to
+ * the CSS initial value of 0s, so every call site that did not happen to
+ * carry its own duration-* stops transitioning altogether. Replacing
+ * transition-all with a property list alone would have silently removed the
+ * animation from most of the places it was meant to fix.
+ *
+ * The duration and the curve come from the theme variables above, so this
+ * inherits the house values rather than restating them. */
+@utility transition-grit {
+  transition-property: color, background-color, border-color, outline-color,
+    text-decoration-color, fill, stroke, box-shadow, opacity, transform;
+  transition-timing-function: var(--default-transition-timing-function);
+  transition-duration: var(--default-transition-duration);
+}
+
+@keyframes grit-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* A row that was not there a moment ago. Only new rows get this: animating
+   the whole list on every render is the tell that nobody decided. */
+@keyframes grit-rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* The save confirming itself where the person is already looking. box-shadow
+   rather than background, so it reads over whatever the row is coloured. */
+@keyframes grit-saved {
+  0% { box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--success) 18%, transparent); }
+  100% { box-shadow: inset 0 0 0 9999px transparent; }
+}
+
+:root {
+  --t-press: 120ms;
+  --t-enter: 260ms;
+}
+
+/* The off switch, which the scaffold did not have anywhere at all.
+ *
+ * Not the usual blanket "turn every duration to 0.01ms". That removes the
+ * colour change on a hover and the fade on a focus ring, which are
+ * information rather than movement: taking them away removes the feedback
+ * instead of the discomfort somebody asked to be spared.
+ *
+ * So movement goes and colour stays. transition-property is narrowed to the
+ * paint properties, which drops transform and any layout property an
+ * individual rule asked for, and animations stop outright.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-property: color, background-color, border-color, outline-color,
+      text-decoration-color, fill, stroke, opacity, box-shadow !important;
+  }
+}
+
+/* Print: isolate the record. Everything is hidden, then only #print-area (the
  * detail card + line items) is made visible and floated to the top-left, so the
  * sidebar, navbar and action buttons never reach the paper. Resource detail
  * pages wrap their printable content in #print-area and mark controls .no-print. */

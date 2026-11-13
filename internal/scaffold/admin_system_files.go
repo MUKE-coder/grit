@@ -1103,7 +1103,7 @@ export default function FilesPage() {
               {/* Delete overlay */}
               <button
                 onClick={() => deleteUpload.mutate(upload.id)}
-                className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-danger transition-all"
+                className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-danger transition-grit"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -1212,7 +1212,7 @@ function StorageStatsPanel({ stats }: { stats: UploadStatsLite }) {
                   </div>
                   <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-bg-tertiary">
                     <div
-                      className="h-full rounded-full bg-accent transition-all"
+                      className="h-full rounded-full bg-accent transition-grit"
                       style={{ width: share + "%" }}
                     />
                   </div>

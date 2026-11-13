@@ -402,7 +402,7 @@ function BoxBody({ progress, reorderable }: { progress: ProgressVariant; reorder
   return (
     <div className="space-y-3">
       <DropzoneTarget
-        className={` + "`" + `flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all ${targetState(
+        className={` + "`" + `flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-grit ${targetState(
           isDragActive,
           uploading,
           "border-border hover:border-accent/50 hover:bg-bg-hover/30",
@@ -438,7 +438,7 @@ function CompactBody({ progress }: { progress: ProgressVariant }) {
   return (
     <div className="space-y-2">
       <DropzoneTarget
-        className={` + "`" + `flex items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 cursor-pointer transition-all ${targetState(
+        className={` + "`" + `flex items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 cursor-pointer transition-grit ${targetState(
           isDragActive,
           uploading,
           "border-border hover:border-accent/50 hover:bg-bg-hover/30",
@@ -484,7 +484,7 @@ function MinimalBody() {
   return (
     <div className="space-y-2">
       <DropzoneTarget
-        className={` + "`" + `inline-flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-all ${targetState(
+        className={` + "`" + `inline-flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-grit ${targetState(
           isDragActive,
           uploading,
           "border-border hover:border-accent/50 text-text-secondary hover:text-foreground",
@@ -559,7 +559,7 @@ function AvatarBody() {
         </div>
       ) : (
         <DropzoneTarget
-          className={` + "`" + `flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed cursor-pointer transition-all ${targetState(
+          className={` + "`" + `flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed cursor-pointer transition-grit ${targetState(
             isDragActive,
             uploading,
             "border-border hover:border-accent/50 hover:bg-bg-hover/30",
@@ -585,7 +585,7 @@ function InlineBody() {
   return (
     <div className="space-y-3">
       <DropzoneTarget
-        className={` + "`" + `flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition-all ${targetState(
+        className={` + "`" + `flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition-grit ${targetState(
           isDragActive,
           uploading,
           "border-border hover:border-accent/50",
@@ -833,8 +833,12 @@ function UploadProgressBar({ percent }: { percent: number }) {
       <p className="text-sm text-text-secondary">Uploading... {percent}%</p>
       <div className="w-48 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
         <div
-          className="h-full bg-accent rounded-full transition-all duration-300"
-          style={{ width: percent + "%" }}
+          /* scaleX, not width. A width transition relayouts the bar and
+             everything after it on every frame of every upload; a transform
+             is composited and costs nothing. origin-left so it grows from
+             the start rather than the middle. */
+          className="h-full w-full origin-left rounded-full bg-accent transition-transform duration-300"
+          style={{ transform: ` + "`" + `scaleX(${percent / 100})` + "`" + ` }}
         />
       </div>
     </div>

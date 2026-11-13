@@ -860,7 +860,7 @@ export function UpdateModal({ update, onClose }: Props) {
               </div>
               <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full bg-primary transition-all duration-300"
+                  className="h-full bg-primary transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                   style={{ width: pct + '%' }}
                 />
               </div>

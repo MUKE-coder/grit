@@ -72,6 +72,105 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.528.0 */}
+            <div className="mb-12" id="v3.528.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.528.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The admin moves like one thing</h3>
+                <p>
+                  The panel had no easing curve. Every transition in it ran on
+                  Tailwind&apos;s default at Tailwind&apos;s duration, which is
+                  not wrong, it is just nobody&apos;s decision: a hundred
+                  components that each took whatever they were given. It had{' '}
+                  <code>transition-all</code> in thirty-seven places. And{' '}
+                  <code>prefers-reduced-motion</code> appeared nowhere in the
+                  entire scaffold, so the one accessibility switch that motion
+                  has was simply absent.
+                </p>
+
+                <h4>One curve, set once</h4>
+                <CodeBlock
+                  language="css"
+                  code={`@theme {
+  --default-transition-timing-function: cubic-bezier(0.17, 0.55, 0.55, 1);
+  --default-transition-duration: 180ms;
+}`}
+                />
+                <p>
+                  Every <code>transition-*</code> utility in Tailwind v4 reads
+                  those two variables, so this reaches every transition already
+                  written across the admin without touching a single class
+                  string. The sidebar, the table rows, the cards and the dropdowns
+                  all move the same way now, and none of their files changed.
+                </p>
+
+                <h4>transition-all, replaced rather than banned</h4>
+                <p>
+                  <code>transition-all</code> asks the browser to watch every
+                  animatable property, so the day a utility adds a width to that
+                  element it animates the width too and relayouts the page every
+                  frame. Nobody writes that bug; it arrives. All thirty-seven are
+                  now <code>transition-grit</code>, a named property list with no
+                  layout property in it.
+                </p>
+                <p>
+                  One of them was animating <code>width</code> for real: the
+                  upload progress bar. It moves on <code>scaleX</code> now, which
+                  the compositor does for free.
+                </p>
+
+                <h4>The button has eight states</h4>
+                <p>
+                  It had five. The press is new, at 0.97 over 120ms, which is the
+                  only feedback that arrives before the network does. Error and
+                  success are new, which are the two always missing.
+                </p>
+                <p>
+                  And the busy state was wrong in the way that matters most: it
+                  greyed the button out, which says &quot;you cannot do
+                  this&quot; when what happened is &quot;I am doing it&quot;. A
+                  busy button now keeps its colour, sets <code>aria-busy</code>,
+                  and takes a <code>busyLabel</code> so the word changes from
+                  Save to Saving. A spinner says nothing to a screen reader and
+                  nothing to anybody who looked away.
+                </p>
+                <p>
+                  It also stops being <code>disabled</code> while busy, because
+                  that attribute takes it out of the tab order: a keyboard user
+                  standing on the button when the request starts loses their
+                  place and is told nothing about why.
+                </p>
+
+                <h4>Reduced motion, considered rather than blanket</h4>
+                <p>
+                  The usual implementation sets every duration to{' '}
+                  <code>0.01ms</code>, which takes away the colour change on a
+                  hover and the fade on a focus ring along with the movement.
+                  Those are information, not motion. Here the transition property
+                  list is narrowed to the paint properties, so transforms stop
+                  and colour feedback survives.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Against the standard at{' '}
+                  <a
+                    href="https://jb.desishub.com/blog/details-that-make-an-app-feel-premium"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    details that make an app feel premium
+                  </a>
+                  . Five tests pin it, including one that fails if a second
+                  easing curve appears.
+                </p>
+              </div>
+            </div>
+
             {/* v3.527.0 */}
             <div className="mb-12" id="v3.527.0">
               <div className="flex items-center gap-3 mb-4">
