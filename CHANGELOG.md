@@ -23,6 +23,27 @@ Also worth knowing:
 ---
 
 
+## v3.536.0 - November 14, 2026
+
+### Activity, cron, and pages that say why they are empty
+
+The fifth redesign release.
+
+#### Every activity tab carries its count
+
+Only **All** did, so Flagged, Critical and After hours were three questions you had to click to answer.{" "} &ldquo;Flagged 0&rdquo; is the answer, and a tab nobody has to open is the cheapest thing an interface can give.
+
+Its four summary cards are the strip the rest of the panel uses, without the tinted fills. Four cards in amber, red, blue and grey made the loudest thing on a quiet page a count of zero: on a system with nothing wrong, Flagged and Critical were the two most prominent objects on the screen, both saying 0. The colour is on the icon now, and a zero reads &ldquo;All clear&rdquo; in green.
+
+#### Cron says why it is empty
+
+Cron runs on the asynq scheduler, which needs Redis. Without it the page was empty and correct and said nothing about either, so an empty table read as &ldquo;nobody has written a task&rdquo; when the truth was &ldquo;the scheduler is not running&rdquo;. There is an amber notice now, with a link to the health page, and the empty state carries a registration example instead of the words &ldquo;No cron tasks registered&rdquo;.
+
+#### And files
+
+&ldquo;No files uploaded yet&rdquo; said the request worked and nothing else: not where files come from, not what the limit is, not that the dropzone directly above it is the answer.
+
+
 ## v3.535.0 - November 14, 2026
 
 ### The system hub and the health page

@@ -957,6 +957,7 @@ func adminFilesPage() string {
 import { useState, useRef } from "react";
 import { useUploads, useUploadFile, useDeleteUpload, useUploadStats } from "@/hooks/use-system";
 import { FolderOpen, Upload, Loader2, X, Image as ImageIcon, Play, Music, FileText, FileSpreadsheet, File as FileIcon } from "@/lib/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import { buttonClasses } from "@/components/ui/button";
 
 function formatFileSize(bytes: number): string {
@@ -1062,10 +1063,15 @@ export default function FilesPage() {
           <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
       ) : uploads.length === 0 ? (
-        <div className="flex flex-col items-center py-16">
-          <FolderOpen className="h-12 w-12 text-text-muted mb-3" />
-          <p className="text-sm text-text-secondary">No files uploaded yet</p>
-        </div>
+        // "No files uploaded yet" said the request worked and nothing else:
+        // not where files come from, not what the limit is, not that the
+        // dropzone above this is the answer.
+        <EmptyState
+          icon={<FolderOpen className="h-5 w-5" />}
+          title="No files yet"
+          description="Anything uploaded through the panel or the API appears here, with its size, type and where it is stored."
+          hint="Max 10 MB per file"
+        />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {uploads.map((upload) => (
@@ -1231,20 +1237,45 @@ function StorageStatsPanel({ stats }: { stats: UploadStatsLite }) {
 func adminCronPage() string {
 	return `"use client";
 
+import Link from "next/link";
 import { useCronTasks } from "@/hooks/use-system";
-import { Calendar, Loader2 } from "@/lib/icons";
+import { useSystemHealth, stateOf } from "@/hooks/use-system-health";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Calendar, Loader2, AlertTriangle } from "@/lib/icons";
 
 export default function CronPage() {
   const { data: tasks, isLoading } = useCronTasks();
+  const health = useSystemHealth();
+  const redisOff = stateOf(health.data?.redis) === "off";
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Cron Scheduler</h1>
-        <p className="text-sm text-text-secondary mt-1">View registered scheduled tasks</p>
-      </div>
+    <div>
+      <PageHeader
+        title="Cron schedules"
+        subtitle="Recurring jobs, when they next run, and what ran last."
+      />
 
-      <div className="rounded-xl border border-border bg-bg-secondary overflow-hidden">
+      {/* Why the page is empty, where that is the answer.
+          Cron runs on the asynq scheduler, which needs Redis. Without it this
+          page is empty and correct, and said nothing about either: an empty
+          table reads as "no tasks have been written" when the truth is "the
+          scheduler is not running". */}
+      {redisOff && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-warning-line bg-warning-soft px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+          <p className="text-sm text-text-secondary">
+            <span className="font-medium text-foreground">Cron is off</span> because Redis
+            is not configured, so nothing below will run.{" "}
+            <Link href="/system/health" className="font-medium text-accent hover:underline">
+              See what that needs
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-border bg-bg-elevated overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
@@ -1280,9 +1311,17 @@ export default function CronPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={3} className="px-4 py-12 text-center">
-                  <Calendar className="h-8 w-8 text-text-muted mx-auto mb-2" />
-                  <p className="text-sm text-text-secondary">No cron tasks registered</p>
+                <td colSpan={3} className="p-0">
+                  {/* What will appear here, and what puts it there.
+                      "No cron tasks registered" said the request worked and
+                      nothing else: not whether this is normal, not what a
+                      task looks like, not where one is written. */}
+                  <EmptyState
+                    icon={<Calendar className="h-5 w-5" />}
+                    title="No scheduled tasks"
+                    description="Register one where the scheduler is set up, and it appears here with its next run time."
+                    hint={'app.Cron("0 2 * * 0", "audit:prune", PruneAudit)'}
+                  />
                 </td>
               </tr>
             )}

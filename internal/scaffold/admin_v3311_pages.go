@@ -634,6 +634,8 @@ import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { apiClient } from "@/lib/api-client";
 import { exportToExcel } from "@/lib/export";
 import { inputClasses } from "@/components/ui/input";
+import { StatStrip } from "@/components/ui/stat-strip";
+import { UnderlineTabs } from "@/components/ui/tabs-underline";
 import {
   Activity as ActivityIcon, AlertCircle, AlertTriangle, Flag, Download,
   LogIn, LogOut, UserPlus, ShoppingCart, FileText, Settings as SettingsIcon, Shield,
@@ -723,6 +725,20 @@ export default function ActivityPage() {
     },
   });
 
+  // How many of the loaded rows are outside working hours.
+  //
+  // Counted over the rows already fetched, which is what the tab filters
+  // too, so the number and the list it leads to always agree. The API has no
+  // facet for this.
+  const afterHoursCount = useMemo(
+    () =>
+      (rows ?? []).filter((r) => {
+        const h = new Date(r.created_at).getHours();
+        return h < 7 || h >= 19;
+      }).length,
+    [rows],
+  );
+
   // Group rows by their day (e.g. "TODAY · SAT, JUN 20, 2026 · 12 EVENTS").
   const grouped = useMemo(() => {
     const groups: Record<string, ActivityRow[]> = {};
@@ -766,41 +782,68 @@ export default function ActivityPage() {
         onSearchChange={setSearch}
       />
 
-      {/* Tabs */}
-      <div className="mb-6 flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((t) => {
-          const active = t === tab;
-          const Icon = t === "Flagged" ? Flag : t === "Critical" ? AlertCircle : t === "After hours" ? AlertTriangle : ActivityIcon;
-          const count = t === "All" ? (rows?.length ?? 0) : undefined;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={
-                "inline-flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors -mb-px " +
-                (active
-                  ? "border-accent text-accent"
-                  : "border-transparent text-text-secondary hover:text-foreground")
-              }
-            >
-              <Icon className="h-4 w-4" />
-              {t === "All" && count !== undefined ? "All " + count : t}
-            </button>
-          );
-        })}
-      </div>
+      {/* Every tab carries its count.
+          Only "All" did, so Flagged, Critical and After hours were three
+          questions you had to click to answer. "Flagged 0" is the answer, and
+          a tab nobody has to open is the cheapest thing an interface can
+          give. The counts come from the same stats the strip below reads, so
+          they cannot disagree with it. */}
+      <UnderlineTabs
+        className="mb-6"
+        label="Activity views"
+        value={tab}
+        onChange={(v) => setTab(v as (typeof TABS)[number])}
+        tabs={TABS.map((t) => ({
+          value: t,
+          label: t,
+          count:
+            t === "All"
+              ? (rows?.length ?? 0)
+              : t === "Flagged"
+                ? (stats?.warn ?? 0) + (stats?.critical ?? 0)
+                : t === "Critical"
+                  ? (stats?.critical ?? 0)
+                  : afterHoursCount,
+        }))}
+      />
 
-      {/* Summary cards */}
       {!stats ? (
         <SkeletonCards count={4} />
       ) : (
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <SummaryCard label="Events" value={rows?.length ?? 0} icon={<ActivityIcon className="h-4 w-4" />} tone="default" />
-          <SummaryCard label="Flagged" value={(stats.warn || 0) + (stats.critical || 0)} icon={<Flag className="h-4 w-4" />} tone="warning" />
-          <SummaryCard label="Critical" value={stats.critical} icon={<AlertCircle className="h-4 w-4" />} tone="danger" />
-          <SummaryCard label="Active users" value={activeUsers} icon={<UsersIcon className="h-4 w-4" />} tone="info" />
-        </div>
+        <StatStrip className="mb-6">
+          <SummaryCard
+            label="Events"
+            value={rows?.length ?? 0}
+            icon={<ActivityIcon className="h-3.5 w-3.5" />}
+            tone="default"
+            hint="In the range below"
+          />
+          <SummaryCard
+            label="Flagged"
+            value={(stats.warn || 0) + (stats.critical || 0)}
+            icon={<Flag className="h-3.5 w-3.5" />}
+            tone="warning"
+            hint={
+              (stats.warn || 0) + (stats.critical || 0) === 0
+                ? "Nothing needs a look"
+                : "Warnings and critical, past 24h"
+            }
+          />
+          <SummaryCard
+            label="Critical"
+            value={stats.critical}
+            icon={<AlertCircle className="h-3.5 w-3.5" />}
+            tone="danger"
+            hint={stats.critical === 0 ? "All clear" : "Look at these first"}
+          />
+          <SummaryCard
+            label="Active users"
+            value={activeUsers}
+            icon={<UsersIcon className="h-3.5 w-3.5" />}
+            tone="info"
+            hint="Seen in this feed"
+          />
+        </StatStrip>
       )}
 
       {/* Filter bar */}
@@ -942,26 +985,49 @@ function prettyIP(ip: string | null | undefined): React.ReactNode {
   return ip;
 }
 
-function SummaryCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "default" | "warning" | "danger" | "info" }) {
-  const toneClass = {
-    default: "border-border bg-bg-elevated",
-    warning: "border-warning/30 bg-warning/5",
-    danger:  "border-danger/30 bg-danger/5",
-    info:    "border-info/30 bg-info/5",
-  }[tone];
+// One cell of the activity strip.
+//
+// The tinted fills are gone. Four cards in amber, red, blue and grey made the
+// loudest thing on a quiet page a count of zero: on a system with nothing
+// wrong, Flagged and Critical were the two most prominent objects on the
+// screen, both saying 0. The colour is on the icon, where it labels the row
+// without claiming the page.
+function SummaryCard({
+  label,
+  value,
+  icon,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  tone: "default" | "warning" | "danger" | "info";
+  hint?: string;
+}) {
   const iconClass = {
-    default: "text-text-secondary",
+    default: "text-text-muted",
     warning: "text-warning",
-    danger:  "text-danger",
-    info:    "text-info",
+    danger: "text-danger",
+    info: "text-info",
   }[tone];
+  // A zero on a page about problems is good news, so it is said in green
+  // rather than in the colour of the thing that is not happening.
+  const hintClass =
+    value === 0 && (tone === "warning" || tone === "danger")
+      ? "text-success"
+      : "text-text-muted";
+
   return (
-    <div className={"rounded-xl border p-4 " + toneClass}>
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{label}</p>
-        <span className={iconClass}>{icon}</span>
-      </div>
-      <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
+    <div className="h-full px-5 py-4">
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+        <span className={"shrink-0 " + iconClass} aria-hidden="true">{icon}</span>
+        <span className="truncate">{label}</span>
+      </p>
+      <p className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.02em] text-foreground tabular-nums">
+        {value}
+      </p>
+      <p className={"mt-1.5 truncate text-[13px] " + hintClass}>{hint ?? "\u00a0"}</p>
     </div>
   );
 }

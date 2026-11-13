@@ -72,6 +72,58 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.536.0 */}
+            <div className="mb-12" id="v3.536.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.536.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Activity, cron, and pages that say why they are empty</h3>
+                <p>The fifth redesign release.</p>
+
+                <h4>Every activity tab carries its count</h4>
+                <p>
+                  Only <strong>All</strong> did, so Flagged, Critical and After
+                  hours were three questions you had to click to answer.{" "}
+                  &ldquo;Flagged 0&rdquo; is the answer, and a tab nobody has to
+                  open is the cheapest thing an interface can give.
+                </p>
+                <p>
+                  Its four summary cards are the strip the rest of the panel
+                  uses, without the tinted fills. Four cards in amber, red, blue
+                  and grey made the loudest thing on a quiet page a count of
+                  zero: on a system with nothing wrong, Flagged and Critical
+                  were the two most prominent objects on the screen, both saying
+                  0. The colour is on the icon now, and a zero reads &ldquo;All
+                  clear&rdquo; in green.
+                </p>
+
+                <h4>Cron says why it is empty</h4>
+                <p>
+                  Cron runs on the asynq scheduler, which needs Redis. Without
+                  it the page was empty and correct and said nothing about
+                  either, so an empty table read as &ldquo;nobody has written a
+                  task&rdquo; when the truth was &ldquo;the scheduler is not
+                  running&rdquo;. There is an amber notice now, with a link to
+                  the health page, and the empty state carries a registration
+                  example instead of the words &ldquo;No cron tasks
+                  registered&rdquo;.
+                </p>
+
+                <h4>And files</h4>
+                <p>
+                  &ldquo;No files uploaded yet&rdquo; said the request worked
+                  and nothing else: not where files come from, not what the
+                  limit is, not that the dropzone directly above it is the
+                  answer.
+                </p>
+              </div>
+            </div>
+
             {/* v3.535.0 */}
             <div className="mb-12" id="v3.535.0">
               <div className="flex items-center gap-3 mb-4">
