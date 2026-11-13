@@ -23,6 +23,30 @@ Also worth knowing:
 ---
 
 
+## v3.517.0 - November 13, 2026
+
+### An admin panel that is the whole app
+
+Plenty of what people build with Grit has no public side at all: a back office, an operations console, an internal tool whose every user signs in. Until now the nearest shape was `--single`, which gave you a landing page, a navbar, a footer and a blog you did not want, with the panel tucked away under `/admin`.
+
+`grit new my-app --api --admin` builds that app directly. The panel is served at `/`, so `/` opens the dashboard and the sign-in page is at `/login`. There is no public site, no site chrome, and no blog example to delete afterwards. Everything else `--single` gives you is unchanged: one Go binary with the SPA embedded in it, and no Node.js in production.
+
+#### What it took, which is the interesting part
+
+Two transforms repoint the admin's code as it is written into a host app, and both of them prefix its links: the panel says `href="/dashboard"`, and inside a `--single` project that screen is at `/admin/dashboard`. Guarding one and not the other left the auth shells pointing at an `/admin` that this shape does not serve, because the first transform had already rewritten the file before the second could decline.
+
+The same question, asked a third time, was where the panel's route files are. The guard matched `/src/routes/admin/`, which at the root matches nothing, so forty route shims kept their `@/pages/...` imports: forty files importing a directory the SPA does not have.
+
+And the blog comes out by running the removal `grit remove resource Blog` runs, rather than by a second list of blog paths inside the scaffolder. Thirty-eight writers put a blog file somewhere, and the blog is also injections: the sync registry, the nav menu, the seeder call, the authz catalog, the WAF exclusion. Removal did not know this layout either, so it deleted the resource definition and left the route files importing it, which is a build error rather than a stale screen.
+
+#### Also
+
+- `grit remove resource` now takes the resource's route folder with it when nothing is left in it. An empty `resources/blogs/` still reads as &ldquo;the blog is sort of here&rdquo;, which is the thing a removal exists to settle.
+- `--admin` with `--next` is refused rather than half-built: the flag embeds the Vite admin into one binary, and a Next frontend runs as its own process.
+
+Reported as [#89](https://github.com/MUKE-coder/grit/issues/89) .
+
+
 ## v3.516.0 - November 13, 2026
 
 ### Six commands that each worked out where the Go code lives, and four got it wrong

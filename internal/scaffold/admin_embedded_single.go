@@ -91,6 +91,12 @@ var singleAdminShellFiles = map[string]bool{
 
 // embeddedSingleAdminFileMap is the Vite admin, keyed by where it goes in the SPA.
 func embeddedSingleAdminFileMap(root string, opts Options) map[string]string {
+	// Where the panel is served, for the content transforms writeFile applies
+	// to these files. Run and RunSingle set it too, early enough for files
+	// this map does not hold; setting it here as well is what lets a test
+	// build the map and get the same answer the scaffolder does.
+	adminMountsAtRoot = opts.AdminOnly
+
 	source := adminTanStackFileMap(root, opts)
 	adminRoot := filepath.Join(root, "apps", "admin")
 	spa := filepath.Join(spaHostRoot(root, opts), "src")
@@ -113,8 +119,9 @@ func embeddedSingleAdminFileMap(root string, opts Options) map[string]string {
 
 		var dest string
 		if strings.HasPrefix(inner, "routes/") {
-			// The routes, under the SPA's /admin.
-			dest = filepath.Join(spa, "routes", "admin",
+			// The routes, under the SPA's /admin, or at its root when there is
+			// no public site to share it with (grit#89).
+			dest = filepath.Join(spa, "routes", adminRouteSegment(opts),
 				filepath.FromSlash(strings.TrimPrefix(inner, "routes/")))
 		} else {
 			// Pages, components, lib, hooks and the resource definitions.
@@ -123,13 +130,20 @@ func embeddedSingleAdminFileMap(root string, opts Options) map[string]string {
 		out[dest] = content
 	}
 
-	// The section's own entry point: /admin sends you to the dashboard.
-	out[filepath.Join(spa, "routes", "admin", "index.tsx")] = singleAdminIndexRoute()
+	// The section's own entry point: /admin sends you to the dashboard, and
+	// so does / when the admin is the whole app.
+	out[filepath.Join(spa, "routes", adminRouteSegment(opts), "index.tsx")] =
+		singleAdminIndexRoute(opts)
 
 	// A layout for the whole section, which exists to own the stylesheet. The
 	// panel's screens need the print, toaster and dark-mode rules, and in a Vite
 	// app a stylesheet is pulled in by importing it from a module that renders.
-	out[filepath.Join(spa, "routes", "admin", "route.tsx")] = singleAdminSectionRoute()
+	// At the root there is no routes/route.tsx in TanStack's file convention:
+	// __root.tsx is the layout, and it already exists, so the stylesheet is
+	// imported there instead. See singleAdminRootStylesheet.
+	if !opts.AdminOnly {
+		out[filepath.Join(spa, "routes", "admin", "route.tsx")] = singleAdminSectionRoute()
+	}
 
 	// And the half of the admin stylesheet that is about screens. The SPA's
 	// globals.css already declares the same tokens with the same values.
@@ -159,21 +173,60 @@ function AdminSection() {
 `
 }
 
-// singleAdminIndexRoute sends /admin to the dashboard.
-func singleAdminIndexRoute() string {
+// adminRouteSegment is the directory the panel's routes live in, which is the
+// path they are served at: "admin" beside a public site, and "." when the
+// admin is the whole app (grit#89).
+func adminRouteSegment(opts Options) string {
+	if opts.AdminOnly {
+		return "."
+	}
+	return "admin"
+}
+
+// singleAdminIndexRoute sends the panel's entry point to the dashboard.
+func singleAdminIndexRoute(opts Options) string {
+	prefix := "/admin"
+	if opts.AdminOnly {
+		prefix = ""
+	}
 	return `import { createFileRoute, redirect } from '@tanstack/react-router'
 
-// /admin has nothing of its own to show: the panel starts at the dashboard.
-export const Route = createFileRoute('/admin/')({
+// ` + orSlash(prefix) + ` has nothing of its own to show: the panel starts at the dashboard.
+export const Route = createFileRoute('` + prefix + `/')({
   beforeLoad: () => {
-    throw redirect({ to: '/admin/dashboard' })
+    throw redirect({ to: '` + prefix + `/dashboard' })
   },
 })
 `
 }
 
+// orSlash renders an empty path prefix as / for a sentence.
+func orSlash(prefix string) string {
+	if prefix == "" {
+		return "/"
+	}
+	return prefix
+}
+
 // routeIDPattern finds the id a file route declares.
 var routeIDPattern = regexp.MustCompile(`createFileRoute\('([^']*)'\)`)
+
+// adminMountsAtRoot says the panel is the whole SPA, so its routes are served
+// at / rather than under /admin (grit#89).
+//
+// Package state, which is not how the rest of this file works, and the reason
+// is that embeddedSingleAdminContent is keyed on a destination path and called
+// from writeFile, which has no Options. Two of its rewrites are wrong at the
+// root: the route id prefix, and the link prefix that turns href="/dashboard"
+// into "/admin/dashboard". The path cannot distinguish them, because in a
+// normal single project src/routes/ also holds the public site, and giving
+// that the admin's alias rewrite would repoint its own components.
+//
+// Set by Run, RunSingle and embeddedSingleAdminFileMap, each of which has the
+// Options and runs before any of these files are written, and set on every
+// call rather than only when true so a second scaffold in one process cannot
+// inherit the first one's answer.
+var adminMountsAtRoot bool
 
 // embeddedSingleAdminContent repoints a Vite admin file living in the SPA.
 //
@@ -187,8 +240,21 @@ func embeddedSingleAdminContent(path, content string) string {
 	// frontend/src for a single, apps/web/src for a double built with --vite. The
 	// Next.js panel lives at apps/web/admin-panel, with no src, so the two
 	// transforms cannot both claim a file.
+	// Where the panel's route files are. Under --admin they are the SPA's own
+	// routes at the root, and matching only /src/routes/admin/ skipped them
+	// entirely: forty shims kept their "@/pages/..." imports, which resolve to
+	// a directory the SPA does not have.
+	//
+	// Widening to /src/routes/ is correct only in that shape, and only because
+	// of what defines it: with no public site, nothing else lives there. In a
+	// normal single project this would hand _site.tsx the admin's alias
+	// rewrite and repoint the site's own components.
+	adminRoutes := "/src/routes/admin/"
+	if adminMountsAtRoot {
+		adminRoutes = "/src/routes/"
+	}
 	if !strings.Contains(slashed, "/src/admin-panel/") &&
-		!strings.Contains(slashed, "/src/routes/admin/") {
+		!strings.Contains(slashed, adminRoutes) {
 		return content
 	}
 
@@ -201,13 +267,19 @@ func embeddedSingleAdminContent(path, content string) string {
 	}
 
 	// The route id, which TanStack requires to equal the file's path.
-	content = routeIDPattern.ReplaceAllStringFunc(content, func(match string) string {
-		id := routeIDPattern.FindStringSubmatch(match)[1]
-		if strings.HasPrefix(id, "/admin") {
-			return match
-		}
-		return "createFileRoute('/admin" + id + "')"
-	})
+	//
+	// Untouched when the panel is the whole app: its own ids are already the
+	// paths it will be served at, and prefixing them would mount an admin with
+	// no site at /admin anyway.
+	if !adminMountsAtRoot {
+		content = routeIDPattern.ReplaceAllStringFunc(content, func(match string) string {
+			id := routeIDPattern.FindStringSubmatch(match)[1]
+			if strings.HasPrefix(id, "/admin") {
+				return match
+			}
+			return "createFileRoute('/admin" + id + "')"
+		})
+	}
 
 	// The API base. A triple admin runs on its own port and talks to the API
 	// across origins, so it defaults to http://localhost:8080. Here the Go binary
@@ -218,12 +290,17 @@ func embeddedSingleAdminContent(path, content string) string {
 
 	// And the links, as in the Next panel: the pages say href="/dashboard", and in
 	// the SPA that screen is at /admin/dashboard.
-	for _, segment := range adminRoutePrefixes {
-		for _, quote := range []string{`"`, "`", `'`} {
-			content = strings.ReplaceAll(content, quote+"/"+segment, quote+"/admin/"+segment)
+	//
+	// Not when the panel is the whole app: there the pages are already right,
+	// and prefixing would point every link at an /admin that does not exist.
+	if !adminMountsAtRoot {
+		for _, segment := range adminRoutePrefixes {
+			for _, quote := range []string{`"`, "`", `'`} {
+				content = strings.ReplaceAll(content, quote+"/"+segment, quote+"/admin/"+segment)
+			}
 		}
+		content = strings.ReplaceAll(content, `href="/"`, `href="/admin"`)
 	}
-	content = strings.ReplaceAll(content, `href="/"`, `href="/admin"`)
 
 	// Vite has no process. It does not polyfill one and esbuild does not
 	// typecheck, so a process.env read reaches the browser as "process is not
@@ -427,4 +504,41 @@ func contains(haystack []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+// singleRootRoute is the SPA's root layout.
+//
+// Normally that is the shared TanStack root, and the admin's own stylesheet is
+// imported by routes/admin/route.tsx, the layout for everything under /admin.
+//
+// When the admin is the whole app there is no such layout: TanStack's file
+// convention has no routes/route.tsx, the root IS __root.tsx. So the
+// stylesheet import moves here, which is the only thing that layout carried
+// (grit#89).
+//
+// Getting this wrong is quiet rather than loud: in a Vite app a stylesheet
+// reaches the bundle by being imported from a module that renders, so a
+// missing import is not an error, it is a panel with no print isolation, no
+// toaster styling and no dark mode.
+func singleRootRoute(opts Options) string {
+	if !opts.AdminOnly {
+		return webTanStackRootRoute(opts)
+	}
+	return `import { createRootRoute, Outlet } from '@tanstack/react-router'
+// grit:web-org-imports
+
+// The admin is the whole app here, so its stylesheet is imported at the root.
+// In a plain --single project this lives in routes/admin/route.tsx, the layout
+// for the /admin section, which this shape has no equivalent of.
+import '@admin/admin.css'
+
+export const Route = createRootRoute({
+  component: () => (
+    <>
+      {/* grit:web-org-switcher */}
+      <Outlet />
+    </>
+  ),
+})
+`
 }

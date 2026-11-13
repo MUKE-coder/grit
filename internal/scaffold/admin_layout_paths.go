@@ -74,8 +74,13 @@ func adminPath(root string, opts Options, parts ...string) string {
 	// In the SPA the router is the SPA's. A route file belongs in its tree, under
 	// the segment the panel owns; only the panel's own code lives in admin-panel/.
 	if opts.ShouldEmbedAdminInSPA() && len(parts) > 0 && parts[0] == "routes" {
+		// adminRouteSegment rather than a literal "admin": under --admin the
+		// panel is the whole app and its routes are the SPA's own, at the
+		// root. Writing them under /admin here while the rest of the panel
+		// went to the root left five screens stranded at a path nothing
+		// routed to (grit#89).
 		return filepath.Join(append(
-			[]string{spaHostRoot(root, opts), "src", "routes", "admin"}, parts[1:]...)...)
+			[]string{spaHostRoot(root, opts), "src", "routes", adminRouteSegment(opts)}, parts[1:]...)...)
 	}
 	base := filepath.Join(root, "apps", "admin")
 	switch {

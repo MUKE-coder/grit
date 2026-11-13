@@ -207,19 +207,28 @@ func embedAdminContent(content string, routes []string) string {
 	// Links: every absolute link to a route the admin owns gains the prefix. The
 	// admin's own code says href="/dashboard", and inside the web app that page is
 	// at /admin/dashboard.
-	for _, segment := range routes {
-		for _, quote := range []string{`"`, "`", `'`} {
-			content = strings.ReplaceAll(content, quote+"/"+segment, quote+"/admin/"+segment)
+	//
+	// Not when the panel IS the app. `grit new --api --admin` serves it at the
+	// root, so its own links are already correct and prefixing them points
+	// every one at an /admin that does not exist. This guard is needed in both
+	// transforms writeFile applies: without it here, the auth shells were
+	// rewritten by this function before the SPA-specific one could decline
+	// (grit#89).
+	if !adminMountsAtRoot {
+		for _, segment := range routes {
+			for _, quote := range []string{`"`, "`", `'`} {
+				content = strings.ReplaceAll(content, quote+"/"+segment, quote+"/admin/"+segment)
+			}
 		}
-	}
-	// Anything that asked for the admin's root now asks for /admin.
-	content = strings.ReplaceAll(content, `href="/"`, `href="/admin"`)
-	content = strings.ReplaceAll(content, `replace("/")`, `replace("/admin")`)
-	content = strings.ReplaceAll(content, `push("/")`, `push("/admin")`)
+		// Anything that asked for the admin's root now asks for /admin.
+		content = strings.ReplaceAll(content, `href="/"`, `href="/admin"`)
+		content = strings.ReplaceAll(content, `replace("/")`, `replace("/admin")`)
+		content = strings.ReplaceAll(content, `push("/")`, `push("/admin")`)
 
-	// The prefix must not be applied twice, which a second pass over an already
-	// rewritten string would do.
-	content = strings.ReplaceAll(content, "/admin/admin/", "/admin/")
+		// The prefix must not be applied twice, which a second pass over an
+		// already rewritten string would do.
+		content = strings.ReplaceAll(content, "/admin/admin/", "/admin/")
+	}
 	return content
 }
 

@@ -759,12 +759,16 @@ grit deploy`} />
                         <td className="px-4 py-2.5">Scaffold Go API only</td>
                       </tr>
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --api --admin</td>
+                        <td className="px-4 py-2.5">The API and the admin panel in one binary, served at /, with no public site</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --full</td>
                         <td className="px-4 py-2.5">Scaffold everything including docs</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --single</td>
-                        <td className="px-4 py-2.5">Single architecture (API only)</td>
+                        <td className="px-4 py-2.5">Single architecture: the API and a Vite SPA it embeds, as one binary</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --double</td>

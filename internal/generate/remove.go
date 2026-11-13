@@ -19,7 +19,18 @@ func RemoveResource(name string) error {
 	if err != nil {
 		return err
 	}
+	return RemoveResourceAt(root, name)
+}
 
+// RemoveResourceAt is RemoveResource against a project named rather than
+// found, for a caller that has just created one and whose working directory
+// is still outside it.
+//
+// `grit new --admin` uses it: dropping the blog by running the same removal
+// everybody else runs is cheaper and safer than teaching thirty-eight writers
+// a condition, because one code path already knows every file, injection and
+// registry entry the blog touches (grit#89).
+func RemoveResourceAt(root, name string) error {
 	def := &ResourceDefinition{Name: name}
 	// The architecture, read from grit.json like everything else reads it.
 	//
@@ -133,11 +144,21 @@ func RemoveResource(name string) error {
 		filepath.Join(webRoot, "app", "admin", "(dashboard)", "resources", names.PluralKebab, "page.tsx"),
 		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "index.tsx"),
 		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "$id.tsx"),
+		// --- admin at the root of the SPA: `grit new --api --admin` ---
+		//
+		// No /admin segment, because the panel is the whole app. Without
+		// these two the removal deleted the resource definition and left the
+		// route files importing it, which is a build error rather than a
+		// stale screen.
+		filepath.Join(root, "src", "routes", "_dashboard", "resources", names.PluralKebab, "index.tsx"),
+		filepath.Join(root, "src", "routes", "_dashboard", "resources", names.PluralKebab, "$id.tsx"),
+		filepath.Join(root, "src", "routes", "_dashboard", "resources", names.PluralKebab+".tsx"),
 		filepath.Join(webRoot, "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "index.tsx"),
 		filepath.Join(webRoot, "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "$id.tsx"),
 		filepath.Join(root, "frontend", "src", "hooks", "use-"+names.PluralKebab+".ts"),
 	}
 
+	emptied := map[string]bool{}
 	for _, f := range filesToDelete {
 		if _, err := os.Stat(f); err == nil {
 			if err := os.Remove(f); err != nil {
@@ -145,6 +166,26 @@ func RemoveResource(name string) error {
 			}
 			rel, _ := filepath.Rel(root, f)
 			fmt.Printf("  ✗ %s\n", rel)
+			emptied[filepath.Dir(f)] = true
+		}
+	}
+	// And the folder, when the resource had one of its own and it is now
+	// empty. Left behind it still reads as "the blog is sort of here", which
+	// is the thing a removal exists to settle.
+	//
+	// Only a directory that is empty, and never the root: os.Remove refuses a
+	// non-empty one, so this cannot take anything with it.
+	for dir := range emptied {
+		if dir == root || !strings.HasPrefix(dir, root) {
+			continue
+		}
+		entries, err := os.ReadDir(dir)
+		if err != nil || len(entries) > 0 {
+			continue
+		}
+		if err := os.Remove(dir); err == nil {
+			rel, _ := filepath.Rel(root, dir)
+			fmt.Printf("  ✗ %s/\n", filepath.ToSlash(rel))
 		}
 	}
 

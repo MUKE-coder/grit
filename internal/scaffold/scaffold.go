@@ -62,6 +62,29 @@ type Options struct {
 	Force          bool // Allow scaffolding into non-empty directory (--force)
 	IncludeDesktop bool // Add apps/desktop (Wails client that shares the monorepo API)
 
+	// AdminOnly is the single shape with no customer-facing site: the Go API
+	// and the admin, in one binary, with the admin at / rather than /admin.
+	//
+	// grit#89 asked for "api + web admin app in one single binary" and reached
+	// for --triple to get it. --single already is that, which was partly the
+	// help text's fault for never saying so. The gap underneath was real and
+	// narrower: there was no way to get the admin WITHOUT the public site,
+	// because --single always writes _site/index.tsx and _site/blog.
+	//
+	// So this is a variant of machinery that already exists and is already in
+	// production rather than a fourth architecture. Three differences from a
+	// plain --single:
+	//
+	//   no _site routes at all, so no landing page and no blog pages
+	//   the admin mounts at / instead of /admin
+	//   the blog goes entirely, model and endpoints included
+	//
+	// The last one is done by running the same removal `grit remove resource
+	// Blog` runs, rather than by teaching thirty-eight writers a condition.
+	// One code path knows every place the blog appears; a second list of blog
+	// paths is a second list to keep in step.
+	AdminOnly bool
+
 	// Version is the Grit CLI version that scaffolded this project (e.g. "3.25.2").
 	// Injected by cmd/grit/main.go so scaffolded README + docs reflect the real
 	// version instead of a hardcoded constant. Falls back to DefaultVersion
@@ -86,7 +109,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.516.0"
+const DefaultVersion = "3.517.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -503,6 +526,12 @@ func ensureTargetDirectory(root string, inPlace bool, force bool) error {
 // Run executes the full scaffolding process.
 func Run(opts Options) error {
 	opts.Normalize()
+	// Recorded before anything is written, because writeFile's content
+	// transforms are keyed on a path and have no Options. Set here rather
+	// than in the admin writer so no writer can run ahead of it, and set
+	// unconditionally so a second scaffold in one process cannot inherit the
+	// first one's answer. See adminMountsAtRoot.
+	adminMountsAtRoot = opts.AdminOnly
 	// A second scaffold in the same process must not inherit the first one's
 	// dependency failure. One command scaffolds once, but the tests do not.
 	ResetDependenciesPending()
@@ -830,6 +859,9 @@ func Run(opts Options) error {
 // RunSingle executes the single-app scaffolding process.
 // Single app: Go API + embedded React SPA, one binary, no Turborepo.
 func RunSingle(opts Options) error {
+	// Run sets this before dispatching here, and RunSingle is also called
+	// directly, so it is set in both for the same reason.
+	adminMountsAtRoot = opts.AdminOnly
 	// Run resets this before dispatching here, but RunSingle is also called
 	// directly, and a stale pending directory would be reported against a
 	// project that resolved fine.

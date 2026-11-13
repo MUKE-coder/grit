@@ -137,7 +137,7 @@ func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 // configuration.
 func singleFrontendOwnFiles(root string, opts Options) map[string]string {
 	feRoot := webAppRoot(root, opts)
-	return map[string]string{
+	files := map[string]string{
 		filepath.Join(feRoot, "package.json"):   singleFrontendPackageJSON(opts),
 		filepath.Join(feRoot, "vite.config.ts"): singleFrontendViteConfig(),
 		filepath.Join(feRoot, "index.html"):     webTanStackIndexHTML(opts),
@@ -148,27 +148,14 @@ func singleFrontendOwnFiles(root string, opts Options) map[string]string {
 		filepath.Join(feRoot, "src", "main.tsx"):             webTanStackMain(),
 		filepath.Join(feRoot, "src", "vite-env.d.ts"):        singleViteEnvTypes(),
 		filepath.Join(feRoot, "src", "globals.css"):          webGlobalCSS(),
-		filepath.Join(feRoot, "src", "routes", "__root.tsx"): webTanStackRootRoute(opts),
-		// The public site, as a pathless layout route: the URLs are still / and
-		// /blog, and the navbar and footer come from _site.tsx rather than from
-		// the root deciding which paths deserve them.
-		filepath.Join(feRoot, "src", "routes", "_site.tsx"):                  singleSiteLayoutRoute(),
-		filepath.Join(feRoot, "src", "routes", "_site", "index.tsx"):         siteRouteID(webTanStackIndexRoute(opts)),
-		filepath.Join(feRoot, "src", "routes", "_site", "blog", "index.tsx"): siteRouteID(webTanStackBlogListRoute()),
-		filepath.Join(feRoot, "src", "routes", "_site", "blog", "$slug.tsx"): siteRouteID(webTanStackBlogDetailRoute()),
-		// Vite-flavoured navbar/footer (use TanStack Router's <Link> + useRouterState),
-		// not the Next.js variants from web_files.go which import next/link.
-		filepath.Join(feRoot, "src", "components", "navbar.tsx"): singleViteNavbar(opts),
-		// The navbar's entries and the menu, the same two files the Next
-		// frontends get, put through the compat rewrite.
-		filepath.Join(feRoot, "src", "lib", "nav-menu.ts"):          nextToTanStack(webNavMenuConfig(opts, !blogRemoved(root, opts))),
-		filepath.Join(feRoot, "src", "components", "mega-menu.tsx"): nextToTanStack(webMegaMenu()),
+		filepath.Join(feRoot, "src", "routes", "__root.tsx"): singleRootRoute(opts),
+
 		// nextToTanStack rewrites next/link and friends to "@/lib/next-compat",
 		// so the shim has to be there. The admin panel has its own copy under
 		// @admin/, and the site components converted above cannot reach into
 		// it: this project did not type-check without this file.
-		filepath.Join(feRoot, "src", "lib", "next-compat.tsx"):      adminNextCompatShim(),
-		filepath.Join(feRoot, "src", "components", "footer.tsx"):    singleViteFooter(opts),
+		filepath.Join(feRoot, "src", "lib", "next-compat.tsx"): adminNextCompatShim(),
+
 		filepath.Join(feRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
 		filepath.Join(feRoot, "src", "lib", "utils.ts"):             webUtils(),
 		filepath.Join(feRoot, "components.json"):                    viteComponentsJSON(),
@@ -189,6 +176,34 @@ func singleFrontendOwnFiles(root string, opts Options) map[string]string {
 		filepath.Join(feRoot, "src", "components", "stats-row.tsx"):              singleStatsRow(),
 		filepath.Join(feRoot, "public", ".gitkeep"):                              "",
 	}
+
+	// The public site, as a pathless layout route: the URLs are still / and
+	// /blog, and the navbar and footer come from _site.tsx rather than from
+	// the root deciding which paths deserve them.
+	//
+	// Absent under --admin, which is an internal tool: there is no landing
+	// page to land on, and / belongs to the admin instead (grit#89).
+	if !opts.AdminOnly {
+		// The site's own chrome. Vite-flavoured navbar and footer (TanStack
+		// Router's <Link> and useRouterState), not the Next variants from
+		// web_files.go which import next/link, plus the navbar's entries and
+		// the menu put through the compat rewrite.
+		//
+		// All four exist to be rendered by _site.tsx. Without a site nothing
+		// imports them but each other, and nav-menu carries a link to
+		// /admin/dashboard, which in that shape is a path that does not exist.
+		files[filepath.Join(feRoot, "src", "components", "navbar.tsx")] = singleViteNavbar(opts)
+		files[filepath.Join(feRoot, "src", "components", "footer.tsx")] = singleViteFooter(opts)
+		files[filepath.Join(feRoot, "src", "lib", "nav-menu.ts")] = nextToTanStack(webNavMenuConfig(opts, !blogRemoved(root, opts)))
+		files[filepath.Join(feRoot, "src", "components", "mega-menu.tsx")] = nextToTanStack(webMegaMenu())
+
+		files[filepath.Join(feRoot, "src", "routes", "_site.tsx")] = singleSiteLayoutRoute()
+		files[filepath.Join(feRoot, "src", "routes", "_site", "index.tsx")] = siteRouteID(webTanStackIndexRoute(opts))
+		files[filepath.Join(feRoot, "src", "routes", "_site", "blog", "index.tsx")] = siteRouteID(webTanStackBlogListRoute())
+		files[filepath.Join(feRoot, "src", "routes", "_site", "blog", "$slug.tsx")] = siteRouteID(webTanStackBlogDetailRoute())
+	}
+
+	return files
 }
 
 // writeSingleRootFiles writes single-app specific root files (Makefile, README, .env).
@@ -606,7 +621,7 @@ func singleFrontendPackageJSON(opts Options) string {
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "tailwind-merge": "^2.6.0",
-    "zod": "` + zodVersion + `",
+    "zod": "`+zodVersion+`",
     "@hookform/resolvers": "^5.9.0",
     "@react-pdf/renderer": "^4.1.5",
 `+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",

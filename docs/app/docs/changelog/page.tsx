@@ -72,6 +72,89 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.517.0 */}
+            <div className="mb-12" id="v3.517.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.517.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An admin panel that is the whole app</h3>
+                <p>
+                  Plenty of what people build with Grit has no public side at
+                  all: a back office, an operations console, an internal tool
+                  whose every user signs in. Until now the nearest shape was{' '}
+                  <code>--single</code>, which gave you a landing page, a
+                  navbar, a footer and a blog you did not want, with the panel
+                  tucked away under <code>/admin</code>.
+                </p>
+                <p>
+                  <code>grit new my-app --api --admin</code> builds that app
+                  directly. The panel is served at <code>/</code>, so{' '}
+                  <code>/</code> opens the dashboard and the sign-in page is at{' '}
+                  <code>/login</code>. There is no public site, no site chrome,
+                  and no blog example to delete afterwards. Everything else{' '}
+                  <code>--single</code> gives you is unchanged: one Go binary
+                  with the SPA embedded in it, and no Node.js in production.
+                </p>
+                <h4>What it took, which is the interesting part</h4>
+                <p>
+                  Two transforms repoint the admin&apos;s code as it is written
+                  into a host app, and both of them prefix its links: the panel
+                  says <code>href=&quot;/dashboard&quot;</code>, and inside a{' '}
+                  <code>--single</code> project that screen is at{' '}
+                  <code>/admin/dashboard</code>. Guarding one and not the other
+                  left the auth shells pointing at an <code>/admin</code> that
+                  this shape does not serve, because the first transform had
+                  already rewritten the file before the second could decline.
+                </p>
+                <p>
+                  The same question, asked a third time, was where the
+                  panel&apos;s route files are. The guard matched{' '}
+                  <code>/src/routes/admin/</code>, which at the root matches
+                  nothing, so forty route shims kept their{' '}
+                  <code>@/pages/...</code> imports: forty files importing a
+                  directory the SPA does not have.
+                </p>
+                <p>
+                  And the blog comes out by running the removal{' '}
+                  <code>grit remove resource Blog</code> runs, rather than by a
+                  second list of blog paths inside the scaffolder. Thirty-eight
+                  writers put a blog file somewhere, and the blog is also
+                  injections: the sync registry, the nav menu, the seeder call,
+                  the authz catalog, the WAF exclusion. Removal did not know
+                  this layout either, so it deleted the resource definition and
+                  left the route files importing it, which is a build error
+                  rather than a stale screen.
+                </p>
+                <h4>Also</h4>
+                <ul>
+                  <li>
+                    <code>grit remove resource</code> now takes the
+                    resource&apos;s route folder with it when nothing is left in
+                    it. An empty <code>resources/blogs/</code> still reads as
+                    &ldquo;the blog is sort of here&rdquo;, which is the thing a
+                    removal exists to settle.
+                  </li>
+                  <li>
+                    <code>--admin</code> with <code>--next</code> is refused
+                    rather than half-built: the flag embeds the Vite admin into
+                    one binary, and a Next frontend runs as its own process.
+                  </li>
+                </ul>
+                <p>
+                  Reported as{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/89" target="_blank" rel="noreferrer">
+                    #89
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
+
             {/* v3.516.0 */}
             <div className="mb-12" id="v3.516.0">
               <div className="flex items-center gap-3 mb-4">

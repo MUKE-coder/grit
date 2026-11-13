@@ -15,6 +15,10 @@ interface ArchMode {
   color: string
   ideal: string
   example: string
+  // What the link to `example` says, when it points at a page on this site
+  // rather than at a repository. Without it the label was whatever the first
+  // entry to use an internal link happened to need.
+  exampleLabel?: string
   tree: TreeNode[]
   features: string[]
 }
@@ -28,11 +32,13 @@ const architectures: ArchMode[] = [
     ideal: 'Laravel/Rails developers, solo devs, simple deploys',
     example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-single-vite',
     tree: [
-      { name: 'cmd/server/main.go', type: 'file', depth: 0, comment: 'go:embed frontend/dist/*' },
-      { name: 'internal/', type: 'folder', depth: 0, comment: 'Go backend' },
-      { name: 'frontend/', type: 'folder', depth: 0, comment: 'React + Vite + TanStack Router' },
-      { name: 'src/admin-panel/', type: 'folder', depth: 1, comment: 'The admin panel, at /admin/dashboard' },
-      { name: 'go.mod', type: 'file', depth: 0 },
+      { name: 'api/', type: 'folder', depth: 0, comment: 'Go backend, go:embed web/*' },
+      { name: 'cmd/server/main.go', type: 'file', depth: 1 },
+      { name: 'internal/', type: 'folder', depth: 1 },
+      { name: 'src/', type: 'folder', depth: 0, comment: 'React + Vite + TanStack Router' },
+      { name: 'routes/', type: 'folder', depth: 1, comment: 'The public site, and /admin' },
+      { name: 'admin-panel/', type: 'folder', depth: 1, comment: 'The admin panel, at /admin/dashboard' },
+      { name: 'index.html', type: 'file', depth: 0 },
       { name: 'Makefile', type: 'file', depth: 0, comment: 'make dev, make build' },
     ],
     features: [
@@ -40,6 +46,29 @@ const architectures: ArchMode[] = [
       'Dev: Go on :8080, Vite on :5173 with proxy',
       'make build produces one executable',
       'No Node.js needed in production',
+    ],
+  },
+  {
+    name: 'Admin Only',
+    flag: '--api --admin',
+    tagline: 'The API and the admin panel, in one binary, with no public site',
+    color: 'emerald',
+    ideal: 'Internal tools, back offices, dashboards: anything whose only users sign in',
+    example: '/docs/concepts/architecture-modes/single',
+    exampleLabel: 'Read the single-binary guide',
+    tree: [
+      { name: 'api/', type: 'folder', depth: 0, comment: 'Go backend, go:embed web/*' },
+      { name: 'src/', type: 'folder', depth: 0, comment: 'React + Vite + TanStack Router' },
+      { name: 'routes/', type: 'folder', depth: 1, comment: 'The panel itself, served at /' },
+      { name: 'admin-panel/', type: 'folder', depth: 1, comment: 'Its pages, components and resources' },
+      { name: 'index.html', type: 'file', depth: 0 },
+      { name: 'Makefile', type: 'file', depth: 0, comment: 'make dev, make build' },
+    ],
+    features: [
+      'The panel is the app: / opens the dashboard, with no /admin prefix',
+      'No landing page, no navbar, no footer, and no blog example to delete',
+      'Everything --single gives you: one binary, go:embed, no Node in production',
+      'Add a public site later by generating the pages you want',
     ],
   },
   {
@@ -162,6 +191,7 @@ const architectures: ArchMode[] = [
     color: 'cyan',
     ideal: 'SaaS products needing native + mobile + web clients — the Linear / Notion / Slack pattern',
     example: '/docs/concepts/architecture-modes/multi-client',
+    exampleLabel: 'Read the multi-client guide',
     tree: [
       { name: 'apps/', type: 'folder', depth: 0 },
       { name: 'api/', type: 'folder', depth: 1, comment: 'Shared Go backend' },
@@ -240,7 +270,7 @@ export default function ArchitectureModesPage() {
                   {arch.example && (
                     arch.example.startsWith('/') ? (
                       <Link href={arch.example} className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors">
-                        Read the multi-client guide &rarr;
+                        {arch.exampleLabel ?? 'Read the guide'} &rarr;
                       </Link>
                     ) : (
                       <a href={arch.example} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors">

@@ -74,12 +74,59 @@ func (g *Generator) adminTanStackRoot() string {
 }
 
 // adminTanStackRoutesRoot is the directory its route files live under. In the SPA
-// that is the SPA's own route tree, under the segment the panel owns.
+// that is the SPA's own route tree, under the segment the panel owns, which is
+// no segment at all when the panel is the whole app.
 func (g *Generator) adminTanStackRoutesRoot() string {
 	if g.EmbedsAdminInSPA() {
-		return filepath.Join(g.spaHost(), "src", "routes", "admin")
+		routes := filepath.Join(g.spaHost(), "src", "routes")
+		probe := filepath.ToSlash(filepath.Join(g.spaHost(), "src", "admin-panel")) + "/"
+		if adminServedAtRoot(probe) {
+			return routes
+		}
+		return filepath.Join(routes, "admin")
 	}
 	return filepath.Join(g.Root, "apps", "admin", "src", "routes")
+}
+
+// adminServedAtRoot answers, from the destination path alone, whether the panel
+// a file belongs to is served at the SPA's root rather than under /admin
+// (grit#89).
+//
+// `grit new --api --admin` builds an app that is nothing but the panel, so its
+// screens are at /dashboard rather than /admin/dashboard, and every prefix this
+// file adds would point at a path the project does not serve. The file's own
+// path says which SPA it is going into, and that SPA's route tree says which
+// shape it is: routes/admin is the segment a panel beside a public site owns.
+//
+// Read from disk rather than carried in a flag because these rewrites are keyed
+// on the destination and run from writeFileWithDirs, which has no Generator.
+// Positive evidence either way: with neither directory present the answer is
+// the old one, so a layout nobody has seen cannot silently lose its prefixes.
+func adminServedAtRoot(slashed string) bool {
+	var spa string
+	switch {
+	case strings.Contains(slashed, "/src/admin-panel/"):
+		spa = slashed[:strings.Index(slashed, "/src/admin-panel/")]
+	case strings.Contains(slashed, "/src/routes/"):
+		spa = slashed[:strings.Index(slashed, "/src/routes/")]
+	default:
+		return false
+	}
+	host := filepath.FromSlash(spa)
+	// Embedded at all. A standalone admin app has routes/_dashboard too, and
+	// it owns @/: rewriting its imports points them at an @admin alias it does
+	// not declare. What makes a panel embedded is that its code sits in a host
+	// SPA's src/admin-panel, so that is the question asked first.
+	if !dirExists(filepath.Join(host, "src", "admin-panel")) {
+		return false
+	}
+	routes := filepath.Join(host, "src", "routes")
+	if dirExists(filepath.Join(routes, "admin")) {
+		return false
+	}
+	// _dashboard is the panel's in both shapes: a public site lives under
+	// _site. At the SPA's root it is the panel saying it is the whole app.
+	return dirExists(filepath.Join(routes, "_dashboard"))
 }
 
 // AdminCodeRoot is where the admin's components, lib, hooks and resource
@@ -120,7 +167,13 @@ func embeddedAdminFileContent(path, content string) string {
 	// cannot both claim a file.
 	if strings.Contains(slashed, "/src/admin-panel/") ||
 		strings.Contains(slashed, "/src/routes/admin/") {
-		return repointSPAAdminContent(content)
+		return repointSPAAdminContent(content, !adminServedAtRoot(slashed))
+	}
+	// The panel's route files when it is served at the SPA's root: there is no
+	// /admin segment to key on, so the host SPA beside them is asked instead.
+	// Nothing is prefixed here, because the panel is the whole app.
+	if adminServedAtRoot(slashed) {
+		return repointSPAAdminContent(content, false)
 	}
 	if !strings.Contains(slashed, "/apps/web/admin-panel/") &&
 		!strings.Contains(slashed, "/apps/web/app/admin/") {
@@ -131,11 +184,20 @@ func embeddedAdminFileContent(path, content string) string {
 
 // repointSPAAdminContent is the same rewrite for a panel inside the SPA, plus
 // the one thing only that shape needs: the id a file route declares has to equal
-// its path, and its path now starts with /admin.
-func repointSPAAdminContent(content string) string {
-	content = repointAdminContent(content)
+// its path, and its path starts with /admin.
+//
+// underAdmin is false when the panel is the whole app. The aliases still have
+// to be repointed, because the panel's code sits behind @admin wherever it is
+// served, but nothing is prefixed: its own links and route ids are already the
+// addresses it answers on.
+func repointSPAAdminContent(content string, underAdmin bool) string {
+	content = repointAdminAliases(content)
 	content = strings.ReplaceAll(content, `"@/pages/`, `"@admin/pages/`)
 	content = strings.ReplaceAll(content, `'@/pages/`, `'@admin/pages/`)
+	if !underAdmin {
+		return content
+	}
+	content = prefixAdminLinks(content)
 	content = routeIDPattern.ReplaceAllStringFunc(content, func(match string) string {
 		id := routeIDPattern.FindStringSubmatch(match)[1]
 		if strings.HasPrefix(id, "/admin") {
@@ -160,13 +222,24 @@ func (g *Generator) adminContent(content string) string {
 
 // repointAdminContent rewrites the imports and links of one admin file.
 func repointAdminContent(content string) string {
+	return prefixAdminLinks(repointAdminAliases(content))
+}
+
+// repointAdminAliases puts the panel's own code behind @admin. True wherever
+// the panel is served: these are imports, not addresses.
+func repointAdminAliases(content string) string {
 	for _, dir := range []string{"components", "lib", "hooks", "resources", "config"} {
 		content = strings.ReplaceAll(content, `"@/`+dir+`/`, `"@admin/`+dir+`/`)
 		content = strings.ReplaceAll(content, `'@/`+dir+`/`, `'@admin/`+dir+`/`)
 		content = strings.ReplaceAll(content, `"@/`+dir+`"`, `"@admin/`+dir+`"`)
 	}
-	// The links a generated screen carries: a resource page links to its own list
-	// and to other resources.
+	return content
+}
+
+// prefixAdminLinks moves the links a generated screen carries under /admin: a
+// resource page links to its own list and to other resources, and inside a host
+// app those pages are one segment deeper than the panel thinks.
+func prefixAdminLinks(content string) string {
 	for _, segment := range []string{"resources", "dashboard", "profile", "system", "account", "settings"} {
 		for _, quote := range []string{`"`, "`", `'`} {
 			content = strings.ReplaceAll(content, quote+"/"+segment, quote+"/admin/"+segment)

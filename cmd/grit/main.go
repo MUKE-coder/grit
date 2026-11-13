@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.516.0"
+var version = "3.517.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -194,7 +194,7 @@ func newCmd() *cobra.Command {
 	var inPlace, force, includeDesktop, withI18n, withMultitenant bool
 
 	// Legacy flags (backward compatibility)
-	var apiOnly, includeExpo, mobileOnly, full bool
+	var apiOnly, includeExpo, mobileOnly, full, adminOnly bool
 
 	cmd := &cobra.Command{
 		Use:   "new <project-name|.>",
@@ -233,6 +233,7 @@ func newCmd() *cobra.Command {
 				Version:        version, // inject the current CLI version into scaffolded files
 				// Legacy flags
 				APIOnly:     apiOnly,
+				AdminOnly:   adminOnly,
 				IncludeExpo: includeExpo,
 				MobileOnly:  mobileOnly,
 				Full:        full,
@@ -280,7 +281,26 @@ func newCmd() *cobra.Command {
 			// We check the resolved flag values directly (set by PreRunE) rather
 			// than cmd.Flags().Changed(), which is more reliable across flag sources.
 			anyFlagSet := archFlag != "" || frontendFlag != "" ||
-				apiOnly || mobileOnly || full || includeExpo
+				apiOnly || mobileOnly || full || includeExpo || adminOnly
+
+			// --admin is the single shape with no public site, so it decides
+			// the architecture rather than modifying whatever --api asked for.
+			// Written as `--api --admin` because that is how it reads: the
+			// API, plus an admin, and nothing else (grit#89).
+			if adminOnly {
+				opts.Architecture = scaffold.ArchSingle
+				opts.APIOnly = false
+				apiOnly = false
+				if opts.Frontend == "" {
+					opts.Frontend = scaffold.FrontendTanStack
+				}
+				if opts.Frontend != scaffold.FrontendTanStack {
+					cmd.SilenceUsage = true
+					return fmt.Errorf(
+						"--admin builds the Vite admin into one binary, so it cannot be combined with --next.\n" +
+							"Drop --next, or use --triple for a separate Next admin alongside a web app")
+				}
+			}
 
 			if !anyFlagSet {
 				printLogo()
@@ -324,6 +344,34 @@ func newCmd() *cobra.Command {
 			if err := scaffold.Run(opts); err != nil {
 				color.Red("\n  Error: %v\n", err)
 				return err
+			}
+
+			// The blog example comes out the same way, by running the removal
+			// `grit remove resource Blog` runs.
+			//
+			// Thirty-eight writers put a blog file somewhere, and the blog is
+			// also injections: the sync registry, the nav menu, the seeder
+			// call, the authz catalog, the WAF exclusion. One code path knows
+			// all of it and is exercised by everybody. A second list of blog
+			// paths inside the scaffolder would be a second list to keep in
+			// step, and the half that drifts is always the one nobody runs
+			// (grit#89).
+			if adminOnly {
+				root := projectName
+				if inPlace {
+					root = "."
+				}
+				abs, err := filepath.Abs(root)
+				if err != nil {
+					abs = root
+				}
+				if err := generate.RemoveResourceAt(abs, "Blog"); err != nil {
+					// Not fatal: the project is scaffolded and usable, and a
+					// blog nobody asked for is a smaller problem than a failed
+					// `grit new`. Said out loud so it can be finished by hand.
+					color.Yellow("\n  ⚠ The blog example could not be removed: %v", err)
+					color.New(color.FgHiBlack).Printf("    Run `grit remove resource Blog --force` in %s\n", root)
+				}
 			}
 
 			// i18n is layered on afterwards by the same function `grit add i18n`
@@ -386,6 +434,8 @@ func newCmd() *cobra.Command {
 
 	// Shorthand architecture flags
 	cmd.Flags().BoolVar(&apiOnly, "api", false, "Shorthand for --arch=api")
+	cmd.Flags().BoolVar(&adminOnly, "admin", false,
+		"The API and the admin in one binary, with no customer-facing site: the admin is served at /, and the blog example is left out. Use with --api, as `grit new my-app --api --admin`")
 	cmd.Flags().BoolVar(&mobileOnly, "mobile", false, "Shorthand for --arch=mobile")
 	// Not "triple with docs" — scaffold.go turns Full on for Expo (IncludeExpo),
 	// Wails (IncludeDesktop) AND the docs site, so it is every target at once.

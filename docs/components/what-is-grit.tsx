@@ -16,7 +16,7 @@ const STEPS = [
     n: '01',
     icon: Sparkles,
     title: 'Scaffold a real project',
-    body: 'Pick your architecture (single binary, monorepo, mobile, desktop) and one command scaffolds the entire repo: Go API, React frontend, admin panel, Docker, CI, all wired together.',
+    body: 'Pick your architecture (single binary, monorepo, admin-only back office, mobile, desktop) and one command scaffolds the entire repo: Go API, React frontend, admin panel, Docker, CI, all wired together.',
     code: 'grit new my-app --triple',
   },
   {

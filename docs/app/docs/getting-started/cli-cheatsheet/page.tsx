@@ -352,6 +352,11 @@ export default function CLICheatsheetPage() {
                           desc: "Scaffold only the Go API",
                         },
                         {
+                          flag: "--admin",
+                          type: "bool",
+                          desc: "With --api: the API and the admin panel in one binary, served at /, with no public site",
+                        },
+                        {
                           flag: "--expo",
                           type: "bool",
                           desc: "Include Expo mobile app",
@@ -2101,6 +2106,7 @@ grit upgrade`}
 │   ├── --double              # API + web (no admin)
 │   ├── --triple              # API + web + admin (default)
 │   ├── --api                 # Go API only
+│   ├── --admin               # With --api: API + admin panel at /, one binary, no site
 │   ├── --mobile              # API + Expo mobile only
 │   ├── --expo                # Add Expo mobile (additive)
 │   ├── --desktop             # Add Wails desktop client (combinable, not --single)
