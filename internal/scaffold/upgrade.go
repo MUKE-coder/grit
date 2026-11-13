@@ -972,6 +972,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 	}
 
+	// internal/dbchain: Apply on every connection, and the request id where
+	// a GORM callback can read it.
+	//
+	// Outside both architecture blocks, and after them. Inside one it ran for
+	// the other shape’s projects and no others, which is a repair that does
+	// nothing and says nothing: it finds the API itself and no-ops when there
+	// is none. After, because several repairs above also edit database.go and
+	// this has to read the file they leave behind.
+	if err := repairDBChain(root, opts); err != nil {
+		fmt.Printf("  ⚠ wiring the database callback chain: %v\n", err)
+	}
+
 	// --- Shared package ---
 	if hasShared {
 		spinner.Printf("  → Updating shared package config...\n")
@@ -1333,6 +1345,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		} else {
 			fmt.Println("  ✓ i18n wiring re-applied")
 		}
+	}
+
+	// After every writer that touches .gitignore, which is why it is here
+	// rather than with the repair that needs it.
+	if err := ignoreQueryLog(root); err != nil {
+		fmt.Printf("  ⚠ keeping the recorded query log out of git: %v\n", err)
 	}
 
 	finished = true

@@ -19,6 +19,7 @@ import (
 // configuration) and keeps its own command.
 func doctorCmd() *cobra.Command {
 	var asJSON bool
+	var queryLog string
 
 	cmd := &cobra.Command{
 		Use:   "doctor",
@@ -27,13 +28,17 @@ func doctorCmd() *cobra.Command {
 			"encrypted field with no key, a resource nothing scopes to its owner, a table\n" +
 			"shared across organizations, a database browser with no login, dashboard\n" +
 			"credentials still at their defaults.\n\n" +
-			"Exits non-zero when anything is an error, so CI can run it.",
+			"Exits non-zero when anything is an error, so CI can run it.\n\n" +
+			"Everything it reads is a file, so it needs no database and no running\n" +
+			"server. The one exception reads a file a run produced: record one with\n" +
+			"GRIT_QUERY_LOG=.grit/queries.jsonl and it reports the same query issued\n" +
+			"many times inside one request, which is what an N+1 looks like.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			root, err := scaffold.FindProjectRoot()
 			if err != nil {
 				return err
 			}
-			report, err := doctor.Run(root)
+			report, err := doctor.RunWith(root, doctor.Options{QueryLog: queryLog})
 			if err != nil {
 				return err
 			}
@@ -92,5 +97,8 @@ func doctorCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Print the report as JSON, for CI")
+	cmd.Flags().StringVar(&queryLog, "queries", "",
+		"A recorded query log to read (default .grit/queries.jsonl when it exists). "+
+			"Record one with GRIT_QUERY_LOG=<path> while the app or its tests run.")
 	return cmd
 }

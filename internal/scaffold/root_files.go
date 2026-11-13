@@ -834,6 +834,9 @@ func rootGitignore() string {
 # edits alone. Commit it so the whole team gets that. The rest is local.
 .grit/backups/
 .grit/slots.json
+# A recorded query log: tens of megabytes after a test run, and it names
+# the lines of whoever recorded it. Read by: grit doctor --queries
+.grit/queries.jsonl
 # Where grit-tokens remembers how far it has read. A cache: losing it costs one
 # slow run, and committing it puts this machine's usage history in the repo.
 .grit/token-usage.json

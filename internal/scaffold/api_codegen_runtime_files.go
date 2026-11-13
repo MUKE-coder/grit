@@ -77,46 +77,53 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		// this application's own router so a batch can only do what the
 		// caller could have done one request at a time. tx.go is how the
 		// transaction reaches them.
-		filepath.Join(apiRoot, "internal", "dbtx", "dbtx.go"):          tmpl("api/dbtx/dbtx.go"),
-		filepath.Join(apiRoot, "internal", "handlers", "batch.go"):     tmpl("api/handlers/batch.go"),
+		filepath.Join(apiRoot, "internal", "dbtx", "dbtx.go"):           tmpl("api/dbtx/dbtx.go"),
+		filepath.Join(apiRoot, "internal", "handlers", "batch.go"):      tmpl("api/handlers/batch.go"),
 		filepath.Join(apiRoot, "internal", "handlers", "batch_test.go"): tmpl("api/handlers/batch_test.go"),
 
 		// The first run: a deployment with no administrator mints a one-time
 		// link instead of seeding a known password.
-		filepath.Join(apiRoot, "internal", "setup", "setup.go"):        tmpl("api/setup/setup.go"),
-		filepath.Join(apiRoot, "internal", "setup", "setup_test.go"):   tmpl("api/setup/setup_test.go"),
-		filepath.Join(apiRoot, "internal", "handlers", "setup.go"):     tmpl("api/handlers/setup.go"),
+		filepath.Join(apiRoot, "internal", "setup", "setup.go"):      tmpl("api/setup/setup.go"),
+		filepath.Join(apiRoot, "internal", "setup", "setup_test.go"): tmpl("api/setup/setup_test.go"),
+		filepath.Join(apiRoot, "internal", "handlers", "setup.go"):   tmpl("api/handlers/setup.go"),
 
 		// A short-lived key for one file, so an <img src> can show a private
 		// upload without the bucket being public.
 		filepath.Join(apiRoot, "internal", "filetoken", "filetoken.go"):      tmpl("api/filetoken/filetoken.go"),
 		filepath.Join(apiRoot, "internal", "filetoken", "filetoken_test.go"): tmpl("api/filetoken/filetoken_test.go"),
 
+		// The one place a GORM callback is registered, so a project's own is
+		// on every connection rather than whichever handle it held, in an
+		// order it declared rather than one it got.
+		filepath.Join(apiRoot, "internal", "dbchain", "dbchain.go"):      tmpl("api/dbchain/dbchain.go"),
+		filepath.Join(apiRoot, "internal", "dbchain", "record.go"):       tmpl("api/dbchain/record.go"),
+		filepath.Join(apiRoot, "internal", "dbchain", "dbchain_test.go"): tmpl("api/dbchain/dbchain_test.go"),
+
 		// The expression engine: one parser and one compiler, used by
 		// ?filter= on a list endpoint and by a declared access rule. Both
 		// resolve every identifier against the model's own GORM schema and
 		// bind every value, which is the whole of the safety argument.
-		filepath.Join(apiRoot, "internal", "rules", "lex.go"):        tmpl("api/rules/lex.go"),
-		filepath.Join(apiRoot, "internal", "rules", "parse.go"):      tmpl("api/rules/parse.go"),
-		filepath.Join(apiRoot, "internal", "rules", "schema.go"):     tmpl("api/rules/schema.go"),
-		filepath.Join(apiRoot, "internal", "rules", "compile.go"):    tmpl("api/rules/compile.go"),
-		filepath.Join(apiRoot, "internal", "rules", "context.go"):    tmpl("api/rules/context.go"),
-		filepath.Join(apiRoot, "internal", "rules", "macros.go"):     tmpl("api/rules/macros.go"),
-		filepath.Join(apiRoot, "internal", "rules", "values.go"):     tmpl("api/rules/values.go"),
-		filepath.Join(apiRoot, "internal", "rules", "rules_test.go"): tmpl("api/rules/rules_test.go"),
-		filepath.Join(apiRoot, "internal", "imports", "limit.go"):          importsLimitGo(),
-		filepath.Join(apiRoot, "internal", "imports", "limit_test.go"):     importsLimitTestGo(),
-		filepath.Join(apiRoot, "internal", "events", "events.go"):          apiEventsGo(),
-		filepath.Join(apiRoot, "internal", "events", "durable.go"):         apiEventsDurableGo(),
-		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):      apiWorkflowGo(),
-		filepath.Join(apiRoot, "internal", "export", "export.go"):          apiExportGo(),
-		filepath.Join(apiRoot, "internal", "export", "export_test.go"):     apiExportTestGo(),
-		filepath.Join(apiRoot, "internal", "ids", "ids.go"):                apiIDsGo(),
-		filepath.Join(apiRoot, "internal", "ids", "ids_test.go"):           apiIDsTestGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                apiPDFGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):            apiPDFInvoiceGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "pdf_test.go"):           apiPDFTestGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "record.go"):             apiPDFRecordGo(),
+		filepath.Join(apiRoot, "internal", "rules", "lex.go"):          tmpl("api/rules/lex.go"),
+		filepath.Join(apiRoot, "internal", "rules", "parse.go"):        tmpl("api/rules/parse.go"),
+		filepath.Join(apiRoot, "internal", "rules", "schema.go"):       tmpl("api/rules/schema.go"),
+		filepath.Join(apiRoot, "internal", "rules", "compile.go"):      tmpl("api/rules/compile.go"),
+		filepath.Join(apiRoot, "internal", "rules", "context.go"):      tmpl("api/rules/context.go"),
+		filepath.Join(apiRoot, "internal", "rules", "macros.go"):       tmpl("api/rules/macros.go"),
+		filepath.Join(apiRoot, "internal", "rules", "values.go"):       tmpl("api/rules/values.go"),
+		filepath.Join(apiRoot, "internal", "rules", "rules_test.go"):   tmpl("api/rules/rules_test.go"),
+		filepath.Join(apiRoot, "internal", "imports", "limit.go"):      importsLimitGo(),
+		filepath.Join(apiRoot, "internal", "imports", "limit_test.go"): importsLimitTestGo(),
+		filepath.Join(apiRoot, "internal", "events", "events.go"):      apiEventsGo(),
+		filepath.Join(apiRoot, "internal", "events", "durable.go"):     apiEventsDurableGo(),
+		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):  apiWorkflowGo(),
+		filepath.Join(apiRoot, "internal", "export", "export.go"):      apiExportGo(),
+		filepath.Join(apiRoot, "internal", "export", "export_test.go"): apiExportTestGo(),
+		filepath.Join(apiRoot, "internal", "ids", "ids.go"):            apiIDsGo(),
+		filepath.Join(apiRoot, "internal", "ids", "ids_test.go"):       apiIDsTestGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):            apiPDFGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):        apiPDFInvoiceGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "pdf_test.go"):       apiPDFTestGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "record.go"):         apiPDFRecordGo(),
 		// Word documents. internal/pdf renders a styled page; this renders a
 		// document with a page size, a named font, a line spacing and a page
 		// break before each chapter, which is what a submission or a marking

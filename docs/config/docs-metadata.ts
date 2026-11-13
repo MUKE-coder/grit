@@ -498,6 +498,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'A query language on every generated list endpoint: ?filter= is an expression over the fields of the model itself, compiled against its GORM schema so an unknown name is a 422 listing the known ones and every value is bound. Operators, relation paths, @request, date macros, :isset and :changed, and ?skip_total.',
   },
+  '/docs/backend/db-callbacks': {
+    title: 'Database callbacks',
+    description:
+      'Code that runs around every statement, registered once and wired onto every connection: the main pool, a worker\u2019s, the one a test opens. Declared ordering against the callbacks the framework already installs, an anchor that names nothing refused rather than ignored, and GRIT_QUERY_LOG to record a run for grit doctor to read offline.',
+  },
   '/docs/backend/health': {
     title: 'Health checks',
     description:

@@ -156,6 +156,7 @@ const navItems: NavItem[] = [
       { title: 'Filter Expressions', href: '/docs/backend/filtering' },
       { title: 'API Documentation', href: '/docs/backend/api-docs' },
       { title: 'Pulse (Observability)', href: '/docs/backend/pulse' },
+      { title: 'Database Callbacks', href: '/docs/backend/db-callbacks' },
       { title: 'Health Checks', href: '/docs/backend/health' },
       { title: 'Feature Flags', href: '/docs/backend/feature-flags' },
       { title: 'Webhooks', href: '/docs/backend/webhooks' },

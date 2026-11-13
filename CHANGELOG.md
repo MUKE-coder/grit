@@ -23,6 +23,47 @@ Also worth knowing:
 ---
 
 
+## v3.526.0 - November 13, 2026
+
+### One place to register a database callback, and a record of what a run queried
+
+The framework installs eight GORM callbacks: field encryption, HTML sanitising, the append-only guard, the field-type checks, the soft-delete touch, the pagination count scope and the sync hooks. Each calls `db.Callback()` from its own Install function, which works because they were all written here and their order was decided once.
+
+A project adding a ninth has none of that. It registers on whichever handle it holds, so the callback is on the main pool and not on the one the test suite opens, or the desktop's local mirror, or the one a worker made: the application then behaves differently from its own tests and nothing says why. It lands in an order nobody declared, and a callback before `crypto:encrypt_map_values` sees plaintext while one after it sees ciphertext. And nothing can tell you what is on the chain, which is the first question when one of them is slow.
+
+#### internal/dbchain
+
+```go
+dbchain.MustRegister(dbchain.Link{
+    Name:   "myapp:stamp_region",
+    Op:     dbchain.Create,
+    When:   dbchain.After,
+    Anchor: "fieldtypes:create",
+    Why:    "fills region from the actor's organization",
+    Fn:     stampRegion,
+})
+```
+
+Registering touches no connection. `dbchain.Apply(db)` does, and `database.Connect` calls it, so a link registered from an `init` is on every handle opened afterwards rather than on whichever one happened to exist.
+
+An anchor that names nothing is refused. GORM takes `After("nope")` without complaint and gives you no ordering at all, which is a callback running in the wrong place and saying nothing about it.
+
+#### And what a run actually queried
+
+Set `GRIT_QUERY_LOG` and the chain writes one JSON line per query: the request that issued it, the matched route, the SQL with its placeholders, the row count, and the line of your application it came from. No code change, and nothing is written when the variable is unset.
+
+```bash
+GRIT_QUERY_LOG=.grit/queries.jsonl go test ./...
+grit doctor
+```
+
+`{`⚠ GET /api/v1/posts runs the same query 23 times in one request, from internal/services/post.go:88 (in 14 requests): SELECT * FROM \`users\` WHERE id = ?`}` `query-repeated-in-one-request` is the 32nd doctor check and the only one that reads something a run produced. It is still offline: the application writes a file and the check reads the file, so nothing talks to a database or a server and it stays usable in CI. Silent when there is no log, and it says so when the log is older than the code, because a report from before a change reads exactly the same as one from after it.
+
+The request id now travels on the request's own context as well as the gin context. Only the first reaches a GORM callback, so without it every recorded query was unattributed and "the same query many times in one request" had no request to be many times inside of.
+
+The registry is Beego's filter chain, which is the thing it has that a pile of direct registrations does not. Timing and live profiling stay with Pulse: this answers a question Pulse cannot, which is what to fail a build on.
+
+
 ## v3.525.0 - November 13, 2026
 
 ### A column can say it is a secret

@@ -138,6 +138,12 @@
     "keywords": "jwt login register auth token password 2fa totp oauth google github trusted devices backup codes refresh implement authentication grit hashing bcrypt protected routes docs backend"
   },
   {
+    "title": "Database callbacks",
+    "href": "/docs/backend/db-callbacks",
+    "section": "Backend (Go API)",
+    "keywords": "code runs around every statement registered once wired onto connection main pool worker u2019s one test opens declared ordering against callbacks framework already installs anchor names nothing refused rather than ignored grit query log record run doctor read offline docs backend db database"
+  },
+  {
     "title": "Word documents",
     "href": "/docs/backend/documents",
     "section": "Backend (Go API)",

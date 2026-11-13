@@ -1908,6 +1908,7 @@ import (
 
 	"{{MODULE}}/internal/appendonly"
 	"{{MODULE}}/internal/crypto"
+	"{{MODULE}}/internal/dbchain"
 	"{{MODULE}}/internal/fieldtypes"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sanitize"
@@ -2028,7 +2029,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("installing append-only guard: %w", err)
 	}
 
-` + paginateConnectHook + syncConnectHook + fieldTypesConnectHook + `	sqlDB, err := db.DB()
+` + paginateConnectHook + syncConnectHook + fieldTypesConnectHook + dbChainConnectHook + `	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
@@ -2997,6 +2998,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"{{MODULE}}/internal/dbchain"
 	"{{MODULE}}/internal/respond"
 )
 
@@ -3013,6 +3015,15 @@ func RequestID() gin.HandlerFunc {
 		}
 		c.Set("request_id", requestID)
 		c.Header("X-Request-ID", requestID)
+		// And onto the request's own context, which is the one that travels
+		// into a service and down to the database. c.Set stores on the gin
+		// context, and a GORM callback never sees that, so a recorded query
+		// could not say which request issued it.
+		//
+		// FullPath is the matched route pattern (/api/posts/:id), not the
+		// URL, so a report groups by endpoint rather than by row id.
+		c.Request = c.Request.WithContext(
+			dbchain.WithRequest(c.Request.Context(), requestID, c.Request.Method+" "+c.FullPath()))
 		c.Next()
 	}
 }

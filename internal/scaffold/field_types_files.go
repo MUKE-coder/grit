@@ -101,7 +101,14 @@ func EnsureFieldTypesWiring(apiRoot, module string) error {
 	if strings.Contains(content, "fieldtypes.Install(db)") {
 		return nil
 	}
-	const anchor = "\tsqlDB, err := db.DB()"
+	// Before the dbchain block when the project has one: Apply has to be the
+	// last thing in Connect, or a link anchored to fieldtypes:create is
+	// registered before fieldtypes:create exists and GORM quietly ignores the
+	// constraint.
+	anchor := "\tsqlDB, err := db.DB()"
+	if strings.Contains(content, dbChainConnectHook) {
+		anchor = dbChainConnectHook
+	}
 	if !strings.Contains(content, anchor) {
 		return fmt.Errorf("could not find where to install the field type checks in %s.\n\n"+
 			"Add this call after connecting, or email, tel and the other formatted fields are stored unchecked:\n\n  fieldtypes.Install(db)", path)
@@ -110,7 +117,12 @@ func EnsureFieldTypesWiring(apiRoot, module string) error {
 	// Where the template has it, between crypto and paginate, when that group
 	// is there; a group of its own otherwise.
 	importLine := "\t\"" + module + "/internal/fieldtypes\"\n"
-	if cryptoLine := "\t\"" + module + "/internal/crypto\"\n"; strings.Contains(content, cryptoLine) {
+	// In sorted position among the project's own imports. "after crypto" was
+	// the sorted position until a package landed between the two, and an
+	// unsorted block is a file gofmt would rewrite under the next person.
+	if placed, ok := insertSortedImport(content, module, "fieldtypes"); ok {
+		content = placed
+	} else if cryptoLine := "\t\"" + module + "/internal/crypto\"\n"; strings.Contains(content, cryptoLine) {
 		content = strings.Replace(content, cryptoLine, cryptoLine+importLine, 1)
 	} else {
 		var ok bool

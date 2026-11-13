@@ -116,14 +116,33 @@ var checks = []struct {
 	// route more permissive, so it is the mistake nothing complains about
 	// (grit#179).
 	{"route-declares-no-permission", checkRoutePermissions},
+	// The one check that reads what a run produced rather than what the
+	// repository holds, and still offline: the application writes a file and
+	// this reads it. Silent unless there is one.
+	{"query-repeated-in-one-request", checkQueryLog},
 }
 
 // Run audits the project at root.
 func Run(root string) (*Report, error) {
+	return RunWith(root, Options{})
+}
+
+// Options are the few things a caller can point the audit at. Everything else
+// it finds for itself, which is what makes `grit doctor` one word.
+type Options struct {
+	// QueryLog overrides where the recorded query log is read from. Empty
+	// uses .grit/queries.jsonl when it exists, and reports nothing when it
+	// does not.
+	QueryLog string
+}
+
+// RunWith is Run with the caller's options.
+func RunWith(root string, opts Options) (*Report, error) {
 	p, err := loadProject(root)
 	if err != nil {
 		return nil, err
 	}
+	p.queryLog = opts.QueryLog
 	report := &Report{Resources: p.resources, Checks: len(checks)}
 	for _, c := range checks {
 		for _, f := range c.run(p) {
@@ -197,6 +216,9 @@ type project struct {
 	resources     []string          // resources with a handler and a service
 	hasTenant     bool
 	allGo         string // every Go file under internal/, concatenated
+	// queryLog is the recorded query log to read, when the caller named one.
+	// Empty means the conventional place, .grit/queries.jsonl, if it is there.
+	queryLog string
 }
 
 var (

@@ -49,6 +49,11 @@ const checks: { name: string; level: string; what: string }[] = [
     what: 'A column named like a secret (anything ending in _token, _secret, _password, _api_key, a recovery phrase, a security answer) is sent in every response and can be filtered on. Declare it sensitive and the API stops returning it, the admin stops listing it, the export stops carrying it and an expression stops resolving it.',
   },
   {
+    name: 'query-repeated-in-one-request',
+    level: 'warning',
+    what: 'The same query runs many times inside one request, which is what an N+1 looks like from the outside. The only check here that reads something a run produced: record a log with GRIT_QUERY_LOG=.grit/queries.jsonl while the app or its tests run, and this reads the file. Silent when there is none, and it says so when the log is older than the code.',
+  },
+  {
     name: 'append-only-mutable-routes',
     level: 'error',
     what: 'An append-only resource still mounts PUT, PATCH or DELETE. The model and the database trigger refuse the write, so the endpoint can only fail.',
@@ -189,7 +194,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  31 checks over 0 resource(s)
+  32 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -208,7 +213,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  31 checks over 10 resource(s)
+  32 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment

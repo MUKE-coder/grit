@@ -72,6 +72,104 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.526.0 */}
+            <div className="mb-12" id="v3.526.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.526.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One place to register a database callback, and a record of what a run queried</h3>
+                <p>
+                  The framework installs eight GORM callbacks: field encryption,
+                  HTML sanitising, the append-only guard, the field-type checks,
+                  the soft-delete touch, the pagination count scope and the sync
+                  hooks. Each calls <code>db.Callback()</code> from its own
+                  Install function, which works because they were all written
+                  here and their order was decided once.
+                </p>
+                <p>
+                  A project adding a ninth has none of that. It registers on
+                  whichever handle it holds, so the callback is on the main pool
+                  and not on the one the test suite opens, or the desktop&apos;s
+                  local mirror, or the one a worker made: the application then
+                  behaves differently from its own tests and nothing says why. It
+                  lands in an order nobody declared, and a callback before{' '}
+                  <code>crypto:encrypt_map_values</code> sees plaintext while one
+                  after it sees ciphertext. And nothing can tell you what is on
+                  the chain, which is the first question when one of them is
+                  slow.
+                </p>
+
+                <h4>internal/dbchain</h4>
+                <CodeBlock
+                  language="go"
+                  code={`dbchain.MustRegister(dbchain.Link{
+    Name:   "myapp:stamp_region",
+    Op:     dbchain.Create,
+    When:   dbchain.After,
+    Anchor: "fieldtypes:create",
+    Why:    "fills region from the actor's organization",
+    Fn:     stampRegion,
+})`}
+                />
+                <p>
+                  Registering touches no connection. <code>dbchain.Apply(db)</code>{' '}
+                  does, and <code>database.Connect</code> calls it, so a link
+                  registered from an <code>init</code> is on every handle opened
+                  afterwards rather than on whichever one happened to exist.
+                </p>
+                <p>
+                  An anchor that names nothing is refused. GORM takes{' '}
+                  <code>After(&quot;nope&quot;)</code> without complaint and gives
+                  you no ordering at all, which is a callback running in the wrong
+                  place and saying nothing about it.
+                </p>
+
+                <h4>And what a run actually queried</h4>
+                <p>
+                  Set <code>GRIT_QUERY_LOG</code> and the chain writes one JSON
+                  line per query: the request that issued it, the matched route,
+                  the SQL with its placeholders, the row count, and the line of
+                  your application it came from. No code change, and nothing is
+                  written when the variable is unset.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`GRIT_QUERY_LOG=.grit/queries.jsonl go test ./...
+grit doctor`}
+                />
+                <pre><code>{`⚠ GET /api/v1/posts runs the same query 23 times in one request,
+  from internal/services/post.go:88 (in 14 requests):
+  SELECT * FROM \`users\` WHERE id = ?`}</code></pre>
+                <p>
+                  <code>query-repeated-in-one-request</code> is the 32nd doctor
+                  check and the only one that reads something a run produced. It
+                  is still offline: the application writes a file and the check
+                  reads the file, so nothing talks to a database or a server and
+                  it stays usable in CI. Silent when there is no log, and it says
+                  so when the log is older than the code, because a report from
+                  before a change reads exactly the same as one from after it.
+                </p>
+                <p>
+                  The request id now travels on the request&apos;s own context as
+                  well as the gin context. Only the first reaches a GORM callback,
+                  so without it every recorded query was unattributed and &quot;the
+                  same query many times in one request&quot; had no request to be
+                  many times inside of.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The registry is Beego&apos;s filter chain, which is the thing it
+                  has that a pile of direct registrations does not. Timing and
+                  live profiling stay with Pulse: this answers a question Pulse
+                  cannot, which is what to fail a build on.
+                </p>
+              </div>
+            </div>
+
             {/* v3.525.0 */}
             <div className="mb-12" id="v3.525.0">
               <div className="flex items-center gap-3 mb-4">

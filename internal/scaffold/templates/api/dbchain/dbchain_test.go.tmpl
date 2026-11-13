@@ -1,0 +1,306 @@
+package dbchain
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"testing"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+)
+
+type chainRow struct {
+	ID   uint `gorm:"primaryKey"`
+	Name string
+	Seen string
+}
+
+func chainDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatalf("opening sqlite: %v", err)
+	}
+	// Each :memory: connection is its own empty database, so the pool has to
+	// be one connection or a second one finds no tables.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	if err := db.AutoMigrate(&chainRow{}); err != nil {
+		t.Fatalf("migrating: %v", err)
+	}
+	return db
+}
+
+// reset puts the package back to empty between tests. The registry is
+// process-wide on purpose, which makes it a thing tests have to clean up.
+func reset(t *testing.T) {
+	t.Helper()
+	mu.Lock()
+	for name := range links {
+		delete(links, name)
+	}
+	mu.Unlock()
+	applied = sync.Map{}
+}
+
+// A link runs, against a real database, on the connection Apply was given.
+func TestALinkRunsOnTheStatement(t *testing.T) {
+	reset(t)
+	var ran int
+	MustRegister(Link{
+		Name: "test:count_creates",
+		Op:   Create, When: Before,
+		Why: "counts",
+		Fn:  func(tx *gorm.DB) { ran++ },
+	})
+	db := chainDB(t)
+	if err := Apply(db); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if err := db.Create(&chainRow{Name: "one"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if ran != 1 {
+		t.Fatalf("the link ran %d times, want 1", ran)
+	}
+}
+
+// A connection Apply was never called on does not carry the chain. This is
+// the failure the package is about: a link on the main pool and not on the
+// handle the tests open looks like the application and its tests disagreeing
+// about what the database does.
+func TestAnUnwiredConnectionHasNoLinks(t *testing.T) {
+	reset(t)
+	var ran int
+	MustRegister(Link{
+		Name: "test:count_creates",
+		Op:   Create, When: Before,
+		Fn: func(tx *gorm.DB) { ran++ },
+	})
+	db := chainDB(t)
+	if Applied(db) {
+		t.Fatal("a fresh connection reports the chain applied")
+	}
+	if err := db.Create(&chainRow{Name: "one"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if ran != 0 {
+		t.Fatalf("a link ran on a connection Apply never saw (%d times)", ran)
+	}
+}
+
+// Applying twice is not an error, and does not double the link. A test helper
+// that opens a database and the Connect that wires one both reach Apply.
+func TestApplyIsIdempotent(t *testing.T) {
+	reset(t)
+	var ran int
+	MustRegister(Link{
+		Name: "test:count_creates",
+		Op:   Create, When: Before,
+		Fn: func(tx *gorm.DB) { ran++ },
+	})
+	db := chainDB(t)
+	for i := 0; i < 3; i++ {
+		if err := Apply(db); err != nil {
+			t.Fatalf("Apply %d: %v", i, err)
+		}
+	}
+	if err := db.Create(&chainRow{Name: "one"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if ran != 1 {
+		t.Fatalf("the link ran %d times for one insert, want 1", ran)
+	}
+}
+
+// The anchor decides the order, and an anchor naming nothing is refused.
+//
+// GORM takes After("nope") without complaint and gives you no ordering at
+// all. That is a callback running in the wrong place with nothing said about
+// it, and for the encryption callback specifically it is the difference
+// between seeing plaintext and seeing ciphertext.
+func TestAnAnchorThatNamesNothingIsRefused(t *testing.T) {
+	reset(t)
+	MustRegister(Link{
+		Name: "test:ordered", Op: Create, When: After,
+		Anchor: "crypto:encrpyt_map_values", // a typo, which is the point
+		Fn:     func(tx *gorm.DB) {},
+	})
+	err := Apply(chainDB(t))
+	if err == nil {
+		t.Fatal("an anchor that names nothing was accepted")
+	}
+	if !strings.Contains(err.Error(), "crypto:encrpyt_map_values") {
+		t.Errorf("the error does not name the bad anchor: %v", err)
+	}
+	// And nothing was registered: a refusal leaves the connection as it was.
+	if Applied(chainDB(t)) {
+		t.Error("the connection was marked applied after a refusal")
+	}
+}
+
+// Two links on the same statement run in the order their anchors say.
+func TestOrderingIsWhatTheAnchorsSay(t *testing.T) {
+	reset(t)
+	var order []string
+	MustRegister(Link{
+		Name: "test:first", Op: Create, When: Before, Anchor: "gorm:create",
+		Fn: func(tx *gorm.DB) { order = append(order, "first") },
+	})
+	MustRegister(Link{
+		Name: "test:second", Op: Create, When: After, Anchor: "test:first",
+		Fn: func(tx *gorm.DB) { order = append(order, "second") },
+	})
+	db := chainDB(t)
+	if err := Apply(db); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if err := db.Create(&chainRow{Name: "one"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(order, ",") != "first,second" {
+		t.Errorf("ran in the order %v, want first then second", order)
+	}
+}
+
+// The refusals at registration. Each one is a mistake that otherwise shows up
+// as a callback that silently does not run, or runs twice.
+func TestRegisterRefusesTheMistakes(t *testing.T) {
+	reset(t)
+	cases := map[string]Link{
+		"no function":     {Name: "test:a", Op: Create, When: Before},
+		"not namespaced":  {Name: "audit", Op: Create, When: Before, Fn: func(*gorm.DB) {}},
+		"unknown op":      {Name: "test:b", Op: "upsert", When: Before, Fn: func(*gorm.DB) {}},
+		"unknown side":    {Name: "test:c", Op: Create, When: "during", Fn: func(*gorm.DB) {}},
+	}
+	for why, l := range cases {
+		if err := Register(l); err == nil {
+			t.Errorf("%s was accepted", why)
+		}
+	}
+	// And the same name twice, which would be one package quietly replacing
+	// another's callback.
+	first := Link{Name: "test:dup", Op: Create, When: Before, Fn: func(*gorm.DB) {}}
+	if err := Register(first); err != nil {
+		t.Fatal(err)
+	}
+	if err := Register(first); err == nil {
+		t.Error("the same name was registered twice")
+	}
+}
+
+// Links is the inventory, and it is sorted, so printing it twice gives the
+// same answer and a diff of it means something.
+func TestLinksAreSorted(t *testing.T) {
+	reset(t)
+	for _, name := range []string{"test:z", "test:a", "test:m"} {
+		MustRegister(Link{Name: name, Op: Query, When: After, Fn: func(*gorm.DB) {}})
+	}
+	var got []string
+	for _, l := range Links() {
+		got = append(got, l.Name)
+	}
+	if strings.Join(got, ",") != "test:a,test:m,test:z" {
+		t.Errorf("Links() returned %v, which is not sorted", got)
+	}
+}
+
+// The recorder writes a line per query, with the request it belongs to and
+// the line of this application that issued it.
+//
+// Written against a real database and read back with a real JSON decoder: a
+// test that asserted on the string this package formats would agree with
+// whatever it formatted, including the wrong thing.
+func TestTheRecorderWritesWhatTheDoctorReads(t *testing.T) {
+	reset(t)
+	path := filepath.Join(t.TempDir(), "queries.jsonl")
+	t.Setenv(QueryLogEnv, path)
+	// openRecorder is once-only per process, so a test that wants a fresh one
+	// has to say so.
+	rec.once = sync.Once{}
+	rec.r, rec.err = nil, nil
+	t.Cleanup(func() {
+		_ = CloseQueryLog()
+		rec.once = sync.Once{}
+		rec.r, rec.err = nil, nil
+	})
+
+	db := chainDB(t)
+	if err := Apply(db); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if err := db.Create(&chainRow{Name: "one"}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := WithRequest(context.Background(), "req-1", "GET /api/rows")
+	var rows []chainRow
+	for i := 0; i < 3; i++ {
+		if err := db.WithContext(ctx).Find(&rows).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := CloseQueryLog(); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, err := os.ReadFile(path) // #nosec G304 -- a path this test made
+	if err != nil {
+		t.Fatalf("the recorder wrote no file: %v", err)
+	}
+	var entries []Entry
+	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+		if line == "" {
+			continue
+		}
+		var e Entry
+		if err := json.Unmarshal([]byte(line), &e); err != nil {
+			t.Fatalf("a line is not JSON: %v\n%s", err, line)
+		}
+		entries = append(entries, e)
+	}
+	if len(entries) != 3 {
+		t.Fatalf("recorded %d queries, want 3:\n%s", len(entries), raw)
+	}
+	for _, e := range entries {
+		if e.Request != "req-1" {
+			t.Errorf("the line does not say which request issued it: %+v", e)
+		}
+		if e.Route != "GET /api/rows" {
+			t.Errorf("the line does not carry the route: %+v", e)
+		}
+		if !strings.Contains(strings.ToUpper(e.SQL), "SELECT") {
+			t.Errorf("the line does not carry the SQL: %+v", e)
+		}
+		// The value, not the shape. A log people paste into an issue must not
+		// carry what was searched for.
+		if strings.Contains(e.SQL, "one") {
+			t.Errorf("the recorded SQL has a bound value in it: %q", e.SQL)
+		}
+		if e.Caller == "" || strings.Contains(e.Caller, "gorm.io") {
+			t.Errorf("the caller is not this application's line: %q", e.Caller)
+		}
+	}
+}
+
+// Outside a request there is no id to record, and that is not an error: a
+// migration, a worker and a seeder all query.
+func TestRequestOfIsEmptyOutsideARequest(t *testing.T) {
+	if id, route := RequestOf(context.Background()); id != "" || route != "" {
+		t.Errorf("got %q %q from a bare context", id, route)
+	}
+	//nolint:staticcheck // the nil context is the point of the case
+	if id, route := RequestOf(nil); id != "" || route != "" {
+		t.Errorf("got %q %q from a nil context", id, route)
+	}
+}

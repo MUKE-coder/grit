@@ -1,0 +1,258 @@
+// Query recording: one line per statement, for `grit doctor` to read later.
+//
+// Pulse answers "why is this request slow" while the request is happening,
+// from a dashboard. This answers a different question, in a different place:
+// after a test run, in CI, with nothing running. It writes a file, and
+// `grit doctor --queries` reads it and reports the same query issued many
+// times inside one request, which is what an N+1 looks like from the outside.
+//
+// It is off unless GRIT_QUERY_LOG names a file, and it is meant for a test
+// run or a development session rather than production: it takes a mutex and
+// writes a line per statement, which is fine for a test suite and not for a
+// busy server.
+//
+//	GRIT_QUERY_LOG=.grit/queries.jsonl go test ./...
+//	grit doctor --queries .grit/queries.jsonl
+
+package dbchain
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"sync"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// requestKey carries the request id and route onto the context the services
+// pass down, so a recorded line can say which request issued the query.
+//
+// Its own unexported type, which is the only way a context key cannot collide
+// with another package's.
+type requestKey struct{}
+
+type requestInfo struct {
+	ID    string
+	Route string
+}
+
+// WithRequest puts the request id and the matched route on the context.
+//
+// Called by the RequestID middleware. The id already lives on the gin
+// context, and a GORM callback cannot see that: gin.Context values and
+// Request.Context() values are two different stores, and only the second one
+// travels into a service and down to the database.
+func WithRequest(ctx context.Context, id, route string) context.Context {
+	if id == "" && route == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, requestKey{}, requestInfo{ID: id, Route: route})
+}
+
+// RequestOf reads back what WithRequest put there. Both empty outside a
+// request: a migration, a worker, a seeder.
+func RequestOf(ctx context.Context) (id, route string) {
+	if ctx == nil {
+		return "", ""
+	}
+	if info, ok := ctx.Value(requestKey{}).(requestInfo); ok {
+		return info.ID, info.Route
+	}
+	return "", ""
+}
+
+// QueryLogEnv is the variable that turns recording on, and names the file.
+const QueryLogEnv = "GRIT_QUERY_LOG"
+
+// Entry is one recorded statement. JSON Lines, so a run appends and a reader
+// streams: a test suite can produce tens of thousands of these.
+type Entry struct {
+	At      time.Time `json:"at"`
+	Request string    `json:"request,omitempty"`
+	Route   string    `json:"route,omitempty"`
+	Op      string    `json:"op"`
+	Table   string    `json:"table,omitempty"`
+	SQL     string    `json:"sql"`
+	Rows    int64     `json:"rows"`
+	Caller  string    `json:"caller,omitempty"`
+}
+
+type recorder struct {
+	mu   sync.Mutex
+	file *os.File
+	enc  *json.Encoder
+}
+
+var rec struct {
+	once sync.Once
+	r    *recorder
+	err  error
+}
+
+// openRecorder opens the log named by GRIT_QUERY_LOG, once.
+func openRecorder() (*recorder, error) {
+	rec.once.Do(func() {
+		path := strings.TrimSpace(os.Getenv(QueryLogEnv))
+		if path == "" {
+			return
+		}
+		if dir := filepath.Dir(path); dir != "" && dir != "." {
+			if err := os.MkdirAll(dir, 0o750); err != nil {
+				rec.err = fmt.Errorf("dbchain: %s names %s, and its directory could not be made: %w",
+					QueryLogEnv, path, err)
+				return
+			}
+		}
+		// Appended to, not truncated. A test suite runs several binaries, one
+		// per package, and truncating would leave the log of whichever
+		// finished last. Truncate it yourself before the run.
+		// #nosec G304 -- the path is this process's own environment, set by
+		// whoever started it.
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o640)
+		if err != nil {
+			rec.err = fmt.Errorf("dbchain: opening %s: %w", path, err)
+			return
+		}
+		rec.r = &recorder{file: f, enc: json.NewEncoder(f)}
+	})
+	return rec.r, rec.err
+}
+
+// CloseQueryLog flushes and closes the log. Safe to call when there is none.
+func CloseQueryLog() error {
+	if rec.r == nil {
+		return nil
+	}
+	rec.r.mu.Lock()
+	defer rec.r.mu.Unlock()
+	if rec.r.file == nil {
+		return nil
+	}
+	err := rec.r.file.Close()
+	rec.r.file = nil
+	return err
+}
+
+// installRecorder puts the recorder on the chain when GRIT_QUERY_LOG is set.
+// Called by Apply, so turning it on needs an environment variable and no
+// code change.
+func installRecorder() error {
+	r, err := openRecorder()
+	if err != nil {
+		return err
+	}
+	if r == nil {
+		return nil
+	}
+	mu.RLock()
+	_, already := links["dbchain:record"]
+	mu.RUnlock()
+	if already {
+		return nil
+	}
+	return Register(Link{
+		Name: "dbchain:record",
+		Op:   Query,
+		// After the statement, so the row count is known. Before it there is
+		// nothing to record but the intention.
+		When:   After,
+		Anchor: "gorm:query",
+		Why:    "writes one line per query to " + os.Getenv(QueryLogEnv),
+		Fn:     r.write,
+	})
+}
+
+func (r *recorder) write(tx *gorm.DB) {
+	if tx == nil || tx.Statement == nil {
+		return
+	}
+	id, route := RequestOf(tx.Statement.Context)
+
+	table := tx.Statement.Table
+	if table == "" && tx.Statement.Schema != nil {
+		table = tx.Statement.Schema.Table
+	}
+
+	entry := Entry{
+		At:      time.Now().UTC(),
+		Request: id,
+		Route:   route,
+		Op:      "query",
+		Table:   table,
+		// The SQL GORM built, placeholders and all. Not Explain()ed with the
+		// values filled in: the shape is the thing a repeated query has in
+		// common, and the values are the part that differs, which is also the
+		// part that would put a password or an email address in a file people
+		// paste into an issue.
+		SQL:    tx.Statement.SQL.String(),
+		Rows:   tx.RowsAffected,
+		Caller: callerOutsideGORM(),
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.file == nil {
+		return
+	}
+	// A failure here must not fail the query: this is a diagnostic, and a
+	// full disk is not a reason to refuse a read.
+	_ = r.enc.Encode(entry)
+}
+
+// callerOutsideGORM is the first frame that is this application's rather than
+// the driver's or the ORM's.
+//
+// It is the whole value of the file. "This query ran 40 times" is a fact you
+// can get from a log; "this query ran 40 times from services/post.go:88" is
+// the line to go and fix.
+func callerOutsideGORM() string {
+	var pcs [24]uintptr
+	// Skip runtime.Callers, this function and write.
+	n := runtime.Callers(3, pcs[:])
+	frames := runtime.CallersFrames(pcs[:n])
+	for {
+		frame, more := frames.Next()
+		if frame.File != "" && !isLibraryFrame(frame.Function) {
+			return fmt.Sprintf("%s:%d", shortFile(frame.File), frame.Line)
+		}
+		if !more {
+			return ""
+		}
+	}
+}
+
+func isLibraryFrame(fn string) bool {
+	for _, prefix := range []string{
+		"gorm.io/", "database/sql", "github.com/glebarez/", "github.com/jackc/",
+		"github.com/go-sql-driver/", "runtime.",
+	} {
+		if strings.HasPrefix(fn, prefix) {
+			return true
+		}
+	}
+	// This package's own frames: recording the recorder helps nobody.
+	return strings.Contains(fn, "/internal/dbchain.")
+}
+
+// shortFile trims an absolute path to the part that identifies the file in
+// this repository. An absolute path from a build machine is noise, and on CI
+// it is somebody else's directory layout.
+func shortFile(path string) string {
+	path = filepath.ToSlash(path)
+	if i := strings.LastIndex(path, "/internal/"); i >= 0 {
+		return path[i+1:]
+	}
+	if i := strings.LastIndex(path, "/"); i >= 0 {
+		if j := strings.LastIndex(path[:i], "/"); j >= 0 {
+			return path[j+1:]
+		}
+		return path[i+1:]
+	}
+	return path
+}

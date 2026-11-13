@@ -1,0 +1,352 @@
+// Package dbchain is the one place a GORM callback gets registered.
+//
+// The framework already installs several: field encryption, HTML sanitising,
+// the append-only guard, the field-type checks, the soft-delete touch. Each
+// calls db.Callback() directly from its own Install function, and that works
+// because they were all written here and their order was decided once.
+//
+// A project adding one of its own has none of that. It registers on whichever
+// handle it happens to hold, so the callback is on the main pool and not on
+// the one the test suite opens, or the desktop's local mirror, or the one a
+// worker made: the app and its own tests then behave differently, and nothing
+// says why. It lands in an order nobody declared, which matters more than it
+// sounds, because a callback before crypto:encrypt_map_values sees plaintext
+// and one after it sees ciphertext. And there is no way to ask what is on the
+// chain, which is the first question when one of them turns out to be slow.
+//
+// So: register here, and Apply wires the whole chain onto a connection.
+//
+//	func init() {
+//	    dbchain.MustRegister(dbchain.Link{
+//	        Name:   "myapp:stamp_region",
+//	        Op:     dbchain.Create,
+//	        When:   dbchain.After,
+//	        Anchor: "fieldtypes:create",
+//	        Why:    "fills region from the actor's organization",
+//	        Fn:     stampRegion,
+//	    })
+//	}
+//
+// Ordering is declared rather than hoped for, and Apply refuses an Anchor
+// that names nothing: GORM accepts After("nope") without complaint and gives
+// you no ordering at all, which is a callback running in the wrong place and
+// saying nothing about it.
+package dbchain
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+	"sync"
+
+	"gorm.io/gorm"
+)
+
+// Op is the kind of statement a link runs around.
+type Op string
+
+const (
+	Create Op = "create"
+	Query  Op = "query"
+	Update Op = "update"
+	Delete Op = "delete"
+	Row    Op = "row"
+	Raw    Op = "raw"
+)
+
+// When is which side of the anchor the link runs on.
+type When string
+
+const (
+	Before When = "before"
+	After  When = "after"
+)
+
+// Link is one callback on the chain.
+//
+// One ordering constraint, not a list, because that is all GORM has: a
+// callback carries a single before or a single after. Saying so here is
+// better than offering a slice and quietly using the first of it.
+type Link struct {
+	// Name identifies the link to GORM and to everything that reports on the
+	// chain. Namespaced with a colon, like every callback GORM and this
+	// framework register: "myapp:stamp_region". An unqualified name collides
+	// with somebody else's the day two packages both call theirs "audit".
+	Name string
+
+	Op   Op
+	When When
+
+	// Anchor is the callback this one runs before or after. Empty means the
+	// statement itself: gorm:create for a create, gorm:query for a query, and
+	// so on, which is what you want unless the link has to see a value
+	// another callback writes.
+	Anchor string
+
+	// Why is one line for the inventory, so somebody reading the chain can
+	// tell what a link is for without opening it.
+	Why string
+
+	Fn func(*gorm.DB)
+}
+
+// anchor is the callback this link is ordered against, with the default
+// filled in.
+func (l Link) anchor() string {
+	if l.Anchor != "" {
+		return l.Anchor
+	}
+	switch l.Op {
+	case Create:
+		return "gorm:create"
+	case Query:
+		return "gorm:query"
+	case Update:
+		return "gorm:update"
+	case Delete:
+		return "gorm:delete"
+	case Row:
+		return "gorm:row"
+	default:
+		return "gorm:raw"
+	}
+}
+
+var (
+	mu    sync.RWMutex
+	links = map[string]Link{}
+)
+
+// knownAnchors are the callback names a link may be ordered against: GORM's
+// own, and this framework's.
+//
+// Listed rather than discovered, because GORM offers no way to ask what is
+// registered, and a typo in an anchor is exactly the silent no-op this
+// refuses. A project link's name is added to this set at Apply.
+var knownAnchors = map[string]bool{
+	// GORM's own.
+	"gorm:begin_transaction":              true,
+	"gorm:create":                         true,
+	"gorm:before_create":                  true,
+	"gorm:after_create":                   true,
+	"gorm:query":                          true,
+	"gorm:preload":                        true,
+	"gorm:after_query":                    true,
+	"gorm:update":                         true,
+	"gorm:before_update":                  true,
+	"gorm:after_update":                   true,
+	"gorm:delete":                         true,
+	"gorm:before_delete":                  true,
+	"gorm:after_delete":                   true,
+	"gorm:save_before_associations":       true,
+	"gorm:save_after_associations":        true,
+	"gorm:commit_or_rollback_transaction": true,
+	"gorm:row":                            true,
+	"gorm:raw":                            true,
+
+	// This framework's. Encryption is the one that matters most: a link
+	// before it sees plaintext and one after it sees ciphertext.
+	//
+	// Spelled exactly as the Install functions register them. Two of these
+	// were wrong on the first attempt (appendonly:refuse_update for
+	// appendonly:update), which would have let an anchor pass this check and
+	// then be ignored by GORM: the failure the check exists to prevent, in
+	// the check. Grit has a test that greps every Register call out of the
+	// framework and requires this list to match.
+	"crypto:encrypt_map_values":           true,
+	"sanitize:html_create":                true,
+	"sanitize:html_update":                true,
+	"appendonly:update":                   true,
+	"appendonly:delete":                   true,
+	"fieldtypes:create":                   true,
+	"fieldtypes:update":                   true,
+	"paginate:count_create":               true,
+	"paginate:count_update":               true,
+	"paginate:count_delete":               true,
+	"paginate:count_raw":                  true,
+	"sync:soft_delete_touches_updated_at": true,
+}
+
+// Register adds a link to the chain.
+//
+// It touches no connection: Apply does that, so a link registered from an
+// init function is on every handle opened afterwards rather than on whichever
+// one happened to exist at the time.
+func Register(l Link) error {
+	if l.Fn == nil {
+		return fmt.Errorf("dbchain: link %q has no Fn", l.Name)
+	}
+	if !strings.Contains(l.Name, ":") {
+		return fmt.Errorf("dbchain: link name %q is not namespaced: use %q, so it cannot "+
+			"collide with another package's", l.Name, "myapp:"+l.Name)
+	}
+	switch l.Op {
+	case Create, Query, Update, Delete, Row, Raw:
+	default:
+		return fmt.Errorf("dbchain: link %q has op %q, which is not one of "+
+			"create, query, update, delete, row, raw", l.Name, l.Op)
+	}
+	switch l.When {
+	case Before, After:
+	default:
+		return fmt.Errorf("dbchain: link %q runs %q, which is not before or after", l.Name, l.When)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if _, taken := links[l.Name]; taken {
+		return fmt.Errorf("dbchain: a link called %q is already registered", l.Name)
+	}
+	links[l.Name] = l
+	return nil
+}
+
+// MustRegister is Register for an init function, where there is nobody to
+// return an error to.
+func MustRegister(l Link) {
+	if err := Register(l); err != nil {
+		panic(err.Error())
+	}
+}
+
+// Remove takes a link off the chain.
+//
+// Connections already wired keep it, because GORM has no way to un-register
+// from a compiled callback set. This is for a test that registered one, not
+// for turning a link off at runtime.
+func Remove(name string) {
+	mu.Lock()
+	defer mu.Unlock()
+	delete(links, name)
+}
+
+// Links is the chain, sorted by op, then side, then name, so the inventory
+// reads the same way twice and a diff of it means something.
+func Links() []Link {
+	mu.RLock()
+	defer mu.RUnlock()
+	out := make([]Link, 0, len(links))
+	for _, l := range links {
+		out = append(out, l)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Op != out[j].Op {
+			return out[i].Op < out[j].Op
+		}
+		if out[i].When != out[j].When {
+			return out[i].When < out[j].When
+		}
+		return out[i].Name < out[j].Name
+	})
+	return out
+}
+
+// applied remembers which callback sets already carry the chain, so calling
+// Apply twice on one connection is not an error. Keyed on the callback set
+// rather than the handle, because a session or a transaction is a different
+// *gorm.DB sharing the same callbacks.
+var applied sync.Map
+
+// Apply wires every registered link onto db.
+//
+// Call it from every place a connection is made: the main pool, a worker's,
+// the one a test opens, the desktop's local mirror. A link on only some of
+// them is the bug this package exists to stop, and it shows up as an
+// application that behaves differently from its own test suite.
+func Apply(db *gorm.DB) error {
+	if db == nil {
+		return fmt.Errorf("dbchain: Apply needs a database handle")
+	}
+	key := db.Callback()
+	if _, done := applied.Load(key); done {
+		return nil
+	}
+
+	// GRIT_QUERY_LOG turns query recording on without a code change, so the
+	// link has to be added here rather than from an init function somebody
+	// has to remember to write.
+	if err := installRecorder(); err != nil {
+		return err
+	}
+
+	chain := Links()
+
+	// Every anchor has to name something real, checked before anything is
+	// registered so a bad one leaves the connection as it was. Built from the
+	// snapshot Links() returned rather than read from the map, which is
+	// another goroutine's to lock.
+	registered := make(map[string]bool, len(chain))
+	for _, l := range chain {
+		registered[l.Name] = true
+	}
+	for _, l := range chain {
+		name := l.anchor()
+		if knownAnchors[name] || registered[name] {
+			continue
+		}
+		return fmt.Errorf("dbchain: link %q is anchored to %q, which is not a registered "+
+			"link, a GORM callback or one of this framework's. GORM accepts an anchor that "+
+			"names nothing and gives you no ordering at all, so this refuses instead",
+			l.Name, name)
+	}
+
+	for _, l := range chain {
+		if err := register(db, l); err != nil {
+			return fmt.Errorf("dbchain: registering %q: %w", l.Name, err)
+		}
+	}
+
+	applied.Store(key, true)
+	return nil
+}
+
+// Applied reports whether this connection already carries the chain. For a
+// test, and for a health check that wants to say so.
+func Applied(db *gorm.DB) bool {
+	if db == nil {
+		return false
+	}
+	_, done := applied.Load(db.Callback())
+	return done
+}
+
+// register is the GORM call, spelled out per op because processor is
+// unexported: there is no way to hold one in a variable and switch on it.
+func register(db *gorm.DB, l Link) error {
+	c := db.Callback()
+	at := l.anchor()
+	before := l.When == Before
+
+	switch l.Op {
+	case Create:
+		if before {
+			return c.Create().Before(at).Register(l.Name, l.Fn)
+		}
+		return c.Create().After(at).Register(l.Name, l.Fn)
+	case Query:
+		if before {
+			return c.Query().Before(at).Register(l.Name, l.Fn)
+		}
+		return c.Query().After(at).Register(l.Name, l.Fn)
+	case Update:
+		if before {
+			return c.Update().Before(at).Register(l.Name, l.Fn)
+		}
+		return c.Update().After(at).Register(l.Name, l.Fn)
+	case Delete:
+		if before {
+			return c.Delete().Before(at).Register(l.Name, l.Fn)
+		}
+		return c.Delete().After(at).Register(l.Name, l.Fn)
+	case Row:
+		if before {
+			return c.Row().Before(at).Register(l.Name, l.Fn)
+		}
+		return c.Row().After(at).Register(l.Name, l.Fn)
+	default:
+		if before {
+			return c.Raw().Before(at).Register(l.Name, l.Fn)
+		}
+		return c.Raw().After(at).Register(l.Name, l.Fn)
+	}
+}
