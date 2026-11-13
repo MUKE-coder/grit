@@ -1,0 +1,114 @@
+package ratelimit
+
+import (
+	"sync"
+	"time"
+)
+
+// Limiter counts requests per bucket in a fixed window.
+//
+// Fixed window rather than a token bucket, deliberately. The thing being
+// stopped is an automated client making hundreds of attempts, and a counter
+// with a timestamp stops that. A burst of two at a window boundary is not the
+// attack, and a token bucket costs a float per bucket and an argument about
+// refill rates to prevent it.
+//
+// In process and per instance, which makes it a floor rather than a ceiling:
+// behind three replicas a caller gets three times the budget. Sentinel keeps
+// its counters in shared storage and is what bounds the total; this is what
+// bounds a single instance when Sentinel is not mounted, which is the default
+// in development and one environment variable away in production.
+type Limiter struct {
+	mu      sync.Mutex
+	buckets map[string]*bucket
+	swept   time.Time
+	now     func() time.Time
+}
+
+type bucket struct {
+	count int
+	reset time.Time
+}
+
+// New returns an empty limiter.
+func New() *Limiter {
+	return &Limiter{buckets: map[string]*bucket{}, now: time.Now}
+}
+
+// Allow counts one request against a bucket and says whether it may proceed.
+//
+// The second return is how long until the window resets, for the Retry-After
+// header: a client told only "no" retries immediately, which is the same
+// request again.
+func (l *Limiter) Allow(key string, max int, window time.Duration) (bool, time.Duration) {
+	if max <= 0 || window <= 0 {
+		return true, 0
+	}
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	now := l.now()
+	l.sweep(now)
+
+	b, ok := l.buckets[key]
+	if !ok || now.After(b.reset) {
+		l.buckets[key] = &bucket{count: 1, reset: now.Add(window)}
+		return true, 0
+	}
+
+	b.count++
+	if b.count > max {
+		return false, time.Until(b.reset)
+	}
+	return true, 0
+}
+
+// Remaining is how many requests are left in the current window, for the
+// X-RateLimit-Remaining header. It does not count a request.
+func (l *Limiter) Remaining(key string, max int) int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	b, ok := l.buckets[key]
+	if !ok || l.now().After(b.reset) {
+		return max
+	}
+	if b.count >= max {
+		return 0
+	}
+	return max - b.count
+}
+
+// sweep drops expired buckets.
+//
+// Without it the map grows by one entry per distinct caller, for ever, which
+// is a slow memory leak with an attacker's hand on the tap. Run at most once a
+// minute, and only while the lock is already held.
+func (l *Limiter) sweep(now time.Time) {
+	if now.Sub(l.swept) < time.Minute {
+		return
+	}
+	l.swept = now
+	for key, b := range l.buckets {
+		if now.After(b.reset) {
+			delete(l.buckets, key)
+		}
+	}
+}
+
+// Reset empties the limiter, for a test that needs a clean window.
+func (l *Limiter) Reset() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.buckets = map[string]*bucket{}
+}
+
+// WithClock replaces the clock, so a test can cross a window boundary without
+// waiting for one.
+func (l *Limiter) WithClock(now func() time.Time) *Limiter {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.now = now
+	return l
+}

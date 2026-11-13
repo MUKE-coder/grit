@@ -483,6 +483,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Twenty-seven skills that teach an AI assistant to build with Grit, plus the reference material they read: what each one does, when it fires, and how grit skills install puts them in your agent.',
   },
+  '/docs/security/rate-limits': {
+    title: 'Rate limits',
+    description:
+      'One table of labelled rules for the whole API instead of a limit written at each route. A request is matched route, then route without method, then class of action, then prefix, so a handler written tomorrow is bounded whether or not anybody thought about it. Classes, audiences, turning one off, and why the credential rule has no audience.',
+  },
   '/docs/backend/filtering': {
     title: 'Filter expressions',
     description:

@@ -72,6 +72,80 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.520.0 */}
+            <div className="mb-12" id="v3.520.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.520.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One rate-limit table for the whole API</h3>
+                <p>
+                  A limit written at a route is a limit somebody has to
+                  remember, and nothing in a handler says &ldquo;this one
+                  needed one and has none&rdquo;. Review 2.8 found five auth
+                  routes without one. The set of routes keeps growing; the set
+                  somebody remembered to limit does not.
+                </p>
+                <p>
+                  Every request now produces a list of labels, most specific
+                  first, and the first rule that matches wins:
+                </p>
+                <pre><code>{`POST /api/v1/orders
+  -> "POST /api/v1/orders"   the route and the method
+  -> "/api/v1/orders"        the route, any method
+  -> "*:create"              the class of action
+  -> "/api/v1/"              a prefix
+  -> "/api/"                 a shorter prefix`}</code></pre>
+                <p>
+                  So one rule covers every create, and a route nobody thought
+                  about is still bounded by the prefix at the end. Specificity
+                  decides rather than position in the file, so writing the
+                  catch-all first does not silently give everything the
+                  loosest limit you have. A rule set to zero is off and the
+                  match stops there, rather than falling through to a broader
+                  rule and quietly reinstating a limit somebody removed.
+                </p>
+                <p>
+                  <code>*:auth</code> is matched on the path rather than a list
+                  of routes, so a new passkey endpoint under{' '}
+                  <code>/auth/</code> is covered the day it is written.
+                </p>
+                <h4>And one thing it deliberately does not do</h4>
+                <p>
+                  The credential rule carries no audience. The middleware runs
+                  before each route&apos;s own authentication, so all it can
+                  know is whether a request <em>carries</em> credentials, not
+                  whether they are real: split that rule and a
+                  credential-stuffing client sends one junk bearer token and
+                  buys the signed-in budget. There is a test that fails if
+                  anybody adds the split back.
+                </p>
+                <p>
+                  Callers see <code>X-RateLimit-Limit</code> and{' '}
+                  <code>X-RateLimit-Remaining</code> on every response, and a
+                  refusal carries <code>Retry-After</code>, because a client
+                  told only &ldquo;no&rdquo; retries immediately.
+                </p>
+                <p>
+                  The counters are in process and per instance, which makes
+                  this a floor rather than a ceiling: it needs no Redis and it
+                  cannot fail open. Sentinel still bounds the total across
+                  replicas, and where both apply the stricter refuses first.
+                </p>
+                <p>
+                  Found while writing it:{' '}
+                  <code>/organization-invitations/preview</code> was listed in
+                  the auth paths as <code>/invitations/preview</code>, with a
+                  leading slash the real path does not have, so the route the
+                  entry was added for matched nothing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.519.0 */}
             <div className="mb-12" id="v3.519.0">
               <div className="flex items-center gap-3 mb-4">

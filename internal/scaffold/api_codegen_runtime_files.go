@@ -56,6 +56,16 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "paginate", "expand.go"):       tmpl("api/paginate/expand.go"),
 		filepath.Join(apiRoot, "internal", "paginate", "project_test.go"): tmpl("api/paginate/project_test.go"),
 
+		// The rate-limit table: labelled rules matched most specific first,
+		// so a route nobody thought about is still bounded by a prefix. One
+		// table for the whole API rather than a limit written at each route,
+		// which is a limit somebody has to remember.
+		filepath.Join(apiRoot, "internal", "ratelimit", "rules.go"):      tmpl("api/ratelimit/rules.go"),
+		filepath.Join(apiRoot, "internal", "ratelimit", "labels.go"):     tmpl("api/ratelimit/labels.go"),
+		filepath.Join(apiRoot, "internal", "ratelimit", "limiter.go"):    tmpl("api/ratelimit/limiter.go"),
+		filepath.Join(apiRoot, "internal", "ratelimit", "rules_test.go"): tmpl("api/ratelimit/rules_test.go"),
+		filepath.Join(apiRoot, "internal", "middleware", "ratelimit.go"): tmpl("api/middleware/ratelimit.go"),
+
 		// The expression engine: one parser and one compiler, used by
 		// ?filter= on a list endpoint and by a declared access rule. Both
 		// resolve every identifier against the model's own GORM schema and

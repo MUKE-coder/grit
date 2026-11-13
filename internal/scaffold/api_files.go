@@ -8158,6 +8158,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/saga"
 	"` + "{{MODULE}}" + `/internal/sagas"
 	"` + "{{MODULE}}" + `/internal/paginate"
+	"` + "{{MODULE}}" + `/internal/ratelimit"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/settings"
 	"` + "{{MODULE}}" + `/internal/tracing"
@@ -8970,6 +8971,20 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// the whole path: a path it does not list costs one map lookup and is let
 	// through.
 	v1.Use(middleware.AuthRateLimit(builtInAuthLimits(cfg.AppEnv == "development")))
+
+	// And the table that covers everything else.
+	//
+	// The line above limits the routes somebody listed. This limits the ones
+	// nobody did, which is the set that keeps growing: a rule matches the
+	// route, then the route without its method, then the class of action,
+	// then a prefix, so a handler written tomorrow is bounded by "/api/"
+	// whether or not anybody thought about it. See internal/ratelimit.
+	//
+	// Both are mounted, and that is not duplication: the auth table is
+	// per-route numbers somebody chose deliberately, and this is the floor
+	// under everything. Where both apply the stricter refuses first, which is
+	// the behaviour either of them alone would have had.
+	v1.Use(middleware.RateLimit(rateLimitRules(cfg.AppEnv == "development"), nil))
 
 	// Public blog routes (no auth required)
 	blogs := v1.Group("/blogs")

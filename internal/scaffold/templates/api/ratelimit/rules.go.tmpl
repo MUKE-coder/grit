@@ -1,0 +1,225 @@
+// Package ratelimit decides how many requests one caller may make, from a
+// table of labelled rules rather than a limit written at each route.
+//
+// A limit written at the route is a limit somebody has to remember to write.
+// Review 2.8 found five auth routes without one, and a new route is a new
+// chance to forget: there is nothing in a handler that says "this one needed a
+// limit and has none". A table of rules is the opposite shape. Every request
+// produces a list of labels, from the most specific to the least, and the
+// first rule that matches one of them wins:
+//
+//	POST /api/v1/orders
+//	  → "POST /api/v1/orders"   the route itself
+//	  → "/api/v1/orders"        the route, any method
+//	  → "*:create"              the class of action
+//	  → "/api/v1/"              a prefix
+//	  → "/api/"                 a shorter prefix
+//
+// So a rule can say "every create, 20 in 5 seconds" once, and a route that
+// nobody thought about is still covered by the prefix at the end.
+package ratelimit
+
+import (
+	"strings"
+	"time"
+)
+
+// Audience narrows a rule to callers of one kind.
+//
+// The same endpoint is a different risk depending on who is asking: a guest
+// hitting /auth/login is credential stuffing, and a signed-in user hitting it
+// is a page refresh. Without this the budget has to be the larger of the two,
+// which means it is the wrong one for the case that matters.
+type Audience string
+
+const (
+	// AudienceAll matches every caller. The zero value, so a rule that does
+	// not care does not have to say so.
+	AudienceAll Audience = ""
+
+	// AudienceGuest matches a caller with no identity.
+	AudienceGuest Audience = "guest"
+
+	// AudienceAuth matches a caller the request identified.
+	AudienceAuth Audience = "auth"
+)
+
+// Rule is one limit, for one label.
+type Rule struct {
+	// Label is what this rule applies to. One of:
+	//
+	//   "POST /api/v1/orders"   a method and a route
+	//   "/api/v1/orders"        a route, any method
+	//   "/api/v1/"              a prefix, trailing slash
+	//   "*:create"              a class: auth, create, read, update, delete
+	Label string
+
+	// MaxRequests in Window. Zero disables the rule, which is how a project
+	// turns one off without deleting it and losing the reason it existed.
+	MaxRequests int
+	Window      time.Duration
+
+	// Audience narrows it to guests or to signed-in callers.
+	Audience Audience
+}
+
+// Enabled reports whether the rule would limit anything.
+func (r Rule) Enabled() bool { return r.MaxRequests > 0 && r.Window > 0 }
+
+// Rules is the table, in priority order.
+//
+// Order matters only between rules of the same specificity: labels are matched
+// most specific first, whatever order they are written in, so moving a rule up
+// the file cannot accidentally make a prefix beat a route.
+type Rules []Rule
+
+// Default is the table this project starts with.
+//
+// Edit it. It is ordinary Go in your own repository, which is the point: a
+// limit that lives in a dashboard is a limit nobody reviews, and one that
+// lives in a handler is a limit nobody finds.
+//
+// The classes first, then the prefixes, because a prefix that is never reached
+// is a rule that does nothing and should be deleted rather than left to
+// confuse the next reader.
+func Default() Rules {
+	return Rules{
+		// Credentials. One rule for everybody, with no audience split, and
+		// that is deliberate rather than an omission.
+		//
+		// The middleware runs before each route's own authentication, so the
+		// only thing it can know about a caller is whether the request
+		// carries credentials, not whether they are real. Split this rule and
+		// a credential-stuffing client sends one junk bearer token and buys
+		// the signed-in budget. Nothing about a sign-in route needs a
+		// relaxation for people who are already signed in.
+		//
+		// The account lockout in internal/password handles the same attack
+		// spread across many addresses; this handles many accounts from one.
+		{Label: "*:auth", MaxRequests: 10, Window: 10 * time.Second},
+
+		// Anything that writes. A create is the expensive one: it allocates
+		// an id, writes a row, and often sends a mail or queues a job.
+		{Label: "*:create", MaxRequests: 20, Window: 5 * time.Second},
+		{Label: "*:update", MaxRequests: 30, Window: 5 * time.Second},
+		{Label: "*:delete", MaxRequests: 20, Window: 5 * time.Second},
+
+		// The batch endpoint is many writes in one request, so it is limited
+		// as the many it is rather than the one it looks like.
+		{Label: "/api/" + APIVersion + "/batch", MaxRequests: 3, Window: time.Second},
+
+		// Everything else. The catch-all exists so that a route nobody
+		// thought about is still bounded, which is the whole argument for a
+		// table over a limit per handler.
+		{Label: "/api/", MaxRequests: 300, Window: 10 * time.Second, Audience: AudienceGuest},
+		{Label: "/api/", MaxRequests: 600, Window: 10 * time.Second, Audience: AudienceAuth},
+	}
+}
+
+// APIVersion is the segment the router mounts under, kept here so a rule can
+// name a route without the package importing routes and the routes package
+// importing this.
+const APIVersion = "v1"
+
+// Match finds the rule for a request, given its labels most specific first.
+//
+// The labels are compared in the order given, and within one label an exact
+// match beats a prefix. A rule whose audience does not match the caller is
+// skipped rather than ending the search, so a guest rule and an auth rule can
+// share a label and each apply to its own half.
+func (rules Rules) Match(labels []string, audience Audience) (Rule, bool) {
+	for _, label := range labels {
+		// Exact first, so "/api/v1/orders" is never answered by "/api/".
+		for _, rule := range rules {
+			if rule.Label != label || !rule.applies(audience) {
+				continue
+			}
+			if !rule.Enabled() {
+				// Deliberately off. Stop here rather than falling through to
+				// a broader rule, which would silently reinstate a limit
+				// somebody turned off.
+				return Rule{}, false
+			}
+			return rule, true
+		}
+	}
+
+	// Then prefixes, shortest path last, so /api/v1/ beats /api/.
+	best := Rule{}
+	bestLen := -1
+	for _, label := range labels {
+		if !strings.HasPrefix(label, "/") {
+			continue
+		}
+		for _, rule := range rules {
+			if !strings.HasSuffix(rule.Label, "/") || !rule.applies(audience) {
+				continue
+			}
+			if !strings.HasPrefix(label, rule.Label) {
+				continue
+			}
+			if len(rule.Label) > bestLen {
+				best, bestLen = rule, len(rule.Label)
+			}
+		}
+	}
+	if bestLen >= 0 {
+		if !best.Enabled() {
+			return Rule{}, false
+		}
+		return best, true
+	}
+	return Rule{}, false
+}
+
+func (r Rule) applies(audience Audience) bool {
+	return r.Audience == AudienceAll || r.Audience == audience
+}
+
+// Validate reports the rules that cannot do anything, which is how a typo in a
+// label is found at start-up rather than during an incident.
+//
+// Returned rather than logged, so a test can assert on it and the server can
+// decide whether a bad table is worth refusing to start for.
+func (rules Rules) Validate() []string {
+	var problems []string
+	seen := map[string]bool{}
+
+	for _, rule := range rules {
+		key := string(rule.Audience) + " " + rule.Label
+		if seen[key] {
+			problems = append(problems, "two rules for "+rule.Label+
+				" with the same audience; the second can never be reached")
+		}
+		seen[key] = true
+
+		switch {
+		case rule.Label == "":
+			problems = append(problems, "a rule with no label")
+		case strings.HasPrefix(rule.Label, "*:"):
+			if !knownClass(strings.TrimPrefix(rule.Label, "*:")) {
+				problems = append(problems, rule.Label+
+					" is not a class (auth, create, read, update, delete, list)")
+			}
+		case !strings.HasPrefix(rule.Label, "/") && !strings.Contains(rule.Label, " /"):
+			problems = append(problems, rule.Label+
+				" is neither a path, a method and a path, nor a *:class")
+		}
+
+		if rule.MaxRequests < 0 {
+			problems = append(problems, rule.Label+" allows a negative number of requests")
+		}
+		if rule.MaxRequests > 0 && rule.Window <= 0 {
+			problems = append(problems, rule.Label+" has a limit but no window, so it never resets")
+		}
+	}
+	return problems
+}
+
+func knownClass(name string) bool {
+	switch name {
+	case "auth", "create", "read", "update", "delete", "list":
+		return true
+	}
+	return false
+}

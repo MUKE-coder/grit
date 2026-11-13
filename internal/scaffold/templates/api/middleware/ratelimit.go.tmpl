@@ -1,0 +1,106 @@
+package middleware
+
+import (
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/ratelimit"
+	"{{MODULE}}/internal/respond"
+)
+
+// RateLimit applies the project's rule table to every request.
+//
+// One middleware for the whole API rather than a limit at each route, because
+// a limit at each route is a limit somebody has to remember: there is nothing
+// in a handler that says "this one needed one and has none". See
+// internal/ratelimit for the table and how a request is matched against it.
+//
+// Mounted before authentication would mean every caller is a guest, so it is
+// mounted after: the audience half of a rule needs to know whether the request
+// identified anybody. A route with no authentication middleware still reaches
+// here, and its caller is a guest, which is correct.
+func RateLimit(rules ratelimit.Rules, limiter *ratelimit.Limiter) gin.HandlerFunc {
+	if limiter == nil {
+		limiter = ratelimit.New()
+	}
+	return func(c *gin.Context) {
+		rule, ok := rules.Match(
+			ratelimit.LabelsFor(c.Request.Method, c.FullPath()),
+			ratelimit.AudienceOf(carriesCredentials(c)),
+		)
+		if !ok {
+			c.Next()
+			return
+		}
+
+		key := ratelimit.Key(rateLimitClient(c), rule)
+		allowed, retryAfter := limiter.Allow(key, rule.MaxRequests, rule.Window)
+
+		// The headers go out whether or not the request was allowed, because
+		// a client that can see its budget can slow down before it is
+		// stopped, and one that cannot will find out by being stopped.
+		c.Header("X-RateLimit-Limit", strconv.Itoa(rule.MaxRequests))
+		c.Header("X-RateLimit-Remaining", strconv.Itoa(limiter.Remaining(key, rule.MaxRequests)))
+
+		if !allowed {
+			seconds := int(retryAfter.Seconds())
+			if seconds < 1 {
+				seconds = 1
+			}
+			c.Header("Retry-After", strconv.Itoa(seconds))
+			respond.Fail(c, respond.CodeRateLimited,
+				"Too many requests. Try again in "+strconv.Itoa(seconds)+" seconds.")
+			return
+		}
+		c.Next()
+	}
+}
+
+// carriesCredentials is the best this middleware can honestly know about who
+// is calling.
+//
+// It runs before each route's own authentication, because a limit that only
+// covers authenticated routes leaves the sign-in routes uncovered, which is
+// the opposite of what is wanted. So user_id is set only where some earlier
+// middleware put it, and otherwise all this can see is whether the request
+// brought credentials at all, not whether they are good.
+//
+// That is why the credential rules in internal/ratelimit carry no audience:
+// anything a caller can set is something a caller can set to buy a bigger
+// budget. For the ordinary classes the difference between the two audiences
+// is a matter of throughput, not of access, and a junk token buying the
+// larger of the two is not worth the complexity of preventing.
+func carriesCredentials(c *gin.Context) bool {
+	if c.GetString("user_id") != "" {
+		return true
+	}
+	if c.GetHeader("Authorization") != "" {
+		return true
+	}
+	if cookie, err := c.Cookie("grit_access"); err == nil && cookie != "" {
+		return true
+	}
+	return false
+}
+
+// rateLimitClient is who is being counted.
+//
+// The user id when there is one, so a signed-in caller behind a shared office
+// address gets their own budget rather than the building's. The client address
+// otherwise, which is all a guest has.
+func rateLimitClient(c *gin.Context) string {
+	if id := c.GetString("user_id"); id != "" {
+		return "user:" + id
+	}
+	return "ip:" + c.ClientIP()
+}
+
+// rateLimitWindowFor is used by the tests to assert a rule's window without
+// reaching into the table, and kept here so the middleware and the test agree
+// about which rule a request matches.
+func rateLimitWindowFor(rules ratelimit.Rules, method, path string, signedIn bool) (time.Duration, bool) {
+	rule, ok := rules.Match(ratelimit.LabelsFor(method, path), ratelimit.AudienceOf(signedIn))
+	return rule.Window, ok
+}

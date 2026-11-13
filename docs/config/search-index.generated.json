@@ -1002,6 +1002,12 @@
     "keywords": "permission says whether somebody may touch invoices all policy they invoice now service has read see already paid rules live internal policies one file per resource written registered grit generate rule func actor authz record any decision returning allow deny reason reaches user 403 three abilities checked update delete getbyid load put patch since v3 451 row bulk edit paths"
   },
   {
+    "title": "Rate limits",
+    "href": "/docs/security/rate-limits",
+    "section": "Security & Testing",
+    "keywords": "one table labelled rules whole api instead limit written each route request matched then method class action prefix so handler tomorrow bounded whether not anybody thought about classes audiences turning off credential rule has no audience docs security rate limits"
+  },
+  {
     "title": "Scout: scanning your own app",
     "href": "/docs/security/scout",
     "section": "Security & Testing",

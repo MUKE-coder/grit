@@ -174,6 +174,31 @@ func authRouteLimits(dev bool) map[string]sentinel.Limit {
 	return limits
 }
 
+// rateLimitRules is this project's rate-limit table.
+//
+// The defaults from internal/ratelimit, relaxed in development. Relaxed, not
+// removed: a route with no rule is a route with no limit, and a limit nobody
+// exercises in development is a limit that surprises somebody in production.
+//
+// Edit internal/ratelimit/rules.go to change the numbers. It is ordinary Go in
+// this repository, which is the point: a limit that lives in a dashboard is a
+// limit nobody reviews, and one that lives in a handler is a limit nobody
+// finds.
+func rateLimitRules(dev bool) ratelimit.Rules {
+	rules := ratelimit.Default()
+	if !dev {
+		return rules
+	}
+	relaxed := make(ratelimit.Rules, 0, len(rules))
+	for _, rule := range rules {
+		if rule.Enabled() {
+			rule.MaxRequests *= 20
+		}
+		relaxed = append(relaxed, rule)
+	}
+	return relaxed
+}
+
 // builtInAuthLimits is the same table, for the limiter that does not need
 // Sentinel.
 //

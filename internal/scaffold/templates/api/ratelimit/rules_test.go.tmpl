@@ -1,0 +1,271 @@
+package ratelimit
+
+import (
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestTheMostSpecificLabelWins(t *testing.T) {
+	rules := Rules{
+		{Label: "POST /api/v1/orders", MaxRequests: 1, Window: time.Second},
+		{Label: "/api/v1/orders", MaxRequests: 2, Window: time.Second},
+		{Label: "*:create", MaxRequests: 3, Window: time.Second},
+		{Label: "/api/v1/", MaxRequests: 4, Window: time.Second},
+		{Label: "/api/", MaxRequests: 5, Window: time.Second},
+	}
+
+	for _, c := range []struct {
+		method, path string
+		want         int
+		why          string
+	}{
+		{"POST", "/api/v1/orders", 1, "the route and the method"},
+		{"PATCH", "/api/v1/orders", 2, "the route, any method"},
+		{"POST", "/api/v1/parts", 3, "the class"},
+		{"GET", "/api/v1/parts", 4, "the longer prefix"},
+		{"GET", "/api/health", 5, "the shorter prefix"},
+	} {
+		rule, ok := rules.Match(LabelsFor(c.method, c.path), AudienceAll)
+		if !ok {
+			t.Errorf("%s %s matched nothing; the catch-all is what stops a new route being unlimited", c.method, c.path)
+			continue
+		}
+		if rule.MaxRequests != c.want {
+			t.Errorf("%s %s matched %q (%d), want %d: %s",
+				c.method, c.path, rule.Label, rule.MaxRequests, c.want, c.why)
+		}
+	}
+}
+
+// A prefix must never beat a route, whatever order the table is written in.
+// Putting the catch-all first is the obvious mistake, and it would silently
+// give every route the loosest limit in the file.
+func TestOrderInTheTableDoesNotDecideSpecificity(t *testing.T) {
+	loose := Rules{
+		{Label: "/api/", MaxRequests: 500, Window: time.Second},
+		{Label: "/api/v1/", MaxRequests: 100, Window: time.Second},
+		{Label: "*:create", MaxRequests: 5, Window: time.Second},
+		{Label: "POST /api/v1/orders", MaxRequests: 1, Window: time.Second},
+	}
+	rule, ok := loose.Match(LabelsFor("POST", "/api/v1/orders"), AudienceAll)
+	if !ok || rule.MaxRequests != 1 {
+		t.Errorf("the catch-all written first answered a route: got %+v", rule)
+	}
+
+	rule, _ = loose.Match(LabelsFor("GET", "/api/v1/anything"), AudienceAll)
+	if rule.MaxRequests != 100 {
+		t.Errorf("the longer prefix should win: got %q (%d)", rule.Label, rule.MaxRequests)
+	}
+}
+
+func TestAudienceSplitsOneLabelInTwo(t *testing.T) {
+	rules := Rules{
+		{Label: "*:create", MaxRequests: 10, Window: time.Second, Audience: AudienceGuest},
+		{Label: "*:create", MaxRequests: 60, Window: time.Second, Audience: AudienceAuth},
+	}
+
+	guest, ok := rules.Match(LabelsFor("POST", "/api/v1/orders"), AudienceGuest)
+	if !ok || guest.MaxRequests != 10 {
+		t.Errorf("a guest got %+v", guest)
+	}
+	signedIn, ok := rules.Match(LabelsFor("POST", "/api/v1/orders"), AudienceAuth)
+	if !ok || signedIn.MaxRequests != 60 {
+		t.Errorf("a signed-in caller got %+v", signedIn)
+	}
+
+	// A rule for the other audience must not end the search, or a guest rule
+	// written first would stop a signed-in caller ever reaching theirs.
+	mixed := Rules{
+		{Label: "/api/v1/x", MaxRequests: 1, Window: time.Second, Audience: AudienceGuest},
+		{Label: "/api/", MaxRequests: 99, Window: time.Second, Audience: AudienceAuth},
+	}
+	rule, ok := mixed.Match(LabelsFor("GET", "/api/v1/x"), AudienceAuth)
+	if !ok || rule.MaxRequests != 99 {
+		t.Errorf("a guest-only rule blocked a signed-in caller from the prefix: %+v", rule)
+	}
+}
+
+// A rule turned off has to stay off. Falling through to a broader rule would
+// silently reinstate a limit somebody deliberately removed, which is worse
+// than either answer because nothing says it happened.
+func TestADisabledRuleDoesNotFallThrough(t *testing.T) {
+	rules := Rules{
+		{Label: "POST /api/v1/webhooks/inbound", MaxRequests: 0},
+		{Label: "*:create", MaxRequests: 5, Window: time.Second},
+		{Label: "/api/", MaxRequests: 100, Window: time.Second},
+	}
+	if _, ok := rules.Match(LabelsFor("POST", "/api/v1/webhooks/inbound"), AudienceAll); ok {
+		t.Error("a rule set to zero was replaced by a broader one")
+	}
+	// And the route beside it is still limited.
+	if _, ok := rules.Match(LabelsFor("POST", "/api/v1/orders"), AudienceAll); !ok {
+		t.Error("turning one route off turned the table off")
+	}
+}
+
+func TestClassOfReadsTheMethodAndThePath(t *testing.T) {
+	for _, c := range []struct{ method, path, want string }{
+		{"POST", "/api/v1/auth/login", "auth"},
+		{"POST", "/api/v1/auth/passkeys/login/begin", "auth"},
+		{"POST", "/api/v1/users/:id/password", "auth"},
+		{"POST", "/api/v1/orders", "create"},
+		{"PATCH", "/api/v1/orders/:id", "update"},
+		{"PUT", "/api/v1/orders/:id", "update"},
+		{"DELETE", "/api/v1/orders/:id", "delete"},
+		{"GET", "/api/v1/orders", "list"},
+		{"GET", "/api/v1/orders/:id", "read"},
+	} {
+		if got := ClassOf(c.method, c.path); got != c.want {
+			t.Errorf("%s %s is class %q, want %q", c.method, c.path, got, c.want)
+		}
+	}
+}
+
+// Every auth route the project serves has to land in the auth class, or it
+// gets the ordinary create budget and credential stuffing is twenty attempts
+// every five seconds instead of ten every ten.
+func TestEveryCredentialRouteIsAnAuthRoute(t *testing.T) {
+	for _, path := range []string{
+		"/api/v1/auth/login",
+		"/api/v1/auth/register",
+		"/api/v1/auth/forgot-password",
+		"/api/v1/auth/reset-password",
+		"/api/v1/auth/totp/verify",
+		"/api/v1/auth/totp/backup-codes/verify",
+		"/api/v1/auth/magic-link",
+		"/api/v1/auth/passkeys/login/begin",
+		"/api/v1/auth/sso/oidc/callback",
+		"/api/v1/organization-invitations/preview",
+	} {
+		if ClassOf("POST", path) != "auth" {
+			t.Errorf("%s is not recognised as a credential route", path)
+		}
+	}
+
+	// And an ordinary route is not, or every create in the application gets
+	// the credential budget and the application is unusable.
+	for _, path := range []string{"/api/v1/orders", "/api/v1/uploads", "/api/v1/parts/:id"} {
+		if ClassOf("POST", path) == "auth" {
+			t.Errorf("%s was mistaken for a credential route", path)
+		}
+	}
+}
+
+func TestTheDefaultTableIsValidAndCoversEverything(t *testing.T) {
+	rules := Default()
+	if problems := rules.Validate(); len(problems) > 0 {
+		t.Errorf("the default table has problems:\n  %s", strings.Join(problems, "\n  "))
+	}
+
+	// The point of a table is that a route nobody thought about is still
+	// bounded. If any of these matches nothing, the catch-all is broken.
+	for _, c := range []struct {
+		method, path string
+		signedIn     bool
+	}{
+		{"GET", "/api/v1/orders", false},
+		{"POST", "/api/v1/orders", true},
+		{"GET", "/api/v1/something-nobody-has-written-yet", false},
+		{"DELETE", "/api/v1/x/:id", true},
+		{"GET", "/api/health", false},
+	} {
+		if _, ok := rules.Match(LabelsFor(c.method, c.path), AudienceOf(c.signedIn)); !ok {
+			t.Errorf("%s %s (signedIn=%v) matched no rule", c.method, c.path, c.signedIn)
+		}
+	}
+}
+
+// The credential rule must not be split by audience.
+//
+// The middleware runs before each route's own authentication, so the only
+// thing it knows about a caller is whether the request carries credentials.
+// Split this rule and a credential-stuffing client sends one junk bearer token
+// and buys the signed-in budget.
+func TestTheCredentialRuleHasNoAudience(t *testing.T) {
+	for _, rule := range Default() {
+		if rule.Label == "*:auth" && rule.Audience != AudienceAll {
+			t.Errorf("*:auth is limited to audience %q; a caller can set what decides that",
+				rule.Audience)
+		}
+	}
+
+	// And it applies to a request carrying credentials exactly as it does to
+	// one that is not, which is the behaviour the sentence above describes.
+	guest, okGuest := Default().Match(LabelsFor("POST", "/api/v1/auth/login"), AudienceGuest)
+	auth, okAuth := Default().Match(LabelsFor("POST", "/api/v1/auth/login"), AudienceAuth)
+	if !okGuest || !okAuth {
+		t.Fatal("a sign-in route matched no rule")
+	}
+	if guest.MaxRequests != auth.MaxRequests {
+		t.Errorf("a sign-in route allows %d to a guest and %d to a caller with a token",
+			guest.MaxRequests, auth.MaxRequests)
+	}
+}
+
+func TestValidateCatchesATypo(t *testing.T) {
+	problems := Rules{
+		{Label: "*:craete", MaxRequests: 5, Window: time.Second},
+		{Label: "orders", MaxRequests: 5, Window: time.Second},
+		{Label: "*:create", MaxRequests: 5},
+		{Label: "*:create", MaxRequests: 5, Window: time.Second},
+		{Label: "*:create", MaxRequests: 9, Window: time.Second},
+	}.Validate()
+
+	want := []string{"is not a class", "is neither a path", "no window", "can never be reached"}
+	joined := strings.Join(problems, "\n")
+	for _, w := range want {
+		if !strings.Contains(joined, w) {
+			t.Errorf("Validate did not report %q:\n%s", w, joined)
+		}
+	}
+}
+
+func TestLimiterCountsInAFixedWindow(t *testing.T) {
+	now := time.Now()
+	l := New().WithClock(func() time.Time { return now })
+
+	for i := 0; i < 3; i++ {
+		if allowed, _ := l.Allow("k", 3, time.Minute); !allowed {
+			t.Fatalf("request %d of 3 was refused", i+1)
+		}
+	}
+	allowed, retryAfter := l.Allow("k", 3, time.Minute)
+	if allowed {
+		t.Error("the fourth request of three was allowed")
+	}
+	if retryAfter <= 0 {
+		t.Error("a refusal has to say when to try again, or the client retries immediately")
+	}
+
+	// A different bucket is unaffected.
+	if allowed, _ := l.Allow("other", 3, time.Minute); !allowed {
+		t.Error("one caller's limit stopped another")
+	}
+
+	// And the window resets.
+	now = now.Add(2 * time.Minute)
+	if allowed, _ := l.Allow("k", 3, time.Minute); !allowed {
+		t.Error("the window did not reset")
+	}
+}
+
+func TestLimiterSweepsExpiredBuckets(t *testing.T) {
+	now := time.Now()
+	l := New().WithClock(func() time.Time { return now })
+
+	for i := 0; i < 50; i++ {
+		l.Allow("caller-"+strconv.Itoa(i), 10, time.Second)
+	}
+	if len(l.buckets) != 50 {
+		t.Fatalf("expected 50 buckets, got %d", len(l.buckets))
+	}
+
+	// Past every window, and past the sweep interval.
+	now = now.Add(2 * time.Minute)
+	l.Allow("one-more", 10, time.Second)
+	if len(l.buckets) > 2 {
+		t.Errorf("%d buckets survived the sweep; the map grows per caller for ever without it", len(l.buckets))
+	}
+}

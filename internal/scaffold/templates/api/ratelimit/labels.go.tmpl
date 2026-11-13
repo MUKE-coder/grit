@@ -1,0 +1,104 @@
+package ratelimit
+
+import (
+	"strings"
+)
+
+// LabelsFor is what a request is called, most specific first.
+//
+// The route pattern, not the URL: "/api/v1/orders/:id" rather than
+// "/api/v1/orders/01a1d3". Keying on the URL would give every row its own
+// bucket, which is a limiter that never fires and a map that grows until the
+// process dies.
+func LabelsFor(method, routePattern string) []string {
+	if routePattern == "" {
+		// gin leaves FullPath empty for a request that matched no route. A
+		// 404 is cheap, but a flood of them is not, so they share one bucket
+		// under the prefix rules.
+		routePattern = "/"
+	}
+	labels := []string{
+		method + " " + routePattern,
+		routePattern,
+	}
+	if class := ClassOf(method, routePattern); class != "" {
+		labels = append(labels, "*:"+class)
+	}
+	return append(labels, routePattern)
+}
+
+// ClassOf names the kind of thing a request does, so one rule can cover every
+// route that does it.
+//
+// Read off the method and the shape of the path, because that is what the
+// router already knows. A handler could declare its own class, and then a
+// handler that declares none would be the one with no limit, which is the
+// problem this package exists to remove.
+func ClassOf(method, routePattern string) string {
+	if isAuthPath(routePattern) {
+		return "auth"
+	}
+	switch strings.ToUpper(method) {
+	case "POST":
+		return "create"
+	case "PUT", "PATCH":
+		return "update"
+	case "DELETE":
+		return "delete"
+	case "GET", "HEAD":
+		// A list and a single row are different costs: a list scans, sorts
+		// and counts, and a row is one index lookup.
+		if strings.Contains(routePattern, "/:") {
+			return "read"
+		}
+		return "list"
+	}
+	return ""
+}
+
+// authPaths are the segments that make a route a credential route.
+//
+// Matched on the path rather than listed route by route, because the list of
+// routes is what keeps growing: a new passkey endpoint under /auth/ is covered
+// the day it is written, and that is exactly the case review 2.8 found five of.
+var authPaths = []string{
+	"/auth/",
+	"/login",
+	"/register",
+	"/password",
+	"/totp",
+	"/passkeys",
+	"/magic-link",
+	"/sso/",
+	// No leading slash: the multitenant plugin serves this at
+	// /organization-invitations/preview, so "/invitations/preview" matched
+	// nothing and the route it was added for went uncovered.
+	"invitations/preview",
+}
+
+func isAuthPath(routePattern string) bool {
+	lower := strings.ToLower(routePattern)
+	for _, segment := range authPaths {
+		if strings.Contains(lower, segment) {
+			return true
+		}
+	}
+	return false
+}
+
+// AudienceOf is which half of a rule's audience a caller falls in.
+func AudienceOf(signedIn bool) Audience {
+	if signedIn {
+		return AudienceAuth
+	}
+	return AudienceGuest
+}
+
+// Key is the bucket a request counts against: the caller, and the rule.
+//
+// Keyed on the rule's label rather than the request's, so every route sharing
+// a class shares one budget. "20 creates in five seconds" means twenty, not
+// twenty per table, which is the difference between a limit and a suggestion.
+func Key(client string, rule Rule) string {
+	return client + "|" + string(rule.Audience) + "|" + rule.Label
+}

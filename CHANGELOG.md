@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.520.0 - November 13, 2026
+
+### One rate-limit table for the whole API
+
+A limit written at a route is a limit somebody has to remember, and nothing in a handler says &ldquo;this one needed one and has none&rdquo;. Review 2.8 found five auth routes without one. The set of routes keeps growing; the set somebody remembered to limit does not.
+
+Every request now produces a list of labels, most specific first, and the first rule that matches wins:
+
+`{`POST /api/v1/orders -> "POST /api/v1/orders" the route and the method -> "/api/v1/orders" the route, any method -> "*:create" the class of action -> "/api/v1/" a prefix -> "/api/" a shorter prefix`}` So one rule covers every create, and a route nobody thought about is still bounded by the prefix at the end. Specificity decides rather than position in the file, so writing the catch-all first does not silently give everything the loosest limit you have. A rule set to zero is off and the match stops there, rather than falling through to a broader rule and quietly reinstating a limit somebody removed.
+
+`*:auth` is matched on the path rather than a list of routes, so a new passkey endpoint under `/auth/` is covered the day it is written.
+
+#### And one thing it deliberately does not do
+
+The credential rule carries no audience. The middleware runs before each route's own authentication, so all it can know is whether a request *carries* credentials, not whether they are real: split that rule and a credential-stuffing client sends one junk bearer token and buys the signed-in budget. There is a test that fails if anybody adds the split back.
+
+Callers see `X-RateLimit-Limit` and `X-RateLimit-Remaining` on every response, and a refusal carries `Retry-After`, because a client told only &ldquo;no&rdquo; retries immediately.
+
+The counters are in process and per instance, which makes this a floor rather than a ceiling: it needs no Redis and it cannot fail open. Sentinel still bounds the total across replicas, and where both apply the stricter refuses first.
+
+Found while writing it: `/organization-invitations/preview` was listed in the auth paths as `/invitations/preview`, with a leading slash the real path does not have, so the route the entry was added for matched nothing.
+
+
 ## v3.519.0 - November 13, 2026
 
 ### Asking for less, and asking for more
