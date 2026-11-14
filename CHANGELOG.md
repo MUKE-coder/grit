@@ -23,6 +23,42 @@ Also worth knowing:
 ---
 
 
+## v3.544.0 - November 14, 2026
+
+### A file was four objects and only one of them was ever deleted
+
+Reported as [#221](https://github.com/MUKE-coder/grit/issues/221): clear an image field, and the thumb and the original stay in the bucket. The report named the cause exactly, and the cause turned out to have four instances rather than one.
+
+An optimised image is not a file. It is the stored file, one object per rendition the profile asked for, and the untouched original kept under a private prefix so the image can be reprocessed if the profile changes later. Four objects for an ordinary photo. Every delete path in the framework worked from one key:
+
+- clearing or replacing a file field, and shrinking a gallery, deleted the stored file and left the rest: the issue as filed;
+- `DELETE /api/uploads/:id` did the same, and derived a thumbnail key by swapping the `uploads/` prefix for `thumbnails/`. That is the async worker's scheme. The media pipeline appends `-thumb` to the stem instead, so for every optimised image that line deleted a key which did not exist and missed the one that did;
+- the nightly orphan sweep walks `uploads` rows, and a rendition has never had one;
+- and the right-to-erasure cleanup deleted each row's path column. The original is the untouched upload, so what survived a right-to-erasure request was the full-resolution copy of the photo somebody had asked to have deleted.
+
+Nothing would have caught any of it afterwards. There is no row for the sweep to find, and the stored file's own row is claimed for good once a record referenced it, which is the mechanism from [#219](https://github.com/MUKE-coder/grit/issues/219).
+
+#### One answer to what a file owns
+
+`FileRef.OwnedKeys()` is every object a ref is the only pointer to, and the cleanup deletes the set difference over it rather than comparing primary keys. That gets two more cases right on the way past: a ref reprocessed in place keeps its key and can still lose a rendition, which is orphaned just as surely; and two refs can share an object, so deleting it because one of them went would take the file out from under the one that stayed.
+
+The three paths that only ever see a database row needed the row to say what it owns, so `uploads` has a `derived` column, written at upload time. Recorded and not worked out later, because the rule that produced those objects lives in a profile that can change, and a rule applied at delete time is exactly what was already wrong.
+
+A test reads the `FileRef` struct by reflection and fails if a field holding a storage key is missing from `OwnedKeys`. A fourth such field is likely, and the failure mode of forgetting it is the quietest there is: nothing breaks, no test fails, storage just grows.
+
+#### Two things found doing it
+
+The erasure cleanup read its rows into a slice of plain strings, and `FindInBatches` pages by reading the primary key off the last element of the destination. A destination without that field panics there, so the cleanup worked for an account with up to 500 uploads and crashed the erasure for one with more. 500 is the batch size the batching exists for.
+
+And GORM cannot infer a column type for a slice that implements `Valuer` and `Scanner`. Without an explicit type tag it logs `unsupported data type` and runs the query anyway, so every row came back with the new field unset and the cleanup reported success having deleted only the paths. Three tests asserting the code said the right thing all passed while it did the wrong one. The test that caught it writes real files to a real disk and checks the directory afterwards.
+
+#### Upgrading
+
+Run `grit migrate`. Until the column exists every path falls back to deleting the stored file alone, which is what every version before this one did, and logs a line saying so: the sweep stopping and an erasure refusing to complete would both be worse than the leak this closes. Objects orphaned before the upgrade are recorded nowhere, so they need a one-off sweep of the bucket rather than a command.
+
+`models/upload.go` moved into the set that travels on upgrade. `internal/files` and `models/erasable.go` both go out on upgrade and both read the new column, so leaving the model behind would have given an upgraded project a package naming a field its own model does not declare: a build failure rather than a missing fix.
+
+
 ## v3.543.1 - November 14, 2026
 
 ### Three answers to one question, and two of them were wrong

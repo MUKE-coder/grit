@@ -105,8 +105,27 @@ func TestErasureDeletesTheFilesTheRowsName(t *testing.T) {
 	if !strings.Contains(models, "erasure.RegisterWithCleanup(&Upload{}, \"user_id\", deleteUploadObjects)") {
 		t.Error("uploads do not register a cleanup, so erasing a user still leaves their files")
 	}
-	if !strings.Contains(models, "disk.DeleteMany(ctx, batch)") {
+	if !strings.Contains(models, "disk.DeleteMany(ctx, keys)") {
 		t.Error("the uploads cleanup does not delete anything from storage")
+	}
+	// And every object each row names, not just the one in its path column.
+	// An optimised image is the stored file plus its renditions plus the
+	// original kept for reprocessing, and the original is the untouched
+	// upload: deleting the path alone left the full-resolution copy of the
+	// photo somebody asked to have erased (grit#221).
+	if !strings.Contains(models, "for _, derived := range r.Derived") {
+		t.Error("the uploads cleanup ignores the derived objects, so renditions " +
+			"and kept originals survive an erasure")
+	}
+	if !strings.Contains(models, "files.UploadsRecordDerived(tx)") {
+		t.Error("the cleanup names the derived column unconditionally, so it fails " +
+			"the erasure on a project that has not migrated yet")
+	}
+	// FindInBatches pages off the primary key of the destination's last
+	// element, so a destination without one panics past the first batch.
+	if !strings.Contains(models, "ID      string") {
+		t.Error("the batch destination has no ID, so erasing an account with more " +
+			"than one batch of uploads panics instead of erasing")
 	}
 	// Uploads must not also be in the plain Register loop, or the rows are
 	// registered twice and deleted twice: the second pass has no cleanup and

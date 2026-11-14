@@ -24,7 +24,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "read_your_writes.go"):     apiReadYourWritesGo(),
 		filepath.Join(apiRoot, "internal", "database", "dialect.go"):                apiDialectGo(),
 		filepath.Join(apiRoot, "internal", "models", "user.go"):                     apiUserModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "upload.go"):                   apiUploadModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "auth.go"):                   apiAuthServiceGo(),
 		filepath.Join(apiRoot, "internal", "models", "session.go"):                  apiSessionModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "session.go"):                apiSessionServiceGo(),
@@ -102,15 +101,20 @@ func writeAPIFiles(root string, opts Options) error {
 		// header sent by the admin/web clients when the TCP peer is
 		// loopback, so dev activity logs show the operator's actual
 		// public IP instead of "::1".
-		filepath.Join(apiRoot, "internal", "services", "clientip.go"):         clientIPHelperGo(),
-		filepath.Join(apiRoot, "internal", "services", "ocsf.go"):             apiOCSFServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "ocsf_test.go"):        apiOCSFTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "access_review.go"):      apiAccessReviewModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "deletion_journal.go"):   apiGDPRModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):             apiGDPRServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "gdpr.go"):             apiGDPRHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):        apiGDPRTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "erasable.go"):           apiErasableModelsGo(),
+		filepath.Join(apiRoot, "internal", "services", "clientip.go"):       clientIPHelperGo(),
+		filepath.Join(apiRoot, "internal", "services", "ocsf.go"):           apiOCSFServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "ocsf_test.go"):      apiOCSFTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "access_review.go"):    apiAccessReviewModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "deletion_journal.go"): apiGDPRModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):           apiGDPRServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "gdpr.go"):           apiGDPRHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):      apiGDPRTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "erasable.go"):         apiErasableModelsGo(),
+		// Beside it, in both of the lists erasable.go is in. The test exercises
+		// deleteUploadObjects against a real disk, and a project that has the
+		// cleanup without the test is a project where the next change to it is
+		// unverified.
+		filepath.Join(apiRoot, "internal", "models", "erasable_test.go"):      apiErasableModelsTestGo(),
 		filepath.Join(apiRoot, "internal", "erasure", "erasure.go"):           apiErasureGo(),
 		filepath.Join(apiRoot, "internal", "confidential", "confidential.go"): apiConfidentialGo(),
 		filepath.Join(apiRoot, "internal", "erasure", "erasure_test.go"):      apiErasureTestGo(),
@@ -2365,6 +2369,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/files"
 )
 
 // Upload represents a file uploaded to storage.
@@ -2377,6 +2383,26 @@ type Upload struct {
 	Path         string         ` + "`" + `gorm:"size:500;not null;index" json:"path"` + "`" + `
 	URL          string         ` + "`" + `gorm:"size:500" json:"url"` + "`" + `
 	ThumbnailURL string         ` + "`" + `gorm:"size:500" json:"thumbnail_url"` + "`" + `
+	// Derived are the other objects this upload owns: the renditions a media
+	// profile produced, and the original kept under a private prefix for
+	// reprocessing. Path names one object; an optimised image is three or
+	// four.
+	//
+	// Recorded rather than worked out at delete time, because the rule that
+	// produced them lives in a profile that can change, and a rule is what
+	// was already wrong here: the delete handler derived a thumbnail key by
+	// swapping the uploads/ prefix for thumbnails/, which is the async
+	// worker's scheme and not the pipeline's, so for every optimised image it
+	// deleted a key that did not exist and left the ones that did (grit#221).
+	//
+	// Three of the four delete paths only ever see this row, so what the row
+	// does not say, nothing deletes.
+	// json:"-" on purpose, twice over. These are storage keys and no client
+	// has any use for them, and one of them is the original's: kept under a
+	// private prefix precisely because it is not for serving, which putting it
+	// in every upload response would undo. It also keeps the shared Upload
+	// type unchanged, which is generated from this struct.
+	Derived      files.KeyList  ` + "`" + `gorm:"type:text" json:"-"` + "`" + `
 	UserID       string         ` + "`" + `gorm:"size:36;index;not null" json:"user_id"` + "`" + `
 	User         User           ` + "`" + `gorm:"foreignKey:UserID" json:"-"` + "`" + `
 	Version      int            ` + "`" + `gorm:"not null;default:1" json:"version"` + "`" + `

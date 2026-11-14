@@ -418,8 +418,22 @@ curl -OJ "http://localhost:8080/api/v1/uploads/$ID/download" -H "Authorization: 
                   An upload is unclaimed until a record points at it. Resource fields store a{' '}
                   <code className={code}>files.FileRef</code>, and saving the record claims the file. Uploads nobody claimed
                   within 24 hours are removed by the orphan cleanup, a page at a time with one batched delete per page, so
-                  a form abandoned halfway does not leave files in the bucket forever. Deleting an upload removes its
-                  stored file too.
+                  a form abandoned halfway does not leave files in the bucket forever.
+                </P>
+                <P>
+                  An upload is more than one object. An optimised image is the stored file, one object per rendition the
+                  profile asked for, and the untouched original under the private{' '}
+                  <code className={code}>originals/</code> prefix. Every delete path removes all of them: clearing or
+                  replacing a file field, shrinking a gallery,{' '}
+                  <code className={code}>DELETE /api/uploads/:id</code>, the orphan cleanup, and the right-to-erasure
+                  cleanup. The row records what it derived in a <code className={code}>derived</code> column, because the
+                  profile that produced those objects can change and a rule applied at delete time would be guessing.
+                </P>
+                <P>
+                  Upgrading an existing project needs <code className={code}>grit migrate</code> for that column. Without
+                  it, every path falls back to deleting the stored file alone, which is what versions before 3.544.0 did,
+                  and says so in the log. Objects orphaned before the upgrade are not recorded anywhere, so they need a
+                  one-off sweep of the bucket rather than a command.
                 </P>
               </Section>
             </div>

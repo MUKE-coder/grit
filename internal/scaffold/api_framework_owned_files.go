@@ -39,6 +39,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// It was written at scaffold time only, so when the rules gained bcrypt's
 		// 72-byte ceiling every existing project kept answering 500 for a long
 		// passphrase, which is the error the ceiling exists to prevent.
+		// The uploads table. Here, and not in writeAPIFiles, because its derived
+		// column is read by internal/files and by models/erasable.go, which
+		// both DO travel on upgrade: leaving the model behind gave an upgraded
+		// project a lifecycle package referring to a field its own model does
+		// not declare, which is a build failure rather than a missing fix.
+		//
+		// Columns only. The registry people add to is models/user.go.
+		filepath.Join(apiRoot, "internal", "models", "upload.go"): apiUploadModelGo(),
+
 		filepath.Join(apiRoot, "internal", "password", "password.go"): apiPasswordRulesGo(),
 		filepath.Join(apiRoot, "internal", "password", "breach.go"):   apiPasswordBreachGo(),
 		filepath.Join(apiRoot, "internal", "services", "jwtkeys.go"):  apiJWTKeysGo(),

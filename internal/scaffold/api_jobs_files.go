@@ -432,12 +432,27 @@ func handleImageProcess(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 			return fmt.Errorf("uploading thumbnail: %w", err)
 		}
 
-		// Update the upload record with thumbnail URL
+		// Update the upload record with thumbnail URL, and record the key as
+		// an object this upload owns.
+		//
+		// Recorded rather than re-derived when something deletes the upload.
+		// The prefix swap above is this worker's scheme and the media
+		// pipeline uses a suffix instead, so a delete path that re-derives
+		// has to know which of the two made the file. Writing it down means
+		// it does not (grit#221).
 		thumbURL := deps.Storage.GetURL(thumbKey)
 		if deps.DB != nil {
+			updates := map[string]interface{}{"thumbnail_url": thumbURL}
+			if files.UploadsRecordDerived(deps.DB) {
+				updates["derived"] = files.KeyList{thumbKey}
+			}
 			// Returned, so the job is retried: a thumbnail nobody can find was
 			// generated for nothing.
-			if err := deps.DB.WithContext(ctx).Model(&models.Upload{}).Where("id = ?", payload.UploadID).Update("thumbnail_url", thumbURL).Error; err != nil {
+			//
+			// A map and not a struct, because Upload has a BeforeUpdate hook
+			// that bumps version with SetColumn, and a struct Save discards
+			// what such a hook set.
+			if err := deps.DB.WithContext(ctx).Model(&models.Upload{}).Where("id = ?", payload.UploadID).Updates(updates).Error; err != nil {
 				return fmt.Errorf("recording the thumbnail for upload %s: %w", payload.UploadID, err)
 			}
 		}

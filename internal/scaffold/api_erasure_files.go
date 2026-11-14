@@ -38,9 +38,10 @@ func writeErasureFiles(root string, opts Options) error {
 		return err
 	}
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "models", "erasable.go"):    apiErasableModelsGo(),
-		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):      apiGDPRServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"): apiGDPRTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "erasable.go"):      apiErasableModelsGo(),
+		filepath.Join(apiRoot, "internal", "models", "erasable_test.go"): apiErasableModelsTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):        apiGDPRServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):   apiGDPRTestGo(),
 	}
 	for path, content := range files {
 		if err := writeFile(path, strings.ReplaceAll(content, "{{MODULE}}", opts.Module())); err != nil {
@@ -60,6 +61,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/erasure"
+	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/storage"
 )
 
@@ -93,7 +95,14 @@ func init() {
 // deleteUploadObjects removes the stored objects of the uploads about to be
 // erased, inside the erasure transaction and before the rows go.
 //
-// Keys are read in batches rather than all at once: an account with ten
+// Every object, not every row: an optimised image is the stored file plus its
+// renditions plus the original kept for reprocessing, and until v3.544.0 this
+// deleted the first of those and reported the erasure complete. The original
+// is the untouched upload, so what survived a right-to-erasure request was
+// the full-resolution copy of the photo somebody asked to have deleted
+// (grit#221, and the same promise as grit#202).
+//
+// Rows are read in batches rather than all at once: an account with ten
 // thousand files should not be a ten-thousand-row slice in memory during a
 // transaction.
 //
@@ -108,18 +117,59 @@ func deleteUploadObjects(tx *gorm.DB, ownerColumn, userID string) error {
 	}
 
 	ctx := context.Background()
-	var batch []string
+
+	// The derived column may not exist yet: grit upgrade rewrites this file
+	// and does not run grit migrate. Naming a missing column here would fail
+	// the erasure transaction, which is worse than the leak it closes, so the
+	// schema is asked first.
+	// id is selected and the destination declares it because FindInBatches
+	// pages by reading the primary key off the LAST element of the
+	// destination slice. A destination without that field panics there, which
+	// a slice of plain paths was: this cleanup worked for an account with up
+	// to 500 uploads and crashed the erasure for one with more, and 500 is
+	// the batch size the batching exists for.
+	columns := []string{"id", "path"}
+	if files.UploadsRecordDerived(tx) {
+		columns = append(columns, "derived")
+	}
+
+	// The type tag is load-bearing. GORM cannot infer a column type for a
+	// slice that implements Valuer and Scanner, and without the tag it logs
+	// "unsupported data type" and runs the query anyway, so every row comes
+	// back with Derived unset and the cleanup reports success having deleted
+	// only the paths. A wrong answer that looks like a right one, which is
+	// the shape of the bug this whole change is about.
+	type row struct {
+		ID      string
+		Path    string
+		Derived files.KeyList ` + "`" + `gorm:"type:text"` + "`" + `
+	}
+	var batch []row
 	rows := tx.Unscoped().Model(&Upload{}).
 		Where(ownerColumn+" = ?", userID).
 		Where("path <> ''")
 
-	return rows.Select("path").FindInBatches(&batch, 500, func(_ *gorm.DB, _ int) error {
+	return rows.Select(columns).FindInBatches(&batch, 500, func(_ *gorm.DB, _ int) error {
 		// batch is the destination slice: read it, not the tx, which carries
 		// no query of its own inside the callback.
 		if len(batch) == 0 {
 			return nil
 		}
-		return disk.DeleteMany(ctx, batch)
+		keys := make([]string, 0, len(batch)*2)
+		for _, r := range batch {
+			if r.Path != "" {
+				keys = append(keys, r.Path)
+			}
+			for _, derived := range r.Derived {
+				if derived != "" {
+					keys = append(keys, derived)
+				}
+			}
+		}
+		if len(keys) == 0 {
+			return nil
+		}
+		return disk.DeleteMany(ctx, keys)
 	}).Error
 }
 `
@@ -379,6 +429,187 @@ func TestScrubRefusesAnUnsafeColumn(t *testing.T) {
 	Register(&ownedNote{}, "user_id; DROP TABLE users")
 	if _, _, err := Scrub(db, "u1"); err == nil {
 		t.Fatal("an owner column that is not an identifier was accepted")
+	}
+}
+`
+}
+
+// apiErasableModelsTestGo is the behavioural test for the uploads cleanup: a
+// real local disk and a real database, because the three string checks in the
+// framework's own suite only prove the code says the right thing.
+func apiErasableModelsTestGo() string {
+	return `package models
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/files"
+	"{{MODULE}}/internal/storage"
+)
+
+// Erasing a user deletes every object their uploads own, not one per row.
+//
+// grit#221: an optimised image is the stored file, one object per rendition a
+// profile asked for, and the original kept under a private prefix so it can
+// be reprocessed later. This cleanup deleted the path column and reported the
+// erasure complete, so what survived a right-to-erasure request was the
+// untouched full-resolution copy of the photo somebody asked to have deleted.
+//
+// Nothing would have caught it afterwards either: a rendition has no uploads
+// row, so the orphan sweep has no candidate to find.
+func TestErasingAUserDeletesEveryObjectTheirUploadsOwn(t *testing.T) {
+	db, root := erasureDisk(t)
+
+	objects := []string{
+		"uploads/2026/11/a.webp",
+		"uploads/2026/11/a-thumb.webp",
+		"originals/2026/11/a.jpg",
+	}
+	for _, key := range objects {
+		writeObject(t, root, key)
+	}
+
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, derived, user_id) VALUES (?, ?, ?, ?)",
+		"u1", objects[0],
+		"[\"uploads/2026/11/a-thumb.webp\",\"originals/2026/11/a.jpg\"]",
+		"victim").Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if err := deleteUploadObjects(db, "user_id", "victim"); err != nil {
+		t.Fatalf("deleteUploadObjects: %v", err)
+	}
+
+	for _, key := range objects {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(key))); err == nil {
+			t.Errorf("%s survived the erasure", key)
+		}
+	}
+}
+
+// Another user's files are untouched, which is the direction that costs
+// somebody their data rather than some bytes.
+func TestErasingAUserLeavesEverybodyElsesObjects(t *testing.T) {
+	db, root := erasureDisk(t)
+
+	writeObject(t, root, "uploads/mine.webp")
+	writeObject(t, root, "uploads/mine-thumb.webp")
+	writeObject(t, root, "uploads/theirs.webp")
+	writeObject(t, root, "uploads/theirs-thumb.webp")
+
+	for _, row := range []struct{ id, path, derived, user string }{
+		{"u1", "uploads/mine.webp", "[\"uploads/mine-thumb.webp\"]", "victim"},
+		{"u2", "uploads/theirs.webp", "[\"uploads/theirs-thumb.webp\"]", "bystander"},
+	} {
+		if err := db.Exec(
+			"INSERT INTO uploads (id, path, derived, user_id) VALUES (?, ?, ?, ?)",
+			row.id, row.path, row.derived, row.user).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := deleteUploadObjects(db, "user_id", "victim"); err != nil {
+		t.Fatalf("deleteUploadObjects: %v", err)
+	}
+
+	for _, gone := range []string{"uploads/mine.webp", "uploads/mine-thumb.webp"} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(gone))); err == nil {
+			t.Errorf("%s survived the erasure", gone)
+		}
+	}
+	for _, kept := range []string{"uploads/theirs.webp", "uploads/theirs-thumb.webp"} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(kept))); err != nil {
+			t.Errorf("%s was deleted, and it belongs to somebody else: %v", kept, err)
+		}
+	}
+}
+
+// And a schema without the derived column still erases.
+//
+// grit upgrade rewrites this file and does not run grit migrate, so this is
+// the state an upgraded project is in until somebody migrates. Naming a
+// column that is not there would fail the erasure transaction, which is a
+// worse outcome than the leak it closes: the request errors and the personal
+// data stays in the database.
+func TestErasureStillRunsBeforeTheDerivedColumnExists(t *testing.T) {
+	db, root := erasureDisk(t)
+	if err := db.Exec("ALTER TABLE uploads DROP COLUMN derived").Error; err != nil {
+		t.Fatal(err)
+	}
+	if files.UploadsRecordDerived(db) {
+		t.Fatal("the column was dropped and the probe still says it is there")
+	}
+
+	writeObject(t, root, "uploads/a.webp")
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, user_id) VALUES (?, ?, ?)",
+		"u1", "uploads/a.webp", "victim").Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if err := deleteUploadObjects(db, "user_id", "victim"); err != nil {
+		t.Fatalf("the erasure failed on a schema without the column: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "uploads", "a.webp")); err == nil {
+		t.Error("the stored file survived, so the fallback deletes nothing at all")
+	}
+}
+
+// erasureDisk is a database with an uploads table and a local disk registered
+// as the default, so deleteUploadObjects has somewhere to delete from.
+func erasureDisk(t *testing.T) (*gorm.DB, string) {
+	t.Helper()
+
+	root := t.TempDir()
+	disk, err := storage.NewLocal(storage.LocalConfig{
+		Root:      root,
+		PublicURL: "http://localhost:8080/files",
+		Secret:    "test-secret",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous := storage.Disks.Default()
+	storage.Disks.SetDefault(disk)
+	t.Cleanup(func() { storage.Disks.SetDefault(previous) })
+
+	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One connection: each :memory: connection is its own empty database, and
+	// a second one answers "no such table" while the test still passes.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+
+	if err := db.Exec(` + "`" + `CREATE TABLE uploads (
+		id TEXT PRIMARY KEY, path TEXT, derived TEXT, user_id TEXT, deleted_at DATETIME
+	)` + "`" + `).Error; err != nil {
+		t.Fatal(err)
+	}
+	return db, root
+}
+
+func writeObject(t *testing.T, root, key string) {
+	t.Helper()
+	path := filepath.Join(root, filepath.FromSlash(key))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 `

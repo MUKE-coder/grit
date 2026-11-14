@@ -52,10 +52,15 @@ var deliveredElsewhere = map[string]bool{
 	"audit":      true, // writeAuditChainFiles
 	"crypto":     true, // writeCryptoFiles
 	"events":     true, // writeCodegenRuntimeFiles
-	"ids":        true, // writeCodegenRuntimeFiles
-	"paginate":   true, // writeCodegenRuntimeFiles
-	"respond":    true, // writeRespondFiles
-	"sms":        true, // writeRecoveryFiles
+	// In this group and not the one below, deliberately. models/upload.go
+	// uses files.KeyList, which v3.544.0 added, so internal/files existing is
+	// not enough: it has to be refreshed. writeStorageFiles does that on
+	// upgrade, which is what qualifies it here.
+	"files":    true, // writeStorageFiles
+	"ids":      true, // writeCodegenRuntimeFiles
+	"paginate": true, // writeCodegenRuntimeFiles
+	"respond":  true, // writeRespondFiles
+	"sms":      true, // writeRecoveryFiles
 
 	// Older than the problem. No project that can be upgraded lacks these.
 	//

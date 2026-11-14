@@ -525,6 +525,10 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		Path:         key,
 		URL:          h.Storage.GetURL(key),
 		ThumbnailURL: ref.ThumbnailURL,
+		// What else this upload owns, so the three delete paths that only see
+		// this row can delete it. Empty for a file the pipeline did not
+		// touch, which owns nothing but itself (grit#221).
+		Derived:      ref.DerivedKeys(),
 		UserID:       userID,
 	}
 
@@ -730,11 +734,26 @@ func (h *UploadHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Delete from storage
+	// Delete from storage: the file, then everything it owns.
 	if h.Storage != nil {
 		_ = h.Storage.Delete(c.Request.Context(), upload.Path)
-		// Also delete thumbnail if it exists
-		if upload.ThumbnailURL != "" {
+
+		// The renditions a media profile produced and the original kept for
+		// reprocessing, as recorded at upload time. Nothing else will ever
+		// look for them: they have no row of their own, and the orphan sweep
+		// walks rows (grit#221).
+		for _, key := range upload.Derived {
+			if key != "" {
+				_ = h.Storage.Delete(c.Request.Context(), key)
+			}
+		}
+
+		// A thumbnail the async worker made, which uses a prefix swap rather
+		// than the pipeline's suffix and predates Derived. Still derived by
+		// rule here because the rows that have one were written before there
+		// was anywhere to record it; a row that records its own renditions
+		// never had a thumbnails/ object to begin with.
+		if upload.ThumbnailURL != "" && len(upload.Derived) == 0 {
 			thumbKey := strings.Replace(upload.Path, "uploads/", "thumbnails/", 1)
 			_ = h.Storage.Delete(c.Request.Context(), thumbKey)
 		}

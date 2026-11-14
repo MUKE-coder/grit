@@ -72,6 +72,132 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.544.0 */}
+            <div className="mb-12" id="v3.544.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.544.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A file was four objects and only one of them was ever deleted</h3>
+                <p>
+                  Reported as <a href="https://github.com/MUKE-coder/grit/issues/221"
+                  target="_blank" rel="noopener noreferrer">#221</a>: clear an image
+                  field, and the thumb and the original stay in the bucket. The
+                  report named the cause exactly, and the cause turned out to have
+                  four instances rather than one.
+                </p>
+                <p>
+                  An optimised image is not a file. It is the stored file, one
+                  object per rendition the profile asked for, and the untouched
+                  original kept under a private prefix so the image can be
+                  reprocessed if the profile changes later. Four objects for an
+                  ordinary photo. Every delete path in the framework worked from
+                  one key:
+                </p>
+                <ul>
+                  <li>
+                    clearing or replacing a file field, and shrinking a gallery,
+                    deleted the stored file and left the rest: the issue as filed;
+                  </li>
+                  <li>
+                    <code>DELETE /api/uploads/:id</code> did the same, and derived a
+                    thumbnail key by swapping the <code>uploads/</code> prefix for{' '}
+                    <code>thumbnails/</code>. That is the async worker&apos;s scheme.
+                    The media pipeline appends <code>-thumb</code> to the stem
+                    instead, so for every optimised image that line deleted a key
+                    which did not exist and missed the one that did;
+                  </li>
+                  <li>
+                    the nightly orphan sweep walks <code>uploads</code> rows, and a
+                    rendition has never had one;
+                  </li>
+                  <li>
+                    and the right-to-erasure cleanup deleted each row&apos;s path
+                    column. The original is the untouched upload, so what survived a
+                    right-to-erasure request was the full-resolution copy of the
+                    photo somebody had asked to have deleted.
+                  </li>
+                </ul>
+                <p>
+                  Nothing would have caught any of it afterwards. There is no row
+                  for the sweep to find, and the stored file&apos;s own row is
+                  claimed for good once a record referenced it, which is the
+                  mechanism from{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/219"
+                  target="_blank" rel="noopener noreferrer">#219</a>.
+                </p>
+
+                <h4>One answer to what a file owns</h4>
+                <p>
+                  <code>FileRef.OwnedKeys()</code> is every object a ref is the only
+                  pointer to, and the cleanup deletes the set difference over it
+                  rather than comparing primary keys. That gets two more cases right
+                  on the way past: a ref reprocessed in place keeps its key and can
+                  still lose a rendition, which is orphaned just as surely; and two
+                  refs can share an object, so deleting it because one of them went
+                  would take the file out from under the one that stayed.
+                </p>
+                <p>
+                  The three paths that only ever see a database row needed the row
+                  to say what it owns, so <code>uploads</code> has a{' '}
+                  <code>derived</code> column, written at upload time. Recorded and
+                  not worked out later, because the rule that produced those objects
+                  lives in a profile that can change, and a rule applied at delete
+                  time is exactly what was already wrong.
+                </p>
+                <p>
+                  A test reads the <code>FileRef</code> struct by reflection and
+                  fails if a field holding a storage key is missing from{' '}
+                  <code>OwnedKeys</code>. A fourth such field is likely, and the
+                  failure mode of forgetting it is the quietest there is: nothing
+                  breaks, no test fails, storage just grows.
+                </p>
+
+                <h4>Two things found doing it</h4>
+                <p>
+                  The erasure cleanup read its rows into a slice of plain strings,
+                  and <code>FindInBatches</code> pages by reading the primary key off
+                  the last element of the destination. A destination without that
+                  field panics there, so the cleanup worked for an account with up to
+                  500 uploads and crashed the erasure for one with more. 500 is the
+                  batch size the batching exists for.
+                </p>
+                <p>
+                  And GORM cannot infer a column type for a slice that implements{' '}
+                  <code>Valuer</code> and <code>Scanner</code>. Without an explicit
+                  type tag it logs <code>unsupported data type</code> and runs the
+                  query anyway, so every row came back with the new field unset and
+                  the cleanup reported success having deleted only the paths. Three
+                  tests asserting the code said the right thing all passed while it
+                  did the wrong one. The test that caught it writes real files to a
+                  real disk and checks the directory afterwards.
+                </p>
+
+                <h4>Upgrading</h4>
+                <p>
+                  Run <code>grit migrate</code>. Until the column exists every path
+                  falls back to deleting the stored file alone, which is what every
+                  version before this one did, and logs a line saying so: the sweep
+                  stopping and an erasure refusing to complete would both be worse
+                  than the leak this closes. Objects orphaned before the upgrade are
+                  recorded nowhere, so they need a one-off sweep of the bucket rather
+                  than a command.
+                </p>
+                <p>
+                  <code>models/upload.go</code> moved into the set that travels on
+                  upgrade. <code>internal/files</code> and{' '}
+                  <code>models/erasable.go</code> both go out on upgrade and both
+                  read the new column, so leaving the model behind would have given
+                  an upgraded project a package naming a field its own model does not
+                  declare: a build failure rather than a missing fix.
+                </p>
+              </div>
+            </div>
+
             {/* v3.543.1 */}
             <div className="mb-12" id="v3.543.1">
               <div className="flex items-center gap-3 mb-4">

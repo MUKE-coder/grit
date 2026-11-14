@@ -20,6 +20,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"sort"
 )
 
 // FileRef is the canonical JSON shape stored in a resource's file
@@ -80,6 +81,54 @@ type Rendition struct {
 	Height int    ` + "`json:\"height,omitempty\"`" + `
 	Size   int64  ` + "`json:\"size,omitempty\"`" + `
 	MIME   string ` + "`json:\"mime,omitempty\"`" + `
+}
+
+// OwnedKeys is every object in storage this ref is the only pointer to: the
+// stored file, the original kept for reprocessing, and one per rendition.
+//
+// Deleting a file means deleting all of them, and until v3.544.0 nothing in
+// the framework did. Every delete path worked from Key alone, so clearing an
+// image field left its thumb and its original in the bucket, and nothing
+// could find them afterwards either: a rendition never had an uploads row of
+// its own, and the primary's row is claimed for good once a record referenced
+// it (grit#221, the same mechanism as grit#219).
+//
+// Renditions come out sorted by name, so two calls read the same way and a
+// test can assert on the whole slice rather than on a set.
+func (f FileRef) OwnedKeys() []string {
+	keys := make([]string, 0, 2+len(f.Renditions))
+	if f.Key != "" {
+		keys = append(keys, f.Key)
+	}
+	if f.OriginalKey != "" {
+		keys = append(keys, f.OriginalKey)
+	}
+	names := make([]string, 0, len(f.Renditions))
+	for name := range f.Renditions {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if key := f.Renditions[name].Key; key != "" {
+			keys = append(keys, key)
+		}
+	}
+	return keys
+}
+
+// DerivedKeys is OwnedKeys without the stored file itself.
+//
+// It is what an uploads row records, because that row already holds the
+// primary in its path column, and three of the four delete paths only ever
+// see the row.
+func (f FileRef) DerivedKeys() []string {
+	derived := make([]string, 0, len(f.Renditions)+1)
+	for _, key := range f.OwnedKeys() {
+		if key != f.Key {
+			derived = append(derived, key)
+		}
+	}
+	return derived
 }
 
 // Value implements driver.Valuer so GORM stores FileRef as JSON.
@@ -159,9 +208,12 @@ func (fs *FileRefs) Scan(value interface{}) error {
 	return json.Unmarshal(data, fs)
 }
 
-// Keys returns the S3 keys of every FileRef in the slice. Used by the
-// orphan cleanup cron and by replacement-delete logic to figure out
-// which storage objects to purge.
+// Keys returns the primary storage key of every FileRef in the slice.
+//
+// Not the set of objects to delete. A ref also owns its renditions and the
+// original kept for reprocessing, and this comment used to claim otherwise:
+// it said purge logic read this, which is the belief grit#221 was made of.
+// OwnedKeys is the one to delete by.
 func (fs FileRefs) Keys() []string {
 	out := make([]string, 0, len(fs))
 	for _, f := range fs {
@@ -170,6 +222,75 @@ func (fs FileRefs) Keys() []string {
 		}
 	}
 	return out
+}
+
+// OwnedKeys is every object the refs in this slice own, deduplicated.
+//
+// Deduplicated because two entries can name the same upload, and a delete
+// list that repeats a key deletes it once and then reports the second attempt
+// as a failure on a file that is already gone.
+func (fs FileRefs) OwnedKeys() []string {
+	seen := make(map[string]struct{}, len(fs)*2)
+	out := make([]string, 0, len(fs)*2)
+	for _, f := range fs {
+		for _, key := range f.OwnedKeys() {
+			if _, dup := seen[key]; dup {
+				continue
+			}
+			seen[key] = struct{}{}
+			out = append(out, key)
+		}
+	}
+	return out
+}
+
+// KeyList is a list of storage keys kept in one text column, for a row that
+// has to record which objects it owns.
+//
+// A column and not a table: the keys are written once, read only when the row
+// is deleted, and meaningless away from it.
+type KeyList []string
+
+// Value implements driver.Valuer. A string and not a []byte for the reason
+// FileRef gives: lib/pq sends []byte as bytea and Postgres refuses that for a
+// json column.
+func (k KeyList) Value() (driver.Value, error) {
+	if len(k) == 0 {
+		return nil, nil
+	}
+	b, err := json.Marshal([]string(k))
+	if err != nil {
+		return nil, fmt.Errorf("marshal KeyList: %w", err)
+	}
+	return string(b), nil
+}
+
+// Scan implements sql.Scanner. NULL and an empty column are both an empty
+// list, which is what every row written before the column existed holds.
+func (k *KeyList) Scan(value interface{}) error {
+	if value == nil {
+		*k = nil
+		return nil
+	}
+	var raw []byte
+	switch v := value.(type) {
+	case []byte:
+		raw = v
+	case string:
+		raw = []byte(v)
+	default:
+		return fmt.Errorf("cannot scan %T into KeyList", value)
+	}
+	if len(raw) == 0 {
+		*k = nil
+		return nil
+	}
+	var out []string
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return fmt.Errorf("unmarshal KeyList: %w", err)
+	}
+	*k = out
+	return nil
 }
 
 // TotalSize sums the byte size of every FileRef in the slice. Used by
@@ -306,6 +427,8 @@ func filesFileRefTestGo() string {
 import (
 	"context"
 	"encoding/json"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -416,6 +539,120 @@ func TestASweepThatCannotLookKeepsEverything(t *testing.T) {
 
 // sweepDB is a real database with the shape the sweep reads: the uploads
 // table, and a record holding keys the way a hand-written service does.
+// The sweep takes an orphan's renditions and its kept original with it.
+//
+// Nothing else ever will. A rendition has no uploads row of its own, so it is
+// not a candidate the sweep could find on a later pass, and the original sits
+// under a private prefix nothing lists. Before v3.544.0 this pass deleted the
+// row and the one object its path column named, and left the rest (grit#221).
+func TestTheSweepTakesTheDerivedObjectsWithTheOrphan(t *testing.T) {
+	db := sweepDBWithDerived(t)
+
+	old := time.Now().Add(-48 * time.Hour)
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, derived, claimed_at, created_at) VALUES (?, ?, ?, NULL, ?)",
+		"u-img", "uploads/2026/11/a.webp",
+		"[\"originals/2026/11/a.jpg\",\"uploads/2026/11/a-thumb.webp\"]",
+		old).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	store := &recordingStore{}
+	if _, err := RunOrphanCleanup(context.Background(), db, store, 24*time.Hour); err != nil {
+		t.Fatalf("RunOrphanCleanup: %v", err)
+	}
+
+	for _, want := range []string{
+		"uploads/2026/11/a.webp",
+		"originals/2026/11/a.jpg",
+		"uploads/2026/11/a-thumb.webp",
+	} {
+		found := false
+		for _, got := range store.deleted {
+			if got == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("the sweep left %s in storage, and nothing else will look for it", want)
+		}
+	}
+	if len(store.deleted) != 3 {
+		t.Errorf("deleted %v, want all three objects", store.deleted)
+	}
+}
+
+// A referenced upload keeps its derived objects too, which is the direction
+// that costs somebody a file rather than some bytes.
+func TestTheSweepKeepsTheDerivedObjectsOfSomethingReferenced(t *testing.T) {
+	db := sweepDBWithDerived(t)
+
+	old := time.Now().Add(-48 * time.Hour)
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, derived, claimed_at, created_at) VALUES (?, ?, ?, NULL, ?)",
+		"u-img", "uploads/2026/11/logo.png",
+		"[\"uploads/2026/11/logo-thumb.webp\"]", old).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(
+		"INSERT INTO workspaces (id, logo_path, settings) VALUES (?, ?, ?)",
+		"w1", "uploads/2026/11/logo.png", "{}").Error; err != nil {
+		t.Fatal(err)
+	}
+
+	store := &recordingStore{}
+	if _, err := RunOrphanCleanup(context.Background(), db, store, 24*time.Hour); err != nil {
+		t.Fatalf("RunOrphanCleanup: %v", err)
+	}
+	if len(store.deleted) != 0 {
+		t.Errorf("deleted %v from an upload a record still points at", store.deleted)
+	}
+}
+
+// And a schema that has no derived column still sweeps.
+//
+// grit upgrade rewrites this file and does not run grit migrate, so this is
+// the state an upgraded project is in until somebody migrates. Naming a
+// column that does not exist would fail the whole statement, which would stop
+// the nightly sweep altogether: a worse outcome than the leak it closes.
+func TestTheSweepStillRunsBeforeTheDerivedColumnExists(t *testing.T) {
+	db := sweepDB(t) // no derived column
+
+	if UploadsRecordDerived(db) {
+		t.Fatal("UploadsRecordDerived says yes to a table without the column")
+	}
+
+	old := time.Now().Add(-48 * time.Hour)
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, claimed_at, created_at) VALUES (?, ?, NULL, ?)",
+		"u-gone", "uploads/2026/11/abandoned.png", old).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	store := &recordingStore{}
+	n, err := RunOrphanCleanup(context.Background(), db, store, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("the sweep failed on a schema without the column: %v", err)
+	}
+	if n != 1 || len(store.deleted) != 1 {
+		t.Errorf("swept %d rows and %v objects, want the one orphan", n, store.deleted)
+	}
+}
+
+// sweepDBWithDerived is sweepDB plus the column v3.544.0 added.
+func sweepDBWithDerived(t *testing.T) *gorm.DB {
+	t.Helper()
+	db := sweepDB(t)
+	if err := db.Exec("ALTER TABLE uploads ADD COLUMN derived TEXT").Error; err != nil {
+		t.Fatal(err)
+	}
+	if !UploadsRecordDerived(db) {
+		t.Fatal("UploadsRecordDerived cannot see a column that is there, so the " +
+			"sweep will never read it")
+	}
+	return db
+}
+
 func sweepDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
@@ -452,6 +689,144 @@ type recordingStore struct{ deleted []string }
 func (s *recordingStore) Delete(ctx context.Context, key string) error {
 	s.deleted = append(s.deleted, key)
 	return nil
+}
+
+// Every field of FileRef that names an object in storage has to be in
+// OwnedKeys.
+//
+// This is the guard on the bug rather than on one instance of it. Key,
+// OriginalKey and the rendition keys all name objects, and for a long time
+// every delete path returned the first of the three, so clearing an image
+// field left two files in the bucket that nothing could find again. A fourth
+// is likely (a video poster, an audio waveform), and the failure mode of
+// forgetting it is the quietest one there is: nothing breaks, no test fails,
+// storage just grows.
+//
+// So the list is read off the struct and not maintained by hand. The
+// convention it enforces is that a string field holding a key is named
+// ...Key; a field called Poster holding a key would slip past, which is the
+// reason to keep naming them that way.
+func TestOwnedKeysCoversEveryFieldThatNamesAnObject(t *testing.T) {
+	var ref FileRef
+	v := reflect.ValueOf(&ref).Elem()
+	rt := v.Type()
+
+	planted := map[string]string{} // field name -> the key put in it
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		switch {
+		case field.Type.Kind() == reflect.String && strings.HasSuffix(field.Name, "Key"):
+			key := "planted/" + field.Name
+			v.Field(i).SetString(key)
+			planted[field.Name] = key
+		case field.Name == "Renditions":
+			ref.Renditions = map[string]Rendition{"thumb": {Key: "planted/Renditions"}}
+			planted[field.Name] = "planted/Renditions"
+		}
+	}
+	if len(planted) < 3 {
+		t.Fatalf("expected Key, OriginalKey and Renditions to name objects, found %d: %v",
+			len(planted), planted)
+	}
+
+	owned := map[string]bool{}
+	for _, key := range ref.OwnedKeys() {
+		owned[key] = true
+	}
+	for field, key := range planted {
+		if !owned[key] {
+			t.Errorf("FileRef.%s names an object in storage that OwnedKeys does not "+
+				"return, so nothing will ever delete it", field)
+		}
+	}
+}
+
+func TestOwnedKeysIsOrderedAndSkipsEmpties(t *testing.T) {
+	ref := FileRef{
+		Key:         "uploads/2026/a.webp",
+		OriginalKey: "originals/2026/a.jpg",
+		Renditions: map[string]Rendition{
+			"thumb": {Key: "uploads/2026/a-thumb.webp"},
+			"card":  {Key: "uploads/2026/a-card.webp"},
+			"empty": {Key: ""},
+		},
+	}
+	want := []string{
+		"uploads/2026/a.webp",
+		"originals/2026/a.jpg",
+		"uploads/2026/a-card.webp",  // renditions sorted by name
+		"uploads/2026/a-thumb.webp",
+	}
+	got := ref.OwnedKeys()
+	if len(got) != len(want) {
+		t.Fatalf("OwnedKeys returned %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("OwnedKeys[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+
+	// And what a row has to record is the same list without the primary,
+	// which the row already holds in its path column.
+	derived := ref.DerivedKeys()
+	if len(derived) != 3 {
+		t.Fatalf("DerivedKeys returned %v, want three", derived)
+	}
+	for _, key := range derived {
+		if key == ref.Key {
+			t.Error("DerivedKeys includes the primary key, which the row holds twice then")
+		}
+	}
+}
+
+func TestOwnedKeysOfAnEmptyRefIsEmpty(t *testing.T) {
+	if got := (FileRef{}).OwnedKeys(); len(got) != 0 {
+		t.Errorf("an empty ref owns %v", got)
+	}
+	if got := (FileRef{Key: "k"}).DerivedKeys(); len(got) != 0 {
+		t.Errorf("a ref with no renditions and no original derives %v", got)
+	}
+}
+
+func TestFileRefsOwnedKeysDeduplicates(t *testing.T) {
+	// The same upload in a gallery twice. A delete list that repeats a key
+	// deletes it once and then reports a failure on a file already gone.
+	shared := FileRef{Key: "uploads/a.webp", Renditions: map[string]Rendition{
+		"thumb": {Key: "uploads/a-thumb.webp"},
+	}}
+	got := FileRefs{shared, shared}.OwnedKeys()
+	if len(got) != 2 {
+		t.Errorf("two identical refs own %v, want two distinct keys", got)
+	}
+}
+
+func TestKeyListRoundTrip(t *testing.T) {
+	value, err := KeyList{"a", "b"}.Value()
+	if err != nil {
+		t.Fatalf("Value: %v", err)
+	}
+	var back KeyList
+	if err := back.Scan(value); err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(back) != 2 || back[0] != "a" || back[1] != "b" {
+		t.Errorf("round-tripped to %v", back)
+	}
+
+	// An empty list stores NULL rather than "[]", and every row written
+	// before the column existed scans back as empty rather than failing.
+	if value, err := (KeyList{}).Value(); err != nil || value != nil {
+		t.Errorf("an empty KeyList stored %v (%v), want NULL", value, err)
+	}
+	var fromNull KeyList
+	if err := fromNull.Scan(nil); err != nil || len(fromNull) != 0 {
+		t.Errorf("scanning NULL gave %v (%v)", fromNull, err)
+	}
+	var fromEmpty KeyList
+	if err := fromEmpty.Scan(""); err != nil || len(fromEmpty) != 0 {
+		t.Errorf("scanning an empty column gave %v (%v)", fromEmpty, err)
+	}
 }
 
 func TestFileRefRoundTrip(t *testing.T) {
@@ -620,10 +995,15 @@ type Storage interface {
 	Delete(ctx context.Context, key string) error
 }
 
-// DiffSingle returns the S3 key of an old FileRef if it was replaced
-// or cleared by the new value, or nil if both refer to the same file.
-// Used during Update handlers to figure out which S3 object (if any)
-// to purge after a single-file field is reassigned.
+// DiffSingle returns the primary storage key of an old FileRef if it was
+// replaced or cleared by the new value, or "" if both refer to the same file.
+//
+// This answers which file was dropped, not which objects to delete: the
+// dropped ref also owns its renditions and the original kept for
+// reprocessing. Deleting what this returns and stopping there is grit#221.
+// RemovedKeys is what the cleanup path uses.
+//
+// Kept, and kept exported, because a project may be calling it.
 func DiffSingle(old, neu *FileRef) string {
 	if old == nil || old.Key == "" {
 		return ""
@@ -634,9 +1014,11 @@ func DiffSingle(old, neu *FileRef) string {
 	return old.Key
 }
 
-// DiffMulti returns the S3 keys present in old but not in new. Used by
-// multi-file fields when the gallery shrinks or some entries get
-// swapped out -- those S3 objects can be deleted right away.
+// DiffMulti returns the primary storage keys present in old but not in new,
+// for a multi-file field whose gallery shrank or had entries swapped out.
+//
+// Same caveat as DiffSingle: these are the files that went, not the objects
+// to delete. RemovedKeysMulti is that.
 func DiffMulti(old, neu FileRefs) []string {
 	if len(old) == 0 {
 		return nil
@@ -659,9 +1041,66 @@ func DiffMulti(old, neu FileRefs) []string {
 	return removed
 }
 
+// RemovedKeys is every storage object that replacing old with neu orphans.
+//
+// A set difference over OwnedKeys rather than a comparison of primary keys,
+// which gets three cases right that the old DiffSingle got wrong:
+//
+//   - A cleared or replaced field drops the renditions and the original too,
+//     which is the bug this function exists for (grit#221).
+//   - A ref reprocessed in place keeps its primary key and can still lose
+//     renditions, if the profile that produced them stopped asking for one.
+//     Those are orphaned just as surely.
+//   - Two refs can share an object, and deleting it because one of them was
+//     dropped takes the file out from under the one that stayed.
+func RemovedKeys(old, neu *FileRef) []string {
+	var oldKeys, newKeys []string
+	if old != nil {
+		oldKeys = old.OwnedKeys()
+	}
+	if neu != nil {
+		newKeys = neu.OwnedKeys()
+	}
+	return keysOnlyIn(oldKeys, newKeys)
+}
+
+// RemovedKeysMulti is RemovedKeys for a multi-file field.
+func RemovedKeysMulti(old, neu FileRefs) []string {
+	if len(old) == 0 {
+		return nil
+	}
+	return keysOnlyIn(old.OwnedKeys(), neu.OwnedKeys())
+}
+
+// keysOnlyIn is the keys in old that neu does not also claim, in order and
+// without repeats. One map does both jobs: a key already seen, whether in neu
+// or earlier in old, is not returned again.
+func keysOnlyIn(old, neu []string) []string {
+	if len(old) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(neu)+len(old))
+	for _, key := range neu {
+		seen[key] = struct{}{}
+	}
+	var removed []string
+	for _, key := range old {
+		if key == "" {
+			continue
+		}
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		removed = append(removed, key)
+	}
+	return removed
+}
+
 // CleanupRemoved walks the fields of old + neu (must be pointers to
-// the same struct type), finds *FileRef + FileRefs columns, computes
-// the diff, and deletes the removed S3 objects via storage.
+// the same struct type), finds *FileRef + FileRefs columns, and deletes
+// every storage object the write orphaned: the dropped file, its
+// renditions, and the original kept for reprocessing.
 //
 // Errors per key are swallowed -- a delete failure for one orphan
 // shouldn't fail the parent UPDATE. Real failures get logged via the
@@ -693,7 +1132,7 @@ func CleanupRemoved(ctx context.Context, st Storage, old, neu interface{}) {
 			if !newField.IsNil() {
 				newRef = newField.Interface().(*FileRef)
 			}
-			if k := DiffSingle(oldRef, newRef); k != "" {
+			for _, k := range RemovedKeys(oldRef, newRef) {
 				_ = st.Delete(ctx, k)
 			}
 			continue
@@ -703,7 +1142,7 @@ func CleanupRemoved(ctx context.Context, st Storage, old, neu interface{}) {
 		if oldField.Type() == reflect.TypeOf(FileRefs{}) {
 			oldRefs := oldField.Interface().(FileRefs)
 			newRefs := newField.Interface().(FileRefs)
-			for _, k := range DiffMulti(oldRefs, newRefs) {
+			for _, k := range RemovedKeysMulti(oldRefs, newRefs) {
 				_ = st.Delete(ctx, k)
 			}
 			continue
@@ -762,10 +1201,46 @@ func ClaimRefs(ctx context.Context, db *gorm.DB, record interface{}) {
 		Error
 }
 
-// orphan is one candidate row: the id to delete and the key to look for.
+// orphan is one candidate row: the id to delete, the key to look for, and
+// the objects that key derived.
 type orphan struct {
 	ID   string ` + "`gorm:\"column:id\"`" + `
 	Path string ` + "`gorm:\"column:path\"`" + `
+	// Derived is empty on every row written before v3.544.0, and on a schema
+	// that has no such column. Both mean the same thing here: delete the
+	// primary and leave what we cannot name.
+	// The column type is spelled out because GORM cannot infer one for a
+	// slice that implements Valuer and Scanner. Without it, it logs
+	// "unsupported data type" and runs the query anyway, so the field comes
+	// back unset and the caller deletes the primary and reports success.
+	Derived KeyList ` + "`gorm:\"column:derived;type:text\"`" + `
+}
+
+// UploadsRecordDerived reports whether the uploads table has the derived
+// column yet.
+//
+// It has to be asked rather than assumed. grit upgrade rewrites this file and
+// does not run grit migrate, so a project can be running this code against a
+// schema that predates the column, and a SELECT naming a column that does not
+// exist fails the whole statement rather than one row of it: the nightly
+// sweep would stop sweeping, and an erasure would refuse to complete.
+//
+// Answered per call, not cached, because the caller is a nightly job and an
+// erasure: one schema query each is nothing, and a cached "no" would outlive
+// the migration that fixed it.
+//
+// Saying no means deleting primaries only, which is what every version before
+// v3.544.0 did, so the fallback is the old leak rather than a new failure.
+func UploadsRecordDerived(db *gorm.DB) bool {
+	if db == nil {
+		return false
+	}
+	if db.Migrator().HasColumn("uploads", "derived") {
+		return true
+	}
+	log.Println("[uploads] the uploads table has no derived column, so renditions " +
+		"and kept originals are not deleted with their upload: run grit migrate")
+	return false
 }
 
 // orphanPage is how many orphans one pass of RunOrphanCleanup reads, deletes
@@ -807,11 +1282,20 @@ func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.
 
 	cutoff := time.Now().Add(-minAge)
 	deleted, after := 0, ""
+
+	// Asked once for the whole run rather than once per page: the schema does
+	// not change under us mid-sweep, and a project without the column should
+	// say so once, not every thousand rows.
+	columns := []string{"id", "path"}
+	if UploadsRecordDerived(db) {
+		columns = append(columns, "derived")
+	}
+
 	for {
 		var page []orphan
 		err := db.WithContext(ctx).
 			Table("uploads").
-			Select("id", "path").
+			Select(columns).
 			Where("claimed_at IS NULL AND created_at < ? AND id > ?", cutoff, after).
 			Order("id").
 			Limit(orphanPage).
@@ -856,6 +1340,14 @@ func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.
 			ids = append(ids, o.ID)
 			if o.Path != "" {
 				keys = append(keys, o.Path)
+			}
+			// The renditions and the kept original go with it. They have no
+			// row of their own, so this pass is the only thing that will ever
+			// look at them (grit#221).
+			for _, derived := range o.Derived {
+				if derived != "" {
+					keys = append(keys, derived)
+				}
 			}
 		}
 		if len(ids) == 0 {
@@ -1051,6 +1543,170 @@ type fakeStorage struct {
 func (f *fakeStorage) Delete(_ context.Context, key string) error {
 	f.deleted = append(f.deleted, key)
 	return nil
+}
+
+// imageRef is one upload as the media pipeline leaves it: the stored file, a
+// thumb, a card, and the original kept for reprocessing. Four objects.
+func imageRef(stem string) *FileRef {
+	return &FileRef{
+		Key:         "uploads/" + stem + ".webp",
+		OriginalKey: "originals/" + stem + ".jpg",
+		Renditions: map[string]Rendition{
+			"thumb": {Key: "uploads/" + stem + "-thumb.webp"},
+			"card":  {Key: "uploads/" + stem + "-card.webp"},
+		},
+	}
+}
+
+// Clearing an image field deletes all four of its objects.
+//
+// This is grit#221 as filed: the field was cleared, one object went, and the
+// two renditions and the original stayed in the bucket with nothing pointing
+// at them. Nothing could find them afterwards either, because a rendition has
+// no uploads row of its own and the primary's row is claimed for good once a
+// record referenced it.
+func TestClearingAnImageFieldDeletesItsRenditionsAndItsOriginal(t *testing.T) {
+	type record struct {
+		Image *FileRef
+	}
+	old := record{Image: imageRef("a")}
+	neu := record{Image: nil}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+
+	for _, want := range old.Image.OwnedKeys() {
+		if !contains(st.deleted, want) {
+			t.Errorf("clearing the field left %s in storage", want)
+		}
+	}
+	if len(st.deleted) != 4 {
+		t.Errorf("deleted %v, want all four objects and nothing else", st.deleted)
+	}
+}
+
+// Replacing it deletes the old one's objects and none of the new one's.
+func TestReplacingAnImageDeletesOnlyTheOldObjects(t *testing.T) {
+	type record struct {
+		Image *FileRef
+	}
+	old := record{Image: imageRef("a")}
+	neu := record{Image: imageRef("b")}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+
+	for _, want := range old.Image.OwnedKeys() {
+		if !contains(st.deleted, want) {
+			t.Errorf("replacing the image left %s in storage", want)
+		}
+	}
+	for _, keep := range neu.Image.OwnedKeys() {
+		if contains(st.deleted, keep) {
+			t.Errorf("deleted %s, which the new image still points at", keep)
+		}
+	}
+}
+
+// A ref reprocessed in place keeps its key and can still lose a rendition,
+// when the profile that produced it stopped asking for that size. Those are
+// orphaned as surely as a cleared field's, and comparing primary keys says
+// nothing changed.
+func TestReprocessingInPlaceDeletesTheRenditionsItDropped(t *testing.T) {
+	type record struct {
+		Image *FileRef
+	}
+	before := imageRef("a")
+	after := imageRef("a")
+	delete(after.Renditions, "card")
+
+	old := record{Image: before}
+	neu := record{Image: after}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+
+	if !contains(st.deleted, "uploads/a-card.webp") {
+		t.Errorf("deleted %v, want the dropped card rendition", st.deleted)
+	}
+	if contains(st.deleted, "uploads/a.webp") {
+		t.Error("deleted the stored file, which is still the same file")
+	}
+	if contains(st.deleted, "uploads/a-thumb.webp") {
+		t.Error("deleted a rendition the new ref still points at")
+	}
+}
+
+// A gallery that shrinks takes the dropped entry's whole set with it.
+func TestAGalleryShrinkingDeletesTheWholeSetOfWhatItDropped(t *testing.T) {
+	type record struct {
+		Gallery FileRefs
+	}
+	a, b := imageRef("a"), imageRef("b")
+	old := record{Gallery: FileRefs{*a, *b}}
+	neu := record{Gallery: FileRefs{*b}}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+
+	for _, want := range a.OwnedKeys() {
+		if !contains(st.deleted, want) {
+			t.Errorf("the removed gallery entry left %s in storage", want)
+		}
+	}
+	for _, keep := range b.OwnedKeys() {
+		if contains(st.deleted, keep) {
+			t.Errorf("deleted %s, which the entry that stayed points at", keep)
+		}
+	}
+}
+
+// Two entries can share an object, and deleting it because one of them went
+// takes the file out from under the one that stayed. The old key-by-key diff
+// got this right for primaries and had no opinion about renditions.
+func TestASharedObjectSurvivesOneOfItsOwnersBeingDropped(t *testing.T) {
+	type record struct {
+		Gallery FileRefs
+	}
+	shared := Rendition{Key: "uploads/shared-thumb.webp"}
+	a := FileRef{Key: "uploads/a.webp", Renditions: map[string]Rendition{"thumb": shared}}
+	b := FileRef{Key: "uploads/b.webp", Renditions: map[string]Rendition{"thumb": shared}}
+
+	old := record{Gallery: FileRefs{a, b}}
+	neu := record{Gallery: FileRefs{b}}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+
+	if contains(st.deleted, shared.Key) {
+		t.Error("deleted a rendition the remaining entry also points at")
+	}
+	if !contains(st.deleted, "uploads/a.webp") {
+		t.Errorf("deleted %v, want the dropped entry's own file", st.deleted)
+	}
+}
+
+func TestRemovedKeysIsEmptyWhenNothingWent(t *testing.T) {
+	ref := imageRef("a")
+	same := imageRef("a")
+	if got := RemovedKeys(ref, same); len(got) != 0 {
+		t.Errorf("an unchanged ref reports %v removed", got)
+	}
+	if got := RemovedKeys(nil, ref); len(got) != 0 {
+		t.Errorf("a field being filled in reports %v removed", got)
+	}
+	if got := RemovedKeysMulti(nil, FileRefs{*ref}); len(got) != 0 {
+		t.Errorf("a gallery being filled in reports %v removed", got)
+	}
+}
+
+func contains(keys []string, want string) bool {
+	for _, key := range keys {
+		if key == want {
+			return true
+		}
+	}
+	return false
 }
 
 func TestDiffSingle(t *testing.T) {
