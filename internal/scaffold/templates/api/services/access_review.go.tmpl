@@ -258,5 +258,11 @@ func AccessReviewWithItems(ctx context.Context, db *gorm.DB, id string) (*models
 	}).First(&review, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
+	// Preload leaves the slice nil when the review has no items, and a nil
+	// slice marshals to null, which breaks a client exactly as hard as a
+	// missing key does. The empty case is an answer, so send it as one.
+	if review.Items == nil {
+		review.Items = []models.AccessReviewItem{}
+	}
 	return &review, nil
 }

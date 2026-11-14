@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.540.0 - November 14, 2026
+
+### Starting your first access review crashed the page
+
+The eighth redesign release: Access reviews, Deleted accounts and Form sharing. Opening the three screens to look at them found a real fault in the first one.
+
+#### An empty list that was no list at all
+
+`AccessReview.Items` was tagged `json:"items,omitempty"`, so a review with nothing to certify sent no `items` key at all. The page did `detail.items.filter(...)` on `undefined` and died inside its error boundary. Opening the first review on a project where nobody holds a role was enough to do it, which is the first thing anybody does on that screen.
+
+TypeScript could not see it: the Go tag and the TypeScript interface are two files nobody compares, and the interface said `items` was always there. `omitempty` is right for a scalar that means &ldquo;unset&rdquo; and wrong for a list a client iterates, where empty is an answer rather than an absence. The tag is gone, the service normalises a nil slice to `[]`, and the page guards it anyway, because a screen should not die of a shape.
+
+#### &ldquo;Select a review to certify its access&rdquo;
+
+That was the whole right-hand column of the access review screen on a project that had never run one. It is the single moment somebody decides whether this feature is worth their afternoon, and the page answered with an instruction to click something that did not exist yet. It now says what a review would cover: every role somebody holds, who decided and when, and the one thing it deliberately does not cover, which is API keys. No counts are quoted, because nothing counts those without opening a campaign and a made-up figure on a compliance screen is worse than no figure.
+
+A decision also reads as a decision. The API calls it `approved`, and &ldquo;approved&rdquo; on a screen about access sounds like a request was granted rather than like existing access was allowed to stay, which is the opposite way round from what happened. It says **Kept**. The count that needs acting on is the one in colour: **4 to decide** beside two grey numbers, instead of three identical grey numbers.
+
+#### Restore, delete, erase
+
+Three operations on Deleted accounts that sound alike and are not: one is reversible, one is permanent, and the third is legally distinct and lives on another page entirely. They were one paragraph of small print under the table, which is where that distinction goes unread. They are three cards now, and the third names the page it is actually on, which was the part nobody found.
+
+#### A share link that says it is open to anyone
+
+A form share with no password was a grey chip reading **Open**, and grey reads as the default rather than as a decision. It says **Open to anyone** in amber. The empty page gained the three decisions the create modal is about to ask for, so you open it knowing what it wants rather than discovering it a field at a time.
+
+
 ## v3.539.0 - November 14, 2026
 
 ### A page that was red whatever your theme was

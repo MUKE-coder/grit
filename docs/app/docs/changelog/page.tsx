@@ -72,6 +72,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.540.0 */}
+            <div className="mb-12" id="v3.540.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.540.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Starting your first access review crashed the page</h3>
+                <p>
+                  The eighth redesign release: Access reviews, Deleted accounts
+                  and Form sharing. Opening the three screens to look at them
+                  found a real fault in the first one.
+                </p>
+
+                <h4>An empty list that was no list at all</h4>
+                <p>
+                  <code>AccessReview.Items</code> was tagged{' '}
+                  <code>json:&quot;items,omitempty&quot;</code>, so a review
+                  with nothing to certify sent no <code>items</code> key at
+                  all. The page did <code>detail.items.filter(...)</code> on{' '}
+                  <code>undefined</code> and died inside its error boundary.
+                  Opening the first review on a project where nobody holds a
+                  role was enough to do it, which is the first thing anybody
+                  does on that screen.
+                </p>
+                <p>
+                  TypeScript could not see it: the Go tag and the TypeScript
+                  interface are two files nobody compares, and the interface
+                  said <code>items</code> was always there.{' '}
+                  <code>omitempty</code> is right for a scalar that means
+                  &ldquo;unset&rdquo; and wrong for a list a client iterates,
+                  where empty is an answer rather than an absence. The tag is
+                  gone, the service normalises a nil slice to{' '}
+                  <code>[]</code>, and the page guards it anyway, because a
+                  screen should not die of a shape.
+                </p>
+
+                <h4>&ldquo;Select a review to certify its access&rdquo;</h4>
+                <p>
+                  That was the whole right-hand column of the access review
+                  screen on a project that had never run one. It is the single
+                  moment somebody decides whether this feature is worth their
+                  afternoon, and the page answered with an instruction to click
+                  something that did not exist yet. It now says what a review
+                  would cover: every role somebody holds, who decided and when,
+                  and the one thing it deliberately does not cover, which is
+                  API keys. No counts are quoted, because nothing counts those
+                  without opening a campaign and a made-up figure on a
+                  compliance screen is worse than no figure.
+                </p>
+                <p>
+                  A decision also reads as a decision. The API calls it{' '}
+                  <code>approved</code>, and &ldquo;approved&rdquo; on a screen
+                  about access sounds like a request was granted rather than
+                  like existing access was allowed to stay, which is the
+                  opposite way round from what happened. It says{' '}
+                  <strong>Kept</strong>. The count that needs acting on is the
+                  one in colour: <strong>4 to decide</strong> beside two grey
+                  numbers, instead of three identical grey numbers.
+                </p>
+
+                <h4>Restore, delete, erase</h4>
+                <p>
+                  Three operations on Deleted accounts that sound alike and are
+                  not: one is reversible, one is permanent, and the third is
+                  legally distinct and lives on another page entirely. They
+                  were one paragraph of small print under the table, which is
+                  where that distinction goes unread. They are three cards now,
+                  and the third names the page it is actually on, which was the
+                  part nobody found.
+                </p>
+
+                <h4>A share link that says it is open to anyone</h4>
+                <p>
+                  A form share with no password was a grey chip reading{' '}
+                  <strong>Open</strong>, and grey reads as the default rather
+                  than as a decision. It says <strong>Open to anyone</strong>{' '}
+                  in amber. The empty page gained the three decisions the
+                  create modal is about to ask for, so you open it knowing what
+                  it wants rather than discovering it a field at a time.
+                </p>
+              </div>
+            </div>
+
             {/* v3.539.0 */}
             <div className="mb-12" id="v3.539.0">
               <div className="flex items-center gap-3 mb-4">

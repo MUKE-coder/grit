@@ -28,8 +28,10 @@ import {
 import { getApiErrorMessage } from "@/lib/api-core";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
-import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink, Activity, Pencil } from "@/lib/icons";
-import { buttonClasses } from "@/components/ui/button";
+import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink, Activity, Pencil, Package, Shield, Link2 } from "@/lib/icons";
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Pill } from "@/components/ui/pill";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { inputClasses } from "@/components/ui/input";
 
@@ -78,38 +80,84 @@ export default function FormSharesPage() {
     <div>
       <PageHeader
         title="Public form sharing"
-        subtitle="Generate share links so anyone with the URL can submit a resource's form — with or without a password gate."
+        subtitle="A link anyone can open to submit one of your forms, with or without a password on it."
         actions={
-          <button
-            onClick={() => setCreateOpen(true)}
-            className={buttonClasses()}
-          >
-            <Plus className="h-4 w-4" />
-            New share
-          </button>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            New share link
+          </Button>
         }
       />
 
       {isLoading ? (
         <SkeletonCards count={3} />
       ) : shares.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-border bg-bg-elevated p-12 text-center">
-          <p className="text-foreground font-medium">No shares yet</p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Create a share to let visitors submit forms for one of your resources without an admin login.
-          </p>
-        </div>
+        <>
+          <div className="rounded-2xl border border-border bg-bg-elevated">
+            <EmptyState
+              icon={<Link2 className="h-5 w-5" />}
+              title="No share links yet"
+              description="A share link lets somebody fill in one of your forms without an account, and the submission lands as a real record."
+              action={
+                <Button onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" />
+                  New share link
+                </Button>
+              }
+            />
+          </div>
+
+          {/* What a share link is, in the order you decide it.
+              The empty state said what the feature does and stopped. Three
+              decisions follow it and all three are made in the same modal, so
+              naming them here is the difference between opening that modal
+              knowing what it will ask and discovering it one field at a
+              time. */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                icon: <Package className="h-4 w-4" />,
+                title: "Pick a resource",
+                body: "The form is built from that resource's own fields, so it validates the same way the admin does. Hide the fields a stranger has no business filling in.",
+              },
+              {
+                icon: <Shield className="h-4 w-4" />,
+                title: "Protect it",
+                body: "Leave it open for a public contact form, or put a password on it when the link is going to one supplier rather than to the world.",
+              },
+              {
+                icon: <Link2 className="h-4 w-4" />,
+                title: "Share the link",
+                body: "Every submission is recorded with its time and address, and you can turn the link off without deleting what came through it.",
+              },
+            ].map((step, i) => (
+              <article key={step.title} className="rounded-xl border border-border bg-bg-elevated p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <span
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-bg-hover text-text-secondary"
+                    aria-hidden="true"
+                  >
+                    {step.icon}
+                  </span>
+                  <span className="font-mono text-[11px] text-text-muted">{"0" + (i + 1)}</span>
+                </div>
+                <h2 className="text-sm font-semibold text-foreground">{step.title}</h2>
+                <p className="mt-1 text-[13px] text-text-secondary">{step.body}</p>
+              </article>
+            ))}
+          </div>
+        </>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-xl border border-border bg-bg-elevated">
+        <div className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
           <table className="w-full text-sm">
-            <thead className="border-b border-border bg-bg-secondary">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Resource</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Label</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Protection</th>
-                <th className="px-4 py-3 text-right font-medium text-text-secondary">Submissions</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Status</th>
-                <th className="px-4 py-3 text-right font-medium text-text-secondary">Actions</th>
+            <thead className="border-b border-border">
+              <tr className="text-xs font-medium uppercase tracking-wider text-text-muted">
+                <th className="px-5 py-3 text-left font-medium">Resource</th>
+                <th className="px-4 py-3 text-left font-medium">Label</th>
+                <th className="px-4 py-3 text-left font-medium">Protection</th>
+                <th className="px-4 py-3 text-right font-medium">Submissions</th>
+                <th className="px-4 py-3 text-left font-medium">Status</th>
+                <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -144,37 +192,39 @@ function ShareRow({ share }: { share: FormShare }) {
       await navigator.clipboard.writeText(publicURL);
       toast.success("Link copied");
     } catch {
-      toast.error("Copy failed — your browser blocked clipboard access");
+      toast.error("Could not copy. Your browser blocked the clipboard, so select the link and copy it by hand.");
     }
   };
 
   return (
     <>
     <tr className="hover:bg-bg-hover">
-      <td className="px-4 py-3 font-mono text-xs text-foreground">{share.resource_name}</td>
+      <td className="px-5 py-3 font-mono text-xs text-foreground">{share.resource_name}</td>
       <td className="px-4 py-3 text-foreground">{share.label || <span className="text-text-muted">—</span>}</td>
       <td className="px-4 py-3">
+        {/* Open is the one worth noticing, so it is the one that is not
+            neutral: a link anybody can submit through is a decision, and a
+            grey chip reads as the default. */}
         {share.has_password ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">
-            <Lock className="h-3 w-3" /> Password
-          </span>
+          <Pill tone="neutral">
+            <Lock className="h-3 w-3" aria-hidden="true" /> Password
+          </Pill>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-bg-secondary px-2 py-0.5 text-xs font-medium text-text-secondary">
-            <Unlock className="h-3 w-3" /> Open
-          </span>
+          <Pill tone="warn">
+            <Unlock className="h-3 w-3" aria-hidden="true" /> Open to anyone
+          </Pill>
         )}
       </td>
       <td className="px-4 py-3 text-right tabular-nums text-foreground">{share.submission_count}</td>
       <td className="px-4 py-3">
         <button
           onClick={() => update({ enabled: !share.enabled })}
-          className={
-            share.enabled
-              ? "inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-xs font-medium text-success hover:bg-success/25"
-              : "inline-flex items-center gap-1 rounded-full bg-bg-secondary px-2 py-0.5 text-xs font-medium text-text-muted hover:bg-bg-hover"
-          }
+          title={share.enabled ? "Turn this link off" : "Turn this link back on"}
+          className="rounded-md transition-grit hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          {share.enabled ? "Enabled" : "Disabled"}
+          <Pill tone={share.enabled ? "good" : "neutral"} dot>
+            {share.enabled ? "Live" : "Off"}
+          </Pill>
         </button>
       </td>
       <td className="px-4 py-3">

@@ -109,6 +109,7 @@ func adminIconMap() string {
   Quote,
   Code,
   Link,
+  Link2,
   Undo,
   Redo,
   Activity,
@@ -317,6 +318,9 @@ export {
   Quote,
   Code,
   Link,
+  // v3.540.0: the form-sharing page, where a share link is the subject of
+  // the screen rather than a way out of it.
+  Link2,
   Undo,
   Redo,
   Activity,

@@ -6,7 +6,11 @@ import { PageHeader } from "@/components/chrome/PageHeader";
 import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage } from "@/lib/api-core";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { AlertTriangle, RotateCcw, Trash2 } from "@/lib/icons";
+import { Pill } from "@/components/ui/pill";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { AlertTriangle, RotateCcw, Trash2, UserCheck, Shield } from "@/lib/icons";
 
 /*
  * Accounts somebody closed.
@@ -70,57 +74,69 @@ export default function DeletedAccountsPage() {
       />
 
       {error && (
-        <div role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{error}</span>
+        <div role="alert" className="mb-6 flex items-start gap-3 rounded-xl border border-danger-line bg-danger-soft px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
+          <p className="text-sm text-text-secondary">{error}</p>
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-bg-elevated">
+      <div className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
         {isPending ? (
-          <p className="py-16 text-center text-sm text-text-muted">Loading...</p>
+          // Rows at the size the real ones will be, rather than the word
+          // "Loading", so the page does not jump when they arrive.
+          <div className="space-y-3 px-5 py-5">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
         ) : users.length === 0 ? (
-          <p className="py-16 text-center text-sm text-text-muted">
-            No account has been closed. One that is closed lands here rather than disappearing.
-          </p>
+          <EmptyState
+            icon={<UserCheck className="h-5 w-5" />}
+            title="Nobody has closed their account"
+            description="A closed account lands here instead of disappearing, so it can be restored or removed deliberately."
+          />
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-xs text-text-muted">
-                <th className="px-5 py-3 font-medium">Who</th>
-                <th className="px-5 py-3 font-medium">Role</th>
-                <th className="px-5 py-3 font-medium">Closed</th>
+              <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wider text-text-muted">
+                <th className="px-5 py-3 font-medium">Account</th>
+                <th className="px-4 py-3 font-medium">Role</th>
+                <th className="px-4 py-3 font-medium">Closed</th>
                 <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
                 <tr key={user.id} className="border-b border-border/60 last:border-0">
-                  <td className="px-5 py-3">
-                    <span className="font-medium text-foreground">
+                  <td className="px-5 py-3 align-top">
+                    <span className="block font-medium text-foreground">
                       {[user.first_name, user.last_name].filter(Boolean).join(" ") || "No name"}
                     </span>
-                    <span className="ml-2 text-xs text-text-muted">{user.email}</span>
+                    <span className="mt-0.5 block text-[13px] text-text-muted">{user.email}</span>
                   </td>
-                  <td className="px-5 py-3 text-text-secondary">{user.role ?? "—"}</td>
-                  <td className="px-5 py-3 text-text-secondary">{when(user.deleted_at)}</td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
+                  <td className="px-4 py-3 align-top">
+                    {user.role ? <Pill>{user.role}</Pill> : <span className="text-text-muted">—</span>}
+                  </td>
+                  <td className="px-4 py-3 align-top text-[13px] text-text-secondary">
+                    {when(user.deleted_at)}
+                  </td>
+                  <td className="px-5 py-3 align-top">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => restore.mutate(user)}
                         disabled={restore.isPending}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground"
                       >
-                        <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                        <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                         Restore
-                      </button>
+                      </Button>
                       <button
                         type="button"
                         onClick={() => setConfirm(user)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1 text-xs text-danger transition-colors hover:bg-danger/10"
+                        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] text-text-muted transition-grit hover:bg-danger-soft hover:text-danger"
                       >
-                        <Trash2 className="h-3 w-3" aria-hidden="true" />
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         Delete forever
                       </button>
                     </div>
@@ -132,11 +148,58 @@ export default function DeletedAccountsPage() {
         )}
       </div>
 
-      <p className="mt-4 text-xs leading-relaxed text-text-muted">
-        Restoring an account lets it sign in again with the password it had. Deleting it for good removes
-        the row and nothing else: erasing what a person left behind across every table is a different
-        operation, with different law attached to it, and it lives on the GDPR page.
-      </p>
+      {/* Three things that sound alike and are not.
+          Restore, delete, erase were one paragraph of small print under the
+          table, which is where the difference between a reversible action, a
+          permanent one, and a legally distinct one goes unread. The third is
+          not even on this page, and that was the part nobody found. */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <article className="rounded-xl border border-border bg-bg-elevated p-4">
+          <span
+            className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-success-soft text-success"
+            aria-hidden="true"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </span>
+          <h2 className="text-sm font-semibold text-foreground">Restore</h2>
+          <p className="mt-1 text-[13px] text-text-secondary">
+            Puts the account back in the Users list. They sign in again with the password they had,
+            and everything they own comes back with them.
+          </p>
+        </article>
+
+        <article className="rounded-xl border border-border bg-bg-elevated p-4">
+          <span
+            className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-warning-soft text-warning"
+            aria-hidden="true"
+          >
+            <Trash2 className="h-4 w-4" />
+          </span>
+          <h2 className="text-sm font-semibold text-foreground">Delete for good</h2>
+          <p className="mt-1 text-[13px] text-text-secondary">
+            Removes the account row and nothing else. What they wrote, uploaded and ordered stays
+            where it is, now owned by nobody.
+          </p>
+        </article>
+
+        <article className="rounded-xl border border-border bg-bg-elevated p-4">
+          <span
+            className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-danger-soft text-danger"
+            aria-hidden="true"
+          >
+            <Shield className="h-4 w-4" />
+          </span>
+          <h2 className="text-sm font-semibold text-foreground">Erase under GDPR</h2>
+          <p className="mt-1 text-[13px] text-text-secondary">
+            The one that reaches across every table. It is a different operation with different law
+            attached, so it lives on the{" "}
+            <a href="/system/gdpr" className="font-medium text-accent hover:underline">
+              GDPR page
+            </a>
+            .
+          </p>
+        </article>
+      </div>
 
       <ConfirmModal
         open={confirm !== null}

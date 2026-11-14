@@ -48,7 +48,11 @@ type AccessReview struct {
 	CreatedAt time.Time ~json:"created_at"~
 	UpdatedAt time.Time ~json:"updated_at"~
 
-	Items []AccessReviewItem ~gorm:"foreignKey:ReviewID" json:"items,omitempty"~
+	// Not omitempty. An absent list and an empty list are the same thing to
+	// Go and very different things to a client: one is [] and the other is
+	// undefined, and undefined.filter is how this page used to crash on the
+	// first review anybody opened.
+	Items []AccessReviewItem ~gorm:"foreignKey:ReviewID" json:"items"~
 }
 
 func (r *AccessReview) BeforeCreate(tx *gorm.DB) error {
@@ -115,7 +119,12 @@ import {
   useDecideAccessReviewItem,
   useCompleteAccessReview,
 } from "@/hooks/use-access-reviews";
-import { ShieldCheck, Check, X, Plus, Loader2, UserCheck } from "@/lib/icons";
+import { ShieldCheck, Check, X, Plus, Loader2, UserCheck, Users, KeyRound } from "@/lib/icons";
+import { Button } from "@/components/ui/button";
+import { Pill, type PillTone } from "@/components/ui/pill";
+import { Note } from "@/components/ui/note";
+import { EmptyState } from "@/components/ui/empty-state";
+import { inputClasses } from "@/components/ui/input";
 
 interface ReviewSummary {
   id: string;
@@ -142,6 +151,17 @@ interface ReviewItem {
 interface ReviewDetail extends ReviewSummary {
   items: ReviewItem[];
 }
+
+// The decision, as a word somebody would say.
+//
+// The API's enum is approved / revoked / pending, and "approved" on a screen
+// about access reads as "this request was granted" rather than "this access
+// was allowed to stay", which is the opposite way round from what happened.
+const DECISION: Record<string, { label: string; tone: PillTone }> = {
+  approved: { label: "Kept", tone: "good" },
+  revoked: { label: "Revoked", tone: "bad" },
+  pending: { label: "Undecided", tone: "warn" },
+};
 
 export default function AccessReviewPage() {
   const [selected, setSelected] = useState<string | null>(null);
@@ -179,7 +199,10 @@ export default function AccessReviewPage() {
   // The detail endpoint returns items but not the aggregate counts (those live on
   // the list summary), so derive the pending count from the items we already
   // have. This keeps the header and the Complete button honest even mid-review.
-  const pendingCount = detail ? detail.items.filter((i) => i.decision === "pending").length : 0;
+  // (detail.items ?? []) rather than detail.items: the API sends [] now, and
+  // a page that dies when it does not is a page that dies on a deploy skew.
+  const items = detail?.items ?? [];
+  const pendingCount = items.filter((i) => i.decision === "pending").length;
 
   return (
     <div className="space-y-6">
@@ -187,15 +210,10 @@ export default function AccessReviewPage() {
         title="Access reviews"
         subtitle="Certify who has access to what. Revoking a grant removes it immediately and is logged to the audit trail."
         actions={
-          <button
-            type="button"
-            onClick={() => setNewOpen(true)}
-            disabled={openM.isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
-          >
-            {openM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            New review
-          </button>
+          <Button onClick={() => setNewOpen(true)} loading={openM.isPending}>
+            {!openM.isPending && <Plus className="h-3.5 w-3.5" />}
+            Start a review
+          </Button>
         }
       />
 
@@ -209,22 +227,12 @@ export default function AccessReviewPage() {
         size="md"
         footer={
           <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setNewOpen(false)}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover"
-            >
+            <Button variant="outline" onClick={() => setNewOpen(false)}>
               Cancel
-            </button>
-            <button
-              type="button"
-              onClick={startReview}
-              disabled={!newName.trim() || openM.isPending}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
-            >
-              {openM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            </Button>
+            <Button onClick={startReview} disabled={!newName.trim()} loading={openM.isPending}>
               Create review
-            </button>
+            </Button>
           </div>
         }
       >
@@ -241,10 +249,10 @@ export default function AccessReviewPage() {
                 if (e.key === "Enter" && newName.trim()) startReview();
               }}
               placeholder="Q3 2026 quarterly"
-              className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className={inputClasses()}
             />
             <p className="text-xs text-text-muted">
-              Name it for the period you&rsquo;re certifying — it becomes the audit record.
+              Name it for the period you&rsquo;re certifying. It becomes the audit record.
             </p>
           </div>
 
@@ -254,8 +262,8 @@ export default function AccessReviewPage() {
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
               rows={3}
-              placeholder="Optional context — scope, who requested it, ticket reference…"
-              className="w-full resize-y rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              placeholder="Optional context: scope, who asked for it, a ticket reference"
+              className={inputClasses({ multiline: true }) + " resize-y"}
             />
           </div>
 
@@ -269,13 +277,23 @@ export default function AccessReviewPage() {
         {/* Campaign list */}
         <div className="space-y-2">
           {listQ.isLoading ? (
-            <div className="flex items-center gap-2 p-4 text-sm text-text-secondary">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-bg-elevated p-4 text-sm text-text-secondary">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading…
             </div>
           ) : (listQ.data ?? []).length === 0 ? (
-            <p className="rounded-xl border border-border bg-bg-secondary/40 p-6 text-sm text-text-secondary">
-              No access reviews yet. Start one to snapshot every current role assignment for certification.
-            </p>
+            <div className="rounded-xl border border-border bg-bg-elevated">
+              <EmptyState
+                icon={<ShieldCheck className="h-5 w-5" />}
+                title="No reviews yet"
+                description="A review is a point in time you certified who had what. The panel beside this says what one would cover."
+                action={
+                  <Button onClick={() => setNewOpen(true)}>
+                    <Plus className="h-3.5 w-3.5" />
+                    Start a review
+                  </Button>
+                }
+              />
+            </div>
           ) : (
             (listQ.data ?? []).map((r) => (
               <button
@@ -283,23 +301,28 @@ export default function AccessReviewPage() {
                 type="button"
                 onClick={() => setSelected(r.id)}
                 className={
-                  "w-full rounded-xl border p-4 text-left transition-colors " +
-                  (selected === r.id ? "border-accent bg-accent/5" : "border-border bg-bg-secondary/40 hover:border-accent/40")
+                  "w-full rounded-xl border p-4 text-left transition-grit " +
+                  (selected === r.id
+                    ? "border-accent-line bg-accent-soft"
+                    : "border-border bg-bg-elevated hover:border-border-strong")
                 }
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-foreground">{r.name}</span>
-                  <span
-                    className={
-                      "rounded-full px-2 py-0.5 text-[11px] font-semibold " +
-                      (r.status === "completed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning")
-                    }
-                  >
-                    {r.status}
-                  </span>
+                  <Pill tone={r.status === "completed" ? "good" : "warn"} dot>
+                    {r.status === "completed" ? "Signed off" : "In progress"}
+                  </Pill>
                 </div>
-                <p className="mt-1 text-xs text-text-secondary">
-                  {r.pending_items} pending · {r.approved_items} approved · {r.revoked_items} revoked
+                {/* The three numbers, each with its own word.
+                    "4 pending · 0 approved · 0 revoked" was one grey line in
+                    which the only number that needs acting on looked exactly
+                    like the two that do not. */}
+                <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className={r.pending_items > 0 ? "font-medium text-warning" : "text-text-muted"}>
+                    {r.pending_items} to decide
+                  </span>
+                  <span className="text-text-muted">{r.approved_items} kept</span>
+                  <span className="text-text-muted">{r.revoked_items} revoked</span>
                 </p>
               </button>
             ))
@@ -309,90 +332,146 @@ export default function AccessReviewPage() {
         {/* Detail */}
         <div>
           {!detail ? (
-            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border p-12 text-sm text-text-secondary">
-              <ShieldCheck className="mr-2 h-5 w-5" /> Select a review to certify its access.
+            /* What a review would cover, rather than an instruction to click.
+               On a project that has never run one, the only thing here was
+               "Select a review", which is a dead end on the one screen where
+               somebody is deciding whether this feature is worth their
+               afternoon. No numbers are quoted: there is no endpoint that
+               counts these without opening a campaign, and a made-up figure
+               on a compliance screen is worse than no figure. */
+            <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-border bg-bg-elevated/40 p-8">
+              <h2 className="text-[15px] font-semibold text-foreground">
+                {(listQ.data ?? []).length === 0
+                  ? "What a review would cover"
+                  : "Pick a review to certify it"}
+              </h2>
+              <p className="mt-1 max-w-prose text-[13px] text-text-secondary">
+                Opening one takes a snapshot of access as it stands right now and turns every line
+                of it into something you have to decide on, one at a time.
+              </p>
+
+              <ul className="mt-5 space-y-3">
+                {[
+                  {
+                    icon: <Users className="h-4 w-4" />,
+                    title: "Every role somebody holds",
+                    body: "One line per person per role. Keep it or revoke it, and a revoke takes the role away immediately rather than filing a note about it.",
+                  },
+                  {
+                    icon: <UserCheck className="h-4 w-4" />,
+                    title: "Who decided, and when",
+                    body: "Each decision is signed with your name and written to the audit trail, which is the part a reviewer asks to see.",
+                  },
+                  {
+                    icon: <KeyRound className="h-4 w-4" />,
+                    title: "What it does not cover",
+                    body: "API keys are not roles and are not in here. They live on their own page, with their own expiry and their own revoke.",
+                  },
+                ].map((row) => (
+                  <li key={row.title} className="flex gap-3">
+                    <span
+                      className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bg-hover text-text-secondary"
+                      aria-hidden="true"
+                    >
+                      {row.icon}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-foreground">{row.title}</span>
+                      <span className="mt-0.5 block text-[13px] text-text-secondary">{row.body}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <Note className="mt-5">
+                A review is a record of a decision, not a schedule. Nothing opens one for you, which
+                is deliberate: an unread campaign that opens itself every quarter is worse evidence
+                than no campaign at all.
+              </Note>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-bg-secondary/40 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-bg-elevated p-4">
                 <div>
                   <p className="font-semibold text-foreground">{detail.name}</p>
-                  <p className="text-xs text-text-secondary">
+                  <p className="mt-0.5 text-[13px] text-text-secondary">
                     Opened by {detail.created_by_email}
-                    {detail.completed_at ? " · completed" : " · " + pendingCount + " pending"}
+                    {detail.completed_at
+                      ? " · signed off"
+                      : pendingCount === 0
+                        ? " · every line decided"
+                        : " · " + pendingCount + " left to decide"}
                   </p>
                 </div>
                 {detail.status !== "completed" && (
-                  <button
-                    type="button"
+                  <Button
                     onClick={() => completeM.mutate()}
-                    disabled={pendingCount > 0 || completeM.isPending}
-                    title={pendingCount > 0 ? "Decide every item before completing" : "Sign off this review"}
-                    className="inline-flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 px-4 py-2 text-sm font-semibold text-success hover:bg-success/20 disabled:opacity-40"
+                    disabled={pendingCount > 0}
+                    loading={completeM.isPending}
+                    title={
+                      pendingCount > 0
+                        ? "Decide every line before signing off"
+                        : "Sign off this review"
+                    }
                   >
-                    <UserCheck className="h-4 w-4" />
-                    Complete review
-                  </button>
+                    {!completeM.isPending && <UserCheck className="h-3.5 w-3.5" />}
+                    Sign off
+                  </Button>
                 )}
               </div>
 
               <div className="overflow-hidden rounded-xl border border-border">
                 <table className="w-full text-sm">
-                  <thead className="bg-bg-tertiary text-left text-xs text-text-secondary">
-                    <tr>
-                      <th className="px-4 py-2 font-medium">User</th>
-                      <th className="px-4 py-2 font-medium">Role</th>
-                      <th className="px-4 py-2 font-medium">Decision</th>
-                      <th className="px-4 py-2" />
+                  <thead className="text-left text-xs font-medium uppercase tracking-wider text-text-muted">
+                    <tr className="border-b border-border">
+                      <th className="px-5 py-3 font-medium">Person</th>
+                      <th className="px-4 py-3 font-medium">Role</th>
+                      <th className="px-4 py-3 font-medium">Decision</th>
+                      <th className="px-5 py-3" />
                     </tr>
                   </thead>
                   <tbody>
-                    {detail.items.map((it) => (
-                      <tr key={it.id} className="border-t border-border">
-                        <td className="px-4 py-2.5 text-foreground">{it.user_email}</td>
-                        <td className="px-4 py-2.5 text-text-secondary">{it.role_name}</td>
-                        <td className="px-4 py-2.5">
-                          <span
-                            className={
-                              "rounded-full px-2 py-0.5 text-[11px] font-semibold " +
-                              (it.decision === "approved"
-                                ? "bg-success/10 text-success"
-                                : it.decision === "revoked"
-                                ? "bg-danger/10 text-danger"
-                                : "bg-bg-hover text-text-secondary")
-                            }
-                          >
-                            {it.decision}
-                          </span>
+                    {items.map((it) => (
+                      <tr key={it.id} className="border-b border-border/60 last:border-0">
+                        <td className="px-5 py-3 text-foreground">{it.user_email}</td>
+                        <td className="px-4 py-3 text-text-secondary">{it.role_name}</td>
+                        <td className="px-4 py-3">
+                          <Pill tone={DECISION[it.decision]?.tone ?? "neutral"} dot>
+                            {DECISION[it.decision]?.label ?? it.decision}
+                          </Pill>
                         </td>
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="px-5 py-3 text-right">
                           {detail.status !== "completed" && it.decision === "pending" && (
-                            <div className="inline-flex gap-1">
+                            <div className="inline-flex gap-2">
                               <button
                                 type="button"
                                 onClick={() => decideM.mutate({ itemId: it.id, decision: "approved" })}
                                 disabled={decideM.isPending}
-                                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-text-secondary hover:border-success/40 hover:text-success disabled:opacity-40"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[13px] text-text-secondary transition-grit hover:border-success-line hover:bg-success-soft hover:text-success disabled:opacity-40"
                               >
-                                <Check className="h-3 w-3" /> Keep
+                                <Check className="h-3.5 w-3.5" aria-hidden="true" /> Keep
                               </button>
                               <button
                                 type="button"
                                 onClick={() => decideM.mutate({ itemId: it.id, decision: "revoked" })}
                                 disabled={decideM.isPending}
-                                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-text-secondary hover:border-danger/40 hover:text-danger disabled:opacity-40"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[13px] text-text-secondary transition-grit hover:border-danger-line hover:bg-danger-soft hover:text-danger disabled:opacity-40"
                               >
-                                <X className="h-3 w-3" /> Revoke
+                                <X className="h-3.5 w-3.5" aria-hidden="true" /> Revoke
                               </button>
                             </div>
                           )}
                         </td>
                       </tr>
                     ))}
-                    {detail.items.length === 0 && (
+                    {items.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-text-secondary">
-                          No role assignments existed when this review was opened.
+                        <td colSpan={4} className="p-0">
+                          <EmptyState
+                            icon={<Users className="h-5 w-5" />}
+                            title="Nothing to certify"
+                            description="Nobody held a role when this review was opened, so it is complete by default and still worth keeping as the record that you looked."
+                          />
                         </td>
                       </tr>
                     )}
