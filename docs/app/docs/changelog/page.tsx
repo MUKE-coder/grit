@@ -72,6 +72,83 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.538.0 */}
+            <div className="mb-12" id="v3.538.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.538.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A secret key you could create and never see</h3>
+                <p>
+                  The sixth redesign release, covering API keys and the audit
+                  log. One of the two changes is not a redesign at all.
+                </p>
+
+                <h4>The one render of a secret key is now a dialog</h4>
+                <p>
+                  A secret key is shown once, because the server keeps only a
+                  hash of it. It was shown in a panel at the top of the page,
+                  and the button that creates it is at the bottom of a tall
+                  form: submit from where that button is and the panel arrives
+                  above the viewport. You saw the form reset, you scrolled
+                  away, and the key was gone. There was no second chance and
+                  no support path, by design.
+                </p>
+                <p>
+                  It is a dialog now, which cannot arrive off screen. Escape
+                  and the close button still work, because a dialog you cannot
+                  leave is a keyboard trap and the people it traps are the
+                  ones using a keyboard: until the key has been copied or
+                  downloaded, they ask once, and say what closing costs.
+                </p>
+
+                <h4>Browser origins only where they mean something</h4>
+                <p>
+                  Origins are a browser-only control and only a publishable key
+                  is meant for a browser, so the field now appears for a
+                  publishable key and nowhere else. It used to be shown for a
+                  secret key too, where filling it in restricted nothing.
+                </p>
+
+                <h4>Every key is reachable from some filter</h4>
+                <p>
+                  Keys are kept rather than deleted, because &ldquo;which key
+                  did this?&rdquo; is a question people ask about keys that
+                  were turned off months ago. The list now opens on the ones
+                  that still work, with <strong>Active</strong>,{' '}
+                  <strong>Inactive</strong> and <strong>All</strong> carrying
+                  their counts. The second one is not called Revoked on
+                  purpose: an expired key is just as dead and was never
+                  revoked, so under an Active and Revoked pair it would have
+                  belonged to neither.
+                </p>
+
+                <h4>The audit log says when it last checked</h4>
+                <p>
+                  The chain integrity card is the one card on the page that
+                  answers a yes or no question, so it is the one card that
+                  changes colour: green with the number of entries checked just
+                  now, or red naming the first row that does not match. Its
+                  three filters moved into the table&apos;s own header, where
+                  they read as narrowing the thing below them rather than as
+                  page furniture, and the method filter is a proper radio group
+                  including the <strong>Security</strong> entries the prune job
+                  and a reseal append.
+                </p>
+
+                <h4>An empty table that says which kind of empty</h4>
+                <p>
+                  Nothing recorded yet and nothing matching your filters are
+                  not the same news, and one sentence was telling both stories
+                  while being wrong about one of them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.537.0 */}
             <div className="mb-12" id="v3.537.0">
               <div className="flex items-center gap-3 mb-4">

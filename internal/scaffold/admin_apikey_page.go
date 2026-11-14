@@ -15,12 +15,28 @@ package scaffold
 func adminAPIKeysPage() string {
 	return `"use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { Pill, type PillTone } from "@/components/ui/pill";
+import { Note } from "@/components/ui/note";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Segmented } from "@/components/ui/segmented";
+import { RadioCard } from "@/components/ui/radio-card";
 import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey } from "@/hooks/use-api-keys";
 import { toast } from "sonner";
-import { KeyRound, Plus, Copy, Check, Loader2, Trash2, AlertTriangle } from "@/lib/icons";
+import {
+  KeyRound,
+  Plus,
+  Copy,
+  Check,
+  Loader2,
+  Trash2,
+  AlertTriangle,
+  Download,
+  Globe,
+  Server,
+} from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
 
@@ -60,17 +76,79 @@ function relative(iso?: string | null): string {
   return Math.floor(hours / 24) + "d ago";
 }
 
-/** The one and only render of the raw key. See the file header. */
-function RevealPanel({ token, onDone }: { token: string; onDone: () => void }) {
+/** When a key stops working, in words rather than a timestamp nobody subtracts. */
+function expiry(iso?: string | null): string {
+  if (!iso) return "never";
+  const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+  if (days < 0) return "expired";
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  if (days < 60) return "in " + days + " days";
+  return "in " + Math.round(days / 30) + " months";
+}
+
+/**
+ * The one and only render of a secret key.
+ *
+ * It is a dialog rather than a panel on the page because of where the eye is
+ * when it appears. The Create button is at the bottom of a tall form, so an
+ * in-page panel rendered above that form arrives outside the viewport: you
+ * could create a secret key, see a form reset, scroll away, and never learn
+ * the key existed. There is no second chance, because the server stores a
+ * hash.
+ *
+ * Closing it is still allowed. A dialog you cannot leave is a keyboard trap,
+ * and the people it traps are the ones using a keyboard. So the exits work
+ * and, until the key has been copied or downloaded, they ask once.
+ */
+function RevealModal({ token, onClose }: { token: string; onClose: () => void }) {
   const [saved, setSaved] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const panel = useRef<HTMLDivElement>(null);
+  const copyButton = useRef<HTMLButtonElement>(null);
+
+  // Focus starts on Copy, which is what somebody is here to do.
+  useEffect(() => {
+    copyButton.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (saved) onClose();
+        else setLeaving(true);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      // Tab stays inside the dialog, which is what aria-modal promises.
+      const stops = panel.current?.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])",
+      );
+      if (!stops || stops.length === 0) return;
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [saved, onClose]);
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(token);
+      toast.success("Secret key copied.");
     } catch {
-      // Insecure origin or an unfocused document. Marking it saved anyway —
-      // refusing would trap the user in a panel with no way out, and Download
-      // is still there.
+      // Insecure origin, or a document that is not focused. Counted as saved
+      // anyway: refusing would leave somebody holding a key they can read on
+      // screen and a dialog that will not believe them. Download still works.
+      toast.error("Could not reach the clipboard. Select the key and copy it, or download it.");
     }
     setSaved(true);
   };
@@ -87,49 +165,82 @@ function RevealPanel({ token, onDone }: { token: string; onDone: () => void }) {
   };
 
   return (
-    <div className="mb-6 rounded-xl border border-warning/40 bg-warning/[0.06] p-5">
-      <div className="mb-2 flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-warning" />
-        <h2 className="font-semibold text-foreground">Copy your key now</h2>
-      </div>
-      <p className="mb-3 text-sm text-text-secondary">
-        This is the only time it will be shown. The server keeps a hash, so it cannot be
-        recovered — if you lose it, revoke this key and make another.
-      </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 bg-black/60"
+        onClick={() => (saved ? onClose() : setLeaving(true))}
+      />
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reveal-title"
+        aria-describedby="reveal-body"
+        className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-bg-elevated shadow-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
+      >
+        <div className="flex items-start gap-3 border-b border-border px-5 py-4">
+          <span
+            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning"
+            aria-hidden="true"
+          >
+            <AlertTriangle className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 id="reveal-title" className="text-[17px] font-semibold text-foreground">
+              Copy your key now
+            </h2>
+            <p id="reveal-body" className="mt-1 text-[13px] text-text-secondary">
+              This is the only time it will be shown. The server keeps a hash, so nobody can
+              recover it later, not even you. If you lose it, revoke this key and make another.
+            </p>
+          </div>
+        </div>
 
-      <code className="mb-3 block break-all rounded-lg bg-bg-tertiary px-4 py-3 font-mono text-sm text-foreground">
-        {token}
-      </code>
+        <div className="px-5 py-4">
+          <code className="block break-all rounded-lg border border-border bg-bg-tertiary px-4 py-3 font-mono text-[13px] text-foreground">
+            {token}
+          </code>
+        </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={copy}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-bg-hover"
-        >
-          {saved ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          Copy
-        </button>
-        <button
-          type="button"
-          onClick={download}
-          className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-bg-hover"
-        >
-          Download
-        </button>
-        <Button
-          size="sm"
-          onClick={onDone}
-          disabled={!saved}
-          title={saved ? undefined : "Copy or download it first"}
-          className="ml-auto"
-        >
-          I have saved it
-        </Button>
+        {leaving ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-danger-line bg-danger-soft px-5 py-4">
+            <p className="text-[13px] text-foreground">
+              Close without saving it? The key is gone for good.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setLeaving(false)}>
+                Keep it open
+              </Button>
+              <Button variant="danger" size="sm" onClick={onClose}>
+                Close anyway
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border px-5 py-4">
+            <Button ref={copyButton} variant="outline" size="sm" onClick={copy}>
+              {saved ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              Copy
+            </Button>
+            <Button variant="outline" size="sm" onClick={download}>
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </Button>
+            <Button
+              size="sm"
+              className="ml-auto"
+              onClick={() => (saved ? onClose() : setLeaving(true))}
+            >
+              {saved ? "I have saved it" : "Close"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+type Shown = "active" | "inactive" | "all";
 
 export default function APIKeysPage() {
   const [name, setName] = useState("");
@@ -140,9 +251,10 @@ export default function APIKeysPage() {
   const [expiresIn, setExpiresIn] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [pendingRevoke, setPendingRevoke] = useState<APIKey | null>(null);
+  const [shown, setShown] = useState<Shown>("active");
 
   // The requests, their query keys and their invalidation are in
-  // hooks/use-api-keys.ts. What is left here is the form and the reveal panel.
+  // hooks/use-api-keys.ts. What is left here is the form and the reveal.
   const { data, isLoading } = useAPIKeys();
   const create = useCreateAPIKey();
   const revoke = useRevokeAPIKey();
@@ -150,7 +262,9 @@ export default function APIKeysPage() {
   const submit = () => {
     const body: Record<string, unknown> = { name: name.trim(), kind };
     if (lines(endpoints).length) body.endpoints = lines(endpoints);
-    if (lines(origins).length) body.origins = lines(origins);
+    // Origins are a browser-only control and the field is only shown for a
+    // publishable key, so a value typed before switching type is not sent.
+    if (kind === "publishable" && lines(origins).length) body.origins = lines(origins);
     const rpm = parseInt(rateLimit, 10);
     if (!Number.isNaN(rpm) && rpm > 0) body.rate_limit = rpm;
     const days = parseInt(expiresIn, 10);
@@ -159,7 +273,7 @@ export default function APIKeysPage() {
       onSuccess: (d) => {
         // Only a secret key gets the one-time reveal. A publishable key is
         // readable from the table forever, so putting it behind a "save this
-        // now or lose it" panel would teach the wrong lesson about what it is.
+        // now or lose it" dialog would teach the wrong lesson about what it is.
         if (kind === "secret") setToken(d.token);
         else toast.success("Publishable key created. It stays readable below.");
         setName("");
@@ -173,6 +287,29 @@ export default function APIKeysPage() {
 
   const keys = (data ?? []) as APIKey[];
 
+  const dead = (k: APIKey) =>
+    !!k.revoked_at || (!!k.expires_at && new Date(k.expires_at) < new Date());
+
+  // "Revoked" was the obvious name for the second filter and it would have
+  // been a lie: an expired key is just as dead and is not revoked, so it
+  // would have belonged to neither tab and been unreachable from this page.
+  const counts = useMemo(
+    () => ({
+      active: keys.filter((k) => !dead(k)).length,
+      inactive: keys.filter((k) => dead(k)).length,
+      all: keys.length,
+    }),
+    [keys],
+  );
+
+  const visible = useMemo(
+    () =>
+      keys.filter((k) =>
+        shown === "all" ? true : shown === "active" ? !dead(k) : dead(k),
+      ),
+    [keys, shown],
+  );
+
   return (
     <div>
       <PageHeader
@@ -180,56 +317,52 @@ export default function APIKeysPage() {
         subtitle="Long-lived credentials for scripts and integrations, instead of a login."
       />
 
-      <div className="px-6 py-6">
-        {token && <RevealPanel token={token} onDone={() => setToken(null)} />}
+      {token && <RevealModal token={token} onClose={() => setToken(null)} />}
 
-        {/* ── Create ── */}
-        <div className="mb-6 rounded-xl border border-border bg-bg-secondary p-5">
-          <h2 className="mb-1 font-semibold text-foreground">New key</h2>
-          <p className="mb-4 text-sm text-text-secondary">
-            Name it after the thing that will use it, so it can be revoked without
-            guesswork.
+      {/* Create a key.
+          The type is first because it decides the rest of the form: what the
+          key may reach, whether an origin list means anything, and whether
+          this is the last time anybody sees it. */}
+      <section className="mb-8 rounded-2xl border border-border bg-bg-elevated">
+        <header className="border-b border-border px-5 py-4">
+          <h2 className="text-[15px] font-semibold text-foreground">Create a key</h2>
+          <p className="mt-0.5 text-[13px] text-text-secondary">
+            Name it after the thing that will use it, so it can be revoked without guesswork.
           </p>
+        </header>
 
-          {/* The kind decides everything else, so it comes first. */}
-          <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            {([
-              {
-                value: "publishable" as const,
-                title: "Publishable",
-                blurb:
-                  "Safe in a browser or a mobile app. Reaches public endpoints only, " +
-                  "never a protected one. Stays readable here, because it is not a secret.",
-              },
-              {
-                value: "secret" as const,
-                title: "Secret",
-                blurb:
-                  "Server to server. Acts as you, with your roles and permissions. " +
-                  "Shown once at creation and never again.",
-              },
-            ]).map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setKind(option.value)}
-                className={
-                  "rounded-lg border p-3 text-left transition " +
-                  (kind === option.value
-                    ? "border-accent bg-accent/10"
-                    : "border-border hover:border-accent/40")
-                }
-              >
-                <div className="text-sm font-semibold text-foreground">{option.title}</div>
-                <div className="mt-1 text-xs leading-relaxed text-text-secondary">
-                  {option.blurb}
-                </div>
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-56 flex-1">
-              <label htmlFor="key-name" className="mb-1 block text-xs uppercase tracking-wider text-text-muted">
+        <div className="space-y-5 px-5 py-5">
+          <fieldset>
+            <legend className="mb-2 text-xs font-medium uppercase tracking-wider text-text-muted">
+              Type
+            </legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <RadioCard
+                name="key-kind"
+                value="publishable"
+                checked={kind === "publishable"}
+                onChange={(v) => setKind(v as "publishable")}
+                title="Publishable"
+                meta="grit_pk_..."
+                icon={<Globe className="h-4 w-4" />}
+                description="Safe in a browser or a mobile app. Reaches public endpoints only, never a protected one, and stays readable here because it is not a secret."
+              />
+              <RadioCard
+                name="key-kind"
+                value="secret"
+                checked={kind === "secret"}
+                onChange={(v) => setKind(v as "secret")}
+                title="Secret"
+                meta="grit_sk_..."
+                icon={<Server className="h-4 w-4" />}
+                description="Server to server. Acts as you, with your roles and permissions. Shown once when it is created and never again."
+              />
+            </div>
+          </fieldset>
+
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem_10rem]">
+            <div>
+              <label htmlFor="key-name" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted">
                 Name
               </label>
               <input
@@ -240,8 +373,8 @@ export default function APIKeysPage() {
                 className={inputClasses()}
               />
             </div>
-            <div className="w-40">
-              <label htmlFor="key-expiry" className="mb-1 block text-xs uppercase tracking-wider text-text-muted">
+            <div>
+              <label htmlFor="key-expiry" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted">
                 Expires in (days)
               </label>
               <input
@@ -253,8 +386,8 @@ export default function APIKeysPage() {
                 className={inputClasses()}
               />
             </div>
-            <div className="w-40">
-              <label htmlFor="key-rpm" className="mb-1 block text-xs uppercase tracking-wider text-text-muted">
+            <div>
+              <label htmlFor="key-rpm" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted">
                 Limit (req/min)
               </label>
               <input
@@ -268,11 +401,13 @@ export default function APIKeysPage() {
             </div>
           </div>
 
-          {/* Restrictions. Two axes: what you may call, and where from. */}
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {/* Restrictions. Two axes: what you may call, and where from. The
+              second only exists for a publishable key, so for a secret key it
+              is not shown rather than shown and ignored. */}
+          <div className={"grid gap-4 " + (kind === "publishable" ? "sm:grid-cols-2" : "")}>
             <div>
-              <label htmlFor="key-endpoints" className="mb-1 block text-xs uppercase tracking-wider text-text-muted">
-                Endpoints
+              <label htmlFor="key-endpoints" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted">
+                Allowed endpoints
               </label>
               <textarea
                 id="key-endpoints"
@@ -280,119 +415,127 @@ export default function APIKeysPage() {
                 onChange={(e) => setEndpoints(e.target.value)}
                 rows={3}
                 placeholder={"GET /api/v1/public/products\nGET /api/v1/public/products/*"}
-                className={inputClasses() + " font-mono text-xs"}
+                className={inputClasses({ multiline: true }) + " font-mono text-xs"}
               />
-              <p className="mt-1 text-xs text-text-muted">
-                One per line, method and path. A trailing * matches a prefix. Empty means
-                every route the kind already allows.
+              <p className="mt-1.5 text-[13px] text-text-muted">
+                One per line, method and path. A trailing * matches a prefix. Empty means every
+                route this type already allows.
               </p>
             </div>
-            <div>
-              <label htmlFor="key-origins" className="mb-1 block text-xs uppercase tracking-wider text-text-muted">
-                Browser origins
-              </label>
-              <textarea
-                id="key-origins"
-                value={origins}
-                onChange={(e) => setOrigins(e.target.value)}
-                rows={3}
-                placeholder={"https://shopfront.com\nhttp://localhost:3000"}
-                className={inputClasses() + " font-mono text-xs"}
-              />
-              <p className="mt-1 text-xs text-text-muted">
-                Leave empty for a mobile app: native clients send no Origin header, so an
-                allowlist would reject every request they make. It also stops nothing that
-                is not a browser.
-              </p>
-            </div>
+            {kind === "publishable" && (
+              <div>
+                <label htmlFor="key-origins" className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted">
+                  Browser origins
+                </label>
+                <textarea
+                  id="key-origins"
+                  value={origins}
+                  onChange={(e) => setOrigins(e.target.value)}
+                  rows={3}
+                  placeholder={"https://shopfront.com\nhttp://localhost:3000"}
+                  className={inputClasses({ multiline: true }) + " font-mono text-xs"}
+                />
+                <p className="mt-1.5 text-[13px] text-text-muted">
+                  Leave it empty for a mobile app: native clients send no Origin header, so an
+                  allowlist would reject every request they make. It also stops nothing that is
+                  not a browser.
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="mt-4">
-            <Button
-              onClick={submit}
-              disabled={!name.trim()}
-              loading={create.isPending}
-            >
+          <div>
+            <Button onClick={submit} disabled={!name.trim()} loading={create.isPending}>
               {!create.isPending && <Plus className="h-3.5 w-3.5" />}
               Create {kind === "publishable" ? "publishable" : "secret"} key
             </Button>
+            <Note className="mt-2.5">
+              {kind === "publishable"
+                ? "A publishable key is readable from the table below whenever you need it again."
+                : "A secret key is shown once, in a dialog, and the server keeps only a hash of it."}
+            </Note>
           </div>
         </div>
+      </section>
 
-        {/* ── List ── */}
-        <div className="overflow-hidden rounded-xl border border-border bg-bg-secondary">
+      {/* The keys.
+          Revocation is a timestamp rather than a delete, because "which key
+          did this?" is a question people ask about keys that were turned off
+          months ago. So dead keys stay, behind a filter that opens on the
+          ones that still work. */}
+      <section className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <h2 className="text-[15px] font-semibold text-foreground">Keys</h2>
+          <Segmented
+            label="Which keys to show"
+            value={shown}
+            onChange={setShown}
+            options={[
+              { value: "active", label: "Active", count: counts.active },
+              { value: "inactive", label: "Inactive", count: counts.inactive },
+              { value: "all", label: "All", count: counts.all },
+            ]}
+          />
+        </header>
+
+        {isLoading ? (
+          <div className="px-5 py-12 text-center">
+            <Loader2 className="mx-auto h-4 w-4 animate-spin text-text-muted" aria-hidden="true" />
+          </div>
+        ) : visible.length === 0 ? (
+          <EmptyState
+            icon={<KeyRound className="h-5 w-5" />}
+            title={keys.length === 0 ? "No API keys yet" : "No " + shown + " keys"}
+            description={
+              keys.length === 0
+                ? "Create one above for a script, a cron job, or an integration, and it appears here with its last use."
+                : "Every key you have is in one of the other tabs."
+            }
+          />
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-text-muted">
-                  <th className="px-4 py-3 font-medium">Name</th>
+                <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-5 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Key</th>
                   <th className="px-4 py-3 font-medium">Last used</th>
+                  <th className="px-4 py-3 font-medium">Expires</th>
                   <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3" />
+                  <th className="px-5 py-3" />
                 </tr>
               </thead>
               <tbody>
-                {isLoading && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center">
-                      <Loader2 className="mx-auto h-4 w-4 animate-spin text-text-muted" />
-                    </td>
-                  </tr>
-                )}
-                {!isLoading && keys.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-text-muted">
-                      No API keys yet. Create one for a script, a cron job, or an integration.
-                    </td>
-                  </tr>
-                )}
-                {keys.map((k) => {
+                {visible.map((k) => {
                   const expired = !!k.expires_at && new Date(k.expires_at) < new Date();
-                  const dead = !!k.revoked_at || expired;
+                  const off = !!k.revoked_at || expired;
+                  const status: { label: string; tone: PillTone } = k.revoked_at
+                    ? { label: "Revoked", tone: "bad" }
+                    : expired
+                      ? { label: "Expired", tone: "warn" }
+                      : { label: "Active", tone: "good" };
                   return (
-                    <tr key={k.id} className="border-b border-border/50 last:border-0">
-                      <td className="px-4 py-3">
-                        <span className={dead ? "text-text-muted line-through" : "text-foreground"}>
+                    <tr key={k.id} className="border-b border-border/60 last:border-0">
+                      <td className="px-5 py-3 align-top">
+                        <span className={off ? "text-text-muted line-through" : "text-foreground"}>
                           {k.name}
                         </span>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          <span
-                            className={
-                              "rounded-full px-2 py-0.5 text-[11px] " +
-                              (k.kind === "publishable"
-                                ? "bg-info/15 text-info"
-                                : "bg-warning/15 text-warning")
-                            }
-                          >
-                            {k.kind === "publishable" ? "publishable" : "secret"}
-                          </span>
-                          {k.rate_limit > 0 && (
-                            <span className="rounded-full bg-bg-tertiary px-2 py-0.5 text-[11px] text-text-muted">
-                              {k.rate_limit}/min
-                            </span>
-                          )}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Pill tone={k.kind === "publishable" ? "info" : "warn"}>{k.kind}</Pill>
+                          {k.rate_limit > 0 && <Pill>{k.rate_limit}/min</Pill>}
                           {k.endpoints && k.endpoints.length > 0 && (
-                            <span
-                              className="rounded-full bg-bg-tertiary px-2 py-0.5 text-[11px] text-text-muted"
-                              title={k.endpoints.join("\n")}
-                            >
-                              {k.endpoints.length} endpoint
-                              {k.endpoints.length === 1 ? "" : "s"}
-                            </span>
+                            <Pill title={k.endpoints.join("\n")}>
+                              {k.endpoints.length} endpoint{k.endpoints.length === 1 ? "" : "s"}
+                            </Pill>
                           )}
                           {k.origins && k.origins.length > 0 && (
-                            <span
-                              className="rounded-full bg-bg-tertiary px-2 py-0.5 text-[11px] text-text-muted"
-                              title={k.origins.join("\n")}
-                            >
-                              {k.origins.length} origin
-                              {k.origins.length === 1 ? "" : "s"}
-                            </span>
+                            <Pill title={k.origins.join("\n")}>
+                              {k.origins.length} origin{k.origins.length === 1 ? "" : "s"}
+                            </Pill>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         {/*
                           A publishable key is shown in full, with a copy button.
                           It is already in every copy of your app, so hiding it here
@@ -400,7 +543,9 @@ export default function APIKeysPage() {
                           when setting up a new environment.
 
                           A secret key shows only its prefix, because only the hash
-                          was ever stored.
+                          was ever stored. The prefix is how the server finds the row
+                          to compare against, so it is not a secret and it is the one
+                          part that tells two secret keys apart.
                         */}
                         {k.kind === "publishable" && k.token ? (
                           <div className="flex items-center gap-2">
@@ -417,7 +562,7 @@ export default function APIKeysPage() {
                                   toast.error("Could not copy. Select it and copy by hand.");
                                 }
                               }}
-                              className="rounded p-1 text-text-muted transition hover:bg-bg-hover hover:text-foreground"
+                              className="rounded p-1 text-text-muted transition-grit hover:bg-bg-hover hover:text-foreground"
                               aria-label={"Copy " + k.name}
                             >
                               <Copy className="h-3.5 w-3.5" />
@@ -429,24 +574,25 @@ export default function APIKeysPage() {
                           </code>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-text-muted">{relative(k.last_used_at)}</td>
-                      <td className="px-4 py-3">
-                        {k.revoked_at ? (
-                          <span className="rounded-full bg-danger/15 px-2 py-0.5 text-xs text-danger">Revoked</span>
-                        ) : expired ? (
-                          <span className="rounded-full bg-warning/15 px-2 py-0.5 text-xs text-warning">Expired</span>
-                        ) : (
-                          <span className="rounded-full bg-success/15 px-2 py-0.5 text-xs text-success">Active</span>
-                        )}
+                      <td className="px-4 py-3 align-top text-[13px] text-text-muted">
+                        {relative(k.last_used_at)}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        {!dead && (
+                      <td className="px-4 py-3 align-top text-[13px] text-text-muted">
+                        {expiry(k.expires_at)}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <Pill tone={status.tone} dot>
+                          {status.label}
+                        </Pill>
+                      </td>
+                      <td className="px-5 py-3 align-top text-right">
+                        {!off && (
                           <button
                             type="button"
                             onClick={() => setPendingRevoke(k)}
-                            className="text-xs text-text-muted hover:text-danger"
+                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] text-text-muted transition-grit hover:bg-danger-soft hover:text-danger"
                           >
-                            <Trash2 className="mr-1 inline h-3 w-3" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             Revoke
                           </button>
                         )}
@@ -457,18 +603,15 @@ export default function APIKeysPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        )}
+      </section>
 
-        <p className="mt-4 flex items-start gap-2 text-xs text-text-muted">
-          <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>
-            Send a key as <code>X-API-Key: grit_&hellip;</code> or{" "}
-            <code>Authorization: Bearer grit_&hellip;</code>. Revoked keys stay listed, because
-            &ldquo;which key did this?&rdquo; is a question people ask about keys that were
-            turned off months ago.
-          </span>
-        </p>
-      </div>
+      <Note className="mt-4">
+        Send a key as <code className="font-mono">X-API-Key: grit_&hellip;</code> or{" "}
+        <code className="font-mono">Authorization: Bearer grit_&hellip;</code>. Revoked keys stay
+        listed under Inactive, because &ldquo;which key did this?&rdquo; is a question people ask
+        about keys that were turned off months ago.
+      </Note>
 
       <ConfirmModal
         open={!!pendingRevoke}
