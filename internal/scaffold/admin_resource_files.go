@@ -3635,7 +3635,10 @@ export function ConfirmModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-bg-secondary p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      {/* The house entrance: 260ms, 8px up, 0.97. Every dialog, popover and
+          sheet uses this one, because four surfaces arriving four different
+          ways is what makes an interface feel assembled rather than made. */}
+      <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-bg-secondary p-6 shadow-2xl motion-safe:animate-grit-enter">
         <div className="flex items-start gap-4">
           <div className={` + "`" + `flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
             variant === "danger" ? "bg-danger/10" : "bg-accent/10"

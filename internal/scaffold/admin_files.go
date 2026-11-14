@@ -305,6 +305,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "ui", "radio-card.tsx"):      adminRadioCardPrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "hub-tile.tsx"):        adminHubTilePrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "note.tsx"):            adminNotePrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "copy-button.tsx"):     adminCopyButtonPrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "stat-strip.tsx"):      adminStatStripPrimitive(),
 		filepath.Join(adminRoot, "lib", "export.ts"):                        adminExportLib(),
 		filepath.Join(adminRoot, "hooks", "use-system-health.ts"):           adminUseSystemHealth(),
@@ -837,6 +838,25 @@ func adminScreenCSS() string {
   --animate-grit-shake: grit-shake 220ms var(--ease-grit);
   --animate-grit-rise: grit-rise 240ms var(--ease-grit);
   --animate-grit-saved: grit-saved 1200ms var(--ease-grit);
+
+  /* One entrance for everything that arrives on top of the page: a dialog, a
+     popover, a menu, a toast. They used to each pick their own combination of
+     fade and zoom at their own duration, which is four things appearing in
+     four different ways in one interface. 8px up and 0.97 reads as coming
+     forward rather than growing. */
+  --animate-grit-enter: grit-enter var(--t-enter) var(--ease-grit);
+
+  /* The two lights. Neither carries information on its own: the sweep says a
+     busy button is still busy, and the sheen is the one flourish the panel
+     allows itself, on the one primary action a page has. */
+  --animate-grit-sweep: grit-sweep 1300ms var(--ease-grit) infinite;
+  --animate-grit-sheen: grit-sheen 700ms var(--ease-grit);
+
+  /* Tailwind ships animate-spin at 1s. 0.7s is the speed at which a spinner
+     reads as working rather than as waiting, and setting it here moves all
+     ninety-odd spinners in the panel at once instead of one class string at
+     a time. */
+  --animate-spin: spin 0.7s linear infinite;
 }
 
 /* The admin's transition, named.
@@ -882,9 +902,108 @@ func adminScreenCSS() string {
   100% { box-shadow: inset 0 0 0 9999px transparent; }
 }
 
+/* Arriving: forward and up, never growing from nothing. */
+@keyframes grit-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* A light crossing a surface. Parked outside it between runs, which is why
+   neither of these needs an opacity: the overflow does the hiding. */
+@keyframes grit-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+/* translate, not transform.
+ *
+ * Tailwind v4 parks the element with before:-translate-x-full, and in v4 that
+ * sets the standalone translate property rather than transform. A
+ * keyframe on transform does not replace it, it composes with it: the light
+ * would start a full width further left and finish at the edge it was
+ * supposed to leave from. Animating the property the parking used is what
+ * makes it a sweep instead of a twitch. */
+@keyframes grit-sheen {
+  from { translate: -100%; }
+  to { translate: 100%; }
+}
+
 :root {
   --t-press: 120ms;
   --t-enter: 260ms;
+}
+
+/* Base layer, so a Tailwind utility on the element still wins.
+ *
+ * These are the behaviours that belong to a kind of element rather than to a
+ * component, which is what stops every call site having to remember them. */
+@layer base {
+  /* A busy button keeps its colour and gains a faint light crossing it.
+   *
+   * Greying out a saving button says "you cannot do this" when the truth is
+   * "I am doing it", and the spinner alone is a 16px glyph that somebody who
+   * looked away will miss entirely. The light is the part you catch out of
+   * the corner of an eye. */
+  button[aria-busy="true"],
+  a[aria-busy="true"] {
+    position: relative;
+    overflow: hidden;
+    cursor: progress;
+  }
+  button[aria-busy="true"]::after,
+  a[aria-busy="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, white 20%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-100%);
+    animation: var(--animate-grit-sweep);
+  }
+
+  /* While busy, the idle icon goes.
+   *
+   * A spinner beside a plus sign is two answers to one question. Doing it
+   * here rather than in the component is what lets a call site write
+   * <Button loading><Plus/>Create</Button> and get the right thing, instead
+   * of every call site hand-rolling {!loading && <Plus/>} and half of them
+   * forgetting. */
+  button[aria-busy="true"] > svg:not(.animate-spin) {
+    display: none;
+  }
+
+  /* The focus ring arrives rather than appearing. 120ms, and on the offset
+     only, so the ring itself is instant and it is the distance that moves. */
+  :focus-visible {
+    transition: outline-offset 120ms var(--ease-grit);
+  }
+}
+
+/* The one flourish the panel allows itself.
+ *
+ * A single light crossing the primary button on hover, once, over 700ms. The
+ * standard it comes from says one button per screen; the panel's own rule is
+ * one primary action per page, so the variant can carry it without anybody
+ * deciding again. */
+@utility grit-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+/* One per screen, and this is the one.
+ *
+ * The sheen rides on the primary variant, and a page can hold several primary
+ * buttons: the account page has six, one per card, and lighting all six on
+ * hover is a flourish that has become wallpaper. Scoping the animation to the
+ * page header's action slot picks exactly the button the panel already calls
+ * the page's primary action. Everywhere else the element is still there and
+ * still parked off the left edge, costing nothing and doing nothing. */
+[data-page-actions] .grit-sheen:hover::before {
+  animation: var(--animate-grit-sheen);
 }
 
 /* The off switch, which the scaffold did not have anywhere at all.
@@ -907,6 +1026,30 @@ func adminScreenCSS() string {
     scroll-behavior: auto !important;
     transition-property: color, background-color, border-color, outline-color,
       text-decoration-color, fill, stroke, opacity, box-shadow !important;
+  }
+
+  /* Except the ones that are the only sign anything is happening.
+   *
+   * The blanket rule above runs every animation once for a hundredth of a
+   * millisecond, which for a spinner means it completes one rotation and
+   * stops. The panel has ninety of them, and with reduced motion on, every
+   * saving button, every loading table and every refetching list looked
+   * exactly like an idle one. Reduced motion is a request for less movement,
+   * not for less information.
+   *
+   * So a progress indicator keeps going, slowly. A decorative sweep does not:
+   * it carries nothing the colour and the spinner do not already say. */
+  .animate-spin,
+  .animate-pulse,
+  [data-grit-progress] {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
+  button[aria-busy="true"]::after,
+  a[aria-busy="true"]::after,
+  .grit-sheen::before {
+    animation: none !important;
+    display: none !important;
   }
 }
 
@@ -957,6 +1100,20 @@ func adminScreenCSS() string {
  */
 
 ` + themePaletteCSS() + `
+/* No sideways scroll on a phone.
+ *
+ * At 375px the keys table is 835px wide inside an overflow-x-auto box, and
+ * every overflowing element on the page has a clipping ancestor, and the
+ * document still reported a scrollWidth of 446. A root that grows for
+ * something already contained is the one case this is for: clip rather than
+ * hidden, so position:sticky inside the page keeps working.
+ *
+ * Tested at 375px on the pages with the widest tables. */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);

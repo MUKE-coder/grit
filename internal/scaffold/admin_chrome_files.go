@@ -98,7 +98,7 @@ export function DarkModeToggle({ className = "" }: { className?: string }) {
       aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       aria-pressed={mode === "dark"}
       suppressHydrationWarning
-      className={"inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary hover:bg-bg-hover transition-colors " + className}
+      className={"inline-flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary transition-grit hover:bg-bg-hover " + className}
     >
       {hydrated && mode === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
@@ -333,7 +333,7 @@ export function NotificationBell() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={"Notifications" + (unread > 0 ? " (" + unread + " unread)" : "")}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary hover:bg-bg-hover transition-colors"
+        className="relative inline-flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary transition-grit hover:bg-bg-hover"
       >
         <Bell className="h-4 w-4" />
         {unread > 0 && (
@@ -574,7 +574,15 @@ export function PageHeader({
             shrink-0 and whitespace-nowrap so a label like "Open full Pulse"
             does not wrap mid-word when it shares the row with a title. */}
         {actions && (
-          <div className="flex shrink-0 items-center justify-end gap-2 whitespace-nowrap">
+          // data-page-actions marks the page's own action slot. The sheen on
+          // a primary button is scoped to it in globals.css, because the
+          // standard allows one per screen and this is the one: the panel's
+          // rule is already one primary action per page and it lives here.
+          // Without the scope, the account page lit six buttons at once.
+          <div
+            data-page-actions=""
+            className="flex shrink-0 items-center justify-end gap-2 whitespace-nowrap"
+          >
             {actions}
           </div>
         )}
@@ -1385,9 +1393,13 @@ export function SessionWatchdog() {
 
         <div className="mt-5">
           <div className="h-1 w-full overflow-hidden rounded-full bg-bg-hover">
+            {/* scaleX, not width. A width transition relayouts the page on
+                every frame for the whole countdown; a transform is composited
+                and never touches layout. They look the same. */}
             <div
-              className="h-full bg-accent transition-[width] duration-1000 ease-linear"
-              style={{ width: ((remaining / COUNTDOWN_MS) * 100) + "%" }}
+              data-grit-progress=""
+              className="h-full w-full origin-left bg-accent transition-transform duration-1000 ease-linear"
+              style={{ transform: "scaleX(" + remaining / COUNTDOWN_MS + ")" }}
             />
           </div>
         </div>

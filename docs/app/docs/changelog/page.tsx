@@ -72,6 +72,105 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.542.0 */}
+            <div className="mb-12" id="v3.542.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.542.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Reduced motion was switching off the spinners</h3>
+                <p>
+                  The admin panel against the premium-feel standard:{' '}
+                  <a
+                    href="https://jb.desishub.com/blog/details-that-make-an-app-feel-premium"
+                    className="text-accent hover:underline"
+                  >
+                    one curve, 150 to 300ms, transform and opacity only,
+                    reduced motion, tokens
+                  </a>
+                  . Most of it was already there. The gap was at the end of the
+                  list.
+                </p>
+
+                <h4>Ninety spinners that stopped spinning</h4>
+                <p>
+                  The reduced-motion block set{' '}
+                  <code>animation-duration: 0.01ms</code> on everything, which
+                  for a spinner means it completes one rotation and stops. The
+                  panel has about ninety of them, so with the preference on,
+                  every saving button, every loading table and every
+                  refetching list looked exactly like an idle one.
+                </p>
+                <p>
+                  Reduced motion is a request for less movement, not for less
+                  information. A progress indicator now slows to 1.6s and keeps
+                  going; the decorative sweep stops outright, because it
+                  carries nothing the colour and the spinner do not already
+                  say.
+                </p>
+
+                <h4>A countdown bar that relayouted the page every frame</h4>
+                <p>
+                  The session-timeout ring used <code>transition-[width]</code>{' '}
+                  for a second at a time, every second. It is a{' '}
+                  <code>scaleX</code> now: composited, never touches layout,
+                  looks identical. The form sheet did the same thing when
+                  maximised, and no longer animates at all, because a
+                  two-state toggle somebody pressed on purpose does not need
+                  easing into.
+                </p>
+
+                <h4>A busy button that is still the same button</h4>
+                <p>
+                  It keeps its colour, gains a faint light crossing it every
+                  1.3s, sets <code>aria-busy</code>, takes{' '}
+                  <code>cursor: progress</code>, and changes its label. Greying
+                  it out says &ldquo;you cannot do this&rdquo; when the truth
+                  is &ldquo;I am doing it&rdquo;. A base-layer rule hides the
+                  idle icon beside the spinner, so a call site can write{' '}
+                  <code>{'<Button loading><Plus/>Create</Button>'}</code> and
+                  get the right thing instead of every call site hand-rolling
+                  the same conditional and some of them forgetting.
+                </p>
+
+                <h4>One flourish, on one button</h4>
+                <p>
+                  A single light crosses the page&apos;s primary action on
+                  hover, once, over 700ms. It first went on the primary
+                  variant, which lit six buttons at once on the account page:
+                  a flourish on six buttons is wallpaper. It is scoped to the
+                  page header&apos;s action slot, which the panel already
+                  treats as the one primary action per page.
+                </p>
+
+                <h4>Copying says so on the button</h4>
+                <p>
+                  It was a toast in the corner of the screen, which is the
+                  furthest point from where the person was looking, and a toast
+                  is for something that happened somewhere else. The icon
+                  becomes a tick and the label becomes <strong>Copied</strong>{' '}
+                  for 1.6 seconds, with a live region so a screen reader hears
+                  it too.
+                </p>
+
+                <h4>And the rest</h4>
+                <p>
+                  One shared entrance for every dialog, 260ms from 8px below at
+                  0.97. Spinners at 0.7s. The four chrome buttons in the top
+                  bar grow from 36 to 44px on a touch screen, as do the copy
+                  buttons and the smallest controls in dashboard settings. Ten
+                  tests pin all of it, including one that strips comments
+                  first: the first version matched the paragraph in{' '}
+                  <code>globals.css</code> explaining why{' '}
+                  <code>transition-all</code> was removed.
+                </p>
+              </div>
+            </div>
+
             {/* v3.541.0 */}
             <div className="mb-12" id="v3.541.0">
               <div className="flex items-center gap-3 mb-4">

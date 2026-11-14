@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.542.0 - November 14, 2026
+
+### Reduced motion was switching off the spinners
+
+The admin panel against the premium-feel standard: [one curve, 150 to 300ms, transform and opacity only, reduced motion, tokens](https://jb.desishub.com/blog/details-that-make-an-app-feel-premium) . Most of it was already there. The gap was at the end of the list.
+
+#### Ninety spinners that stopped spinning
+
+The reduced-motion block set `animation-duration: 0.01ms` on everything, which for a spinner means it completes one rotation and stops. The panel has about ninety of them, so with the preference on, every saving button, every loading table and every refetching list looked exactly like an idle one.
+
+Reduced motion is a request for less movement, not for less information. A progress indicator now slows to 1.6s and keeps going; the decorative sweep stops outright, because it carries nothing the colour and the spinner do not already say.
+
+#### A countdown bar that relayouted the page every frame
+
+The session-timeout ring used `transition-[width]` for a second at a time, every second. It is a `scaleX` now: composited, never touches layout, looks identical. The form sheet did the same thing when maximised, and no longer animates at all, because a two-state toggle somebody pressed on purpose does not need easing into.
+
+#### A busy button that is still the same button
+
+It keeps its colour, gains a faint light crossing it every 1.3s, sets `aria-busy`, takes `cursor: progress`, and changes its label. Greying it out says &ldquo;you cannot do this&rdquo; when the truth is &ldquo;I am doing it&rdquo;. A base-layer rule hides the idle icon beside the spinner, so a call site can write `Create` and get the right thing instead of every call site hand-rolling the same conditional and some of them forgetting.
+
+#### One flourish, on one button
+
+A single light crosses the page's primary action on hover, once, over 700ms. It first went on the primary variant, which lit six buttons at once on the account page: a flourish on six buttons is wallpaper. It is scoped to the page header's action slot, which the panel already treats as the one primary action per page.
+
+#### Copying says so on the button
+
+It was a toast in the corner of the screen, which is the furthest point from where the person was looking, and a toast is for something that happened somewhere else. The icon becomes a tick and the label becomes **Copied** for 1.6 seconds, with a live region so a screen reader hears it too.
+
+#### And the rest
+
+One shared entrance for every dialog, 260ms from 8px below at 0.97. Spinners at 0.7s. The four chrome buttons in the top bar grow from 36 to 44px on a touch screen, as do the copy buttons and the smallest controls in dashboard settings. Ten tests pin all of it, including one that strips comments first: the first version matched the paragraph in `globals.css` explaining why `transition-all` was removed.
+
+
 ## v3.541.0 - November 14, 2026
 
 ### The last page, and the end of the redesign

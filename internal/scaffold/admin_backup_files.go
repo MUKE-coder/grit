@@ -117,7 +117,7 @@ import {
   useBackupRetention,
   type Backup, type BackupFrequency,
 } from "@/hooks/use-backups";
-import { Database, Download, RefreshCw, Loader2, AlertCircle, Clock, Save, Package, Copy } from "@/lib/icons";
+import { Database, Download, RefreshCw, Loader2, AlertCircle, Clock, Save, Package } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
 import { Pill, type PillTone } from "@/components/ui/pill";
@@ -125,8 +125,8 @@ import { Note } from "@/components/ui/note";
 import { EmptyState } from "@/components/ui/empty-state";
 import { RadioCard } from "@/components/ui/radio-card";
 import { PageHeader } from "@/components/chrome/PageHeader";
+import { CopyButton } from "@/components/ui/copy-button";
 import { getApiErrorMessage } from "@/lib/api-core";
-import { toast } from "sonner";
 
 const FREQUENCIES: { key: BackupFrequency; label: string; hint: string }[] = [
   { key: "daily", label: "Daily", hint: "Every day" },
@@ -503,21 +503,7 @@ export default function BackupsPage() {
             <code className="min-w-0 flex-1 truncate font-mono text-[13px] text-foreground">
               grit restore backup.zip
             </code>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText("grit restore backup.zip");
-                  toast.success("Command copied.");
-                } catch {
-                  toast.error("Could not copy. Select it and copy by hand.");
-                }
-              }}
-              className="shrink-0 rounded p-1 text-text-muted transition-grit hover:bg-bg-hover hover:text-foreground"
-              aria-label="Copy the restore command"
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </button>
+            <CopyButton value="grit restore backup.zip" label="Copy the restore command" />
           </div>
 
           <Note className="mt-3">

@@ -1049,14 +1049,14 @@ function Section({ description, widgets, enabled, onChange }: SectionProps) {
                     <button
                       onClick={() => setAllInGroup(moduleKeys, true)}
                       disabled={moduleAll}
-                      className="rounded px-1.5 py-0.5 text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="min-h-6 rounded px-2 py-1 text-text-secondary transition-grit hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:min-h-11 pointer-coarse:min-w-11"
                     >
                       All
                     </button>
                     <button
                       onClick={() => setAllInGroup(moduleKeys, false)}
                       disabled={moduleNone}
-                      className="rounded px-1.5 py-0.5 text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="min-h-6 rounded px-2 py-1 text-text-secondary transition-grit hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:min-h-11 pointer-coarse:min-w-11"
                     >
                       None
                     </button>

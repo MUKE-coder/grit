@@ -153,7 +153,7 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
         type="button"
         onClick={onOpenMenu}
         aria-label="Open menu"
-        className="-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground md:hidden"
+        className="-ml-1 inline-flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded-md text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground md:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -207,7 +207,7 @@ export function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
           type="button"
           onClick={onRefresh}
           aria-label="Refresh this page's data"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground"
+          className="inline-flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 items-center justify-center rounded-md text-text-secondary transition-grit hover:bg-bg-hover hover:text-foreground"
         >
           <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
         </button>

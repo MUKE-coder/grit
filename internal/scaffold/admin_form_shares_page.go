@@ -28,9 +28,10 @@ import {
 import { getApiErrorMessage } from "@/lib/api-core";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
-import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink, Activity, Pencil, Package, Shield, Link2 } from "@/lib/icons";
+import { Plus, Lock, Unlock, Trash2, X, ExternalLink, Activity, Pencil, Package, Shield, Link2 } from "@/lib/icons";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
+import { CopyButton } from "@/components/ui/copy-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { inputClasses } from "@/components/ui/input";
@@ -187,15 +188,6 @@ function ShareRow({ share }: { share: FormShare }) {
   const remove = () =>
     deleteM.mutate(share.id, { onSuccess: () => toast.success("Share deleted") });
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(publicURL);
-      toast.success("Link copied");
-    } catch {
-      toast.error("Could not copy. Your browser blocked the clipboard, so select the link and copy it by hand.");
-    }
-  };
-
   return (
     <>
     <tr className="hover:bg-bg-hover">
@@ -243,13 +235,15 @@ function ShareRow({ share }: { share: FormShare }) {
           >
             <Activity className="h-3 w-3" /> Audit
           </button>
-          <button
-            onClick={copyLink}
-            className="inline-flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-2 py-1 text-xs text-text-secondary hover:bg-bg-hover hover:text-foreground"
-            title="Copy public link"
+          {/* The tick lands on the button that was pressed. A toast in the
+              corner is for something that happened somewhere else. */}
+          <CopyButton
+            value={publicURL}
+            label={"Copy the public link for " + (share.label || share.resource_name)}
+            className="border border-border bg-bg-elevated text-xs"
           >
-            <Copy className="h-3 w-3" /> Copy
-          </button>
+            Copy
+          </CopyButton>
           <a
             href={publicURL}
             target="_blank"

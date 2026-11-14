@@ -790,7 +790,10 @@ export function FormSheet<T extends object = Record<string, unknown>>({
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div
         className={
-          "relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-bg-secondary shadow-2xl transition-[width] duration-200 md:max-h-none md:h-full md:max-w-none md:rounded-none " +
+          // No transition on the width. Maximising relayouts the sheet and
+          // everything in it on every frame for 200ms, and a two-state toggle
+          // somebody pressed on purpose does not need easing into.
+          "relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-bg-secondary shadow-2xl md:max-h-none md:h-full md:max-w-none md:rounded-none " +
           widthClass
         }
       >

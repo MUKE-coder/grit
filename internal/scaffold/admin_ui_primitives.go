@@ -678,7 +678,15 @@ const STATES: Record<ButtonState, string> = {
 };
 
 const VARIANTS: Record<ButtonVariant, string> = {
+  // grit-sheen gives this one a single light crossing it on hover. It is on
+  // the primary variant because the panel already allows one primary action
+  // per page, so "one per screen" needs no second decision. The ::before it
+  // relies on is in globals.css, under @layer base.
+  // grit-sheen only positions the element. What animates it is a rule in
+  // globals.css scoped to [data-page-actions], so the flourish lands on the
+  // page's one primary action rather than on all six of them.
   primary:
+    "grit-sheen " +
     "bg-accent text-accent-fg hover:bg-accent-hover focus-visible:ring-accent",
   secondary:
     "bg-bg-tertiary text-foreground hover:bg-bg-hover focus-visible:ring-border",
@@ -705,6 +713,10 @@ const SIZES: Record<ButtonSize, string> = {
 
 const BASE =
   "inline-flex shrink-0 items-center justify-center font-medium " +
+  // The sheen's element: parked off the left edge, invisible until the
+  // hover animation walks it across and overflow-hidden clips it away again.
+  "before:pointer-events-none before:absolute before:inset-0 " +
+  "before:-translate-x-full before:bg-[linear-gradient(100deg,transparent_30%,color-mix(in_srgb,white_26%,transparent)_50%,transparent_70%)] " +
   // Named properties, never transition-grit. Transform and colour are the two
   // that cost nothing to animate; transition-grit would quietly pick up width
   // and height the day a utility adds one, and animating those relayouts the
@@ -811,6 +823,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={buttonClasses({ variant, size, state, className })}
         {...rest}
       >
+        {/* animate-spin is load bearing beyond the spin: the base layer
+            hides every other svg in a busy button by matching
+            :not(.animate-spin), and reduced motion keeps this one turning
+            by matching it too. */}
         {loading && (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
         )}

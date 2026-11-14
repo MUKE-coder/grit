@@ -498,3 +498,97 @@ export function StatStrip({
 }
 `
 }
+
+// adminCopyButtonPrimitive is components/ui/copy-button.tsx.
+//
+// Copying was a toast in the corner of the screen, which is the wrong place
+// for it twice over: it is the furthest point from where the person is
+// looking, and a toast is for something that happened elsewhere. Copying a
+// key is something that happened exactly here, under the pointer, because
+// they just pressed this.
+//
+// So the button says it itself: the icon becomes a tick, the label becomes
+// "Copied", and it goes back after 1.6 seconds. A live region carries the
+// same word to a screen reader, which the icon swap on its own does not.
+func adminCopyButtonPrimitive() string {
+	return `"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Copy, Check } from "@/lib/icons";
+
+export interface CopyButtonProps {
+  /** What goes on the clipboard. */
+  value: string;
+  /** Names it for a screen reader: "Copy the publishable key". */
+  label: string;
+  /** Shown beside the icon. Omit for an icon-only button. */
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export function CopyButton({ value, label, children, className = "" }: CopyButtonProps) {
+  const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clearing on unmount, because the row this sits in can be revoked,
+  // filtered away or paginated past inside the 1.6 seconds.
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const copy = async () => {
+    if (timer.current) clearTimeout(timer.current);
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setFailed(false);
+    } catch {
+      // An insecure origin, or a document that is not focused. Saying so
+      // beats a tick that lied.
+      setCopied(false);
+      setFailed(true);
+    }
+    timer.current = setTimeout(() => {
+      setCopied(false);
+      setFailed(false);
+    }, 1600);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      aria-label={label}
+      className={
+        "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[13px] " +
+        // 30x22 with a mouse is comfortable and with a thumb it is a miss.
+        // The drawn button is unchanged; the box grows to the 44px floor
+        // only where the pointer is coarse.
+        "pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:justify-center " +
+        "text-text-muted transition-grit hover:bg-bg-hover hover:text-foreground " +
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
+        (copied ? "text-success " : "") +
+        (failed ? "text-danger " : "") +
+        className
+      }
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
+      {children !== undefined && (
+        <span>{copied ? "Copied" : failed ? "Press Ctrl C" : children}</span>
+      )}
+      {/* The icon swap is invisible to a screen reader, so the word goes
+          somewhere it will be read. Polite: it is a confirmation, not an
+          interruption. */}
+      <span aria-live="polite" className="sr-only">
+        {copied ? "Copied" : failed ? "Could not reach the clipboard" : ""}
+      </span>
+    </button>
+  );
+}
+`
+}

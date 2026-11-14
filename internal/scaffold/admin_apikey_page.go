@@ -38,6 +38,7 @@ import {
   Server,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { inputClasses } from "@/components/ui/input";
 
 interface APIKey {
@@ -176,7 +177,7 @@ function RevealModal({ token, onClose }: { token: string; onClose: () => void })
         aria-modal="true"
         aria-labelledby="reveal-title"
         aria-describedby="reveal-body"
-        className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-bg-elevated shadow-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
+        className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-bg-elevated shadow-2xl motion-safe:animate-grit-enter"
       >
         <div className="flex items-start gap-3 border-b border-border px-5 py-4">
           <span
@@ -552,21 +553,10 @@ export default function APIKeysPage() {
                             <code className="max-w-64 truncate font-mono text-xs text-foreground">
                               {k.token}
                             </code>
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  await navigator.clipboard.writeText(k.token as string);
-                                  toast.success("Publishable key copied.");
-                                } catch {
-                                  toast.error("Could not copy. Select it and copy by hand.");
-                                }
-                              }}
-                              className="rounded p-1 text-text-muted transition-grit hover:bg-bg-hover hover:text-foreground"
-                              aria-label={"Copy " + k.name}
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
+                            {/* The confirmation belongs on the button, not in
+                                a corner of the screen: this happened here,
+                                under the pointer, because they pressed this. */}
+                            <CopyButton value={k.token} label={"Copy " + k.name} />
                           </div>
                         ) : (
                           <code className="font-mono text-xs text-text-muted">
