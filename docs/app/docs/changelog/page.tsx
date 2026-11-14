@@ -72,6 +72,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.543.1 */}
+            <div className="mb-12" id="v3.543.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.543.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Three answers to one question, and two of them were wrong</h3>
+                <p>
+                  Found while release-testing v3.543.0 by running the command
+                  it changed. On a <code>--single</code> project, and on the{' '}
+                  <code>--api --admin</code> shape that followed it,{' '}
+                  <code>grit new --i18n</code> scaffolded the whole project and
+                  then stopped with <code>no Go API found: run this from the
+                  root of a Grit project</code>. The module was there. It was
+                  in <code>api/</code>, which is where both of those shapes
+                  keep it. <code>grit add i18n</code> failed on the same
+                  projects for the same reason.
+                </p>
+                <p>
+                  Three separate functions resolved where a project keeps its
+                  Go module, each by looking for <code>go.mod</code>, and only
+                  one of them knew about <code>api/</code>. That one is{' '}
+                  <code>grit doctor</code>, which learned it in v3.517.1 when
+                  the same bug stopped it running on single projects at all.
+                  The other two did not learn anything, because nothing
+                  connected them.
+                </p>
+
+                <h4>The second one was worse, because it did not fail</h4>
+                <p>
+                  <code>grit versions</code> on a single project reported every
+                  framework library as <code>absent, not in go.mod</code>. It
+                  was reading a path that holds no <code>go.mod</code> at all,
+                  and <code>absent</code> is also exactly what a library you
+                  have not mounted looks like. A wrong answer that is
+                  indistinguishable from a right one is not going to be
+                  questioned, so that report had been quietly lying on every
+                  single project since the layout changed.
+                </p>
+                <p>
+                  There is one resolver now, in <code>internal/project</code>,
+                  and all three call it. The fix is not that{' '}
+                  <code>api/</code> was added to a list: it is that there is one
+                  list. A test pins every shape Grit scaffolds, the two cases
+                  that can go wrong in the other direction (a monorepo that
+                  also holds an <code>api/</code> directory still resolves to{' '}
+                  <code>apps/api</code>, and an <code>api/</code> directory with
+                  no module in it is not an API), and a guard that fails if any
+                  of the three re-inlines its own copy. That guard strips
+                  comments first, because both delegating functions explain in
+                  prose what their old candidate list used to be, which is the
+                  string a check for a candidate list looks for.
+                </p>
+                <p>
+                  The frontend half of i18n is unchanged. Those shapes use the
+                  Vite admin, which <code>AddI18n</code> does not wire, as
+                  before.
+                </p>
+              </div>
+            </div>
+
             {/* v3.543.0 */}
             <div className="mb-12" id="v3.543.0">
               <div className="flex items-center gap-3 mb-4">

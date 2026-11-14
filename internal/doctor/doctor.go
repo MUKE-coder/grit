@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	gritproject "github.com/MUKE-coder/grit/v3/internal/project"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
@@ -1000,25 +1001,14 @@ func structBlock(src, opener string) (string, bool) {
 
 // apiRootOf returns the directory holding the Go API: the project root for a
 // single-binary layout, apps/api for a monorepo.
+// apiRootOf resolves where this project keeps its Go module.
+//
+// One resolver, in internal/project, because there were three and two of them
+// were missing api/. doctor's was the one that was right, and being right in
+// one of three places is how grit new --i18n and grit versions each failed on
+// a single project in their own vocabulary.
 func apiRootOf(root string) string {
-	// A monorepo: triple, double, mobile and api all keep the module here.
-	mono := filepath.Join(root, "apps", "api")
-	if _, err := os.Stat(filepath.Join(mono, "go.mod")); err == nil {
-		return mono
-	}
-	// A single project, whose frontend owns the project root and whose Go
-	// module sits in api/ beside it. Missing, doctor reported "no Go API" and
-	// exited on every single project: the command whose job is finding
-	// problems was the one that could not run.
-	//
-	// The directory on disk decides rather than grit.json, matching the
-	// generator's resolver and keeping doctor file-only: a project scaffolded
-	// before the module moved keeps everything at the root, and falls through.
-	single := filepath.Join(root, "api")
-	if _, err := os.Stat(filepath.Join(single, "go.mod")); err == nil {
-		return single
-	}
-	return root
+	return gritproject.APIRoot(root)
 }
 
 // readEnv reads KEY=VALUE lines. Values keep their '#' unless it is spaced off

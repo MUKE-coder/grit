@@ -23,6 +23,23 @@ Also worth knowing:
 ---
 
 
+## v3.543.1 - November 14, 2026
+
+### Three answers to one question, and two of them were wrong
+
+Found while release-testing v3.543.0 by running the command it changed. On a `--single` project, and on the `--api --admin` shape that followed it, `grit new --i18n` scaffolded the whole project and then stopped with `no Go API found: run this from the root of a Grit project`. The module was there. It was in `api/`, which is where both of those shapes keep it. `grit add i18n` failed on the same projects for the same reason.
+
+Three separate functions resolved where a project keeps its Go module, each by looking for `go.mod`, and only one of them knew about `api/`. That one is `grit doctor`, which learned it in v3.517.1 when the same bug stopped it running on single projects at all. The other two did not learn anything, because nothing connected them.
+
+#### The second one was worse, because it did not fail
+
+`grit versions` on a single project reported every framework library as `absent, not in go.mod`. It was reading a path that holds no `go.mod` at all, and `absent` is also exactly what a library you have not mounted looks like. A wrong answer that is indistinguishable from a right one is not going to be questioned, so that report had been quietly lying on every single project since the layout changed.
+
+There is one resolver now, in `internal/project`, and all three call it. The fix is not that `api/` was added to a list: it is that there is one list. A test pins every shape Grit scaffolds, the two cases that can go wrong in the other direction (a monorepo that also holds an `api/` directory still resolves to `apps/api`, and an `api/` directory with no module in it is not an API), and a guard that fails if any of the three re-inlines its own copy. That guard strips comments first, because both delegating functions explain in prose what their old candidate list used to be, which is the string a check for a candidate list looks for.
+
+The frontend half of i18n is unchanged. Those shapes use the Vite admin, which `AddI18n` does not wire, as before.
+
+
 ## v3.543.0 - November 14, 2026
 
 ### Spanish, and the two catalogues that were quietly incomplete

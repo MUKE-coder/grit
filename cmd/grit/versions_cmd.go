@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MUKE-coder/grit/v3/internal/plugin"
+	"github.com/MUKE-coder/grit/v3/internal/project"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
@@ -257,12 +258,15 @@ func architectureOf(root string) string {
 	return cfg.Architecture
 }
 
+// apiRootOf resolves where this project keeps its Go module.
+//
+// This copy knew apps/api and nothing else, so on a single project every
+// framework library in the report read "absent, not in go.mod": it was reading
+// a path that holds no go.mod at all, and "absent" is exactly what a library
+// you have not mounted looks like. A wrong answer that matches a legitimate
+// answer is the kind a report is never going to be questioned about.
 func apiRootOf(root string) string {
-	mono := filepath.Join(root, "apps", "api")
-	if _, err := os.Stat(filepath.Join(mono, "go.mod")); err == nil {
-		return mono
-	}
-	return root
+	return project.APIRoot(root)
 }
 
 func readTextFile(path string) string {

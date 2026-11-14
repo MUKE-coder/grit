@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
+	"github.com/MUKE-coder/grit/v3/internal/project"
 )
 
 // AddI18n installs internationalisation into an existing Grit project.
@@ -162,21 +163,26 @@ type i18nLayout struct {
 	NextRoots []string
 }
 
+// detectLayout finds the API and the Next.js apps, by what is on disk rather
+// than by what grit.json says, so a project scaffolded before a layout changed
+// still resolves.
+//
+// api/ is the one that was missing. A single project, and the --api --admin
+// shape that followed it, keep the Go module in api/ beside a frontend that
+// owns the project root, so grit new --api --admin --i18n got as far as
+// scaffolding the whole project and then failed with "no Go API found": the
+// command had just written the module it could not find. doctor had the same
+// gap, and the same fix, in v3.517.1.
+//
+// Three places resolved the API root this way and only doctor's knew api/.
+// There is one now, in internal/project, and all three call it.
 func detectLayout(root string) (*i18nLayout, error) {
 	l := &i18nLayout{}
 
-	for _, candidate := range []string{
-		filepath.Join(root, "apps", "api"), // triple / double / mobile
-		root,                               // api-only and single
-	} {
-		if fileExists(filepath.Join(candidate, "go.mod")) {
-			l.APIRoot = candidate
-			break
-		}
-	}
-	if l.APIRoot == "" {
+	if !project.HasAPIModule(root) {
 		return nil, fmt.Errorf("no Go API found: run this from the root of a Grit project")
 	}
+	l.APIRoot = project.APIRoot(root)
 
 	// Only Next.js apps get next-intl. The Vite and Expo clients have their own
 	// i18n stories and wiring them here would be guessing.
