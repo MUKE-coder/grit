@@ -72,6 +72,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.541.0 */}
+            <div className="mb-12" id="v3.541.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.541.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The last page, and the end of the redesign</h3>
+                <p>
+                  Dashboard settings, and with it all seventeen screens of the
+                  admin panel have been through this. Ten releases, starting at
+                  v3.532.0.
+                </p>
+
+                <h4>Four identical cards became one card with tabs</h4>
+                <p>
+                  Stat cards, Charts, Tables and By resource were four stacked
+                  panels of the same shape, so the page was a long scroll with
+                  no landmarks and the choice you wanted was always below the
+                  fold. They are one <strong>Widgets</strong> card now, with a
+                  tab each, and every tab carries its count:{' '}
+                  <strong>Charts 2/7</strong> answers &ldquo;have I turned
+                  anything on in there&rdquo; without opening it. The two
+                  panels that belong to a tab, resource layout and custom
+                  charts, now appear under that tab instead of at the bottom
+                  of the page regardless.
+                </p>
+
+                <h4>A card whose entire content was a button</h4>
+                <p>
+                  Saving lived in its own bordered panel above the content,
+                  holding a button and a sentence about that button. The
+                  actions moved into the page header, where every other screen
+                  in the panel keeps them, and a <strong>Saved</strong> pill
+                  confirms a save where you are already looking.
+                </p>
+
+                <h4>A way out of a mess</h4>
+                <p>
+                  There are around ninety checkboxes on this page and no way
+                  back short of reading the catalog to work out what the
+                  defaults were. <strong>Reset to default</strong> puts every
+                  widget choice, the section order, the resource layouts and
+                  any custom charts back to how a project ships. It asks
+                  first, and it changes only what is on screen: nothing is
+                  stored until you save.
+                </p>
+
+                <h4>Why the arrows, and not a drag handle</h4>
+                <p>
+                  Section order has always used up and down buttons rather
+                  than drag and drop, and the copy now says why: the arrows
+                  work from a keyboard and a drag handle does not.
+                </p>
+              </div>
+            </div>
+
             {/* v3.540.0 */}
             <div className="mb-12" id="v3.540.0">
               <div className="flex items-center gap-3 mb-4">

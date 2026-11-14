@@ -380,8 +380,25 @@ func adminDashboardSettingsPageTS() string {
 // what's pre-selected in settings.
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ChevronUp, ChevronDown, Plus, Pencil, Trash2 } from "@/lib/icons";
-import { buttonClasses } from "@/components/ui/button";
+import {
+  Loader2,
+  ChevronUp,
+  ChevronDown,
+  Plus,
+  Pencil,
+  Trash2,
+  RotateCcw,
+  Save,
+  LayoutDashboard,
+  BarChart3 as ChartIcon,
+  getIcon,
+} from "@/lib/icons";
+import { Button } from "@/components/ui/button";
+import { Pill } from "@/components/ui/pill";
+import { Note } from "@/components/ui/note";
+import { Segmented } from "@/components/ui/segmented";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
@@ -401,7 +418,6 @@ import {
   useDashboardLayout,
   useSaveDashboardLayout,
 } from "@/hooks/use-dashboard-layout";
-import { getIcon } from "@/lib/icons";
 import { ChartBuilderForm } from "@/components/dashboard/ChartBuilderForm";
 
 // v3.31.45 -- friendly labels for the four sections shown in the
@@ -413,6 +429,9 @@ const SECTION_LABELS: Record<DashboardSection, { title: string; description: str
   tables: { title: "Tables", description: "Recent activity + Quick access" },
   "by-resource": { title: "By Resource", description: "Per-resource Total + Latest pairs" },
 };
+
+// Which kind of widget the Widgets card is showing.
+type WidgetTab = "cards" | "charts" | "tables" | "resource";
 
 export default function DashboardSettingsPage() {
   const { data: layout, isLoading } = useDashboardLayout();
@@ -431,6 +450,8 @@ export default function DashboardSettingsPage() {
   // v3.31.47 -- user-defined chart configs.
   const [customCharts, setCustomCharts] = useState<CustomChart[]>([]);
   const [datePreset, setDatePreset] = useState<string>("");
+  const [tab, setTab] = useState<WidgetTab>("cards");
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -488,33 +509,62 @@ export default function DashboardSettingsPage() {
     });
   };
 
+  // Everything back to how a project ships.
+  //
+  // A page with ninety checkboxes on it needs a way out of a mess, and the
+  // alternative is reading the catalog to work out what the defaults were.
+  // It only changes what is on screen: nothing is stored until Save, which is
+  // why it asks once rather than twice.
+  const resetEverything = () => {
+    setCards(resolveEnabledKeys(undefined, "card", catalog));
+    setCharts(resolveEnabledKeys(undefined, "chart", catalog));
+    setTables(resolveEnabledKeys(undefined, "table", catalog));
+    setResourceWidgets(resolveEnabledKeys(undefined, "resource", catalog));
+    setSectionOrder([...DEFAULT_SECTION_ORDER]);
+    setResourceLayouts({});
+    setCustomCharts([]);
+    setDatePreset("");
+    setConfirmReset(false);
+  };
+
+  const counts: Record<WidgetTab, string> = {
+    cards: cards.size + "/" + cardsList.length,
+    charts: charts.size + "/" + chartsList.length,
+    tables: tables.size + "/" + tablesList.length,
+    resource: resourceWidgets.size + "/" + resourceList.length,
+  };
+
   return (
     <div>
       <PageHeader
         title="Dashboard settings"
-        subtitle="Choose which widgets show up, and reorder the dashboard sections."
+        subtitle="What appears on your dashboard, and in what order. Yours only: other admins keep their own."
+        actions={
+          <div className="flex items-center gap-2">
+            {save.isSuccess && (
+              <Pill tone="good" dot>
+                Saved
+              </Pill>
+            )}
+            <Button variant="ghost" onClick={() => setConfirmReset(true)}>
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset to default
+            </Button>
+            {/* One primary button, at the top, where the page's own actions
+                live on every other screen. It used to be a card of its own
+                above the content, which is a card whose entire content is a
+                button and a sentence about that button. */}
+            <Button onClick={handleSave} loading={save.isPending}>
+              {!save.isPending && <Save className="h-3.5 w-3.5" />}
+              Save preferences
+            </Button>
+          </div>
+        }
       />
-
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-bg-elevated px-5 py-4">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Save your selection</p>
-          <p className="text-xs text-text-muted">
-            Changes apply only to your account. Other admins keep their own preferences.
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={save.isPending}
-          className={buttonClasses()}
-        >
-          {save.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Save preferences
-        </button>
-      </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20 text-text-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
         </div>
       ) : (
         <div className="space-y-6">
@@ -523,47 +573,102 @@ export default function DashboardSettingsPage() {
             onMove={moveSection}
             onReset={resetOrder}
           />
-          <Section
-            title="Stat cards"
-            description="Compact tiles shown at the top of the dashboard. Pick the metrics you watch most."
-            widgets={cardsList}
-            enabled={cards}
-            onChange={setCards}
-          />
-          <Section
-            title="Charts"
-            description="Trend graphs and breakdown pies. More charts = denser dashboard."
-            widgets={chartsList}
-            enabled={charts}
-            onChange={setCharts}
-          />
-          <Section
-            title="Tables"
-            description="Activity feeds and tiled module links shown below the charts."
-            widgets={tablesList}
-            enabled={tables}
-            onChange={setTables}
-          />
-          <Section
-            title="By Resource"
-            description="Auto-generated Total + Latest pair per resource (v3.31.44). Toggle either widget independently."
-            widgets={resourceList}
-            enabled={resourceWidgets}
-            onChange={setResourceWidgets}
-          />
-          <ResourceLayoutPanel
-            resources={resources}
-            enabled={resourceWidgets}
-            layouts={resourceLayouts}
-            onChange={setResourceLayouts}
-          />
-          <CustomChartsPanel
-            resources={resources}
-            charts={customCharts}
-            onChange={setCustomCharts}
-          />
+
+          {/* Four kinds of widget, one card.
+              They were four stacked cards of identical shape, so the page was
+              a scroll with no landmarks and the choice you wanted was always
+              somewhere below the fold. The tabs carry their counts, which is
+              the fact you came for: "Charts 2/7" answers "have I turned
+              anything on here" without opening it. */}
+          <section className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+            <header className="border-b border-border px-5 py-4">
+              <h2 className="text-[15px] font-semibold text-foreground">Widgets</h2>
+              <p className="mt-0.5 text-[13px] text-text-secondary">
+                Everything the dashboard can show. Unticking one hides it without deleting
+                anything.
+              </p>
+              <Segmented
+                className="mt-3"
+                label="Kind of widget"
+                value={tab}
+                onChange={(v) => setTab(v as WidgetTab)}
+                options={[
+                  { value: "cards", label: "Stat cards", count: counts.cards },
+                  { value: "charts", label: "Charts", count: counts.charts },
+                  { value: "tables", label: "Tables", count: counts.tables },
+                  { value: "resource", label: "By resource", count: counts.resource },
+                ]}
+              />
+            </header>
+
+            {tab === "cards" && (
+              <Section
+                description="The row of numbers across the top of the dashboard."
+                widgets={cardsList}
+                enabled={cards}
+                onChange={setCards}
+              />
+            )}
+            {tab === "charts" && (
+              <Section
+                description="Trends and breakdowns. Every one you add is one more thing to read."
+                widgets={chartsList}
+                enabled={charts}
+                onChange={setCharts}
+              />
+            )}
+            {tab === "tables" && (
+              <Section
+                description="Activity feeds and the quick access tiles below the charts."
+                widgets={tablesList}
+                enabled={tables}
+                onChange={setTables}
+              />
+            )}
+            {tab === "resource" && (
+              <Section
+                description="A Total and a Latest for each resource you have generated. Either can go on its own."
+                widgets={resourceList}
+                enabled={resourceWidgets}
+                onChange={setResourceWidgets}
+              />
+            )}
+          </section>
+
+          {/* The two panels that belong to a tab, under that tab. */}
+          {tab === "resource" && (
+            <ResourceLayoutPanel
+              resources={resources}
+              enabled={resourceWidgets}
+              layouts={resourceLayouts}
+              onChange={setResourceLayouts}
+            />
+          )}
+          {tab === "charts" && (
+            <CustomChartsPanel
+              resources={resources}
+              charts={customCharts}
+              onChange={setCustomCharts}
+            />
+          )}
+
+          <Note>
+            Nothing here is saved until you press Save preferences, and nothing here is shared:
+            every admin arranges their own dashboard, and changing yours leaves everybody
+            else&rsquo;s alone.
+          </Note>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmReset}
+        title="Put everything back to default?"
+        description="Every widget choice, the section order, your resource layouts and any custom charts go back to how the project ships. Nothing is stored until you press Save preferences."
+        confirmLabel="Reset"
+        variant="danger"
+        onConfirm={resetEverything}
+        onCancel={() => setConfirmReset(false)}
+      />
     </div>
   );
 }
@@ -583,17 +688,19 @@ function SectionOrderPanel({ order, onMove, onReset }: SectionOrderPanelProps) {
     <section className="rounded-xl border border-border bg-bg-elevated">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Section order</h2>
-          <p className="text-xs text-text-muted">
-            Drag-free ordering: tap the arrows to move a section up or down. Top renders first on the dashboard.
+          <h2 className="text-[15px] font-semibold text-foreground">Section order</h2>
+          <p className="mt-0.5 text-[13px] text-text-secondary">
+            Top of this list is top of the dashboard. The arrows move a section, and they work
+            from the keyboard, which a drag handle does not.
           </p>
         </div>
         <button
           onClick={onReset}
           disabled={isDefault}
-          className="rounded-md border border-border px-2.5 py-1 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          title="Put the four sections back in their original order"
+          className="rounded-md border border-border px-2.5 py-1 text-xs text-text-secondary transition-grit hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Reset to default
+          Reset order
         </button>
       </header>
       <ol className="divide-y divide-border">
@@ -601,7 +708,7 @@ function SectionOrderPanel({ order, onMove, onReset }: SectionOrderPanelProps) {
           const meta = SECTION_LABELS[key];
           return (
             <li key={key} className="flex items-center gap-3 px-5 py-3">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 text-accent text-xs font-mono">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-bg-hover font-mono text-xs text-text-secondary">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
@@ -662,26 +769,29 @@ function ResourceLayoutPanel({ resources, enabled, layouts, onChange }: Resource
 
   if (visible.length === 0) {
     return (
-      <section className="rounded-xl border border-border bg-bg-elevated">
+      <section className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
         <header className="border-b border-border px-5 py-4">
-          <h2 className="text-sm font-semibold text-foreground">Resource layout</h2>
-          <p className="text-xs text-text-muted">
-            Enable at least one By Resource widget above to choose how each resource lays out on the dashboard.
+          <h2 className="text-[15px] font-semibold text-foreground">Resource layout</h2>
+          <p className="mt-0.5 text-[13px] text-text-secondary">
+            How a resource arranges its own pair of widgets.
           </p>
         </header>
-        <p className="px-5 py-10 text-center text-sm text-text-muted">
-          No resources have widgets enabled yet.
-        </p>
+        <EmptyState
+          icon={<LayoutDashboard className="h-5 w-5" />}
+          title="No resource is showing anything"
+          description="Tick a Total or a Latest above, and the resource it belongs to appears here with a choice of how to lay the pair out."
+        />
       </section>
     );
   }
 
   return (
-    <section className="rounded-xl border border-border bg-bg-elevated">
+    <section className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
       <header className="border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Resource layout</h2>
-        <p className="text-xs text-text-muted">
-          Split puts the Total stat and Latest table side-by-side (33/67). Tabs puts each in its own full-width tab.
+        <h2 className="text-[15px] font-semibold text-foreground">Resource layout</h2>
+        <p className="mt-0.5 text-[13px] text-text-secondary">
+          Split sets the Total beside the Latest, a third and two thirds. Tabs gives each the
+          full width and one click to reach the other.
         </p>
       </header>
       <ul className="divide-y divide-border">
@@ -691,8 +801,8 @@ function ResourceLayoutPanel({ resources, enabled, layouts, onChange }: Resource
           const label = r.label?.plural ?? r.name;
           return (
             <li key={r.slug} className="flex items-center gap-3 px-5 py-3">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 text-accent">
-                <Icon className="h-3.5 w-3.5" />
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-bg-hover text-text-secondary">
+                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground">{label}</p>
@@ -771,27 +881,31 @@ function CustomChartsPanel({ resources, charts, onChange }: CustomChartsPanelPro
   }
 
   return (
-    <section className="rounded-xl border border-border bg-bg-elevated">
+    <section className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Custom charts</h2>
-          <p className="text-xs text-text-muted">
-            Build bar / line / pie charts from your data. Renders in the Charts section of the dashboard.
+          <h2 className="text-[15px] font-semibold text-foreground">Custom charts</h2>
+          <p className="mt-0.5 text-[13px] text-text-secondary">
+            A chart of your own, from your own data, shown with the rest.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditing("new")}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/20"
-        >
+        <Button variant="outline" size="sm" onClick={() => setEditing("new")}>
           <Plus className="h-3.5 w-3.5" />
           Add chart
-        </button>
+        </Button>
       </header>
       {charts.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-text-muted">
-          No custom charts yet. Click <em>Add chart</em> to build your first one.
-        </p>
+        <EmptyState
+          icon={<ChartIcon className="h-5 w-5" />}
+          title="No charts of your own"
+          description="Pick a resource, a field and a shape, and it appears in the Charts section beside the built-in ones."
+          action={
+            <Button variant="outline" size="sm" onClick={() => setEditing("new")}>
+              <Plus className="h-3.5 w-3.5" />
+              Add chart
+            </Button>
+          }
+        />
       ) : (
         <ul className="divide-y divide-border">
           {charts.map((chart) => {
@@ -826,7 +940,7 @@ function CustomChartsPanel({ resources, charts, onChange }: CustomChartsPanelPro
                 <button
                   type="button"
                   onClick={() => remove(chart.id)}
-                  className="rounded-md border border-border bg-bg-tertiary p-1.5 text-danger hover:bg-danger/10"
+                  className="rounded-md border border-border bg-bg-tertiary p-1.5 text-text-muted transition-grit hover:bg-danger-soft hover:text-danger"
                   aria-label="Delete chart"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -840,15 +954,20 @@ function CustomChartsPanel({ resources, charts, onChange }: CustomChartsPanelPro
   );
 }
 
+// One tab's worth of widgets.
+//
+// It used to be a card of its own, with its own border, heading and
+// description, and there were four of them in a row: four identical frames
+// whose only difference was the word at the top. The frame moved up to the
+// Widgets card and what is left here is the part that differs.
 interface SectionProps {
-  title: string;
   description: string;
   widgets: CatalogWidget[];
   enabled: Set<string>;
   onChange: (next: Set<string>) => void;
 }
 
-function Section({ title, description, widgets, enabled, onChange }: SectionProps) {
+function Section({ description, widgets, enabled, onChange }: SectionProps) {
   const groups = useMemo(() => groupByModule(widgets), [widgets]);
   const allKeys = useMemo(() => widgets.map((w) => w.key), [widgets]);
   const allChecked = allKeys.every((k) => enabled.has(k));
@@ -874,38 +993,34 @@ function Section({ title, description, widgets, enabled, onChange }: SectionProp
   };
 
   return (
-    <section className="rounded-xl border border-border bg-bg-elevated">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-          <p className="text-xs text-text-muted">{description}</p>
-        </div>
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
+        <p className="text-[13px] text-text-secondary">{description}</p>
         <div className="flex items-center gap-2 text-xs">
           <button
             onClick={() => onChange(new Set(allKeys))}
             disabled={allChecked}
-            className="rounded-md border border-border px-2.5 py-1 text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="rounded-md border border-border px-2.5 py-1 text-text-secondary transition-grit hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             Select all
           </button>
           <button
             onClick={() => onChange(new Set())}
             disabled={noneChecked}
-            className="rounded-md border border-border px-2.5 py-1 text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="rounded-md border border-border px-2.5 py-1 text-text-secondary transition-grit hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             Deselect all
           </button>
         </div>
-      </header>
+      </div>
 
       {widgets.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-text-muted">
-          No widgets available. Add{" "}
-          <code className="rounded bg-bg-hover px-1.5 py-0.5 text-[11px]">
-            dashboard.widgets
-          </code>{" "}
-          to a resource definition to populate this section.
-        </p>
+        <EmptyState
+          icon={<LayoutDashboard className="h-5 w-5" />}
+          title="Nothing to show here yet"
+          description="Widgets of this kind come from a resource that declares them. A resource with none contributes nothing to this tab."
+          hint="dashboard: { widgets: [...] }"
+        />
       ) : (
         <div className="divide-y divide-border">
           {Array.from(groups.entries()).map(([moduleName, moduleWidgets]) => {
@@ -918,14 +1033,16 @@ function Section({ title, description, widgets, enabled, onChange }: SectionProp
               <div key={moduleName} className="px-5 py-4">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 text-accent">
-                      <Icon className="h-3.5 w-3.5" />
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-bg-hover text-text-secondary">
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                     <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                       {moduleName}
                     </span>
-                    <span className="text-[10px] text-text-muted">
-                      {moduleKeys.filter((k) => enabled.has(k)).length}/{moduleKeys.length} selected
+                    {/* "3/5 on" rather than "3/5 selected": the question is
+                        what the dashboard is showing, not what is ticked. */}
+                    <span className="font-mono text-[11px] text-text-muted">
+                      {moduleKeys.filter((k) => enabled.has(k)).length}/{moduleKeys.length} on
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px]">
@@ -952,7 +1069,7 @@ function Section({ title, description, widgets, enabled, onChange }: SectionProp
                       className={
                         "flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition-colors " +
                         (enabled.has(w.key)
-                          ? "border-accent/40 bg-accent/5"
+                          ? "border-accent-line bg-accent-soft"
                           : "border-border bg-bg-tertiary hover:bg-bg-hover")
                       }
                     >
@@ -960,7 +1077,7 @@ function Section({ title, description, widgets, enabled, onChange }: SectionProp
                         type="checkbox"
                         checked={enabled.has(w.key)}
                         onChange={() => toggle(w.key)}
-                        className="mt-0.5 h-4 w-4 rounded border-border bg-bg-secondary accent-accent"
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border bg-bg-secondary accent-[var(--accent)]"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground">{w.label}</p>
@@ -976,7 +1093,7 @@ function Section({ title, description, widgets, enabled, onChange }: SectionProp
           })}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 `

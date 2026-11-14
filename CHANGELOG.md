@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.541.0 - November 14, 2026
+
+### The last page, and the end of the redesign
+
+Dashboard settings, and with it all seventeen screens of the admin panel have been through this. Ten releases, starting at v3.532.0.
+
+#### Four identical cards became one card with tabs
+
+Stat cards, Charts, Tables and By resource were four stacked panels of the same shape, so the page was a long scroll with no landmarks and the choice you wanted was always below the fold. They are one **Widgets** card now, with a tab each, and every tab carries its count: **Charts 2/7** answers &ldquo;have I turned anything on in there&rdquo; without opening it. The two panels that belong to a tab, resource layout and custom charts, now appear under that tab instead of at the bottom of the page regardless.
+
+#### A card whose entire content was a button
+
+Saving lived in its own bordered panel above the content, holding a button and a sentence about that button. The actions moved into the page header, where every other screen in the panel keeps them, and a **Saved** pill confirms a save where you are already looking.
+
+#### A way out of a mess
+
+There are around ninety checkboxes on this page and no way back short of reading the catalog to work out what the defaults were. **Reset to default** puts every widget choice, the section order, the resource layouts and any custom charts back to how a project ships. It asks first, and it changes only what is on screen: nothing is stored until you save.
+
+#### Why the arrows, and not a drag handle
+
+Section order has always used up and down buttons rather than drag and drop, and the copy now says why: the arrows work from a keyboard and a drag handle does not.
+
+
 ## v3.540.0 - November 14, 2026
 
 ### Starting your first access review crashed the page
