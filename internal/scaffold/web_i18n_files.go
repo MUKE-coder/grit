@@ -60,6 +60,7 @@ export const DEFAULT_LOCALE = 'en'
  *  the two cannot serve. */
 export const LOCALES = [
   { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
   { code: 'fr', label: 'Français' },
   { code: 'sw', label: 'Kiswahili' },
 ] as const
@@ -213,6 +214,87 @@ func i18nMessagesEN() string {
 `
 }
 
+// i18nMessagesES emits messages/es.json for the Next.js apps.
+//
+// Spanish is the fourth catalogue, added after French and Swahili, so the
+// switcher offers the language a large share of the scaffold's users read
+// without a further edit. Same shape and same keys as the English one; the
+// parity test in i18n_catalogue_parity_test.go holds every catalogue to that.
+func i18nMessagesES() string {
+	return `{
+  "nav": {
+    "dashboard": "Panel",
+    "resources": "Recursos",
+    "users": "Usuarios",
+    "roles": "Roles",
+    "settings": "Configuración",
+    "system": "Sistema",
+    "systemHub": "Centro del sistema",
+    "content": "Contenido",
+    "operations": "Operaciones",
+    "security": "Seguridad",
+    "backups": "Copias de seguridad",
+    "account": "Cuenta",
+    "signOut": "Cerrar sesión"
+  },
+  "table": {
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "columns": "Mostrar columnas",
+    "export": "Exportar",
+    "import": "Importar",
+    "selected": "{count} seleccionado(s)",
+    "empty": "No se encontraron registros",
+    "emptyAll": "Aquí todavía no hay nada",
+    "emptyAllHint": "El primer registro que añadas aparecerá aquí.",
+    "rowsPerPage": "Filas por página",
+    "of": "de",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "prev": "Ant.",
+    "first": "Primera",
+    "last": "Última",
+    "actions": "Acciones",
+    "view": "Ver",
+    "new": "Añadir {name}",
+    "showing": "Mostrando {start}–{end} de {total}",
+    "perPage": "{size} por página",
+    "emptyHint": "Prueba a ajustar la búsqueda o los filtros",
+    "searchPlaceholder": "Buscar..."
+  },
+  "form": {
+    "save": "Guardar",
+    "saving": "Guardando",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "create": "Crear",
+    "edit": "Editar",
+    "confirmDelete": "¿Eliminar esto de forma permanente?",
+    "required": "Obligatorio",
+    "optional": "Opcional",
+    "update": "Actualizar",
+    "editTitle": "Editar {name}",
+    "createTitle": "Crear {name}",
+    "backTo": "Volver a {name}"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgot": "¿Olvidaste tu contraseña?",
+    "remember": "Recordar este dispositivo"
+  },
+  "common": {
+    "loading": "Cargando",
+    "error": "Algo salió mal",
+    "retry": "Reintentar",
+    "language": "Idioma"
+  }
+}
+`
+}
+
 func i18nMessagesFR() string {
 	return `{
   "nav": {
@@ -238,6 +320,8 @@ func i18nMessagesFR() string {
     "import": "Importer",
     "selected": "{count} sélectionné(s)",
     "empty": "Aucun enregistrement",
+    "emptyAll": "Rien ici pour le moment",
+    "emptyAllHint": "Le premier enregistrement que vous ajoutez apparaîtra ici.",
     "rowsPerPage": "Lignes par page",
     "of": "sur",
     "previous": "Précédent",
@@ -296,6 +380,11 @@ func i18nMessagesSW() string {
     "settings": "Mipangilio",
     "system": "Mfumo",
     "systemHub": "Kitovu cha mfumo",
+    "content": "Maudhui",
+    "operations": "Uendeshaji",
+    "security": "Usalama",
+    "backups": "Nakala rudufu",
+    "account": "Akaunti",
     "signOut": "Toka"
   },
   "table": {
@@ -306,6 +395,8 @@ func i18nMessagesSW() string {
     "import": "Ingiza",
     "selected": "{count} zimechaguliwa",
     "empty": "Hakuna rekodi",
+    "emptyAll": "Hakuna kitu hapa bado",
+    "emptyAllHint": "Rekodi ya kwanza unayoongeza itaonekana hapa.",
     "rowsPerPage": "Safu kwa ukurasa",
     "of": "kati ya",
     "previous": "Iliyotangulia",

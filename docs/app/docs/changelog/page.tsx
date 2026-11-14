@@ -72,6 +72,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.543.0 */}
+            <div className="mb-12" id="v3.543.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.543.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Spanish, and the two catalogues that were quietly incomplete</h3>
+                <p>
+                  Contributed by{' '}
+                  <a href="https://github.com/daljo25" className="text-accent hover:underline">
+                    daljo25
+                  </a>{' '}
+                  in grit#218. Spanish ships as a fourth catalogue, in both
+                  halves of i18n: <code>messages/es.json</code> in each Next.js
+                  app and <code>internal/i18n/locales/es.json</code> in the API,
+                  with <code>es</code> in <code>LOCALES</code> so the switcher
+                  offers it. Translated, not stubbed. A project that wrote its
+                  own translations keeps them, because existing catalogues are
+                  untouched.
+                </p>
+
+                <h4>What the new test found on the way in</h4>
+                <p>
+                  The interesting part of the change is not the Spanish. Adding
+                  a catalogue meant writing a test that every catalogue carries
+                  the same keys, and that test failed on the two that were
+                  already there: <code>fr.json</code> had no{' '}
+                  <code>table.emptyAll</code> or <code>table.emptyAllHint</code>
+                  , and <code>sw.json</code> had neither plus five missing nav
+                  entries. A French or Swahili admin showed English labels in
+                  the middle of a translated page, for months, and nothing
+                  failed: <code>t()</code> falls back to the English text, so a
+                  missing key looks like a translation nobody got round to
+                  rather than a bug.
+                </p>
+                <p>
+                  The API has always compared its catalogues to each other, but
+                  only inside a generated project, so the templates themselves
+                  were never compared. Both halves are compared now, against
+                  Grit&apos;s own build, and <code>LOCALES</code> is held to
+                  offering exactly the catalogues that exist: a catalogue with
+                  no entry is a language nobody can pick, and an entry with no
+                  catalogue is a switcher option that renders its raw keys.
+                </p>
+
+                <h4>Still English</h4>
+                <p>
+                  Plugin screens do not go through <code>t()</code>, and{' '}
+                  <code>AddI18n</code> does not wire the TanStack admin or the
+                  Expo app. Both were already true before Spanish, and both are
+                  a change of their own rather than something to bury in this
+                  one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.542.0 */}
             <div className="mb-12" id="v3.542.0">
               <div className="flex items-center gap-3 mb-4">

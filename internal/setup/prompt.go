@@ -424,7 +424,7 @@ func Prompt(o *Options) error {
 			huh.NewConfirm().
 				Key("i18n").
 				Title("Add internationalisation?").
-				Description("next-intl, translated API messages and en/fr/sw catalogues.").
+				Description("next-intl, translated API messages and en/es/fr/sw catalogues.").
 				Affirmative("Yes").
 				Negative("No").
 				Value(&i18n),

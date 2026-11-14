@@ -49,9 +49,9 @@ pnpm install`}
                 </li>
                 <li>
                   <strong>The web app and the admin</strong> get next-intl, catalogues in{' '}
-                  <code className={C}>messages/en.json</code>, <code className={C}>fr.json</code> and{' '}
-                  <code className={C}>sw.json</code>, and a language switcher: in the admin&apos;s page
-                  header, and in the web app&apos;s navbar.
+                  <code className={C}>messages/en.json</code>, <code className={C}>es.json</code>,{' '}
+                  <code className={C}>fr.json</code> and <code className={C}>sw.json</code>, and a
+                  language switcher: in the admin&apos;s page header, and in the web app&apos;s navbar.
                 </li>
                 <li>
                   The locale lives in the cookie, not the URL, so a link means the same page in every
@@ -70,7 +70,7 @@ pnpm install`}
                 The sidebar, the table toolbar, pagination, the empty state, row actions and the form
                 buttons and headings read their text from <code className={C}>nav.*</code>,{' '}
                 <code className={C}>table.*</code> and <code className={C}>form.*</code>, already
-                translated in all three catalogues.
+                translated in all four catalogues.
               </p>
 
               <h3>Your resources&apos; labels</h3>

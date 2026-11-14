@@ -666,11 +666,11 @@ export const CLI_COMMANDS: CliCommand[] = [
     id: 'add-i18n',
     name: 'grit add i18n',
     category: 'Add',
-    summary: 'next-intl on both frontends, translated API messages, en/fr/sw.',
+    summary: 'next-intl on both frontends, translated API messages, en/es/fr/sw.',
     example: 'grit add i18n',
     output: [
       '  ✓ apps/api/internal/i18n/i18n.go',
-      '  ✓ apps/api/internal/i18n/locales/en.json, fr.json, sw.json',
+      '  ✓ apps/api/internal/i18n/locales/en.json, es.json, fr.json, sw.json',
       '  ✓ apps/api/internal/middleware/locale.go',
       '  ✓ apps/api/internal/response/response.go',
       '  ✓ apps/web/i18n/request.ts + messages/',
@@ -688,7 +688,7 @@ export const CLI_COMMANDS: CliCommand[] = [
     files: [
       { path: 'apps/api/internal/i18n/i18n.go', status: 'created' },
       { path: 'apps/api/internal/i18n/i18n_test.go', status: 'created' },
-      { path: 'apps/api/internal/i18n/locales/en.json', status: 'created', note: 'plus fr.json and sw.json' },
+      { path: 'apps/api/internal/i18n/locales/en.json', status: 'created', note: 'plus es.json, fr.json and sw.json' },
       { path: 'apps/api/internal/middleware/locale.go', status: 'created' },
       { path: 'apps/api/internal/response/response.go', status: 'created', note: 'translated responses' },
       { path: 'apps/api/internal/handlers/i18n.go', status: 'created' },

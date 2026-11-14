@@ -366,7 +366,7 @@ export const docsMetadata: Record<string, DocPage> = {
   '/docs/frontend/i18n': {
     title: 'Internationalisation: One Cookie for the API, Web App and Admin',
     description:
-      'How grit new --i18n and grit add i18n translate a Grit project: the grit_locale cookie the API, web app and admin share, next-intl catalogues in English, French and Swahili, the language switcher, translating the admin through t(key, fallback), your resources’ labels under resources.<slug>, adding a language, and what grit upgrade repairs in projects from before v3.222.0.',
+      'How grit new --i18n and grit add i18n translate a Grit project: the grit_locale cookie the API, web app and admin share, next-intl catalogues in English, Spanish, French and Swahili, the language switcher, translating the admin through t(key, fallback), your resources’ labels under resources.<slug>, adding a language, and what grit upgrade repairs in projects from before v3.222.0.',
   },
 
   '/docs/deployment/multiple-instances': {

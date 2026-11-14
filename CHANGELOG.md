@@ -23,6 +23,23 @@ Also worth knowing:
 ---
 
 
+## v3.543.0 - November 14, 2026
+
+### Spanish, and the two catalogues that were quietly incomplete
+
+Contributed by [daljo25](https://github.com/daljo25) in grit#218. Spanish ships as a fourth catalogue, in both halves of i18n: `messages/es.json` in each Next.js app and `internal/i18n/locales/es.json` in the API, with `es` in `LOCALES` so the switcher offers it. Translated, not stubbed. A project that wrote its own translations keeps them, because existing catalogues are untouched.
+
+#### What the new test found on the way in
+
+The interesting part of the change is not the Spanish. Adding a catalogue meant writing a test that every catalogue carries the same keys, and that test failed on the two that were already there: `fr.json` had no `table.emptyAll` or `table.emptyAllHint` , and `sw.json` had neither plus five missing nav entries. A French or Swahili admin showed English labels in the middle of a translated page, for months, and nothing failed: `t()` falls back to the English text, so a missing key looks like a translation nobody got round to rather than a bug.
+
+The API has always compared its catalogues to each other, but only inside a generated project, so the templates themselves were never compared. Both halves are compared now, against Grit's own build, and `LOCALES` is held to offering exactly the catalogues that exist: a catalogue with no entry is a language nobody can pick, and an entry with no catalogue is a switcher option that renders its raw keys.
+
+#### Still English
+
+Plugin screens do not go through `t()`, and `AddI18n` does not wire the TanStack admin or the Expo app. Both were already true before Spanish, and both are a change of their own rather than something to bury in this one.
+
+
 ## v3.542.0 - November 14, 2026
 
 ### Reduced motion was switching off the spinners

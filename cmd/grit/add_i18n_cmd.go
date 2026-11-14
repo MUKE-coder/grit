@@ -33,7 +33,8 @@ Installs three things:
              easy path rather than extra work.
   Next apps  next-intl wired the cookie way, with no locale prefix in the
              URL, so routes stay the same in every language.
-  Catalogues English, French and Swahili, translated rather than stubbed.
+  Catalogues English, Spanish, French and Swahili, translated rather than
+             stubbed.
 
 The frontend cookie and the API both use grit_locale, so a page and the errors
 its API calls return agree on the language.

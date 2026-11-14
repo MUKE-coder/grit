@@ -63,6 +63,7 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 	if layout.APIRoot != "" {
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "i18n.go")] = i18nGo()
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "locales", "en.json")] = i18nLocaleEN()
+		files[filepath.Join(layout.APIRoot, "internal", "i18n", "locales", "es.json")] = i18nLocaleES()
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "locales", "fr.json")] = i18nLocaleFR()
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "locales", "sw.json")] = i18nLocaleSW()
 		files[filepath.Join(layout.APIRoot, "internal", "middleware", "locale.go")] = i18nMiddlewareGo()
@@ -77,6 +78,7 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 		files[filepath.Join(root, "lib", "locale.ts")] = i18nLocaleLibTS()
 		files[filepath.Join(root, "components", "language-switcher.tsx")] = i18nSwitcherTSX()
 		files[filepath.Join(root, "messages", "en.json")] = i18nMessagesEN()
+		files[filepath.Join(root, "messages", "es.json")] = i18nMessagesES()
 		files[filepath.Join(root, "messages", "fr.json")] = i18nMessagesFR()
 		files[filepath.Join(root, "messages", "sw.json")] = i18nMessagesSW()
 		// The admin's translation seam, for a project older than it.
