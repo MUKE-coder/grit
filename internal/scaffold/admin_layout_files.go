@@ -264,6 +264,9 @@ export {
   Pencil,
   Trash2,
   Printer,
+  // v3.539.0: the backups page, for "what is in a backup". It has been in the
+  // iconMap above since long before, which is not the same as being importable.
+  Package,
   Download,
   X,
   Maximize2,

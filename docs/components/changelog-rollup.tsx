@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 9 to 15, 2026",
-    count: 57,
+    count: 58,
     entries: [
+      { version: "3.539.0", title: "A page that was red whatever your theme was" },
       { version: "3.538.0", title: "A secret key you could create and never see" },
       { version: "3.537.0", title: "The account page was 8,900 pixels long" },
       { version: "3.536.0", title: "Activity, cron, and pages that say why they are empty" },

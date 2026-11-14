@@ -72,6 +72,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.539.0 */}
+            <div className="mb-12" id="v3.539.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.539.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A page that was red whatever your theme was</h3>
+                <p>
+                  The seventh redesign release, covering Backups and GDPR, and
+                  the GDPR page turned out not to be using the project&apos;s
+                  colours at all.
+                </p>
+
+                <h4>Tailwind&apos;s palette, not yours</h4>
+                <p>
+                  The GDPR screen was written against{' '}
+                  <code>red-500</code> and <code>emerald-500</code> directly.
+                  Those are fixed hues: they do not move when a project picks a
+                  theme. So on seven of the eight themes its erase button was a
+                  different red from every other destructive button in the
+                  panel, and nothing in the build said so, because a hardcoded
+                  palette colour is the one styling mistake that is invisible
+                  in the theme it was written in. It is on the tokens now, and
+                  a test fails the build if either page reaches for a numbered
+                  colour again.
+                </p>
+
+                <h4>Erasing a person now takes their address</h4>
+                <p>
+                  The confirmation was a reason field, and a reason is a
+                  record rather than a confirmation: you can fill it in without
+                  ever reading whose account is about to go. This page has
+                  exactly one catastrophic mistake available to it, erasing the
+                  wrong person, and it is irreversible by design. You type the
+                  email. The reason stays, because the API requires it and the
+                  journal keeps it.
+                </p>
+
+                <h4>The backup schedule says what you just arranged</h4>
+                <p>
+                  Three controls and no answer: you picked Monthly, typed a
+                  time, and the card told you nothing about what that meant.
+                  It now reads <strong>Next run Sunday 16 November, 02:00</strong>,
+                  and it updates as you choose, so you find out you got it
+                  wrong while it is still free to change.
+                </p>
+
+                <h4>&ldquo;3 of 4 kept&rdquo;, from the server</h4>
+                <p>
+                  Rolling retention keeps four archives, and that four is{' '}
+                  <code>backup.KeepBackups</code> in Go. The page now reads it
+                  off the schedule response rather than carrying a second copy:
+                  raise retention to eight and the screen follows instead of
+                  going on saying four.
+                </p>
+                <p>
+                  A purged row used to show the bare enum{' '}
+                  <code>PURGED</code>, which reads as a failure. It is the
+                  opposite, so it says <strong>Aged out</strong> and explains
+                  on hover that retention deleted the archive and kept the row
+                  on purpose.
+                </p>
+
+                <h4>The restore command is not a footnote any more</h4>
+                <p>
+                  It was 12px muted grey under a table, which is where you put
+                  something nobody needs. It is the only part of the page that
+                  matters on the day it matters, and that is not a day for
+                  small print. It has its own card now, with what is inside an
+                  archive and a copy button.
+                </p>
+
+                <h4>The icon trap, closed</h4>
+                <p>
+                  An icon can be in the admin&apos;s <code>iconMap</code> and
+                  still not be importable, because the named exports are a
+                  separate block. That has broken a generated project three
+                  times now, each time found by standing one up rather than by
+                  a test. A test now reads every icon every admin file actually
+                  imports and checks the export block has it, so the next one
+                  fails here instead of in somebody else&apos;s repository.
+                </p>
+              </div>
+            </div>
+
             {/* v3.538.0 */}
             <div className="mb-12" id="v3.538.0">
               <div className="flex items-center gap-3 mb-4">

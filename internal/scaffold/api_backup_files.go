@@ -1225,7 +1225,10 @@ func (h *BackupHandler) GetSettings(c *gin.Context) {
 		respond.Fail(c, respond.CodeInternalError, "Failed to load backup schedule")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": sc})
+	// keep travels with the schedule because the admin says "N of 4" and that
+	// 4 is backup.KeepBackups. Sending it is the difference between one number
+	// and two that have to agree.
+	c.JSON(http.StatusOK, gin.H{"data": sc, "meta": gin.H{"keep": backup.KeepBackups}})
 }
 
 // The automatic-backup schedule.

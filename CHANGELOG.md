@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.539.0 - November 14, 2026
+
+### A page that was red whatever your theme was
+
+The seventh redesign release, covering Backups and GDPR, and the GDPR page turned out not to be using the project's colours at all.
+
+#### Tailwind's palette, not yours
+
+The GDPR screen was written against `red-500` and `emerald-500` directly. Those are fixed hues: they do not move when a project picks a theme. So on seven of the eight themes its erase button was a different red from every other destructive button in the panel, and nothing in the build said so, because a hardcoded palette colour is the one styling mistake that is invisible in the theme it was written in. It is on the tokens now, and a test fails the build if either page reaches for a numbered colour again.
+
+#### Erasing a person now takes their address
+
+The confirmation was a reason field, and a reason is a record rather than a confirmation: you can fill it in without ever reading whose account is about to go. This page has exactly one catastrophic mistake available to it, erasing the wrong person, and it is irreversible by design. You type the email. The reason stays, because the API requires it and the journal keeps it.
+
+#### The backup schedule says what you just arranged
+
+Three controls and no answer: you picked Monthly, typed a time, and the card told you nothing about what that meant. It now reads **Next run Sunday 16 November, 02:00**, and it updates as you choose, so you find out you got it wrong while it is still free to change.
+
+#### &ldquo;3 of 4 kept&rdquo;, from the server
+
+Rolling retention keeps four archives, and that four is `backup.KeepBackups` in Go. The page now reads it off the schedule response rather than carrying a second copy: raise retention to eight and the screen follows instead of going on saying four.
+
+A purged row used to show the bare enum `PURGED`, which reads as a failure. It is the opposite, so it says **Aged out** and explains on hover that retention deleted the archive and kept the row on purpose.
+
+#### The restore command is not a footnote any more
+
+It was 12px muted grey under a table, which is where you put something nobody needs. It is the only part of the page that matters on the day it matters, and that is not a day for small print. It has its own card now, with what is inside an archive and a copy button.
+
+#### The icon trap, closed
+
+An icon can be in the admin's `iconMap` and still not be importable, because the named exports are a separate block. That has broken a generated project three times now, each time found by standing one up rather than by a test. A test now reads every icon every admin file actually imports and checks the export block has it, so the next one fails here instead of in somebody else's repository.
+
+
 ## v3.538.0 - November 14, 2026
 
 ### A secret key you could create and never see

@@ -583,6 +583,11 @@ import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { apiClient } from "@/lib/api-client";
 import { Shield, ShieldCheck, Download, Trash2, AlertTriangle, Loader2, Check, X, Search } from "@/lib/icons";
+import { Button } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
+import { Pill } from "@/components/ui/pill";
+import { Note } from "@/components/ui/note";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface PickedUser {
   id: string;
@@ -631,7 +636,7 @@ function UserPicker({
 
   if (value) {
     return (
-      <div className="flex min-w-[320px] flex-1 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2">
+      <div className="flex min-w-[320px] flex-1 items-center justify-between gap-3 rounded-lg border border-accent-line bg-accent-soft px-3 py-2">
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium text-foreground">{name(value)}</span>
           <span className="block truncate font-mono text-xs text-text-muted">
@@ -652,7 +657,10 @@ function UserPicker({
 
   return (
     <div ref={boxRef} className="relative min-w-[320px] flex-1">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+        aria-hidden="true"
+      />
       <input
         value={query}
         onChange={(e) => {
@@ -661,8 +669,9 @@ function UserPicker({
         }}
         onFocus={() => setOpen(true)}
         spellCheck={false}
+        aria-label="Search a user by name or email"
         placeholder="Search a user by name or email…"
-        className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-accent"
+        className={inputClasses({ className: "pl-9" })}
       />
       {open && (
         <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-bg-elevated shadow-xl">
@@ -715,6 +724,7 @@ export default function GDPRPage() {
   const [picked, setPicked] = useState<PickedUser | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState("");
+  const [typed, setTyped] = useState("");
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const userId = picked?.id ?? "";
 
@@ -765,6 +775,7 @@ export default function GDPRPage() {
       setMsg({ kind: "ok", text: "Erased " + d.records_affected + " record(s) and anonymized the user." });
       setConfirming(false);
       setReason("");
+      setTyped("");
       setPicked(null);
       qc.invalidateQueries({ queryKey: ["gdpr-journal"] });
     },
@@ -772,158 +783,218 @@ export default function GDPRPage() {
   });
 
   const meta = journalQ.data?.meta;
+  // Case-insensitive, because an address is, and trimmed, because a paste
+  // from an email client brings a space with it. Nothing else is forgiven.
+  const emailMatches =
+    !!picked && typed.trim().toLowerCase() === picked.email.trim().toLowerCase();
 
   return (
-    <div className="space-y-8">
+    <div>
       <PageHeader
         title="GDPR"
-        subtitle="Right-to-access exports and right-to-erasure. Every erasure is written to a tamper-evident deletion journal."
+        subtitle="Right-to-access exports and right-to-erasure, with every erasure written to a tamper-evident journal."
       />
 
       {msg && (
         <div
+          role="status"
           className={
-            "flex items-center gap-2 rounded-lg border px-4 py-3 text-sm " +
+            "mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 " +
             (msg.kind === "ok"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
-              : "border-red-500/30 bg-red-500/10 text-red-500")
+              ? "border-success-line bg-success-soft"
+              : "border-danger-line bg-danger-soft")
           }
         >
-          {msg.kind === "ok" ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-          {msg.text}
+          {msg.kind === "ok" ? (
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+          ) : (
+            <X className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
+          )}
+          <p className="text-sm text-text-secondary">{msg.text}</p>
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-bg-elevated p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-accent" />
-          <h2 className="text-lg font-semibold">Export or erase a user</h2>
-        </div>
-        <p className="mb-4 max-w-2xl text-sm text-text-muted">
-          Search for the user this request is about. Export downloads a full JSON copy of their
-          data (Art. 15). Erase hard-deletes their personal records and anonymizes the account
-          (Art. 17) — this cannot be undone.
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <UserPicker
-            value={picked}
-            onChange={(u) => {
-              setPicked(u);
-              setConfirming(false);
-            }}
-          />
-          <button
-            type="button"
-            disabled={!userId || exportM.isPending}
-            onClick={() => exportM.mutate(userId)}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:border-accent disabled:opacity-40"
+      {/* Find the person first.
+          A request arrives as "delete john@acme.com", never as a UUID, and the
+          two things you can do to them are a download and an erasure that
+          cannot be undone. So the subject is chosen before either button
+          exists, rather than sitting beside them waiting to be mis-clicked. */}
+      <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+        <header className="flex items-center gap-3 border-b border-border px-5 py-4">
+          <span
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
+            aria-hidden="true"
           >
-            {exportM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Export data
-          </button>
-          <button
-            type="button"
-            disabled={!userId}
-            onClick={() => setConfirming(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/20 disabled:opacity-40"
-          >
-            <Trash2 className="h-4 w-4" />
-            Erase&hellip;
-          </button>
+            <Shield className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="text-[15px] font-semibold text-foreground">Find the person</h2>
+            <p className="text-[13px] text-text-secondary">
+              Requests arrive with a name or an email, so start from one.
+            </p>
+          </div>
+        </header>
+
+        <div className="px-5 py-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <UserPicker
+              value={picked}
+              onChange={(u) => {
+                setPicked(u);
+                setConfirming(false);
+              }}
+            />
+            <Button
+              variant="outline"
+              disabled={!userId}
+              loading={exportM.isPending}
+              onClick={() => exportM.mutate(userId)}
+            >
+              {!exportM.isPending && <Download className="h-3.5 w-3.5" />}
+              Export data
+            </Button>
+            <Button variant="danger" disabled={!userId} onClick={() => setConfirming(true)}>
+              <Trash2 className="h-3.5 w-3.5" />
+              Erase&hellip;
+            </Button>
+          </div>
+
+          <Note className="mt-3">
+            <strong className="font-medium text-foreground">Export</strong> downloads a full JSON
+            copy of their data, which is the artifact you hand back under Art. 15.{" "}
+            <strong className="font-medium text-foreground">Erase</strong> hard-deletes their
+            personal records and anonymises the account under Art. 17, and nothing undoes it.
+          </Note>
         </div>
 
         {confirming && (
-          <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 p-4">
-            <div className="mb-3 flex items-start gap-2 text-sm text-red-500">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                This permanently deletes{" "}
-                <span className="font-medium">{picked?.email ?? userId}</span>&rsquo;s uploads,
-                sessions, 2FA and more, and anonymizes their account. The audit trail is retained.
-              </span>
+          <div className="border-t border-danger-line bg-danger-soft px-5 py-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  Erase {picked?.email ?? userId}?
+                </p>
+                <p className="mt-1 text-[13px] text-text-secondary">
+                  This permanently deletes their uploads, sessions, two-factor enrolment and the
+                  rest of their personal records, and anonymises the account. The audit trail is
+                  kept, because the law that requires the erasure also requires the record of it.
+                </p>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="reason (required, recorded in the journal)"
-                className="min-w-[280px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-              />
-              {/* The API refuses an erasure with no reason (422). The button is
-                  disabled to say so before the request rather than after it. */}
-              <button
-                type="button"
-                disabled={eraseM.isPending || reason.trim().length < 3}
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="erase-email"
+                  className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
+                >
+                  Type their email to confirm
+                </label>
+                {/* Typing the address is the confirmation; the reason below is
+                    the record. A reason box on its own confirms nothing: you
+                    can fill it in without ever reading whose account is about
+                    to go, and the one mistake this page can make is erasing
+                    the wrong person. */}
+                <input
+                  id="erase-email"
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  spellCheck={false}
+                  autoComplete="off"
+                  placeholder={picked?.email ?? ""}
+                  className={inputClasses({ invalid: typed.length > 0 && !emailMatches }) + " font-mono text-xs"}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="erase-reason"
+                  className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-text-muted"
+                >
+                  Reason, for the journal
+                </label>
+                <input
+                  id="erase-reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Art. 17 request by email, 14 Nov"
+                  className={inputClasses()}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {/* The API refuses an erasure with no reason (422). Disabling
+                  the button says so before the request rather than after it. */}
+              <Button
+                variant="danger"
+                disabled={!emailMatches || reason.trim().length < 3}
+                loading={eraseM.isPending}
                 onClick={() => eraseM.mutate()}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-40"
               >
-                {eraseM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Confirm erasure
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                className="rounded-lg px-3 py-2 text-sm text-text-muted hover:text-foreground"
-              >
+                {!eraseM.isPending && <Trash2 className="h-3.5 w-3.5" />}
+                Erase permanently
+              </Button>
+              <Button variant="ghost" onClick={() => setConfirming(false)}>
                 Cancel
-              </button>
+              </Button>
+              {!emailMatches && (
+                <p className="text-[13px] text-text-muted">
+                  The email has to match exactly.
+                </p>
+              )}
             </div>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="rounded-xl border border-border bg-bg-elevated p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Deletion journal</h2>
+      <section className="overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div>
+            <h2 className="text-[15px] font-semibold text-foreground">Deletion journal</h2>
+            <p className="text-[13px] text-text-secondary">
+              Every Art. 17 erasure, hash-chained so a removed line shows up.
+            </p>
+          </div>
           {meta && (
-            <span
-              className={
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold " +
-                (meta.verified
-                  ? "bg-emerald-500/15 text-emerald-500"
-                  : "bg-red-500/15 text-red-500")
-              }
-            >
-              {meta.verified ? <ShieldCheck className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+            <Pill tone={meta.verified ? "good" : "bad"} dot>
               {meta.verified ? "Chain verified" : "Chain broken"}
-            </span>
+            </Pill>
           )}
-        </div>
-
-        <p className="mb-4 text-xs text-text-muted">
-          Erasures only. Deleting a user from the Users page is an ordinary, reversible soft
-          delete — it keeps their data and is not recorded here. Use <strong>Erase</strong> above
-          for a real Art. 17 erasure.
-        </p>
+        </header>
 
         {journalQ.isLoading ? (
-          <div className="flex items-center gap-2 py-8 text-sm text-text-muted">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading&hellip;
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-hidden="true" />
           </div>
         ) : !journalQ.data?.rows.length ? (
-          <p className="py-8 text-center text-sm text-text-muted">
-            No erasures recorded yet. When you erase a user, an entry appears here.
-          </p>
+          <EmptyState
+            icon={<ShieldCheck className="h-5 w-5" />}
+            title="No erasures recorded"
+            description="Nobody has been erased under Art. 17 yet. When somebody is, the entry appears here with who did it and why."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-text-muted">
-                  <th className="py-2 pr-4 font-medium">Deleted user</th>
-                  <th className="py-2 pr-4 font-medium">Erased by</th>
-                  <th className="py-2 pr-4 font-medium">Records</th>
-                  <th className="py-2 pr-4 font-medium">Reason</th>
-                  <th className="py-2 pr-4 font-medium">When</th>
+                <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-5 py-3 font-medium">Erased</th>
+                  <th className="px-4 py-3 font-medium">By</th>
+                  <th className="px-4 py-3 font-medium">Records</th>
+                  <th className="px-4 py-3 font-medium">Reason</th>
+                  <th className="px-5 py-3 font-medium">When</th>
                 </tr>
               </thead>
               <tbody>
                 {journalQ.data.rows.map((r) => (
-                  <tr key={r.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4 font-mono text-xs">{r.deleted_user_id.slice(0, 8)}&hellip;</td>
-                    <td className="py-2 pr-4">{r.actor_email || "—"}</td>
-                    <td className="py-2 pr-4">{r.records_affected}</td>
-                    <td className="py-2 pr-4 text-text-muted">{r.reason || "—"}</td>
-                    <td className="py-2 pr-4 text-text-muted">
+                  <tr key={r.id} className="border-b border-border/60 last:border-0">
+                    <td className="px-5 py-3 font-mono text-xs text-text-secondary" title={r.deleted_user_id}>
+                      {r.deleted_user_id.slice(0, 8)}&hellip;
+                    </td>
+                    <td className="px-4 py-3 text-foreground">{r.actor_email || "—"}</td>
+                    <td className="px-4 py-3 text-text-secondary tabular-nums">{r.records_affected}</td>
+                    <td className="px-4 py-3 text-text-secondary">{r.reason || "—"}</td>
+                    <td className="px-5 py-3 text-[13px] text-text-muted">
                       {new Date(r.created_at).toLocaleString()}
                     </td>
                   </tr>
@@ -932,7 +1003,13 @@ export default function GDPRPage() {
             </table>
           </div>
         )}
-      </div>
+      </section>
+
+      <Note className="mt-4">
+        An erasure here is not the same thing as deleting a user from the Users page. That is a
+        reversible soft delete that keeps their data and is not recorded in this journal. This is
+        the one that is permanent and the one a regulator asks to see.
+      </Note>
     </div>
   );
 }
