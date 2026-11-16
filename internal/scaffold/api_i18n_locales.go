@@ -17,6 +17,20 @@ package scaffold
 // Keys are dotted and grouped by area. Flat JSON rather than nested, because a
 // flat map needs no traversal code and a translator editing it cannot break the
 // shape by mis-indenting a brace.
+//
+// A message that takes a resource or field name as %s is worded so the sentence
+// stays grammatical whatever that name is. Spanish and French inflect the
+// participle and the article, so "%s creado" renders "Factura creado" and
+// "Ese %s ya está en uso" renders "Ese Factura". The fix is in the wording, not
+// in a lookup table: put the agreement on a word the catalogue owns ("Se creó
+// %s", whose impersonal "se" leaves no noun to agree with) or on a fixed noun
+// ("El campo %s es obligatorio", "La valeur de %s est déjà utilisée"). A
+// gendered catalogue would need the grammatical gender of every resource, and
+// no resource definition carries one.
+//
+// Swahili agrees by noun class rather than gender. The class-9 forms here cover
+// most resource names and are wrong for a class-1 one (a person), which is the
+// same missing information in a different grammar.
 
 func i18nLocaleEN() string {
 	return `{
@@ -69,7 +83,7 @@ func i18nLocaleEN() string {
 func i18nLocaleES() string {
 	return `{
   "errors.not_found": "No encontrado",
-  "errors.resource_not_found": "%s no encontrado",
+  "errors.resource_not_found": "No se encontró %s",
   "errors.unauthorized": "Tienes que iniciar sesión para hacer eso",
   "errors.forbidden": "No tienes permiso para hacer eso",
   "errors.validation": "Algunos datos no son correctos",
@@ -93,18 +107,18 @@ func i18nLocaleES() string {
   "auth.totp_required": "Introduce el código de tu aplicación de autenticación",
   "auth.totp_invalid": "Ese código no es correcto",
 
-  "validation.required": "%s es obligatorio",
+  "validation.required": "El campo %s es obligatorio",
   "validation.email": "%s debe ser una dirección de correo válida",
   "validation.min_length": "%s debe tener al menos %d caracteres",
   "validation.max_length": "%s debe tener como máximo %d caracteres",
-  "validation.unique": "Ese %s ya está en uso",
+  "validation.unique": "El valor de %s ya está en uso",
   "validation.numeric": "%s debe ser un número",
   "validation.positive": "%s debe ser mayor que cero",
 
-  "resource.created": "%s creado",
-  "resource.updated": "%s actualizado",
-  "resource.deleted": "%s eliminado",
-  "resource.restored": "%s restaurado",
+  "resource.created": "Se creó %s",
+  "resource.updated": "Se actualizó %s",
+  "resource.deleted": "Se eliminó %s",
+  "resource.restored": "Se restauró %s",
 
   "common.yes": "Sí",
   "common.no": "No",
@@ -145,14 +159,14 @@ func i18nLocaleFR() string {
   "validation.email": "%s doit être une adresse e-mail valide",
   "validation.min_length": "%s doit contenir au moins %d caractères",
   "validation.max_length": "%s doit contenir au plus %d caractères",
-  "validation.unique": "Ce %s est déjà utilisé",
+  "validation.unique": "La valeur de %s est déjà utilisée",
   "validation.numeric": "%s doit être un nombre",
   "validation.positive": "%s doit être supérieur à zéro",
 
-  "resource.created": "%s créé",
-  "resource.updated": "%s mis à jour",
-  "resource.deleted": "%s supprimé",
-  "resource.restored": "%s restauré",
+  "resource.created": "Création de %s",
+  "resource.updated": "Mise à jour de %s",
+  "resource.deleted": "Suppression de %s",
+  "resource.restored": "Restauration de %s",
 
   "common.yes": "Oui",
   "common.no": "Non",
@@ -259,19 +273,27 @@ func (h *I18nHandler) List(c *gin.Context) {
 func i18nTestGo() string {
 	return `package i18n
 
-import "testing"
+import (
+	"regexp"
+	"sort"
+	"strings"
+	"testing"
+)
 
 func TestCataloguesResolve(t *testing.T) {
 	if err := Load(); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	for _, loc := range []string{"en", "fr", "sw"} {
+	for _, loc := range []string{"en", "es", "fr", "sw"} {
 		if !Has(loc) {
 			t.Fatalf("locale %q not compiled in; Available=%v", loc, Available())
 		}
 	}
 	if got := T("fr", "errors.not_found"); got != "Introuvable" {
 		t.Fatalf("fr errors.not_found = %q", got)
+	}
+	if got := T("es", "errors.not_found"); got != "No encontrado" {
+		t.Fatalf("es errors.not_found = %q", got)
 	}
 	// An unknown locale falls back to English rather than to nothing.
 	if got := T("de", "errors.not_found"); got != "Not found" {
@@ -311,6 +333,42 @@ func TestCataloguesAgreeOnKeys(t *testing.T) {
 		}
 	}
 }
+
+// TestCatalogueMarkersMatch holds every catalogue to the printf verbs its
+// English message has. Keys alone are not enough: a translation that drops a
+// %s keeps its key, compiles, and prints %!s(MISSING) to whoever reads it.
+func TestCatalogueMarkersMatch(t *testing.T) {
+	if err := Load(); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	base := messages[Default]
+	for locale, m := range messages {
+		if locale == Default {
+			continue
+		}
+		for key, translated := range m {
+			got, want := verbs(translated), verbs(base[key])
+			if got != want {
+				t.Errorf("%s %q renders with %q, %s has %q", locale, key, got, Default, want)
+			}
+		}
+	}
+}
+
+// verbs lists the printf verbs in a message, sorted, so two translations of one
+// key compare equal however they order the sentence a %s sits in.
+func verbs(message string) string {
+	var found []string
+	for _, v := range printfVerb.FindAllString(message, -1) {
+		if v != "%%" {
+			found = append(found, v)
+		}
+	}
+	sort.Strings(found)
+	return strings.Join(found, " ")
+}
+
+var printfVerb = regexp.MustCompile("%[-+# 0]*[0-9]*(\\.[0-9]+)?[A-Za-z%]")
 
 func TestNegotiate(t *testing.T) {
 	cases := map[string]string{
