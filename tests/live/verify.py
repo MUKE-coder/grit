@@ -530,14 +530,26 @@ def check_error_codes(alice, alice_email):
     def code_of(body):
         return (err(body) or {}).get('code')
 
-    # A field that fails validation, and a body that is not JSON at all. Both are
-    # 422 from a generated handler: gin binds and validates in one step.
+    # A field that fails validation, and a body that is not JSON at all. Two
+    # different failures, and since v3.546.0 two different codes, which is what
+    # the catalogue always said they were: VALIDATION_ERROR is "the body parsed,
+    # and a field in it is missing or not acceptable", INVALID_BODY is "the body
+    # was not valid JSON". Both came back 422 while handlers answered a binding
+    # error with err.Error(), because gin binds and validates in one step and
+    # nothing looked at which half had failed.
     status, _, body = call('POST', '/api/v1/lots', alice, {'current_bid': 5})
     check('Codes: a missing field is 422 VALIDATION_ERROR',
           status == 422 and code_of(body) == 'VALIDATION_ERROR', (status, code_of(body)))
     status, _, body = call('POST', '/api/v1/lots', alice, raw=b'{not json')
-    check('Codes: an unparseable body is 422 VALIDATION_ERROR',
-          status == 422 and code_of(body) == 'VALIDATION_ERROR', (status, code_of(body)))
+    check('Codes: an unparseable body is 400 INVALID_BODY',
+          status == 400 and code_of(body) == 'INVALID_BODY', (status, code_of(body)))
+
+    # And a field whose JSON type is wrong is named, so a form can show it.
+    status, _, body = call('POST', '/api/v1/lots', alice, {'title': 123})
+    details = (err(body) or {}).get('details') or {}
+    check('Codes: a wrong JSON type is 400 INVALID_BODY naming the field',
+          status == 400 and code_of(body) == 'INVALID_BODY' and 'title' in details,
+          (status, code_of(body), details))
 
     # An id nobody has.
     status, _, body = call('GET', '/api/v1/lots/' + str(uuid.uuid4()), alice)
