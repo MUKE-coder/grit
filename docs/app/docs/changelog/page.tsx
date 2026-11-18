@@ -72,6 +72,112 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.545.0 */}
+            <div className="mb-12" id="v3.545.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.545.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The translated API messages were a facility nothing used</h3>
+                <p>
+                  <code>grit new --i18n</code> advertises translated API
+                  messages, and the i18n docs said toast messages come from the
+                  API in the user&apos;s language. Neither was true. The
+                  catalogues were compiled in and the frontend read them, and
+                  every error the API itself returned was English.
+                </p>
+                <p>
+                  Found while merging{' '}
+                  <a href="https://github.com/MUKE-coder/grit/pull/223"
+                  target="_blank" rel="noopener noreferrer">#223</a>, which
+                  fixes the Spanish and French wording of the catalogue&apos;s
+                  resource messages. Checking who actually renders those
+                  messages turned up the answer: nothing does.{' '}
+                  <code>internal/response</code>, the translated helper, has
+                  zero call sites in generated code.{' '}
+                  <code>respond.Fail</code> has 441 and never translated. So a
+                  project could translate its own handlers and the framework
+                  answered its users in English regardless.
+                </p>
+
+                <h4>Keyed on the code, not the call site</h4>
+                <p>
+                  Every <code>Fail</code> already carries a documented error
+                  code, and there are 124 codes against those 441 calls. So the
+                  code is what gets translated: <code>FORBIDDEN</code> resolves
+                  to <code>errors.forbidden</code> in the caller&apos;s
+                  language. A locale that translates a code has translated it at
+                  every call site, including in handlers written afterwards, and
+                  not one of the 441 changed.
+                </p>
+                <p>
+                  Most of the mapping points at keys the catalogues already had,
+                  so the wording is the one a translator reviewed rather than
+                  something invented for the table. Fifteen keys are new, in all
+                  four languages.
+                </p>
+                <p>
+                  A code with no translation keeps the English message its
+                  handler passed rather than showing a catalogue key, which is
+                  what makes a language additive. Thirty-two codes are
+                  translated, covering 85% of the call sites. The rest are
+                  deliberate: a rejected webhook signature, an API key, an
+                  origin, the operator-only faults. A test counts code use
+                  across the templates and fails if a code used five times or
+                  more has neither a translation nor a written reason nobody
+                  reads it.
+                </p>
+
+                <h4>English is untouched, and that is the load-bearing part</h4>
+                <p>
+                  A handler&apos;s own message is often more specific than the
+                  code&apos;s general one: &ldquo;Only an owner can archive an
+                  invoice&rdquo; against &ldquo;You do not have permission to do
+                  that&rdquo;. Translating the default locale as well would have
+                  discarded the better sentence at all 441 sites at once,
+                  silently, in the language most of them were written in. So the
+                  bridge returns nothing for the default locale, and English
+                  behaviour is byte-identical to v3.544.0. Readers of other
+                  languages lose nothing by it, because that specific sentence
+                  was never going to be translated. <code>respond.FailT</code>
+                  {' '}takes a key of its own for the refusals worth it.
+                </p>
+                <p>
+                  <code>respond</code> is in every project and the catalogues are
+                  in none by default, so it cannot import them. It exposes a
+                  translator hook instead, nil unless i18n is installed, and the
+                  i18n package registers one from an init. In package{' '}
+                  <code>i18n</code> and not in <code>internal/response</code>,
+                  because an init only runs in a package something imports and
+                  nothing imports that one: it would have been a registration
+                  that never happened, which no test of the catalogues could see.
+                </p>
+
+                <h4>Verified live, which is where the next one showed up</h4>
+                <p>
+                  On a generated project: <code>Accept-Language: es</code> on a
+                  protected route answers{' '}
+                  <code>Tienes que iniciar sesión para hacer eso</code>, French
+                  and Swahili likewise, and English still answers the
+                  handler&apos;s own <code>Authentication required</code>.
+                </p>
+                <p>
+                  It also showed that the English message for a failed
+                  validation is a raw go-playground/validator dump,{' '}
+                  <code>Key: &apos;RegisterRequest.first_name&apos; Error:Field
+                  validation for...</code>, because 71 call sites pass{' '}
+                  <code>err.Error()</code> straight through. So Spanish and
+                  French now read better than English on that path. That is a
+                  separate defect on the same surface and it is filed, not
+                  fixed here.
+                </p>
+              </div>
+            </div>
+
             {/* v3.544.0 */}
             <div className="mb-12" id="v3.544.0">
               <div className="flex items-center gap-3 mb-4">

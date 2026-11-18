@@ -88,6 +88,33 @@ func Has(locale string) bool {
 	return ok
 }
 
+// Lookup is the translation for key in locale, and whether any catalogue had
+// it.
+//
+// Two fallbacks, in order: the requested locale, then the default one. The
+// boolean is the part T cannot express, and a caller that has its own message
+// to fall back on needs it: respond passes a handler's English message and has
+// to know the difference between a catalogue that answered and one that did
+// not. T returns the key for a miss, which is a sensible thing to render and a
+// useless thing to test.
+func Lookup(locale, key string, args ...any) (string, bool) {
+	_ = Load()
+
+	if m, ok := messages[locale]; ok {
+		if s, ok := m[key]; ok {
+			return format(s, args...), true
+		}
+	}
+	if locale != Default {
+		if m, ok := messages[Default]; ok {
+			if s, ok := m[key]; ok {
+				return format(s, args...), true
+			}
+		}
+	}
+	return "", false
+}
+
 // T translates key into locale, substituting fmt-style arguments.
 //
 // Three fallbacks, in order: the requested locale, the default locale, then the
@@ -95,19 +122,8 @@ func Has(locale string) bool {
 // translation shows up in the UI as "errors.not_found" and gets fixed, where an
 // empty string shows up as a blank space and does not.
 func T(locale, key string, args ...any) string {
-	_ = Load()
-
-	if m, ok := messages[locale]; ok {
-		if s, ok := m[key]; ok {
-			return format(s, args...)
-		}
-	}
-	if locale != Default {
-		if m, ok := messages[Default]; ok {
-			if s, ok := m[key]; ok {
-				return format(s, args...)
-			}
-		}
+	if translated, ok := Lookup(locale, key, args...); ok {
+		return translated
 	}
 	return key
 }
@@ -246,6 +262,83 @@ func LocaleOf(c *gin.Context) string {
 		}
 	}
 	return i18n.Default
+}
+`
+}
+
+// i18nRespondBridgeGo emits internal/i18n/respond.go: the one line that makes
+// every framework error message translated.
+//
+// It lives in package i18n and not in internal/response, because an init only
+// runs in a package something imports, and nothing imports internal/response.
+// That package is a convenience for handlers, so in a project whose handlers
+// have not adopted it, its init would never run and the registration would
+// silently not happen. middleware imports i18n, routes import middleware, and
+// main imports routes, so this one is always linked.
+//
+// It reads the locale off the gin context by key rather than calling
+// middleware.LocaleOf, because middleware imports this package and the call
+// would be a cycle. The key is middleware's own constant, repeated here, and a
+// test in Grit compares the two spellings so they cannot drift.
+func i18nRespondBridgeGo() string {
+	return `package i18n
+
+import (
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/respond"
+)
+
+// localeKey is where the Locale middleware leaves the resolved locale.
+//
+// The same string as middleware.LocaleKey, written out rather than imported:
+// middleware imports this package, so importing it back would be a cycle.
+const localeKey = "locale"
+
+// init registers the translator respond calls for every error it writes.
+//
+// This is what makes a Spanish reader see Spanish when any of the framework's
+// 441 respond.Fail calls refuses their request. None of those call sites
+// changes: respond asks for the general message of the code it was given, and
+// the catalogues answer for the codes they have translated.
+//
+// A code no catalogue translates returns "", and respond then uses the English
+// message the handler passed. So adding a locale is additive and never makes a
+// message worse: untranslated stays English rather than becoming a key.
+func init() {
+	respond.Translator = func(c *gin.Context, key string) string {
+		if c == nil {
+			return ""
+		}
+		value, _ := c.Get(localeKey)
+		locale, _ := value.(string)
+		if locale == "" {
+			locale = Default
+		}
+
+		// English is left alone, on purpose, and this is the line that makes
+		// the change safe to ship.
+		//
+		// A handler passes its own message, and some of them say more than the
+		// code's general message does: "Only an owner can archive an invoice"
+		// against "You do not have permission to do that". Translating the
+		// default locale too would discard the more specific sentence at all
+		// 441 call sites at once, silently, in the language most of them were
+		// written in. A reader of another language loses nothing by it,
+		// because that specific sentence was never going to be translated.
+		if locale == Default {
+			return ""
+		}
+
+		// Lookup and not T: T answers with the key when nothing has it, and
+		// respond needs to know the difference so it can keep the handler's
+		// own message instead.
+		translated, ok := Lookup(locale, key)
+		if !ok {
+			return ""
+		}
+		return translated
+	}
 }
 `
 }

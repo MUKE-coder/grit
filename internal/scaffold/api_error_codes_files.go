@@ -126,6 +126,23 @@ var catalogue = map[Code]Meaning{
 
 	b.WriteString(`}
 
+// messageKeys is the catalogue key holding each code's general message, for
+// the codes a person reads. Generated from the same list as the catalogue
+// above, so the two cannot disagree about what a code is called.
+//
+// A code absent from here has no translation and keeps the message its
+// handler passed. That is deliberate for the ones no person reads: a webhook
+// signature, an API key, a rejected origin, the operator-only faults.
+var messageKeys = map[Code]string{
+`)
+	for _, code := range errorcodes.Translated() {
+		if key := errorcodes.MessageKeyOf(code); key != "" {
+			b.WriteString(fmt.Sprintf("\t%s: %q,\n", goConstName(code), key))
+		}
+	}
+
+	b.WriteString(`}
+
 // StatusOf is the status a code is always returned with, or 0 if the code is not
 // one of the documented ones.
 func StatusOf(code Code) int {
@@ -174,6 +191,14 @@ func Codes() []Code {
 // error (grit#208). Nothing in the response or the log said which code, and
 // it reads as correct in review.
 func Fail(c *gin.Context, code Code, message string, details ...map[string]string) {
+	write(c, code, messageFor(c, code, message), details...)
+}
+
+// write is the response itself, shared by Fail and FailT so the two cannot
+// disagree about the status, the envelope or the abort. It translates nothing:
+// both callers have already decided what the message is, and a second lookup
+// here would overwrite the specific message FailT exists to deliver.
+func write(c *gin.Context, code Code, message string, details ...map[string]string) {
 	status := StatusOf(code)
 	if status == 0 {
 		reportUndeclaredCode(code)
@@ -184,6 +209,77 @@ func Fail(c *gin.Context, code Code, message string, details ...map[string]strin
 		body.Details = details[0]
 	}
 	c.AbortWithStatusJSON(status, gin.H{"error": body})
+}
+
+// Translator looks a catalogue key up in the language of the request, and
+// returns "" when no catalogue has it.
+//
+// A hook and not an import, because respond is in every project and the
+// catalogues are not: internal/i18n exists only after grit add i18n, so
+// respond cannot refer to it and still compile everywhere. The i18n package
+// registers itself here instead, from an init in a file that package owns.
+// nil, which is every project without i18n, leaves Fail behaving exactly as
+// it did before v3.545.0.
+var Translator func(c *gin.Context, key string) string
+
+// MessageKey is the catalogue key for a code's general message, or "" when the
+// code has none and its handler's own message stands.
+//
+//	respond.MessageKey(respond.CodeForbidden) == "errors.forbidden"
+//
+// Keyed on the code rather than on the call site, which is the decision worth
+// knowing about. A generated project makes 441 Fail calls with 124 codes, and
+// the code is the part that is stable, documented, and already being passed.
+// Keying on the call site would need a key for each of the 441, a translation
+// of each one in each locale, and another every time anybody writes a handler.
+// Keyed on the code, a locale that translates FORBIDDEN has translated it
+// everywhere, including in handlers written after the translation.
+//
+// What that costs is specificity. A handler refusing with "Only an owner can
+// archive an invoice" answers a Spanish reader the general message for
+// FORBIDDEN. Generic in a language somebody reads beats exact in one they do
+// not, and FailT exists for the refusals worth translating on their own.
+func MessageKey(code Code) string {
+	return messageKeys[code]
+}
+
+// messageFor is the translated general message for a code, and the handler's
+// own message when there is no translator or no translation for it.
+//
+// So an untranslated code reaches the reader in English rather than as a key,
+// and a locale can translate the twenty codes its users actually meet without
+// owing the other hundred.
+func messageFor(c *gin.Context, code Code, message string) string {
+	if Translator == nil || c == nil {
+		return message
+	}
+	key := MessageKey(code)
+	if key == "" {
+		return message
+	}
+	if translated := Translator(c, key); translated != "" {
+		return translated
+	}
+	return message
+}
+
+// FailT is Fail with a message of your own to translate, for a refusal whose
+// general message loses something that matters.
+//
+//	respond.FailT(c, respond.CodeForbidden,
+//	    "errors.only_the_owner_archives", "Only an owner can archive an invoice")
+//
+// The key is read in the request's locale. The fallback is used when no
+// catalogue has the key, and in a project with no i18n at all, so write one
+// that reads correctly on its own rather than a placeholder.
+func FailT(c *gin.Context, code Code, key, fallback string, details ...map[string]string) {
+	message := fallback
+	if Translator != nil && c != nil {
+		if translated := Translator(c, key); translated != "" {
+			message = translated
+		}
+	}
+	write(c, code, message, details...)
 }
 
 // reported is the codes already complained about. Once each: a handler on a

@@ -63,6 +63,10 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 	// itself: it receives a message, not a reason.
 	if layout.APIRoot != "" {
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "i18n.go")] = i18nGo()
+		// The bridge that makes respond translate. In package i18n rather than
+		// internal/response because an init only runs in a package something
+		// imports, and nothing imports internal/response.
+		files[filepath.Join(layout.APIRoot, "internal", "i18n", "respond.go")] = i18nRespondBridgeGo()
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "locales", "en.json")] = i18nLocaleEN()
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "locales", "es.json")] = i18nLocaleES()
 		files[filepath.Join(layout.APIRoot, "internal", "i18n", "locales", "fr.json")] = i18nLocaleFR()

@@ -27,6 +27,82 @@ import (
 	"strings"
 )
 
+// messageKeys is the catalogue key holding a code's general message, for the
+// codes a person reads.
+//
+// respond.Fail takes an English message from its call site, and there are 441
+// of those against 124 codes. Translating the call sites would mean a key for
+// each one, in every locale, forever. Translating the code instead means a
+// locale that has FORBIDDEN has it everywhere, including in handlers written
+// later. What it costs is specificity: a refusal that said "Only an owner can
+// archive an invoice" reads as the general message for FORBIDDEN in Spanish.
+// Generic in a language somebody reads beats exact in one they do not.
+//
+// Most of these point at keys the catalogues already had, so the wording is
+// the one a translator already reviewed rather than something invented for
+// this table.
+//
+// A code absent from here has no translation and keeps its handler's English
+// message. That is the intended state for the ones no person reads: a webhook
+// signature, an API key, a rejected origin or endpoint, and the operator-only
+// faults. Translating those would be work nobody ever sees.
+var messageKeys = map[string]string{
+	// The ones that carry the traffic. Keys the catalogues already had.
+	"VALIDATION_ERROR":  "errors.validation",
+	"INTERNAL_ERROR":    "errors.internal",
+	"NOT_FOUND":         "errors.not_found",
+	"FORBIDDEN":         "errors.forbidden",
+	"UNAUTHORIZED":      "errors.unauthorized",
+	"INVALID_BODY":      "errors.invalid_request",
+	"RATE_LIMITED":      "errors.rate_limited",
+	"CONFLICT":          "errors.conflict",
+	"PAYLOAD_TOO_LARGE": "errors.payload_too_large",
+	"FILE_TOO_LARGE":    "errors.payload_too_large",
+
+	// Signing in. Also already written.
+	"INVALID_CREDENTIALS": "auth.invalid_credentials",
+	"ACCOUNT_LOCKED":      "auth.account_locked",
+	"INVALID_TOKEN":       "auth.token_expired",
+	"INVALID_LINK":        "auth.token_invalid",
+	"INVALID_TOTP_CODE":   "auth.totp_invalid",
+	"INVALID_CODE":        "auth.totp_invalid",
+
+	// New keys, because nothing existing said these.
+	"ACCOUNT_DISABLED":      "errors.account_disabled",
+	"INVALID_BACKUP_CODE":   "errors.invalid_backup_code",
+	"INVALID_PENDING_TOKEN": "errors.sign_in_expired",
+	"CSRF_INVALID":          "errors.request_not_verified",
+	"TOTP_ALREADY_ENABLED":  "errors.totp_already_enabled",
+	"TOKEN_ERROR":           "errors.sign_in_failed",
+	"TOTP_ERROR":            "errors.totp_failed",
+	"MAIL_FAILED":           "errors.mail_failed",
+	"INVALID_FILE_TYPE":     "errors.invalid_file_type",
+	"INVALID_FILE":          "errors.invalid_file",
+	"UPLOAD_FAILED":         "errors.upload_failed",
+	"UPLOAD_NOT_FOUND":      "errors.upload_not_found",
+	"STORAGE_UNAVAILABLE":   "errors.storage_unavailable",
+	"REDIS_UNAVAILABLE":     "errors.service_unavailable",
+	"SETTINGS_UNAVAILABLE":  "errors.service_unavailable",
+	"AI_UNAVAILABLE":        "errors.ai_unavailable",
+}
+
+// MessageKeyOf is the catalogue key for a code's general message, or "" when
+// the code has none and the handler's own message stands.
+func MessageKeyOf(code string) string {
+	return messageKeys[code]
+}
+
+// Translated is the codes that have a general message, sorted. Used by the
+// generator and by the test that holds this table to the code list.
+func Translated() []string {
+	out := make([]string, 0, len(messageKeys))
+	for code := range messageKeys {
+		out = append(out, code)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // Category is what kind of problem a code reports, which is what decides how a
 // client should treat it: fix the request, sign in, wait, or give up and report.
 type Category string

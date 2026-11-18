@@ -184,11 +184,66 @@ const t = useTranslations("nav");
                 merged into them, leaving every translation you wrote, and its order, as it was.
               </p>
 
+              <h2 id="api-errors">Errors the API refuses with</h2>
+              <p>
+                Every error the framework returns is translated, and no handler had to change for
+                that. <code className={C}>respond.Fail</code> is called 441 times in a generated
+                project, always with an error code and an English message. The code is what gets
+                translated: <code className={C}>FORBIDDEN</code> resolves to{' '}
+                <code className={C}>errors.forbidden</code> in the caller&apos;s language, so a
+                locale that translates a code has translated it at every call site, including in
+                handlers written later.
+              </p>
+              <p>
+                A code with no translation keeps the English message its handler passed, rather than
+                showing a catalogue key. That is what makes a language additive: Grit translates the
+                thirty-odd codes a person actually meets, and the ones no person reads, a rejected
+                webhook signature or API key, stay in English on purpose.
+              </p>
+              <p>
+                <strong>English is left exactly as it was.</strong> A handler&apos;s own message is
+                often more specific than the code&apos;s general one, &ldquo;Only an owner can
+                archive an invoice&rdquo; against &ldquo;You do not have permission to do
+                that&rdquo;, and translating the default locale would have replaced the better
+                sentence at all 441 sites at once. Readers of other languages lose nothing by it,
+                because that specific sentence was never going to be translated.
+              </p>
+              <p>
+                When the general message does lose something that matters, give the refusal a key of
+                its own:
+              </p>
+              <CodeBlock
+                language="go"
+                code={`respond.FailT(c, respond.CodeForbidden,
+    "errors.only_the_owner_archives", "Only an owner can archive an invoice")`}
+              />
+              <p>
+                The fallback is used when no catalogue has the key, and in a project with no i18n at
+                all, so write one that reads correctly on its own.
+              </p>
+              <p>
+                Codes you declare yourself in{' '}
+                <code className={C}>.grit/error-codes.yaml</code> have no general message yet, so
+                they keep the English one their handler passes. Use{' '}
+                <code className={C}>respond.FailT</code> with a key of your own for those.
+              </p>
+              <p>
+                The error <em>code</em> is never translated. Clients branch on it, and translating
+                the thing code branches on breaks every client that ever shipped. Per-field
+                validation messages in <code className={C}>error.details</code> come from the
+                binding tags and are still English.
+              </p>
+
               <h2 id="not-yet">Still in English</h2>
               <p>
                 The account menus, the record detail page&apos;s chrome and the System Hub pages do not
-                go through <code className={C}>t()</code> yet. Toast messages come from the API in the
-                user&apos;s language.
+                go through <code className={C}>t()</code> yet.
+              </p>
+              <p>
+                On the API side: the per-field messages in <code className={C}>error.details</code>,
+                which come from the binding tags rather than a catalogue, and the ninety-odd error
+                codes no person reads. A code used by the framework five times or more and read by a
+                human is translated, and a test fails if a new one is not.
               </p>
             </div>
 

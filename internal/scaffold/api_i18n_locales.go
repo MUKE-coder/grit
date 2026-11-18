@@ -45,6 +45,22 @@ func i18nLocaleEN() string {
   "errors.conflict": "That conflicts with something that already exists",
   "errors.payload_too_large": "That upload is too large",
 
+  "errors.account_disabled": "This account has been deactivated",
+  "errors.invalid_backup_code": "That recovery code is not correct",
+  "errors.sign_in_expired": "That sign-in has expired. Start again",
+  "errors.sign_in_failed": "Your sign-in could not be completed. Try again",
+  "errors.request_not_verified": "That request could not be verified. Reload the page and try again",
+  "errors.totp_already_enabled": "Two-factor authentication is already on",
+  "errors.totp_failed": "Two-factor setup could not be completed. Try again",
+  "errors.mail_failed": "That email could not be sent. Try again",
+  "errors.invalid_file_type": "That kind of file is not accepted here",
+  "errors.invalid_file": "That file could not be read",
+  "errors.upload_failed": "That upload did not finish. Try again",
+  "errors.upload_not_found": "That file could not be found",
+  "errors.storage_unavailable": "File storage is not available right now",
+  "errors.service_unavailable": "That is not available right now. Try again shortly",
+  "errors.ai_unavailable": "The assistant is not available right now",
+
   "auth.invalid_credentials": "That email and password do not match",
   "auth.account_locked": "This account is locked. Try again later",
   "auth.email_taken": "An account with that email already exists",
@@ -92,6 +108,22 @@ func i18nLocaleES() string {
   "errors.rate_limited": "Demasiadas solicitudes. Inténtalo de nuevo en un momento",
   "errors.conflict": "Eso entra en conflicto con algo que ya existe",
   "errors.payload_too_large": "Ese archivo es demasiado grande",
+
+  "errors.account_disabled": "Esta cuenta ha sido desactivada",
+  "errors.invalid_backup_code": "Ese código de recuperación no es correcto",
+  "errors.sign_in_expired": "Ese inicio de sesión ha caducado. Empieza otra vez",
+  "errors.sign_in_failed": "No se pudo completar el inicio de sesión. Inténtalo otra vez",
+  "errors.request_not_verified": "No se pudo verificar la solicitud. Vuelve a cargar la página e inténtalo otra vez",
+  "errors.totp_already_enabled": "La verificación en dos pasos ya está activada",
+  "errors.totp_failed": "No se pudo completar la configuración en dos pasos. Inténtalo otra vez",
+  "errors.mail_failed": "No se pudo enviar el correo. Inténtalo otra vez",
+  "errors.invalid_file_type": "Ese tipo de archivo no se acepta aquí",
+  "errors.invalid_file": "No se pudo leer ese archivo",
+  "errors.upload_failed": "La subida no se completó. Inténtalo otra vez",
+  "errors.upload_not_found": "No se encontró ese archivo",
+  "errors.storage_unavailable": "El almacenamiento de archivos no está disponible ahora mismo",
+  "errors.service_unavailable": "Eso no está disponible ahora mismo. Inténtalo en un momento",
+  "errors.ai_unavailable": "El asistente no está disponible ahora mismo",
 
   "auth.invalid_credentials": "Ese correo y esa contraseña no coinciden",
   "auth.account_locked": "Esta cuenta está bloqueada. Inténtalo más tarde",
@@ -141,6 +173,22 @@ func i18nLocaleFR() string {
   "errors.conflict": "Cela entre en conflit avec un élément existant",
   "errors.payload_too_large": "Ce fichier est trop volumineux",
 
+  "errors.account_disabled": "Ce compte a été désactivé",
+  "errors.invalid_backup_code": "Ce code de secours n'est pas correct",
+  "errors.sign_in_expired": "Cette connexion a expiré. Recommencez",
+  "errors.sign_in_failed": "La connexion n'a pas pu aboutir. Réessayez",
+  "errors.request_not_verified": "Cette requête n'a pas pu être vérifiée. Rechargez la page et réessayez",
+  "errors.totp_already_enabled": "La double authentification est déjà activée",
+  "errors.totp_failed": "La configuration de la double authentification n'a pas abouti. Réessayez",
+  "errors.mail_failed": "Cet e-mail n'a pas pu être envoyé. Réessayez",
+  "errors.invalid_file_type": "Ce type de fichier n'est pas accepté ici",
+  "errors.invalid_file": "Ce fichier n'a pas pu être lu",
+  "errors.upload_failed": "L'envoi n'est pas allé au bout. Réessayez",
+  "errors.upload_not_found": "Ce fichier est introuvable",
+  "errors.storage_unavailable": "Le stockage de fichiers n'est pas disponible pour le moment",
+  "errors.service_unavailable": "Ce service n'est pas disponible pour le moment. Réessayez dans un instant",
+  "errors.ai_unavailable": "L'assistant n'est pas disponible pour le moment",
+
   "auth.invalid_credentials": "Cet e-mail et ce mot de passe ne correspondent pas",
   "auth.account_locked": "Ce compte est verrouillé. Réessayez plus tard",
   "auth.email_taken": "Un compte existe déjà avec cet e-mail",
@@ -188,6 +236,22 @@ func i18nLocaleSW() string {
   "errors.rate_limited": "Maombi mengi mno. Jaribu tena baadaye kidogo",
   "errors.conflict": "Hiyo inagongana na kitu kilichopo tayari",
   "errors.payload_too_large": "Faili hilo ni kubwa mno",
+
+  "errors.account_disabled": "Akaunti hii imezimwa",
+  "errors.invalid_backup_code": "Msimbo huo wa dharura si sahihi",
+  "errors.sign_in_expired": "Kuingia huko kumeisha muda. Anza tena",
+  "errors.sign_in_failed": "Kuingia hakukukamilika. Jaribu tena",
+  "errors.request_not_verified": "Ombi hilo halikuthibitishwa. Pakia ukurasa upya na ujaribu tena",
+  "errors.totp_already_enabled": "Uthibitishaji wa hatua mbili umewashwa tayari",
+  "errors.totp_failed": "Uwekaji wa hatua mbili haukukamilika. Jaribu tena",
+  "errors.mail_failed": "Barua pepe hiyo haikutumwa. Jaribu tena",
+  "errors.invalid_file_type": "Aina hiyo ya faili haikubaliki hapa",
+  "errors.invalid_file": "Faili hilo halikusomeka",
+  "errors.upload_failed": "Upakiaji haukukamilika. Jaribu tena",
+  "errors.upload_not_found": "Faili hilo halipatikani",
+  "errors.storage_unavailable": "Hifadhi ya mafaili haipatikani kwa sasa",
+  "errors.service_unavailable": "Hiyo haipatikani kwa sasa. Jaribu tena baadaye kidogo",
+  "errors.ai_unavailable": "Msaidizi hapatikani kwa sasa",
 
   "auth.invalid_credentials": "Barua pepe na nenosiri hazilingani",
   "auth.account_locked": "Akaunti hii imefungwa. Jaribu tena baadaye",
@@ -274,10 +338,17 @@ func i18nTestGo() string {
 	return `package i18n
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/respond"
 )
 
 func TestCataloguesResolve(t *testing.T) {
@@ -369,6 +440,108 @@ func verbs(message string) string {
 }
 
 var printfVerb = regexp.MustCompile("%[-+# 0]*[0-9]*(\\.[0-9]+)?[A-Za-z%]")
+
+// The framework's own error messages come out translated.
+//
+// This is the end of the thing i18n was half of until v3.545.0: the
+// catalogues were compiled in and the frontend read them, and every message
+// the API itself refused a request with was English, because all 441
+// respond.Fail calls pass an English string and nothing translated it.
+//
+// respond now asks a translator for the general message of the code it was
+// given, and internal/i18n/respond.go registers one. So this test is about
+// the registration as much as the catalogue: an init that does not run, in a
+// package nothing imports, is the way this silently would not work.
+func TestTheFrameworksOwnErrorsAreTranslated(t *testing.T) {
+	if respond.Translator == nil {
+		t.Fatal("nothing registered a translator, so every API error is English " +
+			"however many catalogues are compiled in")
+	}
+
+	gin.SetMode(gin.TestMode)
+
+	cases := []struct {
+		locale string
+		code   respond.Code
+		want   string
+	}{
+		{"es", respond.CodeForbidden, "No tienes permiso para hacer eso"},
+		{"fr", respond.CodeForbidden, "Vous n'avez pas la permission de faire cela"},
+		{"sw", respond.CodeNotFound, "Haipatikani"},
+		{"es", respond.CodeValidationError, "Algunos datos no son correctos"},
+	}
+	for _, tc := range cases {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+		c.Set("locale", tc.locale)
+
+		respond.Fail(c, tc.code, "the handler's own English message")
+
+		var body struct {
+			Error struct {
+				Code    string ` + "`json:\"code\"`" + `
+				Message string ` + "`json:\"message\"`" + `
+			} ` + "`json:\"error\"`" + `
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatalf("%s %s: %v\n%s", tc.locale, tc.code, err, rec.Body.String())
+		}
+		if body.Error.Code != string(tc.code) {
+			t.Errorf("%s: code came back %q", tc.locale, body.Error.Code)
+		}
+		if body.Error.Message != tc.want {
+			t.Errorf("%s %s: message %q, want %q",
+				tc.locale, tc.code, body.Error.Message, tc.want)
+		}
+	}
+}
+
+// A code with no translation keeps the handler's message, in every locale.
+//
+// This is what makes adding a locale additive. There are 124 codes and a
+// translation for the ones a person reads; the rest have to come out as
+// English rather than as a key, or every locale would owe a translation for
+// an API key rejection nobody will ever read.
+func TestAnUntranslatedCodeKeepsItsEnglishMessage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	if respond.MessageKey(respond.CodeInvalidSignature) != "" {
+		t.Skip("INVALID_SIGNATURE has a translation now; pick another untranslated code")
+	}
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+	c.Set("locale", "es")
+
+	respond.Fail(c, respond.CodeInvalidSignature, "That signature does not match")
+
+	if !strings.Contains(rec.Body.String(), "That signature does not match") {
+		t.Errorf("an untranslated code lost its message: %s", rec.Body.String())
+	}
+}
+
+// English is untouched, which is the line that made this safe to ship.
+//
+// A handler's own message often says more than the code's general one: "Only
+// an owner can archive an invoice" against "You do not have permission to do
+// that". Translating the default locale as well would have discarded the
+// better sentence at all 441 call sites at once, silently.
+func TestEnglishStillGetsTheHandlersOwnMessage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+	c.Set("locale", "en")
+
+	respond.Fail(c, respond.CodeForbidden, "Only an owner can archive an invoice")
+
+	if !strings.Contains(rec.Body.String(), "Only an owner can archive an invoice") {
+		t.Errorf("English lost the handler's specific message: %s", rec.Body.String())
+	}
+}
 
 func TestNegotiate(t *testing.T) {
 	cases := map[string]string{
