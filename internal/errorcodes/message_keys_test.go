@@ -102,9 +102,22 @@ func TestTheCodesHandlersActuallyUseAreTranslated(t *testing.T) {
 
 	// Guard the guard: a counter that found nothing would make the loop above
 	// pass with any table at all.
-	if uses["VALIDATION_ERROR"] < 50 {
-		t.Errorf("counted %d uses of VALIDATION_ERROR, so the template walk is "+
-			"not reading the handlers", uses["VALIDATION_ERROR"])
+	//
+	// On the total rather than on one code's count, which is the lesson of
+	// writing it the other way first. It was pinned to VALIDATION_ERROR being
+	// used 50 times or more, and v3.546.0 moved 53 bind sites onto
+	// respond.Invalid, which names no code: a correct change failed a guard
+	// that was really asserting "the walk reads files".
+	total := 0
+	for _, n := range uses {
+		total += n
+	}
+	if total < 200 {
+		t.Errorf("counted %d code uses across the templates, so the walk is not "+
+			"reading the handlers", total)
+	}
+	if uses["VALIDATION_ERROR"] == 0 {
+		t.Error("counted no uses of VALIDATION_ERROR, which cannot be right")
 	}
 	for _, code := range []string{"SENTINEL_OFF", "ENDPOINT_NOT_ALLOWED",
 		"INVALID_API_KEY", "INVALID_SIGNATURE", "ORIGIN_NOT_ALLOWED",

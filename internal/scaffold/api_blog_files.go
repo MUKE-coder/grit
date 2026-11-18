@@ -377,7 +377,7 @@ func (h *BlogHandler) Create(c *gin.Context) {
 	var req CreateBlogRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -429,7 +429,7 @@ func (h *BlogHandler) Update(c *gin.Context) {
 	var req UpdateBlogRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

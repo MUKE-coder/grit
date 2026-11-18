@@ -70,8 +70,33 @@ export default function ErrorCodesPage() {
               />
               <p>
                 <code>details</code> is present on a validation failure and maps each field to what
-                is wrong with it. Branch on <code>code</code> rather than on the status: the status
-                groups errors, the code says which one it is.
+                is wrong with it, keyed by the name the client sent rather than the Go field.
+                Branch on <code>code</code> rather than on the status: the status groups errors, the
+                code says which one it is.
+              </p>
+              <p>
+                In a handler, that shape comes from one call:
+              </p>
+              <CodeBlock
+                language="go"
+                code={`if err := c.ShouldBindJSON(&req); err != nil {
+    respond.Invalid(c, err)
+    return
+}`}
+              />
+              <p>
+                Use it rather than passing <code>err.Error()</code> to{' '}
+                <code>respond.Fail</code>. A binding error&apos;s own text is the validator talking
+                to whoever wrote the struct, naming the Go type and the tag, and it leaves{' '}
+                <code>details</code> empty: the one field this page tells you to read. Fifty-three
+                handlers did exactly that until v3.546.0.
+              </p>
+              <p>
+                <code>Invalid</code> also answers a body that never parsed with{' '}
+                <code>INVALID_BODY</code> and 400 rather than 422, naming the field when the
+                decoder knows which one: <code>&quot;email&quot;: &quot;Expected a string,
+                received a number&quot;</code>. A shape whose fields could not be checked is a
+                different failure from a field that broke a rule.
               </p>
 
               <h2 id="typescript">In TypeScript</h2>

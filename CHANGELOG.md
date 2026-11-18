@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.546.0 - November 19, 2026
+
+### A failed validation answered with the validator talking to itself
+
+[#225](https://github.com/MUKE-coder/grit/issues/225), found verifying v3.545.0 live. Posting a bad body to `/api/auth/register` answered:
+
+`{`Key: 'RegisterRequest.first_name' Error:Field validation for 'first_name' failed on the 'required' tag`}` Three things wrong at once. It is the library talking to whoever wrote the struct. It names the Go type and the tag vocabulary on the wire. And `error.details`, the field the error documentation tells clients to read and show against each input, was empty, so a frontend had no option but to print the blob.
+
+It answers this now:
+
+`{`{"error": { "code": "VALIDATION_ERROR", "message": "Check the highlighted fields", "details": { "email": "Enter a valid email address", "first_name": "This field is required", "password": "Must be at least 8 characters" } }}`}` The cause was not what the issue said The issue claimed there was no formatter. There was, and a good one: `respond.ValidationFields` names every field the way the client sent it, phrases the rule it broke, and picks the unit, so &ldquo;at least 8&rdquo; is characters for a string and items for a list. It teaches gin's validator the json tag so the names are right everywhere.
+
+None of the 53 handlers used it. They called `respond.Fail(c, CodeValidationError, err.Error())`, which is the obvious thing and the wrong one. So the fix is `respond.Invalid(c, err)`, one helper over machinery that was already there, and 53 call sites moved onto it. Worth correcting on the issue rather than leaving a wrong diagnosis in the record.
+
+#### Converting 53 sites broke two repair anchors
+
+A repair finds the code it fixes by matching what an older project actually contains, so those snapshots are frozen by definition. A walk over `internal/` rewrote two of them along with the real call sites, and an anchor updated to the new spelling matches nothing in any project that predates the change: the repair reports nothing to do, forever, silently.
+
+One was caught by the test that feeds that repair an older handler. The other had no such test and was found by reading the diff. Both are fixed, the refresh repair now matches both spellings, and there is a test for the class rather than for those two.
+
+#### Also
+
+A body that never parsed answers `INVALID_BODY` and 400 rather than 422, and names the field when the decoder knows which: `"email": "Expected a string, received a number"`. A shape whose fields could not be checked is a different failure from a field that broke a rule.
+
+The generated tree handler's rebuild endpoint answered `INTERNAL_ERROR` with the Go error's own text, which for a write carries schema names and sometimes SQL. That code's catalogue entry says the message is deliberately vague and the detail belongs in the log, which is what `respond.Internal` does. One site, and a guard for the next.
+
+And `internal/i18n/respond.go`, the translator bridge added yesterday, was delivered once at first install and skipped on every upgrade after. Its other half, `internal/respond`, is refreshed every time. Today that still compiles; the first change to the hook would have made it stop, and a fix to the bridge would have reached nobody.
+
+Per-field messages in `details` are still English, as v3.545.0 documented. They come from the binding tags rather than a catalogue, and translating them needs the request threaded through an exported function a project may be calling.
+
+
 ## v3.545.0 - November 19, 2026
 
 ### The translated API messages were a facility nothing used

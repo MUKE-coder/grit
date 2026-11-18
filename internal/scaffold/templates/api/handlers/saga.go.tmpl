@@ -65,7 +65,7 @@ func (h *SagaHandler) Retry(c *gin.Context) {
 		// The service refuses a run that is not stuck, and says why. That is a
 		// 422 rather than a 500: the request was understood and is not something
 		// this run can do.
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": run, "message": "The run is compensating again"})

@@ -332,7 +332,7 @@ func (h *AIHandler) Complete(c *gin.Context) {
 
 	var req CompleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -360,7 +360,7 @@ func (h *AIHandler) Chat(c *gin.Context) {
 
 	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -388,7 +388,7 @@ func (h *AIHandler) Stream(c *gin.Context) {
 
 	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

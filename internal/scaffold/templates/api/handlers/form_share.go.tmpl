@@ -93,7 +93,7 @@ type CreateFormShareRequest struct {
 func (h *FormShareHandler) Create(c *gin.Context) {
 	var req CreateFormShareRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -159,7 +159,7 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 
 	var req UpdateFormShareRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	if req.Label != nil {
@@ -273,7 +273,7 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 
 	var body PublicFormSubmitRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

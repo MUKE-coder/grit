@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.545.0"
+var version = "3.546.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -2024,6 +2024,19 @@ func upgradeCmd() *cobra.Command {
 			// with 225, and the routes screen and grit add scout both read it.
 			if root, err := os.Getwd(); err == nil {
 				scaffold.RegenerateAccessTable(root)
+			}
+
+			// Handlers off err.Error() for a binding failure (grit#225).
+			//
+			// Its own pass with its own gate, after everything that writes a
+			// handler, because a project's handlers are its own and upgrade
+			// preserves them: converting the templates reached new projects and
+			// nobody else. A check folded into an existing repair would only
+			// reach projects that repair had not already visited.
+			if root, err := os.Getwd(); err == nil {
+				if err := scaffold.RepairBindFailures(root); err != nil {
+					color.New(color.FgYellow).Printf("  ⚠ moving handlers off err.Error() for a bind failure: %v\n", err)
+				}
 			}
 
 			// Last, because a plugin update rewrites routes.go and this is the

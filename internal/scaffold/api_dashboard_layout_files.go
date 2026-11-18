@@ -170,7 +170,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 
 	var req DashboardLayoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

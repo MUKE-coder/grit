@@ -62,7 +62,7 @@ type FeatureFlagRequest struct {
 func (h *FeatureFlagHandler) Create(c *gin.Context) {
 	var body FeatureFlagRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	if body.Name == "" {
@@ -105,7 +105,7 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 
 	var body FeatureFlagRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

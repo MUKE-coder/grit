@@ -7062,10 +7062,12 @@ func apiRespondGo() string {
 package respond
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -7127,6 +7129,104 @@ func Conflict(c *gin.Context, message string) {
 // per-field messages so the frontend can highlight the fields.
 func Validation(c *gin.Context, message string, fields map[string]string) {
 	Fail(c, CodeValidationError, message, fields)
+}
+
+// Invalid answers a binding failure, and is what a handler should call when
+// ShouldBindJSON returns an error.
+//
+//	if err := c.ShouldBindJSON(&req); err != nil {
+//	    respond.Invalid(c, err)
+//	    return
+//	}
+//
+// It exists because the obvious thing is wrong. Fifty-four handlers answered
+// with respond.Fail(c, CodeValidationError, err.Error()), and err.Error() on a
+// validator failure is the library talking to whoever wrote the struct:
+//
+//	Key: 'RegisterRequest.first_name' Error:Field validation for 'first_name'
+//	failed on the 'required' tag
+//
+// That went to the client, naming the Go type and the tag, with embedded
+// newlines, while error.details stayed empty. The documentation for
+// VALIDATION_ERROR tells clients to read details and show each message against
+// its input, so the one place that promise was made was the place it was not
+// kept, and a frontend had no option but to print the blob (grit#225).
+//
+// Everything it needs was already here: ValidationFields names each field the
+// way the client sent it and phrases the rule it broke. Only the handlers were
+// not using it.
+func Invalid(c *gin.Context, err error) {
+	if fields := ValidationFields(err); len(fields) > 0 {
+		Validation(c, "Check the highlighted fields", fields)
+		return
+	}
+
+	// A field whose JSON type is not the one the struct reads. The decoder
+	// knows which field and what arrived, so say that rather than answering
+	// with nothing: "expected a string, received a number" is something the
+	// caller can act on, and it names neither the Go type nor the struct.
+	var wrongType *json.UnmarshalTypeError
+	if errors.As(err, &wrongType) && wrongType.Field != "" {
+		Fail(c, CodeInvalidBody, "That request body could not be read",
+			map[string]string{
+				wrongType.Field: "Expected " + jsonKind(wrongType.Type) +
+					", received " + article(wrongType.Value),
+			})
+		return
+	}
+
+	// Anything else: a body that is not JSON at all, a truncated one, the
+	// wrong content type. There is no field to name, and the decoder's own
+	// sentence is about bytes and offsets, so this is the honest answer.
+	//
+	// 400 and not 422, because the body never parsed into a shape whose fields
+	// could be checked, which is the distinction between the two codes.
+	Fail(c, CodeInvalidBody, "That request body could not be read")
+}
+
+// jsonKind describes a Go type the way the JSON that feeds it looks, because
+// the caller sent JSON and has never heard of the struct.
+func jsonKind(t reflect.Type) string {
+	if t == nil {
+		return "a different type"
+	}
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	switch t.Kind() {
+	case reflect.String:
+		return "a string"
+	case reflect.Bool:
+		return "true or false"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return "a whole number"
+	case reflect.Float32, reflect.Float64:
+		return "a number"
+	case reflect.Slice, reflect.Array:
+		return "a list"
+	case reflect.Map, reflect.Struct:
+		return "an object"
+	}
+	return "a different type"
+}
+
+// article is the JSON value's own word, as encoding/json reports it ("number",
+// "string", "bool", "array", "object"), with something to read it with.
+func article(value string) string {
+	switch value {
+	case "":
+		return "something else"
+	case "array":
+		return "a list"
+	case "object":
+		return "an object"
+	case "bool":
+		return "true or false"
+	case "number", "string":
+		return "a " + value
+	}
+	return value
 }
 
 // RuleError is a business rule the caller broke, phrased for the caller.

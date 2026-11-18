@@ -359,7 +359,7 @@ type MagicLinkRequest struct {
 func (h *AuthHandler) RequestMagicLink(c *gin.Context) {
 	var req MagicLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -433,7 +433,7 @@ type MagicLinkConsumeRequest struct {
 func (h *AuthHandler) ConsumeMagicLink(c *gin.Context) {
 	var req MagicLinkConsumeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

@@ -142,7 +142,7 @@ type ResetPasswordRequest struct {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -444,7 +444,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -547,7 +547,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 				respond.Fail(c, respond.CodeInvalidToken, "No refresh token")
 				return
 			}
-			respond.Fail(c, respond.CodeValidationError, err.Error())
+			respond.Invalid(c, err)
 			return
 		}
 		if req.RefreshToken == "" {

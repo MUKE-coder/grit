@@ -629,7 +629,7 @@ func (h *%[1]sTreeHandler) Move(c *gin.Context) {
 		Position int     `+"`"+`json:"position"`+"`"+`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -650,7 +650,11 @@ func (h *%[1]sTreeHandler) Move(c *gin.Context) {
 // Also the repair for a bulk import that went around the hooks.
 func (h *%[1]sTreeHandler) RebuildPaths(c *gin.Context) {
 	if err := h.Tree.RebuildPaths(c.Request.Context()); err != nil {
-		respond.Fail(c, respond.CodeInternalError, err.Error())
+		// Internal and not Fail with err.Error(): INTERNAL_ERROR's message is
+		// deliberately vague by the catalogue's own entry, and the detail
+		// belongs in the server log. This one sent a GORM error, which carries
+		// schema names and sometimes SQL, to whoever called the endpoint.
+		respond.Internal(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Paths rebuilt"})
@@ -664,7 +668,7 @@ func (h *%[1]sTreeHandler) Reorder(c *gin.Context) {
 		IDs      []string `+"`"+`json:"ids" binding:"required"`+"`"+`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	if err := h.Tree.Reorder(c.Request.Context(), req.ParentID, req.IDs); err != nil {

@@ -70,7 +70,7 @@ func (h *` + pascal + `VariantHandler) CreateOption(c *gin.Context) {
 		Position     int    ` + "`" + `json:"position"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	if req.Kind == "" {
@@ -147,7 +147,7 @@ func (h *` + pascal + `VariantHandler) CreateOptionValue(c *gin.Context) {
 		Position   int     ` + "`" + `json:"position"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -196,7 +196,7 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 		ValueIDs  []string ` + "`" + `json:"value_ids"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -398,7 +398,7 @@ func (h *` + pascal + `VariantHandler) Update(c *gin.Context) {
 		ClearPrice bool ` + "`" + `json:"clear_price"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

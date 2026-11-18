@@ -787,7 +787,7 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 
 	var req PresignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -877,7 +877,7 @@ type CompleteUploadRequest struct {
 func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	var req CompleteUploadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

@@ -72,6 +72,120 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.546.0 */}
+            <div className="mb-12" id="v3.546.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.546.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A failed validation answered with the validator talking to itself</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/225"
+                  target="_blank" rel="noopener noreferrer">#225</a>, found
+                  verifying v3.545.0 live. Posting a bad body to{' '}
+                  <code>/api/auth/register</code> answered:
+                </p>
+                <pre><code>{`Key: 'RegisterRequest.first_name' Error:Field validation
+for 'first_name' failed on the 'required' tag`}</code></pre>
+                <p>
+                  Three things wrong at once. It is the library talking to
+                  whoever wrote the struct. It names the Go type and the tag
+                  vocabulary on the wire. And <code>error.details</code>, the
+                  field the error documentation tells clients to read and show
+                  against each input, was empty, so a frontend had no option
+                  but to print the blob.
+                </p>
+                <p>
+                  It answers this now:
+                </p>
+                <pre><code>{`{"error": {
+  "code": "VALIDATION_ERROR",
+  "message": "Check the highlighted fields",
+  "details": {
+    "email": "Enter a valid email address",
+    "first_name": "This field is required",
+    "password": "Must be at least 8 characters"
+  }
+}}`}</code></pre>
+
+                <h4>The cause was not what the issue said</h4>
+                <p>
+                  The issue claimed there was no formatter. There was, and a
+                  good one: <code>respond.ValidationFields</code> names every
+                  field the way the client sent it, phrases the rule it broke,
+                  and picks the unit, so &ldquo;at least 8&rdquo; is characters
+                  for a string and items for a list. It teaches gin&apos;s
+                  validator the json tag so the names are right everywhere.
+                </p>
+                <p>
+                  None of the 53 handlers used it. They called{' '}
+                  <code>respond.Fail(c, CodeValidationError, err.Error())</code>,
+                  which is the obvious thing and the wrong one. So the fix is{' '}
+                  <code>respond.Invalid(c, err)</code>, one helper over
+                  machinery that was already there, and 53 call sites moved onto
+                  it. Worth correcting on the issue rather than leaving a wrong
+                  diagnosis in the record.
+                </p>
+
+                <h4>Converting 53 sites broke two repair anchors</h4>
+                <p>
+                  A repair finds the code it fixes by matching what an older
+                  project actually contains, so those snapshots are frozen by
+                  definition. A walk over <code>internal/</code> rewrote two of
+                  them along with the real call sites, and an anchor updated to
+                  the new spelling matches nothing in any project that predates
+                  the change: the repair reports nothing to do, forever,
+                  silently.
+                </p>
+                <p>
+                  One was caught by the test that feeds that repair an older
+                  handler. The other had no such test and was found by reading
+                  the diff. Both are fixed, the refresh repair now matches both
+                  spellings, and there is a test for the class rather than for
+                  those two.
+                </p>
+
+                <h4>Also</h4>
+                <p>
+                  A body that never parsed answers <code>INVALID_BODY</code> and
+                  400 rather than 422, and names the field when the decoder
+                  knows which: <code>&quot;email&quot;: &quot;Expected a string,
+                  received a number&quot;</code>. A shape whose fields could not
+                  be checked is a different failure from a field that broke a
+                  rule.
+                </p>
+                <p>
+                  The generated tree handler&apos;s rebuild endpoint answered{' '}
+                  <code>INTERNAL_ERROR</code> with the Go error&apos;s own text,
+                  which for a write carries schema names and sometimes SQL. That
+                  code&apos;s catalogue entry says the message is deliberately
+                  vague and the detail belongs in the log, which is what{' '}
+                  <code>respond.Internal</code> does. One site, and a guard for
+                  the next.
+                </p>
+                <p>
+                  And <code>internal/i18n/respond.go</code>, the translator
+                  bridge added yesterday, was delivered once at first install
+                  and skipped on every upgrade after. Its other half,{' '}
+                  <code>internal/respond</code>, is refreshed every time. Today
+                  that still compiles; the first change to the hook would have
+                  made it stop, and a fix to the bridge would have reached
+                  nobody.
+                </p>
+                <p>
+                  Per-field messages in <code>details</code> are still English,
+                  as v3.545.0 documented. They come from the binding tags rather
+                  than a catalogue, and translating them needs the request
+                  threaded through an exported function a project may be
+                  calling.
+                </p>
+              </div>
+            </div>
+
             {/* v3.545.0 */}
             <div className="mb-12" id="v3.545.0">
               <div className="flex items-center gap-3 mb-4">

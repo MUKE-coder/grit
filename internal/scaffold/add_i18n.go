@@ -98,7 +98,7 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 	}
 
 	for path, body := range files {
-		if !force && fileExists(path) && !brokenSwitcher(path) {
+		if !force && fileExists(path) && !brokenSwitcher(path) && !i18nFrameworkOwned(path) {
 			// A catalogue is yours to edit, so it is never replaced, but keys
 			// added in a later release are merged in so they are not shown in
 			// English in the middle of a translated page.
@@ -139,6 +139,28 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 // imported a dropdown-menu component neither app has and so failed the type
 // check of every --i18n project. Replacing it can only fix things: while that
 // component is missing, the file cannot compile, customised or not.
+// i18nFrameworkOwned is the files here that are Grit's and have to be
+// refreshed, rather than left alone because they already exist.
+//
+// Everything else this writer produces is either the developer's (a catalogue,
+// which is merged instead) or wiring that is idempotent once written. The
+// bridge is neither: it is framework code with no reason for anybody to edit
+// it, and it is the half of a pair whose other half, internal/respond, IS
+// refreshed on every upgrade.
+//
+// Leave it behind and a project gets a new respond with an old bridge. Today
+// that still compiles; the first change to the hook's shape would make it
+// stop, and a fix to the bridge itself would reach nobody. The whole reason
+// the bridge exists is that an init in a package nothing imports never runs,
+// and a file never refreshed is the same failure one layer up.
+//
+// grit upgrade calls AddI18n with force=false, so without this the bridge was
+// delivered once, at first install, and never again.
+func i18nFrameworkOwned(path string) bool {
+	dir, base := filepath.Split(filepath.ToSlash(path))
+	return base == "respond.go" && strings.HasSuffix(dir, "internal/i18n/")
+}
+
 func brokenSwitcher(path string) bool {
 	return filepath.Base(path) == "language-switcher.tsx" &&
 		fileContains(path, "@/components/ui/dropdown-menu") &&

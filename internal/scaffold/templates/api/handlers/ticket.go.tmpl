@@ -85,7 +85,7 @@ func (h *TicketHandler) actorOf(c *gin.Context) services.TicketActor {
 func (h *TicketHandler) Create(c *gin.Context) {
 	var req CreateTicketRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	actor := h.actorOf(c)
@@ -172,7 +172,7 @@ func (h *TicketHandler) Get(c *gin.Context) {
 func (h *TicketHandler) Reply(c *gin.Context) {
 	var req TicketReplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	reply, ticket, err := h.tickets().Reply(services.ContextOf(c), h.actorOf(c), c.Param("id"), req.Body)
@@ -219,7 +219,7 @@ func (h *TicketHandler) Assign(c *gin.Context) {
 	}
 	var req AssignTicketRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	ticket, err := h.tickets().Assign(services.ContextOf(c), actor, c.Param("id"), req.AssigneeID)

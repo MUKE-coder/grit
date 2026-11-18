@@ -53,7 +53,7 @@ type OpenReviewRequest struct {
 func (h *AccessReviewHandler) Open(c *gin.Context) {
 	var req OpenReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	review, err := services.OpenAccessReview(h.DB, req.Name, req.Note, c.GetString("user_id"), c.GetString("user_email"))
@@ -76,7 +76,7 @@ type ReviewDecisionRequest struct {
 func (h *AccessReviewHandler) Decide(c *gin.Context) {
 	var req ReviewDecisionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	item, err := services.DecideAccessReviewItem(

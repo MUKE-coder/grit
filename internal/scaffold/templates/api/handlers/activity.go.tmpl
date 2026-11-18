@@ -97,7 +97,7 @@ type ResealResponse struct {
 func (h *ActivityHandler) Reseal(c *gin.Context) {
 	var req ResealRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)

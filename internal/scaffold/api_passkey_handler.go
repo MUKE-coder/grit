@@ -188,7 +188,7 @@ func (h *PasskeyHandler) Rename(c *gin.Context) {
 	}
 	var req renamePasskeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 	name := strings.TrimSpace(req.Name)

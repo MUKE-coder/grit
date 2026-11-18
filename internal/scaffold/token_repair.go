@@ -124,7 +124,27 @@ func repairRefreshHandlerSource(src string) (string, []string, []string) {
 	// bind an empty body and answer 422 with the decoder's "EOF", which a
 	// client's 401-refresh interceptor surfaced instead of the 401 the page
 	// could act on.
-	const bindOld = `	} else {
+	// Two spellings, because a project in the wild has one or the other. The
+	// handler answered a bind failure with
+	// respond.Fail(c, respond.CodeValidationError, err.Error()) until
+	// v3.546.0, and with respond.Invalid(c, err) after it. An anchor matching
+	// only the current template finds nothing in every project scaffolded
+	// before the change, and this repair would report nothing to do forever.
+	//
+	// That is not hypothetical: converting the call sites rewrote this
+	// constant along with the real ones, and the only thing that noticed was
+	// the test that feeds this repair an older handler.
+	bindOlds := []string{
+		`	} else {
+		var req RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond.Invalid(c, err)
+			return
+		}
+		refreshToken = req.RefreshToken
+	}
+`,
+		`	} else {
 		var req RefreshRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			respond.Fail(c, respond.CodeValidationError, err.Error())
@@ -132,7 +152,8 @@ func repairRefreshHandlerSource(src string) (string, []string, []string) {
 		}
 		refreshToken = req.RefreshToken
 	}
-`
+`,
+	}
 	const bindNew = `	} else {
 		var req RefreshRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -140,7 +161,7 @@ func repairRefreshHandlerSource(src string) (string, []string, []string) {
 				respond.Fail(c, respond.CodeInvalidToken, "No refresh token")
 				return
 			}
-			respond.Fail(c, respond.CodeValidationError, err.Error())
+			respond.Invalid(c, err)
 			return
 		}
 		if req.RefreshToken == "" {
@@ -151,10 +172,14 @@ func repairRefreshHandlerSource(src string) (string, []string, []string) {
 	}
 `
 	needsIO := false
-	if strings.Contains(body, bindOld) {
+	for _, bindOld := range bindOlds {
+		if !strings.Contains(body, bindOld) {
+			continue
+		}
 		body = strings.Replace(body, bindOld, bindNew, 1)
 		needsIO = true
 		fixes = append(fixes, "a refresh without a cookie or a body answers INVALID_TOKEN instead of 422 EOF")
+		break
 	}
 
 	if !strings.Contains(src, "GenerateSessionTokenPair(") {

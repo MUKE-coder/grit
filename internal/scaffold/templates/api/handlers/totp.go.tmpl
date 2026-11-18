@@ -164,7 +164,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 
 	var req EnableTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -322,7 +322,7 @@ func (h *TOTPHandler) EnableEmail(c *gin.Context) {
 		Code string `json:"code" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -373,7 +373,7 @@ func (h *TOTPHandler) EnableEmail(c *gin.Context) {
 func (h *TOTPHandler) Verify(c *gin.Context) {
 	var req VerifyTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -444,7 +444,7 @@ func (h *TOTPHandler) sealSecret(c *gin.Context, config *models.TwoFactorConfig)
 func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 	var req VerifyBackupCodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -609,7 +609,7 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 
 	var req DisableTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 

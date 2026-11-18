@@ -619,7 +619,7 @@ type BulkEdit{{Pascal}}Request struct {
 func (h *{{Pascal}}Handler) BulkEdit(c *gin.Context) {
 	var req BulkEdit{{Pascal}}Request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -668,7 +668,7 @@ type BulkCreate{{Pascal}}Request struct {
 func (h *{{Pascal}}Handler) BulkCreate(c *gin.Context) {
 	var req BulkCreate{{Pascal}}Request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -2045,7 +2045,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 	var req Create{{Pascal}}Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -2073,7 +2073,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 	var req Update{{Pascal}}Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -2100,7 +2100,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 	var body map[string]interface{}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
@@ -2153,7 +2153,7 @@ type Bulk{{Pascal}}Request struct {
 func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	var req Bulk{{Pascal}}Request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
+		respond.Invalid(c, err)
 		return
 	}
 
