@@ -149,6 +149,22 @@ const t = useTranslations("nav");
                   its error messages stay in the default language.
                 </li>
               </ol>
+              <p>
+                Two things are checked for you. Every catalogue must carry the same keys as the English
+                one, and the same markers inside them: <code className={C}>%s</code> in the API, whose
+                messages are rendered with <code className={C}>fmt.Sprintf</code>, and{' '}
+                <code className={C}>{'{name}'}</code> in the apps, which next-intl fills in. A
+                translation that drops one does not fall back, it shows the reader{' '}
+                <code className={C}>%!s(MISSING)</code> or a blank where a number belongs.
+              </p>
+              <p>
+                A message that takes a resource or field name is worded so it stays grammatical
+                whatever that name is. Spanish and French inflect, so{' '}
+                <code className={C}>%s creado</code> renders <em>Factura creado</em>. Put the agreement
+                on a word the message owns instead: <code className={C}>Se creó %s</code>,{' '}
+                <code className={C}>Création de %s</code>,{' '}
+                <code className={C}>El campo %s es obligatorio</code>.
+              </p>
 
               <h2 id="upgrading">Upgrading a project from before v3.222.0</h2>
               <p>
