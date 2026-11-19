@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.547.0 - November 19, 2026
+
+### Purging from the Trash left every file the record owned
+
+[#222](https://github.com/MUKE-coder/grit/issues/222), filed five days ago while fixing the four delete paths that do touch storage. This was a fifth that touched it not at all: `Purge`, `Empty` and the nightly `PurgeExpired` hard-deleted the row and stopped there.
+
+And nothing else would ever collect them. The orphan sweep only considers uploads whose `claimed_at` is NULL, and `ClaimRefs` set it when the record was first saved. So the one event that made a file an orphan was also the event that hid it from the collector, permanently. For an optimised image that is four objects per record, and `PurgeExpired` runs every night over everything past the retention window, so it accumulated with nobody doing anything.
+
+#### It releases rather than deletes
+
+The rows are read before they are deleted, because a file column lives on the row and nothing can ask it afterwards, and then `files.ReleaseRefs` marks each upload they referenced unclaimed. The sweep takes it from there.
+
+That is the design decision worth stating. The sweep already checks every key against the project's own tables before removing it, so an upload two records happened to share survives while the second still points at it, and it already knows that one upload is several objects. Deleting from inside the purge would be a second copy of both of those rules, and the copy that gets it wrong costs somebody a file rather than some bytes.
+
+What it costs is latency: the objects go on the sweep's next pass rather than inside the purge. A right-to-erasure request is the case that cannot wait, and that path deletes immediately and always did.
+
+A soft delete still keeps everything, which is the other half of the contract: the row is restorable, so its files have to still be there when it comes back. There is a test for that specifically, because the easy mistake here is releasing too early.
+
+#### Four tests, and the one that matters most
+
+Purge releases, a soft delete does not, the nightly sweep does, and then the end-to-end one: purge a row, run the orphan sweep, and watch it take the stored file and its thumbnail. The two halves live in different packages and each was tested on its own, which is exactly the arrangement that passes while the pair is broken.
+
+Each was confirmed by removing the fix and watching it fail. They ship into every project, beside the service, because the string checks a framework test can do only prove the code says the right thing.
+
+#### Two smaller things found doing it
+
+`sync.Registry.Register` panicked on a zero-value registry: its map was nil and nothing initialised it, so `&Registry{}`, which is the obvious thing to write in a test, was a crash rather than a registry. It initialises lazily now.
+
+And `ClaimRefs` put an empty string in its `IN` list for a ref with no key, which matches any upload row whose path is empty. Both it and `ReleaseRefs` read their keys from one `RefKeys` now, so the pair cannot disagree about what a record points at.
+
+
 ## v3.546.0 - November 19, 2026
 
 ### A failed validation answered with the validator talking to itself

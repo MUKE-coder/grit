@@ -61,6 +61,11 @@ func apiFeatureFlagServiceGo() string { return tmpl("api/services/feature_flag.g
 // to it. Built on the sync registry, which already names every resource.
 func apiTrashServiceGo() string { return tmpl("api/services/trash.go") }
 
+// The behaviour test for the purge paths, beside the service, because the
+// three string checks a framework test can do only prove the code says the
+// right thing. It needs a real database to prove it does it.
+func apiTrashServiceTestGo() string { return tmpl("api/services/trash_test.go") }
+
 func apiTrashHandlerGo() string { return tmpl("api/handlers/trash.go") }
 
 // apiFeatureFlagServiceTestGo emits internal/services/feature_flag_test.go.

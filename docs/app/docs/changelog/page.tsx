@@ -72,6 +72,104 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.547.0 */}
+            <div className="mb-12" id="v3.547.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.547.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Purging from the Trash left every file the record owned</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/222"
+                  target="_blank" rel="noopener noreferrer">#222</a>, filed five
+                  days ago while fixing the four delete paths that do touch
+                  storage. This was a fifth that touched it not at all:{' '}
+                  <code>Purge</code>, <code>Empty</code> and the nightly{' '}
+                  <code>PurgeExpired</code> hard-deleted the row and stopped
+                  there.
+                </p>
+                <p>
+                  And nothing else would ever collect them. The orphan sweep
+                  only considers uploads whose <code>claimed_at</code> is NULL,
+                  and <code>ClaimRefs</code> set it when the record was first
+                  saved. So the one event that made a file an orphan was also
+                  the event that hid it from the collector, permanently. For an
+                  optimised image that is four objects per record, and{' '}
+                  <code>PurgeExpired</code> runs every night over everything
+                  past the retention window, so it accumulated with nobody doing
+                  anything.
+                </p>
+
+                <h4>It releases rather than deletes</h4>
+                <p>
+                  The rows are read before they are deleted, because a file
+                  column lives on the row and nothing can ask it afterwards, and
+                  then <code>files.ReleaseRefs</code> marks each upload they
+                  referenced unclaimed. The sweep takes it from there.
+                </p>
+                <p>
+                  That is the design decision worth stating. The sweep already
+                  checks every key against the project&apos;s own tables before
+                  removing it, so an upload two records happened to share
+                  survives while the second still points at it, and it already
+                  knows that one upload is several objects. Deleting from inside
+                  the purge would be a second copy of both of those rules, and
+                  the copy that gets it wrong costs somebody a file rather than
+                  some bytes.
+                </p>
+                <p>
+                  What it costs is latency: the objects go on the sweep&apos;s
+                  next pass rather than inside the purge. A right-to-erasure
+                  request is the case that cannot wait, and that path deletes
+                  immediately and always did.
+                </p>
+                <p>
+                  A soft delete still keeps everything, which is the other half
+                  of the contract: the row is restorable, so its files have to
+                  still be there when it comes back. There is a test for that
+                  specifically, because the easy mistake here is releasing too
+                  early.
+                </p>
+
+                <h4>Four tests, and the one that matters most</h4>
+                <p>
+                  Purge releases, a soft delete does not, the nightly sweep
+                  does, and then the end-to-end one: purge a row, run the orphan
+                  sweep, and watch it take the stored file and its thumbnail.
+                  The two halves live in different packages and each was tested
+                  on its own, which is exactly the arrangement that passes while
+                  the pair is broken.
+                </p>
+                <p>
+                  Each was confirmed by removing the fix and watching it fail.
+                  They ship into every project, beside the service, because the
+                  string checks a framework test can do only prove the code says
+                  the right thing.
+                </p>
+
+                <h4>Two smaller things found doing it</h4>
+                <p>
+                  <code>sync.Registry.Register</code> panicked on a zero-value
+                  registry: its map was nil and nothing initialised it, so{' '}
+                  <code>&amp;Registry{'{}'}</code>, which is the obvious thing to
+                  write in a test, was a crash rather than a registry. It
+                  initialises lazily now.
+                </p>
+                <p>
+                  And <code>ClaimRefs</code> put an empty string in its{' '}
+                  <code>IN</code> list for a ref with no key, which matches any
+                  upload row whose path is empty. Both it and{' '}
+                  <code>ReleaseRefs</code> read their keys from one{' '}
+                  <code>RefKeys</code> now, so the pair cannot disagree about
+                  what a record points at.
+                </p>
+              </div>
+            </div>
+
             {/* v3.546.0 */}
             <div className="mb-12" id="v3.546.0">
               <div className="flex items-center gap-3 mb-4">

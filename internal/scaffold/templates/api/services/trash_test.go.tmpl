@@ -1,0 +1,255 @@
+package services
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/files"
+	"{{MODULE}}/internal/sync"
+)
+
+// trashRow is a resource with a file column, which is the case that was broken.
+type trashRow struct {
+	ID        string `gorm:"primarykey;size:36"`
+	Title     string
+	Image     *files.FileRef `gorm:"type:json"`
+	Gallery   files.FileRefs `gorm:"type:json"`
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+func (trashRow) TableName() string { return "trash_rows" }
+
+// Purging from the Trash releases the uploads the row pointed at.
+//
+// grit#222: purging hard-deleted the row and touched storage not at all, and
+// the files were then unreachable even by the orphan sweep. The sweep only
+// considers uploads whose claimed_at is NULL, and ClaimRefs set it when the
+// record was first saved, so the one event that made a file an orphan was also
+// the one that hid it from the collector for ever.
+//
+// It releases rather than deleting: the sweep re-checks every key against the
+// project's own tables, and already takes the renditions and the kept original
+// with it, so deleting here would be a second copy of both rules.
+func TestPurgingFromTheTrashReleasesItsUploads(t *testing.T) {
+	db, svc := trashFixture(t)
+
+	claimed := time.Now()
+	for _, path := range []string{"uploads/a.webp", "uploads/b.webp", "uploads/kept.webp"} {
+		if err := db.Exec(
+			"INSERT INTO uploads (id, path, claimed_at) VALUES (?, ?, ?)",
+			path, path, claimed).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	doomed := trashRow{
+		ID:      "r1",
+		Title:   "going",
+		Image:   &files.FileRef{Key: "uploads/a.webp"},
+		Gallery: files.FileRefs{{Key: "uploads/b.webp"}},
+	}
+	keeper := trashRow{ID: "r2", Title: "staying",
+		Image: &files.FileRef{Key: "uploads/kept.webp"}}
+	if err := db.Create(&doomed).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&keeper).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Delete(&doomed).Error; err != nil { // soft, into the Trash
+		t.Fatal(err)
+	}
+
+	if err := svc.Purge(context.Background(), "trash_rows", "r1"); err != nil {
+		t.Fatalf("Purge: %v", err)
+	}
+
+	// The two the purged row owned are now candidates for the sweep.
+	for _, path := range []string{"uploads/a.webp", "uploads/b.webp"} {
+		if isClaimed(t, db, path) {
+			t.Errorf("%s is still claimed, so the sweep will never collect it", path)
+		}
+	}
+	// And the one another row still points at is untouched.
+	if !isClaimed(t, db, "uploads/kept.webp") {
+		t.Error("released an upload belonging to a row that is still there")
+	}
+}
+
+// A soft delete must not release anything: the row is restorable, and its
+// files have to still be there when it comes back.
+func TestASoftDeleteKeepsItsUploadsClaimed(t *testing.T) {
+	db, _ := trashFixture(t)
+
+	if err := db.Exec("INSERT INTO uploads (id, path, claimed_at) VALUES (?, ?, ?)",
+		"uploads/a.webp", "uploads/a.webp", time.Now()).Error; err != nil {
+		t.Fatal(err)
+	}
+	row := trashRow{ID: "r1", Image: &files.FileRef{Key: "uploads/a.webp"}}
+	if err := db.Create(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Delete(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if !isClaimed(t, db, "uploads/a.webp") {
+		t.Error("a soft delete released the row's files, so restoring it from the " +
+			"Trash brings back a record whose images the next sweep has taken")
+	}
+}
+
+// The retention sweep releases too, which is the unattended path: it runs
+// nightly over everything past the window, so a leak there accumulates with
+// nobody doing anything.
+func TestTheRetentionSweepReleasesWhatItPurges(t *testing.T) {
+	db, svc := trashFixture(t)
+
+	if err := db.Exec("INSERT INTO uploads (id, path, claimed_at) VALUES (?, ?, ?)",
+		"uploads/old.webp", "uploads/old.webp", time.Now()).Error; err != nil {
+		t.Fatal(err)
+	}
+	row := trashRow{ID: "r1", Image: &files.FileRef{Key: "uploads/old.webp"}}
+	if err := db.Create(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	// Deleted longer ago than the window.
+	expired := time.Now().AddDate(0, 0, -(TrashRetentionDays + 1))
+	if err := db.Model(&trashRow{}).Unscoped().
+		Where("id = ?", "r1").Update("deleted_at", expired).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := svc.PurgeExpired(context.Background())
+	if err != nil {
+		t.Fatalf("PurgeExpired: %v", err)
+	}
+	if out["trash_rows"] != 1 {
+		t.Fatalf("purged %v, want one row of trash_rows", out)
+	}
+	if isClaimed(t, db, "uploads/old.webp") {
+		t.Error("the nightly sweep purged the row and left its upload claimed")
+	}
+}
+
+// The whole chain: purge, then the sweep takes the files.
+//
+// The two halves are in different packages and each is tested on its own, which
+// is exactly the arrangement that passes while the pair is broken. This is the
+// handoff: the Trash releases, and the sweep is the thing that deletes.
+//
+// Note what it also pins: the sweep only considers an upload older than minAge,
+// so the objects go on a later pass rather than inside the purge. That is the
+// latency the release design accepts in exchange for the sweep's reference
+// check, and a test is the place to say so out loud.
+func TestAfterAPurgeTheSweepTakesTheFiles(t *testing.T) {
+	db, svc := trashFixture(t)
+
+	// Old enough for the sweep's minAge, as a real purged upload would be.
+	old := time.Now().Add(-48 * time.Hour)
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, derived, claimed_at, created_at) VALUES (?, ?, ?, ?, ?)",
+		"uploads/a.webp", "uploads/a.webp",
+		"[\"uploads/a-thumb.webp\"]", time.Now(), old).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	row := trashRow{ID: "r1", Image: &files.FileRef{Key: "uploads/a.webp"}}
+	if err := db.Create(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Delete(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	// While the row is only soft-deleted, the sweep must leave it alone: it is
+	// still referenced, and it is still claimed.
+	store := &recordingDeleter{}
+	if _, err := files.RunOrphanCleanup(context.Background(), db, store, 24*time.Hour); err != nil {
+		t.Fatalf("sweep before the purge: %v", err)
+	}
+	if len(store.deleted) != 0 {
+		t.Fatalf("the sweep deleted %v from a row that is only in the Trash", store.deleted)
+	}
+
+	if err := svc.Purge(context.Background(), "trash_rows", "r1"); err != nil {
+		t.Fatalf("Purge: %v", err)
+	}
+
+	store = &recordingDeleter{}
+	if _, err := files.RunOrphanCleanup(context.Background(), db, store, 24*time.Hour); err != nil {
+		t.Fatalf("sweep after the purge: %v", err)
+	}
+	for _, want := range []string{"uploads/a.webp", "uploads/a-thumb.webp"} {
+		found := false
+		for _, got := range store.deleted {
+			if got == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%s survived the purge and the sweep, so nothing will ever "+
+				"collect it", want)
+		}
+	}
+}
+
+// recordingDeleter is a files.Storage that remembers what it was asked to
+// delete.
+type recordingDeleter struct{ deleted []string }
+
+func (r *recordingDeleter) Delete(_ context.Context, key string) error {
+	r.deleted = append(r.deleted, key)
+	return nil
+}
+
+func trashFixture(t *testing.T) (*gorm.DB, *TrashService) {
+	t.Helper()
+
+	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One connection: each :memory: connection is its own empty database, and
+	// a second one answers "no such table" while the test still passes.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+
+	if err := db.AutoMigrate(&trashRow{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`CREATE TABLE uploads (
+		id TEXT PRIMARY KEY, path TEXT, derived TEXT,
+		claimed_at DATETIME, created_at DATETIME
+	)`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	registry := &sync.Registry{}
+	registry.Register("trash_rows", &trashRow{})
+	return db, &TrashService{DB: db, Registry: registry}
+}
+
+// isClaimed asks the question the sweep asks, with the same predicate: it
+// skips a row whose claimed_at IS NOT NULL. Scanning the value instead means
+// scanning a NULL into a *time.Time, which the driver refuses.
+func isClaimed(t *testing.T, db *gorm.DB, path string) bool {
+	t.Helper()
+	var n int64
+	if err := db.Raw(
+		"SELECT COUNT(*) FROM uploads WHERE path = ? AND claimed_at IS NOT NULL",
+		path).Scan(&n).Error; err != nil {
+		t.Fatal(err)
+	}
+	return n > 0
+}

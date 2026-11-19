@@ -4625,6 +4625,12 @@ func NewRegistry() *Registry {
 func (r *Registry) Register(table string, proto interface{}) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	// A zero-value Registry is the obvious thing to write in a test, and it
+	// used to panic here on a nil map rather than work. NewRegistry is still
+	// how the app builds the shared one, because that also assigns Shared.
+	if r.models == nil {
+		r.models = make(map[string]reflect.Type)
+	}
 	t := reflect.TypeOf(proto)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -4642,6 +4648,21 @@ func (r *Registry) New(table string) (interface{}, error) {
 		return nil, fmt.Errorf("sync: unknown table %q", table)
 	}
 	return reflect.New(t).Interface(), nil
+}
+
+// NewSlice returns a pointer to an empty slice of the table's model, for a
+// query that has to read the rows rather than count them.
+//
+// Added for the Trash: purging has to read what it is about to delete, because
+// the file columns are on the rows and nothing can ask them afterwards.
+func (r *Registry) NewSlice(table string) (interface{}, error) {
+	r.mu.RLock()
+	t, ok := r.models[table]
+	r.mu.RUnlock()
+	if !ok {
+		return nil, fmt.Errorf("sync: unknown table %q", table)
+	}
+	return reflect.New(reflect.SliceOf(t)).Interface(), nil
 }
 
 // Tables lists every registered table name. Used by /api/sync/pull when

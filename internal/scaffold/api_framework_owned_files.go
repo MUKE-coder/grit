@@ -270,6 +270,7 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "access_review_test.go"): apiAccessReviewTestGo(),
 		filepath.Join(apiRoot, "internal", "services", "feature_flag.go"):       apiFeatureFlagServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "trash.go"):              apiTrashServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "trash_test.go"):         apiTrashServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "trash.go"):              apiTrashHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "feature_flag_test.go"):  apiFeatureFlagServiceTestGo(),
 

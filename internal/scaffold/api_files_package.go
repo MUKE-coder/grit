@@ -1159,34 +1159,8 @@ func CleanupRemoved(ctx context.Context, st Storage, old, neu interface{}) {
 // Safe to call on records that have no file columns -- the function
 // just iterates zero times.
 func ClaimRefs(ctx context.Context, db *gorm.DB, record interface{}) {
-	if db == nil || record == nil {
-		return
-	}
-	v := derefPtr(reflect.ValueOf(record))
-	if !v.IsValid() {
-		return
-	}
-	t := v.Type()
-
-	var keys []string
-	for i := 0; i < t.NumField(); i++ {
-		f := v.Field(i)
-		if f.Kind() == reflect.Ptr && f.Type() == reflect.TypeOf((*FileRef)(nil)) {
-			if !f.IsNil() {
-				keys = append(keys, f.Interface().(*FileRef).Key)
-			}
-			continue
-		}
-		if f.Type() == reflect.TypeOf(FileRefs{}) {
-			for _, r := range f.Interface().(FileRefs) {
-				if r.Key != "" {
-					keys = append(keys, r.Key)
-				}
-			}
-			continue
-		}
-	}
-	if len(keys) == 0 {
+	keys := RefKeys(record)
+	if db == nil || len(keys) == 0 {
 		return
 	}
 
@@ -1199,6 +1173,85 @@ func ClaimRefs(ctx context.Context, db *gorm.DB, record interface{}) {
 		Where("path IN ?", keys).
 		Update("claimed_at", time.Now()).
 		Error
+}
+
+// ReleaseRefs marks the uploads a record referenced as unclaimed, which is
+// ClaimRefs in reverse.
+//
+// For a record removed for good. Purging from the Trash hard-deletes the row,
+// and the files it owned used to stay in the bucket for ever: the sweep only
+// considers rows whose claimed_at is NULL, and ClaimRefs set it when the
+// record was first saved. So the one event that makes a file an orphan was
+// also the one that made it permanently invisible to the thing that collects
+// orphans (grit#222, grit#219's mechanism from the other end).
+//
+// It unclaims rather than deleting the objects itself, deliberately. The sweep
+// already looks for each key in the project's own tables before removing
+// anything, so an upload two records happened to share survives while the
+// second still points at it, and it already takes the renditions and the kept
+// original with it (grit#221). Deleting from here would be a second copy of
+// both of those rules, and the copy that gets it wrong costs somebody a file
+// rather than some bytes.
+//
+// What that buys is correctness at the price of latency: the objects go on the
+// sweep's next pass rather than inside the purge. A right-to-erasure request
+// is the case that cannot wait, and that path deletes immediately and always
+// did.
+func ReleaseRefs(ctx context.Context, db *gorm.DB, record interface{}) {
+	keys := RefKeys(record)
+	if db == nil || len(keys) == 0 {
+		return
+	}
+
+	// NULL, not the zero time: the sweep tests the column with IS NULL, and a
+	// zero timestamp is a claim made in the year one.
+	_ = db.WithContext(ctx).
+		Table("uploads").
+		Where("path IN ?", keys).
+		Update("claimed_at", gorm.Expr("NULL")).
+		Error
+}
+
+// RefKeys is the primary storage key of every file a record's columns point
+// at, which is what the uploads table is keyed by.
+//
+// Primaries only. A rendition and a kept original have no uploads row of their
+// own, so there is nothing to claim or release for them; they travel with
+// their primary, and OwnedKeys is the list for deleting rather than for
+// bookkeeping.
+func RefKeys(record interface{}) []string {
+	if record == nil {
+		return nil
+	}
+	v := derefPtr(reflect.ValueOf(record))
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return nil
+	}
+
+	var keys []string
+	t := v.Type()
+	for i := 0; i < t.NumField(); i++ {
+		f := v.Field(i)
+		if f.Kind() == reflect.Ptr && f.Type() == reflect.TypeOf((*FileRef)(nil)) {
+			// The empty check matters: a nil-free ref with no key would put ""
+			// in the IN list, which matches any row whose path is empty.
+			if !f.IsNil() {
+				if key := f.Interface().(*FileRef).Key; key != "" {
+					keys = append(keys, key)
+				}
+			}
+			continue
+		}
+		if f.Type() == reflect.TypeOf(FileRefs{}) {
+			for _, r := range f.Interface().(FileRefs) {
+				if r.Key != "" {
+					keys = append(keys, r.Key)
+				}
+			}
+			continue
+		}
+	}
+	return keys
 }
 
 // orphan is one candidate row: the id to delete, the key to look for, and

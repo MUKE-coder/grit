@@ -100,6 +100,35 @@ DELETE /api/admin/trash/:table/:id           hard-delete one row
 DELETE /api/admin/trash/:table?confirm=true  hard-delete the whole bucket`}
               />
 
+              <h2>What happens to the files</h2>
+              <p>
+                A soft delete keeps them. The row is restorable, so the images and documents it
+                points at have to still be there when it comes back.
+              </p>
+              <p>
+                Purging releases them. The rows are read before they are deleted, because a file
+                column lives on the row and nothing can ask it afterwards, and each upload they
+                referenced is marked unclaimed. The nightly orphan sweep then removes it along
+                with its renditions and the original kept for reprocessing.
+              </p>
+              <p>
+                Releasing rather than deleting on the spot is deliberate. The sweep already
+                checks every key against the project&apos;s own tables before removing it, so an
+                upload two records happened to share survives while the second still points at
+                it, and it already knows that one upload is several objects. Deleting from the
+                purge would be a second copy of both rules, and the copy that gets it wrong costs
+                somebody a file rather than some bytes. The price is latency: the objects go on
+                the sweep&apos;s next pass rather than inside the purge.
+              </p>
+              <p>
+                A right-to-erasure request is the case that cannot wait, and that path deletes
+                immediately rather than releasing. See{' '}
+                <Link href="/docs/batteries/storage" className="text-accent hover:underline">
+                  File Storage
+                </Link>{' '}
+                for the file lifecycle, and what one upload actually consists of.
+              </p>
+
               <h2>Deleted accounts</h2>
               <p>
                 <code>/system/deleted-accounts</code>. Closing an account is a soft delete too,

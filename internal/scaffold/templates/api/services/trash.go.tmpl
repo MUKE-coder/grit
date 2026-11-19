@@ -3,12 +3,14 @@ package services
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/sync"
 )
 
@@ -148,22 +150,91 @@ func (s *TrashService) Restore(ctx context.Context, table, id string) error {
 
 // Purge removes one row for good.
 func (s *TrashService) Purge(ctx context.Context, table, id string) error {
-	proto, err := s.Registry.New(table)
-	if err != nil {
-		return fmt.Errorf("unknown resource %q", table)
-	}
 	// Unscoped on a row that is already soft-deleted: the WHERE keeps this from
 	// hard-deleting a live row if an id is sent by hand.
-	res := s.db(ctx).Unscoped().
-		Where("id = ? AND deleted_at IS NOT NULL", id).
-		Delete(proto)
-	if res.Error != nil {
-		return res.Error
+	removed, err := s.purge(ctx, table, "id = ? AND deleted_at IS NOT NULL", id)
+	if err != nil {
+		return err
 	}
-	if res.RowsAffected == 0 {
+	if removed == 0 {
 		return fmt.Errorf("nothing deleted with id %q in %s", id, table)
 	}
 	return nil
+}
+
+// purge hard-deletes the rows a condition selects, and releases the files they
+// owned.
+//
+// The rows are read first, which is the whole point: a file column lives on
+// the row, so after the DELETE there is nothing left to ask what the record
+// pointed at. Purging used to be a bare DELETE, and every object a purged
+// record owned stayed in the bucket for ever, unreachable even by the orphan
+// sweep, because the upload row was claimed when the record was saved and the
+// sweep only looks at unclaimed ones (grit#222).
+//
+// Releasing rather than deleting: see files.ReleaseRefs. The sweep re-checks
+// every key against the project's own tables before removing it and already
+// takes the renditions and the kept original, so doing it here would be a
+// second copy of both rules.
+//
+// A page at a time, because Empty and PurgeExpired can select a whole table
+// and a slice of every expired row is not a thing to hold in memory.
+func (s *TrashService) purge(ctx context.Context, table, where string, args ...any) (int64, error) {
+	proto, err := s.Registry.New(table)
+	if err != nil {
+		return 0, fmt.Errorf("unknown resource %q", table)
+	}
+
+	const page = 500
+	var removed int64
+	for {
+		rows, err := s.Registry.NewSlice(table)
+		if err != nil {
+			return removed, fmt.Errorf("unknown resource %q", table)
+		}
+		if err := s.db(ctx).Unscoped().Model(proto).
+			Where(where, args...).
+			Limit(page).
+			Find(rows).Error; err != nil {
+			return removed, err
+		}
+
+		batch := reflect.ValueOf(rows).Elem()
+		if batch.Len() == 0 {
+			return removed, nil
+		}
+
+		// Delete by id, so the rows deleted are exactly the ones just read.
+		// Re-running the condition could pick up a row soft-deleted in the
+		// meantime, whose files would then never be released.
+		ids := make([]string, 0, batch.Len())
+		for i := 0; i < batch.Len(); i++ {
+			ids = append(ids, idOf(batch.Index(i)))
+		}
+		res := s.db(ctx).Unscoped().Where("id IN ?", ids).Delete(proto)
+		if res.Error != nil {
+			return removed, res.Error
+		}
+		removed += res.RowsAffected
+
+		// After the delete, so a failed delete releases nothing.
+		for i := 0; i < batch.Len(); i++ {
+			files.ReleaseRefs(ctx, s.DB, batch.Index(i).Addr().Interface())
+		}
+
+		if batch.Len() < page {
+			return removed, nil
+		}
+	}
+}
+
+// idOf reads a row's primary key without knowing the model.
+func idOf(row reflect.Value) string {
+	field := row.FieldByName("ID")
+	if !field.IsValid() || field.Kind() != reflect.String {
+		return ""
+	}
+	return field.String()
 }
 
 // Empty purges every deleted row of one resource, or of all of them when table
@@ -179,15 +250,11 @@ func (s *TrashService) Empty(ctx context.Context, table string) (int64, error) {
 
 	var removed int64
 	for _, name := range tables {
-		proto, err := s.Registry.New(name)
+		n, err := s.purge(ctx, name, "deleted_at IS NOT NULL")
 		if err != nil {
-			continue
+			return removed, err
 		}
-		res := s.db(ctx).Unscoped().Where("deleted_at IS NOT NULL").Delete(proto)
-		if res.Error != nil {
-			return removed, res.Error
-		}
-		removed += res.RowsAffected
+		removed += n
 	}
 	return removed, nil
 }
@@ -200,18 +267,12 @@ func (s *TrashService) PurgeExpired(ctx context.Context) (map[string]int64, erro
 	cutoff := time.Now().AddDate(0, 0, -TrashRetentionDays)
 	out := map[string]int64{}
 	for _, table := range s.tables() {
-		proto, err := s.Registry.New(table)
+		n, err := s.purge(ctx, table, "deleted_at IS NOT NULL AND deleted_at < ?", cutoff)
 		if err != nil {
-			continue
+			return out, err
 		}
-		res := s.db(ctx).Unscoped().
-			Where("deleted_at IS NOT NULL AND deleted_at < ?", cutoff).
-			Delete(proto)
-		if res.Error != nil {
-			return out, res.Error
-		}
-		if res.RowsAffected > 0 {
-			out[table] = res.RowsAffected
+		if n > 0 {
+			out[table] = n
 		}
 	}
 	return out, nil
