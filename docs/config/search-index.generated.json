@@ -900,6 +900,12 @@
     "keywords": "docs plugins marketplace"
   },
   {
+    "title": "Mcp",
+    "href": "/docs/plugins/mcp",
+    "section": "Plugins",
+    "keywords": "docs plugins mcp"
+  },
+  {
     "title": "Multi-tenancy plugin",
     "href": "/docs/plugins/multitenant",
     "section": "Plugins",
