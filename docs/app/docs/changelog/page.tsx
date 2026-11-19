@@ -72,6 +72,106 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.553.0 */}
+            <div className="mb-12" id="v3.553.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.553.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>/healthz and /readyz</h3>
+                <p>
+                  Part of{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/41"
+                  target="_blank" rel="noopener noreferrer">#41</a>. Every
+                  project had <code>/api/health</code>, which is a dashboard: it
+                  counts tables, reads queue snapshots and names the mail
+                  driver, for a person looking at a page. An orchestrator is
+                  asking something else, several times a minute, and the two
+                  questions have different right answers.
+                </p>
+                <p>
+                  <strong>Liveness touches nothing.</strong> The answer to a
+                  failed liveness probe is to kill the container, so a liveness
+                  check that pings Redis turns a Redis blip into a rolling
+                  restart of every replica: a degraded service becomes an
+                  outage. <code>/healthz</code> answers from the fact that it
+                  answered.
+                </p>
+                <p>
+                  <strong>Readiness gates on the database and nothing else.</strong>{' '}
+                  A no takes this replica out of the load balancer, so the bar
+                  is whether it can serve a request at all, and without a
+                  database every endpoint is a 500. Redis, object storage and
+                  mail are reported in the body and deliberately not fatal: an
+                  app with no cache is slower and an app with no object store
+                  cannot accept an upload, and in both cases serving the rest of
+                  the product beats serving none of it. The last replica
+                  standing should stay in rotation. A 200 whose{' '}
+                  <code>status</code> reads <code>degraded</code> says both
+                  things at once.
+                </p>
+                <p>
+                  Anything registered through <code>health.Register</code> is
+                  already in the report, so a project that wants to gate on its
+                  queue edits one condition in{' '}
+                  <code>readyState</code>. The shipped test says which
+                  components do not unready a replica and why, so the decision
+                  stays written down rather than drifting.
+                </p>
+
+                <h4>Two things found while wiring it</h4>
+                <p>
+                  The first file was called <code>probes.go</code>, and the
+                  access registry never saw it. The route table is parsed from{' '}
+                  <code>routes.go</code> and every{' '}
+                  <code>*_routes.go</code> beside it, so two new public
+                  endpoints were missing from the one table that exists to make
+                  the public surface visible. Renaming it{' '}
+                  <code>probes_routes.go</code> was the whole fix, and the
+                  registry now lists both as public.
+                </p>
+                <p>
+                  And the probes are excluded from Pulse. A kubelet calling them
+                  every few seconds contributes thousands of records a day per
+                  replica: they would dominate the request log, and a flood of
+                  2ms requests drags the RED charts down until the latency of
+                  the endpoints people use is invisible inside the average.
+                </p>
+
+                <h4>An upgraded project gets them too</h4>
+                <p>
+                  <code>internal/routes/probes_routes.go</code> is
+                  framework-owned, so it travels. The line that mounts it has to
+                  go in <code>routes.go</code>, which is yours, so a repair puts
+                  it there: a file with a function nobody calls still compiles,
+                  which is exactly why this needed a repair rather than a
+                  release note. The symptom would have been a project that
+                  upgraded, got the code, and answered 404.
+                </p>
+                <p>
+                  Guarded as a pair: the <code>routes.go</code> a new project
+                  gets and the <code>routes.go</code> an upgraded one is
+                  repaired into have to be the same bytes, because a test over
+                  either alone passes while the pair is broken.
+                </p>
+
+                <h4>Still open on #41</h4>
+                <p>
+                  The <code>/metrics</code> half, with one correction worth
+                  having: Pulse already serves a complete Prometheus endpoint at{' '}
+                  <code>/pulse/metrics</code> in every scaffolded project, 163
+                  series of request rate, latency, errors, runtime and database
+                  pool, with no extra dependency. What is missing is the
+                  conventional path and the three things Pulse cannot see, which
+                  are jobs, cache hit ratio and live sockets.
+                </p>
+              </div>
+            </div>
+
             {/* v3.552.0 */}
             <div className="mb-12" id="v3.552.0">
               <div className="flex items-center gap-3 mb-4">

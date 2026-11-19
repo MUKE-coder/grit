@@ -143,6 +143,70 @@ unknown   wired up, but this probe could not find out`}
                 the frontends, whose client rewrites every call to the versioned path.
               </p>
 
+              <h2>/healthz and /readyz, which are not this</h2>
+              <p>
+                <code>/api/health</code> is a dashboard. It counts tables, reads queue snapshots
+                and names the mail driver, for a person looking at a page. An orchestrator is
+                asking something else, several times a minute, and the two questions have
+                different right answers. Both are mounted by{' '}
+                <code>internal/routes/probes_routes.go</code>, unauthenticated and outside the
+                version prefix, because the thing calling them is a kubelet or a load balancer
+                configured outside your repo.
+              </p>
+              <CodeBlock
+                terminal
+                code={`$ curl -i localhost:8080/healthz
+HTTP/1.1 200 OK
+ok
+
+$ curl -s localhost:8080/readyz | jq
+{
+  "status": "ok",
+  "ready": true,
+  "database": { "state": "ok", "ok": true, "latency_ms": 0 }
+}`}
+              />
+              <p className="mt-4">
+                <strong>Liveness touches nothing.</strong> The orchestrator&apos;s answer to a
+                failed liveness probe is to kill the container, so a liveness check that pings
+                Redis turns a Redis blip into a rolling restart of every replica: a degraded
+                service becomes an outage. <code>/healthz</code> answers from the fact that it
+                answered.
+              </p>
+              <p>
+                <strong>Readiness gates on the database and nothing else.</strong> A no takes this
+                replica out of the load balancer, so the bar is &quot;can it serve a request at
+                all&quot;, and without a database every endpoint is a 500. Redis, object storage
+                and mail are deliberately reported in the body and deliberately not fatal: an app
+                with no cache is slower and an app with no object store cannot accept an upload,
+                and in both cases serving the rest of the product beats serving none of it. The
+                last replica standing should stay in rotation. A 200 whose{' '}
+                <code>status</code> reads <code>degraded</code> is the normal way to say both
+                things at once.
+              </p>
+              <Callout type="tip" title="If your product disagrees">
+                Edit <code>readyState</code> in <code>internal/routes/probes_routes.go</code>. A
+                queue worker whose whole job needs Redis is a fair reason to gate on it, and that
+                is a decision about your product rather than about the framework. Anything
+                registered through <code>health.Register</code> is already in the report, so
+                gating on it is one condition. Change the test beside it too, so the decision
+                stays written down.
+              </Callout>
+              <p>
+                Neither probe appears in Pulse. A kubelet calling them every few seconds
+                contributes thousands of records a day per replica, which would dominate the
+                request log and drag the latency charts down until the endpoints people use are
+                invisible inside the average.
+              </p>
+              <CodeBlock
+                code={`livenessProbe:
+  httpGet: { path: /healthz, port: 8080 }
+  periodSeconds: 10
+readinessProbe:
+  httpGet: { path: /readyz, port: 8080 }
+  periodSeconds: 5`}
+              />
+
               <div className="mt-16 flex items-center justify-between border-t border-border/30 pt-8">
                 <Link href="/docs/backend/pulse">
                   <Button variant="outline" size="sm" className="gap-2">

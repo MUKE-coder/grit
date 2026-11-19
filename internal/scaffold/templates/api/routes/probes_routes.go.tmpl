@@ -1,0 +1,115 @@
+package routes
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/health"
+)
+
+// The two probes an orchestrator asks, which are not the same question.
+//
+// /api/health is a dashboard: it counts tables, reads queue snapshots and names
+// the mail driver, for a person looking at the System Health page. These two
+// are for a machine deciding what to do with this replica, several times a
+// minute, and the answers differ in what they are allowed to say yes to.
+//
+// # Why liveness touches nothing
+//
+// /healthz answers "is this process still a process". It must not probe a
+// dependency, because the orchestrator's response to a failed liveness probe is
+// to kill the container. A liveness check that pings Redis turns a Redis blip
+// into a rolling restart of every replica, which takes a degraded service and
+// makes it an outage. It answers from the fact that it answered.
+//
+// # Why readiness is the database and nothing else
+//
+// /readyz answers "should traffic come here", and a no takes this replica out
+// of the load balancer. So the bar is "can it serve a request at all", which
+// means the database: without it every endpoint is a 500. Redis, object storage
+// and mail are deliberately reported and deliberately not fatal. An app with no
+// cache is slower and an app with no object store cannot accept an upload, and
+// in both cases serving the rest of the product beats serving none of it. The
+// last replica standing should stay in rotation.
+//
+// A project that disagrees edits readyState: a queue worker whose whole job
+// needs Redis is a fair reason to gate on it, and that is a decision about your
+// product rather than about the framework.
+//
+// Both are unauthenticated and outside the version prefix, because the thing
+// calling them is a kubelet or a load balancer configured outside this repo,
+// and neither can hold a token or follow a rewrite.
+func mountProbes(r *gin.Engine, db *gorm.DB) {
+	// Liveness. No dependency, no allocation worth measuring, no body a parser
+	// has to read: every orchestrator treats 2xx as alive.
+	r.GET("/healthz", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
+	})
+
+	// Readiness. 200 while this replica can serve, 503 while it cannot, and the
+	// components either way so whoever is looking at the 503 does not have to
+	// go somewhere else to find out which one it was.
+	r.GET("/readyz", func(c *gin.Context) {
+		ready, comps := readyState(c.Request.Context(), db)
+		status := http.StatusOK
+		if !ready {
+			status = http.StatusServiceUnavailable
+		}
+		body := gin.H{"status": health.Overall(comps), "ready": ready}
+		for name, report := range comps {
+			if _, taken := body[name]; !taken {
+				body[name] = report
+			}
+		}
+		c.JSON(status, body)
+	})
+}
+
+// readyState decides whether this replica should receive traffic.
+//
+// Separate from the handler so it can be tested without an engine, and so the
+// rule is one readable function rather than a condition buried in a route.
+func readyState(ctx context.Context, db *gorm.DB) (bool, map[string]health.Report) {
+	// Whatever registered itself through health.Register travels with the
+	// framework's own answer. A plugin that knows it is not ready gets to say
+	// so, which is the whole point of the registry.
+	comps := health.Snapshot()
+
+	ready := true
+	switch sqlDB, err := db.DB(); {
+	case err != nil:
+		comps["database"] = health.Degraded("the database handle is not available", nil)
+		ready = false
+	default:
+		// Bounded, and short. A readiness probe that waits on a hung database
+		// is a probe the orchestrator times out on, which reads as unready
+		// anyway but takes a connection and a goroutine with it every few
+		// seconds while the incident lasts.
+		start := time.Now()
+		pingCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+		defer cancel()
+		if pingErr := sqlDB.PingContext(pingCtx); pingErr != nil {
+			// The error goes to the log, not the response: a driver error names
+			// the host, the port and often the user, and this endpoint is
+			// reachable without credentials.
+			log.Printf("readyz: database ping failed: %v", pingErr)
+			comps["database"] = health.Degraded("the database did not answer a ping", nil)
+			ready = false
+		} else {
+			comps["database"] = health.OK("", map[string]any{
+				"latency_ms": time.Since(start).Milliseconds(),
+			})
+		}
+	}
+
+	// A registered component that is degraded lowers the reported status
+	// through health.Overall, and does not by itself take the replica out of
+	// rotation: see the note above about the last replica standing. Register a
+	// component and gate on it here if your product needs the opposite.
+	return ready, comps
+}

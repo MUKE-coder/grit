@@ -890,6 +890,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairHealthStates(root, opts); err != nil {
 			fmt.Printf("  ⚠ giving /api/health its four states: %v\n", err)
 		}
+		// /healthz and /readyz. After the versioned-route repair, whose output
+		// is the anchor this one looks for, and after the four-state repair,
+		// which rewrites the same region of the file.
+		if err := repairProbesMount(root, opts); err != nil {
+			fmt.Printf("  ⚠ mounting /healthz and /readyz: %v\n", err)
+		}
 		// /llms.txt and /llms-full.txt, which an agent pointed at this service
 		// reads before it calls anything. After the four-state repair, beside
 		// whose eventBusStatus the handler is written.

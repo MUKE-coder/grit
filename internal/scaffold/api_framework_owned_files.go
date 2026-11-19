@@ -143,6 +143,18 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "health", "health.go"):      apiHealthGo(),
 		filepath.Join(apiRoot, "internal", "health", "health_test.go"): apiHealthTestGo(),
 
+		// /healthz and /readyz, which are not /api/health. That one is a
+		// dashboard for a person; these two are a machine deciding what to do
+		// with this replica, several times a minute, and the right answers
+		// differ: liveness touches no dependency, because the response to a
+		// failed liveness probe is to kill the container, and readiness gates
+		// on the database alone, because taking the last replica out of
+		// rotation over a Redis blip turns a degraded service into an outage.
+		// Framework-owned, so the rule travels and an upgraded project does not
+		// keep a readiness probe from before anybody thought about it.
+		filepath.Join(apiRoot, "internal", "routes", "probes_routes.go"):      tmpl("api/routes/probes_routes.go"),
+		filepath.Join(apiRoot, "internal", "routes", "probes_routes_test.go"): tmpl("api/routes/probes_routes_test.go"),
+
 		// llms.txt and llms-full.txt, which an agent pointed at a running service
 		// reads before it calls anything. Here for the reason health is: routes.go
 		// is repaired in place, and a repair that mounts a package the project has

@@ -8836,7 +8836,14 @@ func mountPulse(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services) {
 		pulseOpts := []pulse.Option{
 			pulse.WithAppName(cfg.AppName),
 			pulse.WithCredentials(cfg.PulseUsername, cfg.PulsePassword),
-			pulse.WithExcludePaths("/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"),
+			// The probes are excluded along with the dashboards. A kubelet
+			// calls /healthz and /readyz every few seconds, so a single
+			// replica contributes thousands of records a day: they would
+			// dominate the request log, and a flood of 2ms requests drags the
+			// RED charts down until the latency of the thing people actually
+			// use is invisible inside it.
+			pulse.WithExcludePaths("/studio/*", "/sentinel/*", "/docs/*", "/pulse/*",
+				"/healthz", "/readyz"),
 			pulse.WithPrometheus(),
 			// Request-body capture is left on, which needs pulse v1.0.1 or
 			// later. Before that the error middleware read the body and put
@@ -9164,6 +9171,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// desktop client's heartbeat, which are configured outside this repo.
 ` + healthCheckBlock + `	r.GET("/api/health", healthCheck)
 	r.GET("/api/"+APIVersion+"/health", healthCheck)
+
+	// /healthz and /readyz, for the orchestrator rather than for the System
+	// Health page. See internal/routes/probes_routes.go for why liveness probes
+	// nothing and readiness gates on the database alone.
+	mountProbes(r, db)
 
 	// The public keys that verify this API's tokens, so another service can
 	// check them without holding anything that can mint one. Unauthenticated,

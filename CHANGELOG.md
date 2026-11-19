@@ -23,6 +23,35 @@ Also worth knowing:
 ---
 
 
+## v3.553.0 - November 19, 2026
+
+### /healthz and /readyz
+
+Part of [#41](https://github.com/MUKE-coder/grit/issues/41). Every project had `/api/health`, which is a dashboard: it counts tables, reads queue snapshots and names the mail driver, for a person looking at a page. An orchestrator is asking something else, several times a minute, and the two questions have different right answers.
+
+**Liveness touches nothing.** The answer to a failed liveness probe is to kill the container, so a liveness check that pings Redis turns a Redis blip into a rolling restart of every replica: a degraded service becomes an outage. `/healthz` answers from the fact that it answered.
+
+**Readiness gates on the database and nothing else.** A no takes this replica out of the load balancer, so the bar is whether it can serve a request at all, and without a database every endpoint is a 500. Redis, object storage and mail are reported in the body and deliberately not fatal: an app with no cache is slower and an app with no object store cannot accept an upload, and in both cases serving the rest of the product beats serving none of it. The last replica standing should stay in rotation. A 200 whose `status` reads `degraded` says both things at once.
+
+Anything registered through `health.Register` is already in the report, so a project that wants to gate on its queue edits one condition in `readyState`. The shipped test says which components do not unready a replica and why, so the decision stays written down rather than drifting.
+
+#### Two things found while wiring it
+
+The first file was called `probes.go`, and the access registry never saw it. The route table is parsed from `routes.go` and every `*_routes.go` beside it, so two new public endpoints were missing from the one table that exists to make the public surface visible. Renaming it `probes_routes.go` was the whole fix, and the registry now lists both as public.
+
+And the probes are excluded from Pulse. A kubelet calling them every few seconds contributes thousands of records a day per replica: they would dominate the request log, and a flood of 2ms requests drags the RED charts down until the latency of the endpoints people use is invisible inside the average.
+
+#### An upgraded project gets them too
+
+`internal/routes/probes_routes.go` is framework-owned, so it travels. The line that mounts it has to go in `routes.go`, which is yours, so a repair puts it there: a file with a function nobody calls still compiles, which is exactly why this needed a repair rather than a release note. The symptom would have been a project that upgraded, got the code, and answered 404.
+
+Guarded as a pair: the `routes.go` a new project gets and the `routes.go` an upgraded one is repaired into have to be the same bytes, because a test over either alone passes while the pair is broken.
+
+#### Still open on #41
+
+The `/metrics` half, with one correction worth having: Pulse already serves a complete Prometheus endpoint at `/pulse/metrics` in every scaffolded project, 163 series of request rate, latency, errors, runtime and database pool, with no extra dependency. What is missing is the conventional path and the three things Pulse cannot see, which are jobs, cache hit ratio and live sockets.
+
+
 ## v3.552.0 - November 19, 2026
 
 ### A select field is now validated by the API, not only by Zod

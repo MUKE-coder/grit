@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 16 to 22, 2026",
-    count: 8,
+    count: 9,
     entries: [
+      { version: "3.553.0", title: "/healthz and /readyz" },
       { version: "3.552.0", title: "A select field is now validated by the API, not only by Zod" },
       { version: "3.551.0", title: "A new field reaches the mobile form and the desktop list" },
       { version: "3.550.0", title: "Wails 2.17.1, which closes two security holes, and one template that never got the last four bumps" },

@@ -89,9 +89,9 @@ const GROUPS: { title: string; note?: string; items: Item[] }[] = [
     title: 'Operations',
     items: [
       {
-        label: 'The health check points at /api/health',
+        label: 'Liveness points at /healthz and readiness at /readyz',
         detail:
-          'Not /. A platform checking the wrong path either cycles a healthy machine forever or reports a deploy that never finishes.',
+          'Not /, and not each other. A platform checking the wrong path either cycles a healthy machine forever or reports a deploy that never finishes. /healthz touches no dependency, because a failed liveness probe kills the container; /readyz gates on the database, because a no takes the replica out of rotation. /api/health is the dashboard a person reads, and is the wrong thing to point a kubelet at.',
       },
       {
         label: 'You know how to roll back',
@@ -105,7 +105,7 @@ const GROUPS: { title: string; note?: string; items: Item[] }[] = [
       {
         label: 'Someone is told when it breaks',
         detail:
-          'An uptime check hitting /api/health from outside your infrastructure. Finding out from a customer is the expensive way.',
+          'An uptime check hitting /readyz from outside your infrastructure. Finding out from a customer is the expensive way.',
       },
     ],
   },

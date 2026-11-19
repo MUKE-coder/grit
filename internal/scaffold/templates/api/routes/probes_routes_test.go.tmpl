@@ -1,0 +1,87 @@
+package routes
+
+import (
+	"context"
+	"testing"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/health"
+)
+
+func readyDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	return db
+}
+
+// A replica with a working database is ready.
+func TestReadyWithADatabase(t *testing.T) {
+	ready, comps := readyState(context.Background(), readyDB(t))
+	if !ready {
+		t.Fatalf("not ready with a working database: %+v", comps)
+	}
+	if comps["database"].State != health.StateOK {
+		t.Errorf("the database is %q, want ok", comps["database"].State)
+	}
+}
+
+// A replica whose database has gone is not ready.
+//
+// The pool is closed rather than the file removed, because that is what a
+// database going away looks like from inside the process: the handle is still
+// there and every call on it fails.
+func TestNotReadyWithoutADatabase(t *testing.T) {
+	db := readyDB(t)
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatalf("handle: %v", err)
+	}
+	if err := sqlDB.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	ready, comps := readyState(context.Background(), db)
+	if ready {
+		t.Fatal("ready with a closed database, so the probe would keep a dead replica in rotation")
+	}
+	if comps["database"].State != health.StateDegraded {
+		t.Errorf("the database is %q, want degraded", comps["database"].State)
+	}
+}
+
+// Redis, storage and mail do not take a replica out of rotation.
+//
+// A component registered as degraded lowers the reported status and leaves the
+// replica serving. An app with no cache is slower and an app with no object
+// store cannot accept an upload: in both cases serving the rest of the product
+// beats serving none of it, and the last replica standing should stay in
+// rotation. Change readyState if your product disagrees, and change this test
+// with it so the decision stays written down rather than drifting.
+func TestADegradedExtraDoesNotUnreadyTheReplica(t *testing.T) {
+	t.Cleanup(health.Reset)
+	health.Register("cache_probe_test", func() health.Report {
+		return health.Degraded("pretending Redis is down", nil)
+	})
+
+	ready, comps := readyState(context.Background(), readyDB(t))
+	if !ready {
+		t.Error("a degraded cache took the replica out of rotation")
+	}
+	if comps["cache_probe_test"].State != health.StateDegraded {
+		t.Error("the registered component was not reported")
+	}
+	// And the 200 still says something is wrong, so a dashboard reading the
+	// body is not told everything is fine.
+	if health.Overall(comps) != health.StateDegraded {
+		t.Errorf("the reported status is %q, so the 200 says nothing is wrong",
+			health.Overall(comps))
+	}
+}
