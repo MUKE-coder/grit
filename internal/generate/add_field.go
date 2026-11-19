@@ -125,6 +125,12 @@ func AddField(resourceName, spec string) error {
 	if err := g.injectFactoryField(names, f); err != nil {
 		fmt.Printf("  • the test factory was not updated: %v\n", err)
 	}
+
+	// The screens no marker injection reaches (grit#87). The desktop list goes
+	// through the same code path grit sync uses, and the Expo form is rebuilt
+	// when nobody has edited it. Reported either way: a field that is in the
+	// API and absent from a screen is the thing somebody needs to be told.
+	reportFieldScreens(names, g.updateFieldScreens(names, f))
 	return nil
 }
 

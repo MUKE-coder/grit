@@ -51,6 +51,7 @@ func Sync() error {
 	var synced int
 	var adminFieldsAdded int
 	var desktopColumnsAdded int
+	var mobileFormsRebuilt int
 	var adminWarnings []string
 	var uiDrift []clientUIDrift
 	for _, entry := range entries {
@@ -128,9 +129,28 @@ func Sync() error {
 			}
 			adminWarnings = append(adminWarnings, deskWarnings...)
 
-			// The Expo screens still cannot be, so say which fields they
-			// never saw. After the desktop pass, so it does not name a
-			// column that was just added.
+			// The Expo form can be rebuilt, which is the other half of
+			// grit#87: the form is the screen the report was about, and a
+			// rebuild from the model is exact where an insert into three
+			// separate places is three things to keep in step. Only when
+			// nobody has edited it, which the manifest decides.
+			if generatedResource(root, s.Name) {
+				if def, defErr := definitionFromModelFileMode(
+					apiRootFrom(root), s.Name, modelForRebuild); defErr == nil {
+					updated, kept := syncMobileForm(root, def, MakeNames(s.Name))
+					if updated != "" {
+						fmt.Printf("  ✓ %s  (rebuilt from the model)\n", updated)
+						mobileFormsRebuilt++
+					}
+					if kept != "" {
+						adminWarnings = append(adminWarnings, "  ⚠ "+kept)
+					}
+				}
+			}
+
+			// The Expo list still cannot be, so say which fields it never
+			// saw. After the desktop and form passes, so it does not name
+			// a field one of them just added.
 			uiDrift = append(uiDrift, findClientUIDrift(root, s)...)
 
 			synced++
@@ -148,6 +168,10 @@ func Sync() error {
 		if desktopColumnsAdded > 0 {
 			fmt.Printf("  ✅ Auto-added %d column%s to desktop screens\n",
 				desktopColumnsAdded, plural(desktopColumnsAdded))
+		}
+		if mobileFormsRebuilt > 0 {
+			fmt.Printf("  ✅ Rebuilt %d Expo form%s from their models\n",
+				mobileFormsRebuilt, plural(mobileFormsRebuilt))
 		}
 		for _, w := range adminWarnings {
 			fmt.Println(w)

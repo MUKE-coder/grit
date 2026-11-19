@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.551.0 - November 19, 2026
+
+### A new field reaches the mobile form and the desktop list
+
+[#87](https://github.com/MUKE-coder/grit/issues/87), found on an Android emulator: a column added to a Go model was in the API response and absent from the create form on screen. Nothing updated that file, ever. The types were right, the schemas were right, the admin was right, and the screen somebody was actually looking at was three fields behind.
+
+Both `grit generate field` and `grit sync` now bring the Expo form and the desktop list up to the model. The desktop half was one line: `grit sync` already inserted columns between that screen's `grit:cols` fences, and the command people are told to use for adding a field never called it. So the command for noticing a missing field did more than the command for adding one.
+
+#### Rebuilt, not inserted into
+
+A field in the Expo form is three things in three places: a `useState`, an entry in the submitted payload, and a control chosen by type. Fencing each would be three regions to maintain and a form that half-updates when one insert misses. Rendering the file from the model is exact, and the generator already does it perfectly.
+
+Whether that is allowed is the manifest's answer rather than a new rule. It holds the hash of what Grit last wrote, so a form nobody has touched is Grit's to rewrite and one you have edited is yours to keep: it is named in the output, left alone, and the fields it is missing are listed. The same rule `grit upgrade` applies to every framework-owned file.
+
+A rebuild also converges rather than accumulating. A form that was skipped while you had it edited picks up every field it missed on the next rebuild, not just the newest one.
+
+#### The near-miss worth writing down
+
+The first version reported `✓ rebuilt from the model` and the field was not on the form. The generator's definition is the resource as it stood *before* the field, because that is what it read at the top of the command, so rendering from it rebuilt the screen exactly as it was. A no-op that claims the job is done is worse than not trying.
+
+Caught by running it rather than by a test, and that is the lesson: every string check passed. The guard now puts the bug back and fails on it.
+
+#### What is still left to --force
+
+The Expo **list**. It renders a header block and a row block that have to line up under a summed table width, so three inserts that must agree produce a table with its headers over the wrong columns when one slips. The desktop **form** is in the same position. `grit sync` names the fields each is missing, which is the difference between a known limitation and a bug somebody finds in a demo.
+
+#### Verified by using it
+
+On a generated project with an Expo app and a desktop app: a column added to the model by hand and `grit sync` put it in all three places in the form; the same form with one line of mine appended was reported as edited, left byte for byte alone, and listed in the drift report; reverting that line and running `grit generate field` rebuilt it with both the new field and the one it had missed while it was held back.
+
+
 ## v3.550.0 - November 19, 2026
 
 ### Wails 2.17.1, which closes two security holes, and one template that never got the last four bumps

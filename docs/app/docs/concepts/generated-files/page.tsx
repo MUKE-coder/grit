@@ -299,15 +299,15 @@ export function useCreateProduct() {
                 To add a field without that, add it in place with{' '}
                 <code>grit generate field &lt;Name&gt; &lt;name:type&gt;</code>, then{' '}
                 <code>grit migrate</code>. It reaches the model, the handler&apos;s request
-                structs and PATCH allow-list, the CSV importer, the types, the Zod schemas and
-                the admin, and leaves the rest of each file as you had it. It covers scalar,
-                select and toggle fields.
+                structs and PATCH allow-list, the CSV importer, the types, the Zod schemas, the
+                admin, the desktop list and the Expo form, and leaves the rest of each file as
+                you had it. It covers scalar, select and toggle fields.
                 <br />
                 <br />
                 Adding the field to the model by hand and running <code>grit sync</code> is not
-                enough on its own. Sync updates the types, the schemas and the admin, but the
-                API accepts only what the handler&apos;s request structs name, so the field is
-                shown, submitted, and dropped.
+                enough on its own. Sync updates the types, the schemas, the admin, the desktop
+                list and the Expo form, but the API accepts only what the handler&apos;s request
+                structs name, so the field is shown, submitted, and dropped.
                 <br />
                 <br />
                 <code>--force</code> regenerates anyway, overwriting your edits. Commit first:

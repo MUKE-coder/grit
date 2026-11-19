@@ -226,6 +226,36 @@ const categoriesOpts = categoriesQuery.data?.pages.flatMap((p) => p.data) ?? [];
               </p>
             </div>
 
+            {/* A field added later */}
+            <div className="prose-grit mb-4 mt-10">
+              <h2>A field added after the resource exists</h2>
+              <p>
+                Add one with <code>grit generate field Task priority:int</code>, or add the
+                column to the Go model and run <code>grit sync</code>. Either way the form is
+                rebuilt from the model, so the new control appears on the create screen, the
+                edit screen and the list&apos;s create sheet.
+              </p>
+              <p>
+                A rebuild rather than an insert, because a field in this form is three things in
+                three places: a <code>useState</code>, an entry in the submitted payload, and a
+                control chosen by type. Rendering the whole file from the model is exact, where
+                three separate inserts are three things to keep in step.
+              </p>
+              <p>
+                Which is also why it stops at a form you have edited. Grit holds a hash of what
+                it last wrote, and a file that no longer matches is yours: it is named in the
+                output and left alone, with the fields it is missing listed. Take Grit&apos;s
+                version with <code>grit generate resource Task --force</code>, or add the control
+                by hand.
+              </p>
+              <p>
+                The <strong>list</strong> screen is not rebuilt. It renders a header block and a
+                row block that have to line up under a summed table width, so it is left to{' '}
+                <code>--force</code>, and <code>grit sync</code> names the fields it does not
+                have.
+              </p>
+            </div>
+
             {/* Nav */}
             <div className="flex items-center justify-between pt-6 border-t border-border/30">
               <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">

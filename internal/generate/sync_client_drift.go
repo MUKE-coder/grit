@@ -11,22 +11,21 @@ import (
 
 // clientUIDrift reports model fields that never reached a client's generated UI.
 //
-// grit sync keeps three things in step: the shared TypeScript type, the Zod
-// schema, and the admin resource definition, which SyncAdminResource updates
-// through markers so customised entries survive. The mobile forms and screens
-// and the desktop columns have no equivalent, so they are frozen at the moment
-// the resource was generated.
+// grit sync keeps the shared TypeScript type, the Zod schema and the admin
+// resource definition in step with the model, and since grit#87 the desktop
+// columns through their marker fences and the Expo form through a rebuild. The
+// Expo list is the one left, and this reports it.
 //
-// The result is a half-synced project that says nothing about it. Adding a
-// column to a Go model and running sync gave a correct type, a correct schema,
-// a correct admin screen, and a mobile create form still showing the original
-// three fields. Verified on an emulator: the field was in the API response and
-// absent from the form.
+// What that report is for: the failure it came from was a half-synced project
+// that said nothing about it. Adding a column to a Go model and running sync
+// gave a correct type, a correct schema, a correct admin screen, and a mobile
+// create form still showing the original three fields. Verified on an
+// emulator: the field was in the API response and absent from the form.
 //
-// This does not fix the drift, which needs the same marker-based regeneration
-// the admin already has. It says the drift exists and names the command that
-// resolves it, which is the difference between a known limitation and a bug
-// somebody finds in a demo.
+// So a screen this cannot update says so and names the command that resolves
+// it, which is the difference between a known limitation and a bug somebody
+// finds in a demo. It also still covers the form in the one case a rebuild is
+// refused, which is a form somebody has edited.
 type clientUIDrift struct {
 	Client   string   // "mobile" or "desktop"
 	Resource string   // Pascal name
@@ -117,10 +116,12 @@ func printClientUIDrift(drifts []clientUIDrift) {
 	fmt.Println("    Types, schemas and the admin are current, and so is a desktop")
 	fmt.Println("    screen carrying the grit:cols markers: sync adds new columns to")
 	fmt.Println("    those in place.")
-	fmt.Println("    The Expo screens are written once, when the resource is generated:")
-	fmt.Println("    its list renders a header block and a row block that have to line up")
-	fmt.Println("    under a summed table width, so adding a column in place would be")
-	fmt.Println("    three things to keep in step and a misaligned table when one slips.")
+	fmt.Println("    An Expo form is rebuilt from the model, unless you have edited it,")
+	fmt.Println("    in which case it is named above and left alone.")
+	fmt.Println("    An Expo list is not: it renders a header block and a row block that")
+	fmt.Println("    have to line up under a summed table width, so adding a column in")
+	fmt.Println("    place would be three things to keep in step and a misaligned table")
+	fmt.Println("    when one slips.")
 	fmt.Println()
 
 	for _, resource := range order {
@@ -169,4 +170,56 @@ func generatedResource(root, pascal string) bool {
 		}
 	}
 	return false
+}
+
+// syncMobileForm rebuilds a resource's Expo create/edit form from its model.
+//
+// Shared by `grit sync` and `grit generate field`, because a field added by
+// either has to reach the same screen and two writers for one file is how the
+// two come to disagree about what it looks like.
+//
+// Returns the path to report as updated, or the path to report as kept, never
+// both. Both empty means there was nothing to do: no Expo app, or no form for
+// this resource.
+//
+// Whether a rebuild is allowed is the manifest's answer, not a new rule: it
+// holds the hash of what Grit last wrote, so a form nobody has touched is
+// Grit's to rewrite and one somebody has edited is theirs to keep. The same
+// rule grit upgrade applies to every framework-owned file.
+func syncMobileForm(root string, def *ResourceDefinition, names Names) (updated, kept string) {
+	// Only Definition is read by mobileFormSource, and Root by the two path
+	// helpers. A full Generator is not available on the sync path, which has a
+	// parsed model and no flags.
+	g := &Generator{Root: root, Definition: def}
+	if !g.hasMobileApp() {
+		return "", ""
+	}
+	path := filepath.Join(g.mobileRoot(), "components", "resource-forms",
+		names.PluralKebab+"-form.tsx")
+	if _, err := os.Stat(path); err != nil {
+		return "", ""
+	}
+
+	// Three different reasons not to write, and they are worth telling apart:
+	// "you have edited it" is advice, and saying it about a file Grit has no
+	// record of is a guess presented as fact. A project older than the
+	// manifest, or one whose form predates it, lands on Untracked.
+	label := relFromRoot(root, path)
+	switch manifest.StatusOfPath(path) {
+	case manifest.Unchanged:
+	case manifest.Untracked:
+		return "", label + "  (Grit has no record of writing it, so it is left alone)"
+	default:
+		return "", label + "  (you have edited it)"
+	}
+
+	body := g.mobileFormSource(names)
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		// Not fatal for either caller. On the generate-field path the field is
+		// already in the model, the schema and the type by now, so failing
+		// here would leave the command half done with nothing to resume it.
+		return "", label + "  (could not be written: " + err.Error() + ")"
+	}
+	manifest.Note(path, body)
+	return label, ""
 }
