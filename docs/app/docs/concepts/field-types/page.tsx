@@ -65,7 +65,7 @@ const COLUMNS: { type: string; tag: string; note: string }[] = [
   { type: 'float', tag: 'type:decimal(12,2)', note: 'Only when the name looks like money. A field called price or amount gets fixed precision, because 1.99 + 0.01 in float64 is not 2.00. Prefer the money type, which does not guess.' },
   { type: 'money', tag: '(two columns)', note: 'price_amount BIGINT in minor units plus price_currency. One column holding "19.99 USD" is not something you can SUM, and a float is not something you can trust.' },
   { type: 'bool / toggle', tag: '(none)', note: 'Same column. toggle is a switch in the form, bool is a checkbox.' },
-  { type: 'select / radio', tag: 'size:255 + enum:"a|b"', note: 'The enum tag records the allowed values on the model, so a seeder generated later fills the column from the list instead of with dictionary words.' },
+  { type: 'select / radio', tag: 'size:255 + enum:"a|b"', note: 'The enum tag is the allowed values. The API refuses anything else with a 422 on every write that has a model, and a seeder generated later fills the column from the list instead of with dictionary words.' },
   { type: 'check', tag: 'type:json', note: 'Several of the allowed values, stored as a JSON array.' },
   { type: 'date', tag: 'type:date', note: 'A day with no time and no zone. datetime keeps both, as *time.Time.' },
   { type: 'slug', tag: 'size:255 uniqueIndex', note: 'Always unique: a slug that repeats is two URLs for one thing. Generated from the named field on write.' },
@@ -556,6 +556,59 @@ export default function FieldTypesPage() {
                   and the matching keyboard for email, url and domain; the desktop forms use the
                   browser&apos;s own email, url, tel, time and colour inputs.
                 </p>
+              </div>
+
+              {/* Closed sets */}
+              <div className="mb-12" id="closed-sets">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Closed sets: select, radio and check
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A <code>select</code>, <code>radio</code> or <code>check</code> field declares
+                  the values its column may hold, and the API holds it to them on every write
+                  that goes through a model. The options land on the model as an{' '}
+                  <code>enum</code> tag, and <code>internal/fieldtypes</code> reads it in the same
+                  callback that checks the formatted types:
+                </p>
+                <CodeBlock
+                  code={`Status string ` + '`' + `gorm:"size:255" json:"status" binding:"required" enum:"draft|sent|paid"` + '`' + `
+Tags   datatypes.JSONSlice[string] ` + '`' + `gorm:"type:json" json:"tags" enum:"bug|ui|docs"` + '`' + ``}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  An undeclared value is a 422 that names the field, the permitted set and the
+                  value that was sent:
+                </p>
+                <CodeBlock
+                  code={`{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Status must be one of draft, sent, paid (got \"whatever\")",
+    "details": { "status": "Status must be one of draft, sent, paid (got \"whatever\")" }
+  }
+}`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  Three things worth knowing about where the rule applies. An empty value passes,
+                  because clearing an optional select has to work and whether a value was given
+                  is <code>binding:&quot;required&quot;</code>&apos;s question rather than this
+                  one&apos;s. A <code>check</code> column holds several values and each is checked
+                  separately, so the one that is wrong is the one named. And a PATCH is checked
+                  only against the columns it carries, which is what lets a project with rows that
+                  predate the rule be repaired one column at a time.
+                </p>
+                <Callout type="warning" title="Upgrading a project that already has these rows">
+                  Before v3.552.0 the <code>enum</code> tag was recorded on the model and enforced
+                  nowhere, so the shared Zod schema was the only thing holding a select to its own
+                  options: the admin could not produce an undeclared value, and anything else
+                  writing to the API could. Nothing breaks on read, and no migration runs. A row
+                  holding a value the field does not declare can no longer be saved whole, so put
+                  it right first:{' '}
+                  <code>
+                    SELECT id, status FROM invoices WHERE status NOT IN (&apos;draft&apos;,
+                    &apos;sent&apos;, &apos;paid&apos;)
+                  </code>
+                  .
+                </Callout>
               </div>
 
               {/* Vector */}

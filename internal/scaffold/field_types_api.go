@@ -17,14 +17,23 @@ const (
 // the sanitiser, so every write with a model goes through them.
 const fieldTypesConnectHook = `	// Formatted columns (email, url, domain, tel, country, color, percent,
 	// rating, time, json) are checked and normalised on every write that has a
-	// model: create, update, PATCH, bulk edit, CSV import and sync push. A
-	// value that is not what its column says is refused with a 422 naming the
-	// field. See internal/fieldtypes.
+	// model: create, update, PATCH, bulk edit, CSV import and sync push, and a
+	// select, radio or check column is held to the values it declares. A value
+	// that is not what its column says is refused with a 422 naming the field.
+	// See internal/fieldtypes.
 	if err := fieldtypes.Install(db); err != nil {
 		return nil, fmt.Errorf("installing the field type checks: %w", err)
 	}
 
 `
+
+// FieldTypesSource is internal/fieldtypes as a project receives it.
+//
+// Exported for a guard in internal/generate: which field types declare a
+// closed set is that package's business, and which column shapes the checker
+// understands is this one's, and a test over either alone passes while the
+// pair is broken (grit#226).
+func FieldTypesSource() string { return apiFieldTypesGo() }
 
 func apiFieldTypesGo() string {
 	return `// Package fieldtypes checks and normalises the formatted columns a generated
@@ -424,8 +433,31 @@ type conditional struct {
 	value string
 }
 
-var fieldCache sync.Map // *schema.Schema -> []formatted
-var condCache sync.Map  // *schema.Schema -> []conditional
+// choice is a column whose value must be one of a closed set, declared as
+// enum:"draft|sent|paid" by every select, radio and check field.
+//
+// The tag was written for whoever read the model and enforced nowhere, which
+// made the frontend the only thing holding a field to its own definition: the
+// shared Zod schema had z.enum(["draft","sent"]) and the API took
+// status:"whatever" with a 201 (grit#226). An agent over the API did it within
+// a minute of being given the tools, and the cost is not only a bad row: the
+// admin's select cannot represent the value, so a person opening that record
+// and saving it changes a field they never touched.
+//
+// Checked here rather than with binding:"oneof=draft sent" on the model, for
+// two reasons. One place covers select, radio and check, and every way in
+// rather than only the ones that bind a request. And binding's tag is split on
+// commas and spaces, so an option value holding either (select:in progress=In
+// Progress is a thing somebody writes) silently becomes a different rule,
+// where this compares the value as declared.
+type choice struct {
+	field  *schema.Field
+	values []string
+}
+
+var fieldCache sync.Map  // *schema.Schema -> []formatted
+var condCache sync.Map   // *schema.Schema -> []conditional
+var choiceCache sync.Map // *schema.Schema -> []choice
 
 // conditionalFields reads the requiredif tags on a model.
 //
@@ -466,6 +498,34 @@ func fieldByAnyName(s *schema.Schema, name string) *schema.Field {
 	return nil
 }
 
+// choiceFields reads the enum tags on a model.
+//
+// A tag with one value is kept: a select with a single option is a column that
+// may hold exactly that, which is a rule like any other.
+func choiceFields(s *schema.Schema) []choice {
+	if cached, ok := choiceCache.Load(s); ok {
+		return cached.([]choice)
+	}
+	var out []choice
+	for _, f := range s.Fields {
+		tag := f.Tag.Get("enum")
+		if tag == "" {
+			continue
+		}
+		var values []string
+		for _, v := range strings.Split(tag, "|") {
+			if v = strings.TrimSpace(v); v != "" {
+				values = append(values, v)
+			}
+		}
+		if len(values) > 0 {
+			out = append(out, choice{field: f, values: values})
+		}
+	}
+	choiceCache.Store(s, out)
+	return out
+}
+
 func formattedFields(s *schema.Schema) []formatted {
 	if cached, ok := fieldCache.Load(s); ok {
 		return cached.([]formatted)
@@ -496,7 +556,8 @@ func check(tx *gorm.DB) {
 	}
 	fields := formattedFields(stmt.Schema)
 	conds := conditionalFields(stmt.Schema)
-	if len(fields) == 0 && len(conds) == 0 {
+	choices := choiceFields(stmt.Schema)
+	if len(fields) == 0 && len(conds) == 0 && len(choices) == 0 {
 		return
 	}
 	// An update that names its columns in a map is checked for those columns
@@ -506,17 +567,20 @@ func check(tx *gorm.DB) {
 	case map[string]interface{}:
 		checkMap(tx, fields, dest)
 		checkConditionalMap(tx, conds, dest)
+		checkChoiceMap(tx, choices, dest)
 		return
 	case *map[string]interface{}:
 		if dest != nil {
 			checkMap(tx, fields, *dest)
 			checkConditionalMap(tx, conds, *dest)
+			checkChoiceMap(tx, choices, *dest)
 		}
 		return
 	}
 	if stmt.Dest != nil {
 		checkValue(tx, fields, stmt.Schema, reflect.ValueOf(stmt.Dest))
 		checkConditional(tx, conds, stmt.Schema, reflect.ValueOf(stmt.Dest))
+		checkChoice(tx, choices, stmt.Schema, reflect.ValueOf(stmt.Dest))
 	}
 }
 
@@ -621,6 +685,128 @@ func isEmptyValue(value interface{}) bool {
 	}
 	v := reflect.ValueOf(value)
 	return v.IsZero()
+}
+
+// checkChoice refuses a row whose choice column holds a value its own
+// declaration does not list.
+//
+// An empty value passes: clearing an optional select is allowed, and a
+// required one is already refused by binding:"required" at the request and by
+// the column's NOT NULL at the database. This rule is about which values are
+// permitted, not about whether one was given, and conflating the two is how a
+// select becomes impossible to clear.
+func checkChoice(tx *gorm.DB, choices []choice, sch *schema.Schema, v reflect.Value) {
+	if len(choices) == 0 || !v.IsValid() {
+		return
+	}
+	v = reflect.Indirect(v)
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			checkChoice(tx, choices, sch, v.Index(i))
+		}
+	case reflect.Struct:
+		if !v.CanAddr() || v.Type() != sch.ModelType {
+			return
+		}
+		ctx := tx.Statement.Context
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		for _, c := range choices {
+			value, zero := c.field.ValueOf(ctx, v)
+			if zero {
+				continue
+			}
+			if got, bad := offendingChoice(c, value); bad {
+				_ = tx.AddError(choiceError(c, got))
+				return
+			}
+		}
+	}
+}
+
+// checkChoiceMap is the PATCH, bulk-edit and Updates(map) path.
+//
+// Only the columns the map names, which is the same rule the formatted and
+// conditional checks follow: a value stored before this check existed should
+// not block an edit to a different column of the same row. An upgraded project
+// has rows that predate the rule, and making them unsaveable in full is the
+// cost of having the rule at all, but making them unsaveable in part would
+// mean a project could not be repaired one column at a time.
+func checkChoiceMap(tx *gorm.DB, choices []choice, values map[string]interface{}) {
+	for _, c := range choices {
+		value, ok := mapValue(values, c.field)
+		if !ok || isEmptyValue(value) {
+			continue
+		}
+		if got, bad := offendingChoice(c, value); bad {
+			_ = tx.AddError(choiceError(c, got))
+			return
+		}
+	}
+}
+
+// offendingChoice returns the first value that the column's declaration does
+// not list, and whether there was one.
+//
+// A check column holds several values at once: its Go type is
+// datatypes.JSONSlice[string], so comparing the whole value against one option
+// would refuse every multi-select write. Each element is checked instead, and
+// the one that is wrong is the one named. Found before this shipped by reading
+// the generator's own Go types rather than the select case it was written for.
+//
+// Compared as text, because the declaration is text and the column may be a
+// string, a pointer to one, or a named type with a string under it.
+func offendingChoice(c choice, value interface{}) (string, bool) {
+	value = derefValue(value)
+	if value == nil {
+		return "", false
+	}
+
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		// Not a []byte: that is raw JSON rather than a list of choices, and
+		// walking it byte by byte would compare numbers to option values.
+		if v.Type().Elem().Kind() == reflect.Uint8 {
+			return "", false
+		}
+		for i := 0; i < v.Len(); i++ {
+			if got, bad := offendingChoice(c, v.Index(i).Interface()); bad {
+				return got, true
+			}
+		}
+		return "", false
+	}
+
+	got := fmt.Sprintf("%v", value)
+	if got == "" {
+		return "", false
+	}
+	for _, want := range c.values {
+		if got == want {
+			return "", false
+		}
+	}
+	return got, true
+}
+
+// choiceError names the field, the value and the permitted set.
+//
+// The rejected value is quoted back because the caller sent it and a 422 that
+// does not say which value was refused is a 422 somebody has to reproduce to
+// act on. Truncated, so a megabyte of pasted text does not become an error
+// message.
+func choiceError(c choice, got string) *Error {
+	if len(got) > 60 {
+		got = got[:60] + "..."
+	}
+	return &Error{
+		Field:   jsonName(c.field),
+		Message: "must be one of " + strings.Join(c.values, ", ") +
+			" (got " + strconv.Quote(got) + ")",
+	}
 }
 
 func checkMap(tx *gorm.DB, fields []formatted, values map[string]interface{}) {
@@ -1020,6 +1206,100 @@ func TestRequiredIf(t *testing.T) {
 	if err := db.Model(&oneOff).Updates(map[string]interface{}{"kind": "recurring"}).Error; err != nil {
 		t.Errorf("a PATCH naming only the condition was refused: %v", err)
 	}
+}
+
+// A select, radio or check column holds only the values it declares.
+//
+// The frontend was the only thing enforcing this: the shared Zod schema had
+// z.enum(["open","closed"]) and the API answered 201 to status "whatever"
+// (grit#226). Two costs, and the second is the worse one: the row is wrong,
+// and the admin's own select cannot represent the value, so a person opening
+// that record and saving it changes a field they never touched.
+func TestAChoiceColumnIsHeldToItsOptions(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := Install(db); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	if err := db.AutoMigrate(&ticket{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+
+	// A declared value.
+	row := ticket{Status: "open", Priority: "high"}
+	if err := db.Create(&row).Error; err != nil {
+		t.Fatalf("a declared value was refused: %v", err)
+	}
+
+	// One that is not, named with the set and the value that was sent.
+	var fe *Error
+	err = db.Create(&ticket{Status: "whatever"}).Error
+	if !errors.As(err, &fe) || fe.Field != "status" {
+		t.Fatalf("an undeclared value was accepted: %v", err)
+	}
+	for _, want := range []string{"must be one of", "open", "closed", "whatever"} {
+		if !strings.Contains(fe.Message, want) {
+			t.Errorf("the message does not mention %q: %q", want, fe.Message)
+		}
+	}
+
+	// An empty optional column passes: a select has to be clearable, and
+	// whether a value was given is binding:"required"'s question, not this
+	// rule's. Conflating the two is how a select becomes impossible to clear.
+	if err := db.Create(&ticket{Status: "open"}).Error; err != nil {
+		t.Errorf("an empty optional choice column was refused: %v", err)
+	}
+
+	// The PATCH and bulk-edit path, which is a map rather than a struct.
+	err = db.Model(&row).Updates(map[string]interface{}{"status": "nope"}).Error
+	if !errors.As(err, &fe) || fe.Field != "status" {
+		t.Errorf("a PATCH to an undeclared value was accepted: %v", err)
+	}
+	if err := db.Model(&row).Updates(map[string]interface{}{"status": "closed"}).Error; err != nil {
+		t.Errorf("a PATCH to a declared value was refused: %v", err)
+	}
+
+	// A map that does not name the column is not checked against it. An
+	// upgraded project has rows that predate this rule, and they have to stay
+	// repairable one column at a time.
+	if err := db.Model(&row).Updates(map[string]interface{}{"title": "renamed"}).Error; err != nil {
+		t.Errorf("a PATCH naming another column was refused: %v", err)
+	}
+
+	// Every field type that carries the tag, not just select.
+	err = db.Create(&ticket{Status: "open", Priority: "urgent"}).Error
+	if !errors.As(err, &fe) || fe.Field != "priority" {
+		t.Errorf("a radio column was not checked: %v", err)
+	}
+
+	// A check column holds several values at once, so it is checked element by
+	// element. Comparing the whole value against one option would refuse every
+	// multi-select write, which is what the first version of this did.
+	if err := db.Create(&ticket{Status: "open", Tags: []string{"bug", "ui"}}).Error; err != nil {
+		t.Errorf("a multi-value check column with declared values was refused: %v", err)
+	}
+	err = db.Create(&ticket{Status: "open", Tags: []string{"bug", "nonsense"}}).Error
+	if !errors.As(err, &fe) || fe.Field != "tags" {
+		t.Fatalf("one undeclared value among several was accepted: %v", err)
+	}
+	if !strings.Contains(fe.Message, "nonsense") {
+		t.Errorf("the message does not name the value that was wrong: %q", fe.Message)
+	}
+	if err := db.Create(&ticket{Status: "open", Tags: []string{}}).Error; err != nil {
+		t.Errorf("an empty check column was refused: %v", err)
+	}
+}
+
+// ticket is a model with the tags a generated select and radio field carry.
+type ticket struct {
+	ID       uint   ` + "`" + `gorm:"primarykey"` + "`" + `
+	Title    string ` + "`" + `json:"title"` + "`" + `
+	Status   string ` + "`" + `json:"status" binding:"required" enum:"open|closed"` + "`" + `
+	Priority string ` + "`" + `json:"priority" enum:"low|high"` + "`" + `
+	// The multi-value shape: a check field's Go type.
+	Tags datatypes.JSONSlice[string] ` + "`" + `gorm:"type:json" json:"tags" enum:"bug|ui|docs"` + "`" + `
 }
 `
 }

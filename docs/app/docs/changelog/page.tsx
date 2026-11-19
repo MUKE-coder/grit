@@ -72,6 +72,119 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.552.0 */}
+            <div className="mb-12" id="v3.552.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.552.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A select field is now validated by the API, not only by Zod</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/226"
+                  target="_blank" rel="noopener noreferrer">#226</a>, found while
+                  building the MCP tools: an agent is just another API client,
+                  and within a minute of being given the tools it stored a value
+                  the admin could never produce.{' '}
+                  <code>POST /api/v1/invoices</code> with{' '}
+                  <code>{'{'}&quot;status&quot;: &quot;whatever&quot;{'}'}</code>{' '}
+                  answered 201.
+                </p>
+                <p>
+                  The options were on the model as an <code>enum</code> tag that
+                  nothing read, so the shared Zod schema was the only thing
+                  holding the field to its own definition. The frontend could
+                  not produce a bad value and everything else could: an agent,
+                  a mobile app, curl, an import. Five things were generated from
+                  that declaration and the API&apos;s own validation was the one
+                  left out.
+                </p>
+                <p>
+                  The cost is not only a bad row. The admin&apos;s select has no
+                  option for the stored value, so it renders empty, and a person
+                  opening that record and saving it changes a field they never
+                  touched.
+                </p>
+
+                <h4>Where the rule lives, and why not on the binding tag</h4>
+                <p>
+                  <code>internal/fieldtypes</code> reads the tag now, in the
+                  same GORM callback that checks the formatted columns: create,
+                  update, PATCH, bulk edit, CSV import, sync push and GORM
+                  Studio&apos;s row editor. A refused value is a 422 naming the
+                  field, the permitted set and the value that was sent, with{' '}
+                  <code>details</code> a form can show.
+                </p>
+                <p>
+                  The issue proposed{' '}
+                  <code>binding:&quot;required,oneof=draft sent&quot;</code> on
+                  the model, and the callback turned out to be the better place
+                  for two reasons. One rule covers <code>select</code>,{' '}
+                  <code>radio</code> and <code>check</code> rather than three
+                  tags, and every way in rather than only the ones that bind a
+                  request body. And binding&apos;s tag is split on commas and
+                  spaces, so an option value holding either, and{' '}
+                  <code>select:in progress=In Progress</code> is a thing people
+                  write, silently becomes a different rule.
+                </p>
+
+                <h4>Three edges</h4>
+                <p>
+                  An empty value passes: clearing an optional select has to
+                  work, and whether a value was given is{' '}
+                  <code>binding:&quot;required&quot;</code>&apos;s question
+                  rather than this one&apos;s. Conflating the two is how a
+                  select becomes impossible to clear.
+                </p>
+                <p>
+                  A <code>check</code> column holds several values at once, so
+                  each is checked separately and the one that is wrong is the
+                  one named. The first version of this compared the whole value
+                  and would have refused every multi-select write: its Go type
+                  is <code>datatypes.JSONSlice[string]</code>, and{' '}
+                  <code>&quot;[bug ui]&quot;</code> matches no option. Caught
+                  before it shipped by reading the generator&apos;s own Go types
+                  rather than the select case the check was written for, and the
+                  guard puts the bug back.
+                </p>
+                <p>
+                  A PATCH is checked only against the columns it carries, which
+                  is the same rule the other checks follow. It is also what lets
+                  a project with rows that predate this be repaired one column
+                  at a time.
+                </p>
+
+                <h4>Upgrading a project that has such rows</h4>
+                <p>
+                  Nothing breaks on read and no migration runs. A row holding a
+                  value its field does not declare can no longer be saved whole,
+                  so find them first:{' '}
+                  <code>
+                    SELECT id, status FROM invoices WHERE status NOT IN
+                    (&apos;draft&apos;, &apos;sent&apos;, &apos;paid&apos;)
+                  </code>
+                  . That is deliberately not a silent data migration: which
+                  value a bad row should have been is not Grit&apos;s to guess.
+                </p>
+
+                <h4>Verified by using it</h4>
+                <p>
+                  On a generated project over HTTP: a create with an undeclared
+                  value is 422 and with a declared one 201; a PATCH to an
+                  undeclared value is 422 and to a declared one 200. The shipped{' '}
+                  <code>internal/fieldtypes</code> test covers select, radio and
+                  the multi-value case, so every project tests its own copy. A
+                  second guard reads both sides of the pair, which field types
+                  declare a closed set and which column shapes the checker
+                  understands, because a test over either alone passes while the
+                  pair is broken.
+                </p>
+              </div>
+            </div>
+
             {/* v3.551.0 */}
             <div className="mb-12" id="v3.551.0">
               <div className="flex items-center gap-3 mb-4">

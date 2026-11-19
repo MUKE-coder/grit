@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.552.0 - November 19, 2026
+
+### A select field is now validated by the API, not only by Zod
+
+[#226](https://github.com/MUKE-coder/grit/issues/226), found while building the MCP tools: an agent is just another API client, and within a minute of being given the tools it stored a value the admin could never produce. `POST /api/v1/invoices` with `{"status": "whatever"}` answered 201.
+
+The options were on the model as an `enum` tag that nothing read, so the shared Zod schema was the only thing holding the field to its own definition. The frontend could not produce a bad value and everything else could: an agent, a mobile app, curl, an import. Five things were generated from that declaration and the API's own validation was the one left out.
+
+The cost is not only a bad row. The admin's select has no option for the stored value, so it renders empty, and a person opening that record and saving it changes a field they never touched.
+
+#### Where the rule lives, and why not on the binding tag
+
+`internal/fieldtypes` reads the tag now, in the same GORM callback that checks the formatted columns: create, update, PATCH, bulk edit, CSV import, sync push and GORM Studio's row editor. A refused value is a 422 naming the field, the permitted set and the value that was sent, with `details` a form can show.
+
+The issue proposed `binding:"required,oneof=draft sent"` on the model, and the callback turned out to be the better place for two reasons. One rule covers `select`, `radio` and `check` rather than three tags, and every way in rather than only the ones that bind a request body. And binding's tag is split on commas and spaces, so an option value holding either, and `select:in progress=In Progress` is a thing people write, silently becomes a different rule.
+
+#### Three edges
+
+An empty value passes: clearing an optional select has to work, and whether a value was given is `binding:"required"`'s question rather than this one's. Conflating the two is how a select becomes impossible to clear.
+
+A `check` column holds several values at once, so each is checked separately and the one that is wrong is the one named. The first version of this compared the whole value and would have refused every multi-select write: its Go type is `datatypes.JSONSlice[string]`, and `"[bug ui]"` matches no option. Caught before it shipped by reading the generator's own Go types rather than the select case the check was written for, and the guard puts the bug back.
+
+A PATCH is checked only against the columns it carries, which is the same rule the other checks follow. It is also what lets a project with rows that predate this be repaired one column at a time.
+
+#### Upgrading a project that has such rows
+
+Nothing breaks on read and no migration runs. A row holding a value its field does not declare can no longer be saved whole, so find them first: ` SELECT id, status FROM invoices WHERE status NOT IN ('draft', 'sent', 'paid') ` . That is deliberately not a silent data migration: which value a bad row should have been is not Grit's to guess.
+
+#### Verified by using it
+
+On a generated project over HTTP: a create with an undeclared value is 422 and with a declared one 201; a PATCH to an undeclared value is 422 and to a declared one 200. The shipped `internal/fieldtypes` test covers select, radio and the multi-value case, so every project tests its own copy. A second guard reads both sides of the pair, which field types declare a closed set and which column shapes the checker understands, because a test over either alone passes while the pair is broken.
+
+
 ## v3.551.0 - November 19, 2026
 
 ### A new field reaches the mobile form and the desktop list
