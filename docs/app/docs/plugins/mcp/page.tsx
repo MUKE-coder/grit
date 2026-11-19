@@ -271,18 +271,47 @@ GET    /api/v1/mcp-connections/:id/calls  what that agent did`}
           connect&rdquo; is the question that one answers.
         </p>
 
-        <h2>What is not in this release</h2>
+        <h2>Tools for every resource, generated</h2>
         <p>
-          Generated CRUD tools per resource, so{' '}
           <code>grit generate resource Invoice</code> writes{' '}
-          <code>list_invoices</code>, <code>get_invoice</code> and the rest with schemas built
-          from the field types. That is the next one, and it is where the leverage is. This
-          release is the server, the connections, and the registry those tools will register
-          into, which is also everything a hand-written tool needs today.
+          <code>internal/mcp/tools_invoices.go</code>: <code>list_invoices</code>,{' '}
+          <code>get_invoice</code>, <code>create_invoice</code>, <code>update_invoice</code> and{' '}
+          <code>delete_invoice</code>, with schemas built from the field types. The permission on
+          each comes from the route table the generator already writes, so the key allowlist and
+          the role checks line up with no extra work.
         </p>
         <p>
-          The connection screens in the admin come with it. Until then a connection is made over
-          the API, which is also how a headless project would do it.
+          The file registers itself from an <code>init()</code>, which is why there is no marker
+          to inject at and why <code>grit remove resource</code> is a delete. Nothing imports it.
+        </p>
+        <p>
+          What the schemas do with each type: a select becomes an <code>enum</code> of its
+          options, money is a number in ordinary units because a model asked for forty dollars
+          sends 40, a date gets a format, and a <code>belongs_to</code> takes the related
+          record&apos;s id <em>or its name</em>, resolved through the app. Required on create,
+          optional on update, from one shared body builder so the two cannot drift.
+        </p>
+        <p>
+          Four kinds of field are never offered, each for its own reason: encrypted and sensitive
+          columns, because a recovery phrase is not an agent&apos;s to set and a sensitive one
+          cannot be read back to check; <code>ServerSet</code>, because a hook overwrites whatever
+          is sent; files, because an upload is a multipart request this transport does not make;
+          and a slug, because it is derived from its source and setting it directly puts the two
+          out of step.
+        </p>
+        <p>
+          A relation&apos;s lookup route is declared alongside the write route, which is easy to
+          miss and not optional: resolving a client by name is a{' '}
+          <code>GET /api/v1/clients</code>, and a route a tool does not declare is one its own
+          key refuses.
+        </p>
+
+        <h2>What is not in this release</h2>
+        <p>
+          The connection screens in the admin, and <code>grit mcp sync</code> for regenerating
+          schemas after a field changes (<code>grit generate resource --force</code> does it
+          today). Until the screens land, a connection is made over the API, which is also how a
+          headless project would do it.
         </p>
 
         <RelatedPlugins items={RELATED} />

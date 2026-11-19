@@ -160,6 +160,17 @@ func Strings(args map[string]any, key string) []string {
 	return nil
 }
 
+// boolText is a bool as the API's query parser reads it.
+//
+// "true" and "false" spelled out, because a filter arrives as a string in a
+// query and an empty one is indistinguishable from false.
+func boolText(value bool) string {
+	if value {
+		return "true"
+	}
+	return "false"
+}
+
 // Page turns a model's paging arguments into the query the API takes, with
 // limits a model cannot talk its way past.
 //

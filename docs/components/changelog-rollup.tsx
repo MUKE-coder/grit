@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 16 to 22, 2026",
-    count: 4,
+    count: 5,
     entries: [
+      { version: "3.549.0", title: "MCP tools for every resource, generated" },
       { version: "3.548.0", title: "grit plugin add mcp" },
       { version: "3.547.0", title: "Purging from the Trash left every file the record owned" },
       { version: "3.546.0", title: "A failed validation answered with the validator talking to itself" },

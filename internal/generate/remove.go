@@ -116,6 +116,13 @@ func RemoveResourceAt(root, name string) error {
 		// register call is taken out of policies.go below; deleting one
 		// without the other leaves a different compile error.
 		filepath.Join(apiRoot, "internal", "policies", names.Snake+".go"),
+		// The MCP tools, if the plugin is installed. Nothing imports the file
+		// and the tools reach the app over HTTP, so leaving it behind still
+		// compiles: it would simply go on offering an agent five tools whose
+		// routes answer 404, and tools/list would advertise them. A removal
+		// that leaves a working build and a lying catalogue is worse than one
+		// that breaks, because nothing says so.
+		filepath.Join(apiRoot, "internal", "mcp", "tools_"+names.PluralSnake+".go"),
 		// --- shared package ---
 		filepath.Join(sharedRoot, "schemas", names.Kebab+".ts"),
 		filepath.Join(sharedRoot, "types", names.Kebab+".ts"),

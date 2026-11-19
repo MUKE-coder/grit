@@ -467,6 +467,15 @@ func (g *Generator) Run() error {
 	}
 	fmt.Printf("  ✓ %sinternal/policies/%s.go\n", apiPrefix, names.Snake)
 
+	// MCP tools, when the plugin is installed. Self-registering, so there is
+	// nothing to inject and nothing for a removal to unpick: see
+	// internal/generate/mcp_tools.go.
+	if path, err := g.writeMCPTools(); err != nil {
+		return fmt.Errorf("writing the MCP tools: %w", err)
+	} else if path != "" {
+		fmt.Printf("  ✓ %s\n", relFromRoot(g.Root, path))
+	}
+
 	// The index an embedding needs, as a checked-in pair. Postgres only, and
 	// only for a resource that has one: see internal/generate/vector_index.go.
 	for _, f := range g.Definition.Fields {

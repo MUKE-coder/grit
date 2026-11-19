@@ -23,6 +23,35 @@ Also worth knowing:
 ---
 
 
+## v3.549.0 - November 19, 2026
+
+### MCP tools for every resource, generated
+
+The half of [#224](https://github.com/MUKE-coder/grit/issues/224) with the leverage in it. With the plugin installed, `grit generate resource Invoice` writes `internal/mcp/tools_invoices.go` with five tools, schemas built from the field types, and the permission on each taken from the route table the generator already writes.
+
+The file registers itself from an `init()`. The issue proposed a `// grit:mcp-tools` marker to inject at; the registry had already made one unnecessary, and the difference is worth the paragraph: every injection anchor in this generator is something a removal has to unpick, and the ones that go wrong leave a project that does not compile. An init needs no anchor and no reverse edit, so `grit remove resource` is a delete.
+
+#### What the field types become
+
+A select becomes an `enum` of its options. Money is a number in ordinary units, because a model asked for forty dollars sends 40 and not 4000. A date gets a format. A `belongs_to` takes the related record's id *or its name*, resolved through the app so the lookup is scoped to what the connection may see. Required on create, optional on update, from one shared body builder: two copies drift, and a field added to create and forgotten on update is one an agent can set once and never correct.
+
+Four kinds of field are never offered, each for its own reason. Encrypted and sensitive columns, because a recovery phrase is not an agent's to set and a sensitive one cannot be read back to check what happened. `ServerSet`, because a hook overwrites whatever is sent, so asking for it asks for a value that does nothing. Files, because an upload is a multipart request this transport does not make. And a slug, because it is derived from its source and setting it directly puts the two out of step.
+
+#### Two bugs the live run found
+
+A `belongs_to` was keyed on the bare field name in the request body, and the model names the column `client_id`: every create was refused with `client_id is required` for a request that had named the client perfectly well. The argument stays bare, because &ldquo;client&rdquo; is what a person says and accepting a name there is the point.
+
+And a relation's lookup route was missing from `Routes`. Resolving a client by name is a `GET /api/v1/clients`, and a route a tool does not declare is one its own connection key refuses: the allowlist is the union of its tools' routes. Both have guards now, and one of them was confirmed by putting the bug back.
+
+Also fixed: the generated file contained `else if creating && false`, which is dead code the condition emitted whenever a field was optional. Generated code is read by people, and a condition that is a literal tells the reader the generator could not be bothered.
+
+#### Verified by using it
+
+On a generated project with a Client and an Invoice: 12 tools registered, a connection minted for five of them, and `create_invoice` called with `"client": "Kato Hardware"` created the invoice with the right `client_id`. Money arrived as 1250.5 and was stored as 125050 minor units. `list_invoices` filtered by status. Removing the resource took its tools with it and the project still built.
+
+That run also turned up something unrelated and worse, filed as [#226](https://github.com/MUKE-coder/grit/issues/226): a select field is validated by Zod on the frontend and by nothing on the API, so `status: "whatever"` is stored happily. An agent is just another API client, and the first thing it did was write a value the admin's own select cannot represent.
+
+
 ## v3.548.0 - November 19, 2026
 
 ### grit plugin add mcp

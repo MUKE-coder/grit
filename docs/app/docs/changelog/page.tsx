@@ -72,6 +72,113 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.549.0 */}
+            <div className="mb-12" id="v3.549.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.549.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>MCP tools for every resource, generated</h3>
+                <p>
+                  The half of{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/224"
+                  target="_blank" rel="noopener noreferrer">#224</a> with the
+                  leverage in it. With the plugin installed,{' '}
+                  <code>grit generate resource Invoice</code> writes{' '}
+                  <code>internal/mcp/tools_invoices.go</code> with five tools,
+                  schemas built from the field types, and the permission on each
+                  taken from the route table the generator already writes.
+                </p>
+                <p>
+                  The file registers itself from an <code>init()</code>. The
+                  issue proposed a <code>// grit:mcp-tools</code> marker to
+                  inject at; the registry had already made one unnecessary, and
+                  the difference is worth the paragraph: every injection anchor
+                  in this generator is something a removal has to unpick, and
+                  the ones that go wrong leave a project that does not compile.
+                  An init needs no anchor and no reverse edit, so{' '}
+                  <code>grit remove resource</code> is a delete.
+                </p>
+
+                <h4>What the field types become</h4>
+                <p>
+                  A select becomes an <code>enum</code> of its options. Money is
+                  a number in ordinary units, because a model asked for forty
+                  dollars sends 40 and not 4000. A date gets a format. A{' '}
+                  <code>belongs_to</code> takes the related record&apos;s id{' '}
+                  <em>or its name</em>, resolved through the app so the lookup
+                  is scoped to what the connection may see. Required on create,
+                  optional on update, from one shared body builder: two copies
+                  drift, and a field added to create and forgotten on update is
+                  one an agent can set once and never correct.
+                </p>
+                <p>
+                  Four kinds of field are never offered, each for its own
+                  reason. Encrypted and sensitive columns, because a recovery
+                  phrase is not an agent&apos;s to set and a sensitive one
+                  cannot be read back to check what happened.{' '}
+                  <code>ServerSet</code>, because a hook overwrites whatever is
+                  sent, so asking for it asks for a value that does nothing.
+                  Files, because an upload is a multipart request this transport
+                  does not make. And a slug, because it is derived from its
+                  source and setting it directly puts the two out of step.
+                </p>
+
+                <h4>Two bugs the live run found</h4>
+                <p>
+                  A <code>belongs_to</code> was keyed on the bare field name in
+                  the request body, and the model names the column{' '}
+                  <code>client_id</code>: every create was refused with{' '}
+                  <code>client_id is required</code> for a request that had
+                  named the client perfectly well. The argument stays bare,
+                  because &ldquo;client&rdquo; is what a person says and
+                  accepting a name there is the point.
+                </p>
+                <p>
+                  And a relation&apos;s lookup route was missing from{' '}
+                  <code>Routes</code>. Resolving a client by name is a{' '}
+                  <code>GET /api/v1/clients</code>, and a route a tool does not
+                  declare is one its own connection key refuses: the allowlist
+                  is the union of its tools&apos; routes. Both have guards now,
+                  and one of them was confirmed by putting the bug back.
+                </p>
+                <p>
+                  Also fixed: the generated file contained{' '}
+                  <code>else if creating &amp;&amp; false</code>, which is dead
+                  code the condition emitted whenever a field was optional.
+                  Generated code is read by people, and a condition that is a
+                  literal tells the reader the generator could not be bothered.
+                </p>
+
+                <h4>Verified by using it</h4>
+                <p>
+                  On a generated project with a Client and an Invoice: 12 tools
+                  registered, a connection minted for five of them, and{' '}
+                  <code>create_invoice</code> called with{' '}
+                  <code>&quot;client&quot;: &quot;Kato Hardware&quot;</code>{' '}
+                  created the invoice with the right{' '}
+                  <code>client_id</code>. Money arrived as 1250.5 and was stored
+                  as 125050 minor units. <code>list_invoices</code> filtered by
+                  status. Removing the resource took its tools with it and the
+                  project still built.
+                </p>
+                <p>
+                  That run also turned up something unrelated and worse, filed as{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/226"
+                  target="_blank" rel="noopener noreferrer">#226</a>: a select
+                  field is validated by Zod on the frontend and by nothing on
+                  the API, so <code>status: &quot;whatever&quot;</code> is stored
+                  happily. An agent is just another API client, and the first
+                  thing it did was write a value the admin&apos;s own select
+                  cannot represent.
+                </p>
+              </div>
+            </div>
+
             {/* v3.548.0 */}
             <div className="mb-12" id="v3.548.0">
               <div className="flex items-center gap-3 mb-4">
