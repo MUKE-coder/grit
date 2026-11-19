@@ -41,6 +41,12 @@ const STEPS: PluginStep[] = [
     then: 'The admin and web clients send this header automatically once an organisation is selected. Without it a scoped query fails closed with NO_ORGANIZATION rather than returning everything.',
   },
   {
+    title: 'Run a scheduled job for every organisation',
+    run: '// A sweep, with the organisation set on the context each call gets.\nreturn tenant.ForEach(ctx, db, func(ctx context.Context, orgID string) error {\n\treturn sendOverdueReminders(ctx, db)\n})',
+    language: 'go',
+    then: 'Active organisations only, soft-deleted ones skipped, in a stable order. Pass the ctx it hands you down into every query, or the query is unscoped or refused. One organisation failing does not stop the rest: the errors come back joined and each names its organisation, because a sweep that returns at the first error leaves everybody after it unprocessed and the only symptom is one customer whose reminders stopped. Pair it with notify.Once so a reminder is sent once per organisation rather than once in total.',
+  },
+  {
     title: 'Opt one query out, visibly',
     run: '// A platform-wide report, deliberately across organisations.\nvar total int64\ntenant.Unscoped(db).Model(&models.Deal{}).Count(&total)',
     language: 'go',

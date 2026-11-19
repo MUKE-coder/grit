@@ -220,6 +220,31 @@ func multitenantInjections(ctx Context) []Injection {
 				"\t}",
 		},
 		{
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:imports",
+			Code:   "\t\"" + ctx.Module + "/internal/notify\"",
+		},
+		{
+			// Claim a notification per organization rather than globally.
+			//
+			// Without this the first organization a sweep reaches claims
+			// "invoice-overdue:42" and no other organization is ever notified
+			// about its own invoice 42. The failure is invisible: the log says
+			// the notification was sent, and it was, to somebody else.
+			//
+			// Assigned here rather than from an init in the tenant package,
+			// which cannot import notify: notify reads models, and in a
+			// multitenant project models embeds tenant.Owned, so that import is
+			// a cycle. routes.go already imports both.
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:handlers",
+			Code: "\t// Notification claims are per organization: see internal/notify.\n" +
+				"\tnotify.Scope = func(ctx context.Context) string {\n" +
+				"\t\tid, _ := tenant.FromContext(ctx)\n" +
+				"\t\treturn id\n" +
+				"\t}",
+		},
+		{
 			// And put the active organization on the request context for those
 			// callbacks to read. Mounted after auth, because membership is
 			// verified against the authenticated user.
@@ -451,6 +476,8 @@ package tenant
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"reflect"
 
 	"gorm.io/gorm"
@@ -665,6 +692,77 @@ func stampOne(db *gorm.DB, field *schema.Field, row reflect.Value, orgID string)
 	if v, zero := field.ValueOf(db.Statement.Context, row); zero || v == "" {
 		_ = field.Set(db.Statement.Context, row, orgID)
 	}
+}
+
+// ForEach runs fn once per active organization, with the organization set on
+// the context fn receives.
+//
+// The shape every scheduled sweep in a multitenant app needs, and the one a
+// project reported writing by hand in a 278-line billing file (grit#179):
+// loop the organizations, set the tenant, do the work. Four lines of
+// boilerplate per job, and the third one is a cross-tenant data leak if it is
+// forgotten.
+//
+//	func billingSweep(ctx context.Context, db *gorm.DB) error {
+//		return tenant.ForEach(ctx, db, func(ctx context.Context, orgID string) error {
+//			return sendOverdueReminders(ctx, db)
+//		})
+//	}
+//
+// Inside fn, db reads and writes scoped to that organization, because the
+// scoping callbacks read the context fn was handed. Pass that ctx down: a
+// query made with the outer context is either unscoped or refused, depending
+// on the model.
+//
+// # One organization's failure does not stop the others
+//
+// fn is called for every organization even when an earlier one fails, and the
+// errors come back joined. A sweep that stops at the first failure leaves
+// every organization after it in the order unprocessed, and the symptom is one
+// customer saying their invoices stopped arriving while everybody else's kept
+// coming, which is not a bug anybody can read off a stack trace.
+//
+// # Which organizations, and why ids rather than rows
+//
+// Active, not soft-deleted, in a stable order, and the list is taken once:
+// reading it per iteration makes a long sweep's behaviour depend on when a row
+// changed.
+//
+// Read by table name and not through models.Organization, which this package
+// cannot reference: models embeds tenant.Owned, so importing it here is an
+// import cycle. That is also why fn is handed an id rather than a row. A job
+// that needs the organization's name or its billing details reads it from its
+// own package, where models is importable, and the ctx it was given scopes
+// nothing it has to pass along by hand.
+//
+// Unscoped, because the organizations table is not itself tenant-owned, and
+// the soft-delete condition is spelled out: a query made by table name does
+// not get GORM's deleted_at scope, so without it a sweep would process every
+// organization anybody had ever deleted.
+func ForEach(ctx context.Context, db *gorm.DB, fn func(context.Context, string) error) error {
+	var ids []string
+	if err := Unscoped(db).WithContext(ctx).
+		Table("organizations").
+		Where("active = ? AND deleted_at IS NULL", true).
+		Order("id").
+		Pluck("id", &ids).Error; err != nil {
+		return fmt.Errorf("listing organizations: %w", err)
+	}
+
+	var failures []error
+	for _, id := range ids {
+		// Cancellation is the one reason to stop early: the process is going
+		// away, and the organizations left are swept by whoever runs next
+		// rather than left out of a run that reported success.
+		if err := ctx.Err(); err != nil {
+			failures = append(failures, fmt.Errorf("stopped partway through %d organizations: %w", len(ids), err))
+			break
+		}
+		if err := fn(WithOrg(ctx, id), id); err != nil {
+			failures = append(failures, fmt.Errorf("organization %s: %w", id, err))
+		}
+	}
+	return errors.Join(failures...)
 }
 
 // orgClause builds the WHERE fragment, qualified with the table name so it

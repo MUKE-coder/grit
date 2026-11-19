@@ -3,7 +3,7 @@
 // example output, verify-install lesson, animated terminal). Bump this
 // when the Go CLI releases; keep it in sync with cmd/grit/main.go's
 // `var version` and internal/scaffold.DefaultVersion.
-export const GRIT_VERSION = '3.553.0'
+export const GRIT_VERSION = '3.554.0'
 
 /**
  * Which channel the version above belongs to.

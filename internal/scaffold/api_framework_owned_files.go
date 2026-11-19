@@ -140,6 +140,14 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// its own probe to. Here rather than in the API map because routes.go is
 		// repaired in place on upgrade, and a repair that writes health.OK into a
 		// project without the package is a project that does not compile.
+		// Running something at most once for a key, and the table that records
+		// it. Framework-owned because the failure it prevents is the same in
+		// every project, and because a fix to the claim-then-release order has
+		// to reach a project that already has a sweep built on it.
+		filepath.Join(apiRoot, "internal", "notify", "notify.go"):             apiNotifyGo(),
+		filepath.Join(apiRoot, "internal", "notify", "notify_test.go"):        apiNotifyTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "notification_claim.go"): apiNotificationClaimModelGo(),
+
 		filepath.Join(apiRoot, "internal", "health", "health.go"):      apiHealthGo(),
 		filepath.Join(apiRoot, "internal", "health", "health_test.go"): apiHealthTestGo(),
 

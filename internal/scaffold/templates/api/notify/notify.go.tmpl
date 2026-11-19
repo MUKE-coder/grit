@@ -1,0 +1,182 @@
+// Package notify runs something at most once, ever, for a key you choose.
+//
+// The case it exists for, from a project that wrote 278 lines of billing sweep
+// to get it (grit#179): a scheduled job that emails a customer about an overdue
+// invoice. The sweep runs every few minutes, the invoice stays overdue, and
+// without a record of having sent it the customer is emailed on every run.
+// Getting that wrong is not a bug somebody reports politely.
+//
+//	err := notify.Once(ctx, db, "invoice-overdue:"+invoice.ID, func() error {
+//		return mailer.Send(ctx, customer.Email, overdueTemplate(invoice))
+//	})
+//
+// Called twice with the same key, the second call does nothing and returns nil.
+// Not an error: "already sent" is the outcome the caller wanted.
+//
+// # What it is not
+//
+// It is not middleware.Idempotency, which replays an HTTP response for a
+// client retrying with the same Idempotency-Key, lives in Redis and expires
+// after a day. This is a permanent record in the database, for work nobody is
+// waiting on.
+//
+// And it is not a lock. Two replicas calling Once at the same moment: one wins
+// the insert, runs fn, and the other returns immediately without waiting for
+// it. That is right for a notification and wrong for anything whose result the
+// caller needs.
+//
+// # Scope
+//
+// A key is prefixed with whatever Scope returns for the context, so a
+// multitenant project claims per organisation without every caller having to
+// remember to put the organisation in the key. Forgetting it would mean the
+// first tenant swept claims the key and no other tenant is ever notified: a
+// failure that is invisible, because the log says the notification was sent.
+// The multitenant plugin sets it; a project without the plugin has no scope and
+// loses nothing.
+package notify
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"{{MODULE}}/internal/models"
+)
+
+// Scope returns the prefix for keys claimed in this context, or "".
+//
+// A variable rather than an interface, because there is one answer per
+// deployment and the thing that knows it (the multitenant plugin) is wired
+// after this package is compiled. Set it once, while the application is being
+// built, never per request.
+var Scope = func(ctx context.Context) string { return "" }
+
+// ErrKeyTooLong is returned for a key the claims table cannot index.
+//
+// Refused rather than truncated: two keys that differ past the limit would
+// become one claim, and the second notification would silently never send.
+// Hash the variable part if a key is long, do not shorten it.
+var ErrKeyTooLong = errors.New("notification key is longer than 191 characters: hash the variable part of it")
+
+// maxKeyLength is what the claims table can index on MySQL's utf8mb4.
+const maxKeyLength = 191
+
+// Once runs fn unless this key has already been claimed.
+//
+// The claim is written first and removed if fn fails, so the key is free for
+// the next run. A process that dies between the two loses that one
+// notification, which is the deliberate trade against re-sending it on every
+// sweep: see models.NotificationClaim.
+//
+// fn's error comes back wrapped. A caller that wants to know whether the work
+// was skipped rather than done should ask Sent.
+func Once(ctx context.Context, db *gorm.DB, key string, fn func() error) error {
+	claimed, err := claim(ctx, db, key)
+	if err != nil {
+		return err
+	}
+	if !claimed {
+		return nil
+	}
+
+	if err := fn(); err != nil {
+		// Released, not left behind. A send that failed has not happened, and a
+		// claim nobody releases is a notification that never sends again.
+		//
+		// The release is best effort and its failure is not returned: fn's
+		// error is what the caller needs to see, and a release that failed
+		// leaves a claim behind, which costs one unsent notification rather
+		// than a flood.
+		scoped, scopeErr := scopedKey(ctx, key)
+		if scopeErr == nil {
+			_ = db.WithContext(ctx).
+				Where("key = ?", scoped).
+				Delete(&models.NotificationClaim{}).Error
+		}
+		return fmt.Errorf("notify %s: %w", key, err)
+	}
+	return nil
+}
+
+// Sent reports whether a key has been claimed, without claiming it.
+//
+// For a screen that wants to show "reminder sent" rather than for deciding
+// whether to send: between this call and a send, another replica can claim the
+// same key. Use Once to decide, and this to display.
+func Sent(ctx context.Context, db *gorm.DB, key string) (bool, error) {
+	scoped, err := scopedKey(ctx, key)
+	if err != nil {
+		return false, err
+	}
+	var count int64
+	if err := db.WithContext(ctx).
+		Model(&models.NotificationClaim{}).
+		Where("key = ?", scoped).
+		Count(&count).Error; err != nil {
+		return false, fmt.Errorf("reading the notification claim for %s: %w", key, err)
+	}
+	return count > 0, nil
+}
+
+// Forget removes a claim, so its notification can send again.
+//
+// Deliberately explicit, and deliberately not called by anything on a
+// schedule. The whole value of a claim is that nothing removes it by accident,
+// and a retention sweep over this table would re-send every notification older
+// than the window.
+func Forget(ctx context.Context, db *gorm.DB, key string) error {
+	scoped, err := scopedKey(ctx, key)
+	if err != nil {
+		return err
+	}
+	if err := db.WithContext(ctx).
+		Where("key = ?", scoped).
+		Delete(&models.NotificationClaim{}).Error; err != nil {
+		return fmt.Errorf("forgetting the notification claim for %s: %w", key, err)
+	}
+	return nil
+}
+
+// claim inserts the row and says whether this caller got it.
+//
+// The insert is what decides, not a read followed by a write: two replicas
+// reading "no claim" at the same moment both send. The unique primary key
+// turns the race into one error, and the loser treats that error as "somebody
+// else is sending it".
+func claim(ctx context.Context, db *gorm.DB, key string) (bool, error) {
+	scoped, err := scopedKey(ctx, key)
+	if err != nil {
+		return false, err
+	}
+
+	// DoNothing rather than catching a driver error. "duplicate key" is spelled
+	// differently by Postgres, MySQL and SQLite, and matching on the message is
+	// how a conflict becomes a 500 the day somebody changes database.
+	result := db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&models.NotificationClaim{Key: scoped})
+	if result.Error != nil {
+		return false, fmt.Errorf("claiming the notification key %s: %w", key, result.Error)
+	}
+	// No row inserted means the claim was already there.
+	return result.RowsAffected > 0, nil
+}
+
+// scopedKey is the key as it is stored.
+func scopedKey(ctx context.Context, key string) (string, error) {
+	if key == "" {
+		return "", errors.New("a notification key cannot be empty: it is what decides whether the work has already been done")
+	}
+	out := key
+	if scope := Scope(ctx); scope != "" {
+		out = scope + "|" + key
+	}
+	if len(out) > maxKeyLength {
+		return "", fmt.Errorf("%w (%q is %d characters with its scope)", ErrKeyTooLong, out, len(out))
+	}
+	return out, nil
+}

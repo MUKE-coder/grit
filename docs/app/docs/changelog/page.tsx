@@ -72,6 +72,132 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.554.0 */}
+            <div className="mb-12" id="v3.554.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.554.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A sweep over every tenant, and a notification sent once</h3>
+                <p>
+                  Proposal 4 of{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/179"
+                  target="_blank" rel="noopener noreferrer">#179</a>, from a
+                  project that wrote a 278-line billing file because every job
+                  in it did the same four things: loop the organisations, set
+                  the tenant, do the work, send the email at most once. Two of
+                  those four are now one call each.
+                </p>
+                <p>
+                  <code>tenant.ForEach(ctx, db, fn)</code> runs the work once
+                  per active organisation, with that organisation on the context
+                  fn receives, so the query inside is scoped without a WHERE
+                  clause of its own. Soft-deleted organisations are skipped, the
+                  order is stable, and the list is taken once.
+                </p>
+                <p>
+                  <code>notify.Once(ctx, db, key, fn)</code> runs fn at most
+                  once, ever, for that key. The invoice stays overdue and the
+                  sweep runs every few minutes, so without a record of having
+                  sent it the customer is emailed on every run. Called again
+                  with the same key it does nothing and returns no error, which
+                  is the outcome the caller wanted.
+                </p>
+
+                <h4>The claim comes before the work</h4>
+                <p>
+                  The row goes into <code>notification_claims</code> before fn
+                  runs and is removed if fn fails. So the question it answers is
+                  &quot;has anybody started sending this&quot;, which is the
+                  question that matters when two replicas run the same sweep a
+                  second apart. A row written after a successful send answers a
+                  different question and leaves a window where both replicas
+                  think nobody has sent it.
+                </p>
+                <p>
+                  The cost is that a process which dies between claiming and
+                  sending loses that one notification. That is the deliberate
+                  trade: losing one overdue reminder is a smaller harm than
+                  sending it every thirty seconds until somebody notices, which
+                  is what the other order does when a sweep retries.
+                </p>
+                <p>
+                  Nothing deletes a claim on a schedule, because deleting one
+                  makes its notification sendable again and a retention sweep
+                  over that table would re-send everything older than the
+                  window. A row is about a hundred bytes.{' '}
+                  <code>notify.Forget</code> releases one deliberately, and{' '}
+                  <code>notify.Sent</code> reads without claiming, for a screen
+                  that wants to show &quot;reminder sent&quot;.
+                </p>
+
+                <h4>Per tenant, without every caller remembering</h4>
+                <p>
+                  In a multitenant project a key is claimed per organisation.
+                  Left global, the first organisation a sweep reaches claims{' '}
+                  <code>invoice-overdue:42</code> and no other organisation is
+                  ever told about its own invoice 42, and the failure is
+                  invisible: the log says the notification was sent, and it was,
+                  to somebody else&apos;s customer. Asking every caller to put
+                  the organisation in the key is exactly the kind of
+                  &quot;remember to&quot; that the tenant package exists to
+                  remove.
+                </p>
+                <p>
+                  So <code>notify.Scope</code> is a hook the multitenant plugin
+                  sets, and a project without the plugin has no scope and loses
+                  nothing. Assigned from the plugin&apos;s wiring rather than
+                  from an init in the tenant package, which cannot import
+                  notify: notify reads models and models embeds{' '}
+                  <code>tenant.Owned</code>, so that import is a cycle.
+                </p>
+
+                <h4>Which the first version did not survive</h4>
+                <p>
+                  <code>ForEach</code> was written taking{' '}
+                  <code>func(ctx, Organization)</code>, and a generated project
+                  refused to build with <code>undefined: Organization</code> for
+                  the same reason. It reads the organisations table by name now
+                  and hands fn an id; a job that needs the organisation&apos;s
+                  name reads it from its own package, where models is
+                  importable. Reading by table name also means GORM&apos;s{' '}
+                  <code>deleted_at</code> scope does not apply, so the condition
+                  is written out: without it a billing sweep invoices every
+                  organisation anybody ever deleted.
+                </p>
+                <p>
+                  One organisation&apos;s failure does not stop the rest. The
+                  errors come back joined, each naming its organisation, because
+                  a sweep that returns at the first error leaves everybody after
+                  it unprocessed and the only symptom is one customer saying
+                  their invoices stopped arriving while everybody else&apos;s
+                  kept coming.
+                </p>
+
+                <h4>Two guards that earned themselves immediately</h4>
+                <p>
+                  The claims table has to be in the AutoMigrate list, and{' '}
+                  <code>models/user.go</code> is yours, so a repair adds it.
+                  Two repairs now insert into that list, and both inserting
+                  before the <code>// grit:models</code> marker cannot converge:
+                  a project missing only the saga block gets its registration on
+                  the far side of this one and the two files differ for ever
+                  after. They insert on opposite sides of the marker now, and
+                  the existing pair test is what said so.
+                </p>
+                <p>
+                  And <code>NotificationClaim</code> is a reserved model name,
+                  so <code>grit generate resource NotificationClaim</code>
+                  cannot overwrite it. That guard was written the day a
+                  generated resource overwrote Ticket.
+                </p>
+              </div>
+            </div>
+
             {/* v3.553.0 */}
             <div className="mb-12" id="v3.553.0">
               <div className="flex items-center gap-3 mb-4">

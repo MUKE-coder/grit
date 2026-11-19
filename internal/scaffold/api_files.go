@@ -2251,7 +2251,7 @@ func Models() []interface{} {
 		// missing from a backup loses events nobody knows were pending.
 		&OutboxMessage{},
 ` + sagaModelRegistration + `		// grit:models
-	}
+` + notifyModelRegistration + `	}
 }
 
 // Migrate runs AutoMigrate for every registered model. For tables that

@@ -23,6 +23,43 @@ Also worth knowing:
 ---
 
 
+## v3.554.0 - November 19, 2026
+
+### A sweep over every tenant, and a notification sent once
+
+Proposal 4 of [#179](https://github.com/MUKE-coder/grit/issues/179), from a project that wrote a 278-line billing file because every job in it did the same four things: loop the organisations, set the tenant, do the work, send the email at most once. Two of those four are now one call each.
+
+`tenant.ForEach(ctx, db, fn)` runs the work once per active organisation, with that organisation on the context fn receives, so the query inside is scoped without a WHERE clause of its own. Soft-deleted organisations are skipped, the order is stable, and the list is taken once.
+
+`notify.Once(ctx, db, key, fn)` runs fn at most once, ever, for that key. The invoice stays overdue and the sweep runs every few minutes, so without a record of having sent it the customer is emailed on every run. Called again with the same key it does nothing and returns no error, which is the outcome the caller wanted.
+
+#### The claim comes before the work
+
+The row goes into `notification_claims` before fn runs and is removed if fn fails. So the question it answers is "has anybody started sending this", which is the question that matters when two replicas run the same sweep a second apart. A row written after a successful send answers a different question and leaves a window where both replicas think nobody has sent it.
+
+The cost is that a process which dies between claiming and sending loses that one notification. That is the deliberate trade: losing one overdue reminder is a smaller harm than sending it every thirty seconds until somebody notices, which is what the other order does when a sweep retries.
+
+Nothing deletes a claim on a schedule, because deleting one makes its notification sendable again and a retention sweep over that table would re-send everything older than the window. A row is about a hundred bytes. `notify.Forget` releases one deliberately, and `notify.Sent` reads without claiming, for a screen that wants to show "reminder sent".
+
+#### Per tenant, without every caller remembering
+
+In a multitenant project a key is claimed per organisation. Left global, the first organisation a sweep reaches claims `invoice-overdue:42` and no other organisation is ever told about its own invoice 42, and the failure is invisible: the log says the notification was sent, and it was, to somebody else's customer. Asking every caller to put the organisation in the key is exactly the kind of "remember to" that the tenant package exists to remove.
+
+So `notify.Scope` is a hook the multitenant plugin sets, and a project without the plugin has no scope and loses nothing. Assigned from the plugin's wiring rather than from an init in the tenant package, which cannot import notify: notify reads models and models embeds `tenant.Owned`, so that import is a cycle.
+
+#### Which the first version did not survive
+
+`ForEach` was written taking `func(ctx, Organization)`, and a generated project refused to build with `undefined: Organization` for the same reason. It reads the organisations table by name now and hands fn an id; a job that needs the organisation's name reads it from its own package, where models is importable. Reading by table name also means GORM's `deleted_at` scope does not apply, so the condition is written out: without it a billing sweep invoices every organisation anybody ever deleted.
+
+One organisation's failure does not stop the rest. The errors come back joined, each naming its organisation, because a sweep that returns at the first error leaves everybody after it unprocessed and the only symptom is one customer saying their invoices stopped arriving while everybody else's kept coming.
+
+#### Two guards that earned themselves immediately
+
+The claims table has to be in the AutoMigrate list, and `models/user.go` is yours, so a repair adds it. Two repairs now insert into that list, and both inserting before the `// grit:models` marker cannot converge: a project missing only the saga block gets its registration on the far side of this one and the two files differ for ever after. They insert on opposite sides of the marker now, and the existing pair test is what said so.
+
+And `NotificationClaim` is a reserved model name, so `grit generate resource NotificationClaim` cannot overwrite it. That guard was written the day a generated resource overwrote Ticket.
+
+
 ## v3.553.0 - November 19, 2026
 
 ### /healthz and /readyz

@@ -351,6 +351,79 @@ if err != nil {
     log.Println("Cron scheduler started")
 }`} />
               </div>
+
+              {/* Sweeps */}
+              <div className="mb-10">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  A sweep over every tenant, sent once
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Most scheduled work in a real app is a sweep: go through the records, find the
+                  ones that need something, tell somebody. Two things in that sentence are easy to
+                  get wrong, and a project reported writing a 278-line billing file to get both
+                  right. Each is one call now.
+                </p>
+                <CodeBlock filename="internal/jobs/workers.go" code={`func billingSweep(ctx context.Context, db *gorm.DB) error {
+    return tenant.ForEach(ctx, db, func(ctx context.Context, orgID string) error {
+        var overdue []models.Invoice
+        if err := db.WithContext(ctx).
+            Where("status = ? AND due_at < ?", "sent", time.Now()).
+            Find(&overdue).Error; err != nil {
+            return err
+        }
+        for _, invoice := range overdue {
+            err := notify.Once(ctx, db, "invoice-overdue:"+invoice.ID, func() error {
+                return mailer.Send(ctx, invoice.Email, overdueTemplate(invoice))
+            })
+            if err != nil {
+                return err
+            }
+        }
+        return nil
+    })
+}`} />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">tenant.ForEach</code>{' '}
+                  runs the work once per active organization with that organization set on the
+                  context it hands you, so the query inside is scoped without a WHERE clause of
+                  your own. Pass that context down: a query made with the outer one is either
+                  unscoped or refused. It comes from the multitenant plugin, and one
+                  organization&apos;s failure does not stop the others. The errors come back
+                  joined, each naming the organization it came from, because a sweep that returns
+                  at the first error leaves everybody after it unprocessed and the symptom is one
+                  customer whose invoices stopped arriving.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">notify.Once</code>{' '}
+                  runs its function at most once, ever, for the key you give it. The invoice stays
+                  overdue and the sweep runs every few minutes, so without a record of having
+                  sent it the customer is emailed on every run. Called again with the same key it
+                  does nothing and returns no error: &quot;already sent&quot; is the outcome you
+                  wanted.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Three things about it worth knowing before you rely on it. The claim is written
+                  to <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">notification_claims</code>{' '}
+                  <em>before</em> the work runs and removed if the work fails, so two replicas
+                  running the same sweep a second apart cannot both send, and a failed send is
+                  retried on the next run. A process that dies between claiming and sending loses
+                  that one notification, which is the deliberate trade against sending it every
+                  thirty seconds. And in a multitenant project the key is claimed per
+                  organization automatically, because a global claim would mean the first
+                  organization swept claims{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">invoice-overdue:42</code>{' '}
+                  and nobody else is ever told about their own invoice 42.
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Nothing deletes a claim on a schedule, and that is on purpose: deleting one
+                  makes its notification sendable again, so a retention sweep over that table
+                  would re-send everything older than the window. A row is about a hundred bytes.
+                  To release one deliberately there is{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">notify.Forget</code>, and to
+                  show &quot;reminder sent&quot; on a screen without claiming anything there is{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">notify.Sent</code>.
+                </p>
+              </div>
             </div>
 
             {/* Nav */}

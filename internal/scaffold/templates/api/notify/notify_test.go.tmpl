@@ -1,0 +1,210 @@
+package notify
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/models"
+)
+
+func notifyDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := db.AutoMigrate(&models.NotificationClaim{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+	t.Cleanup(func() { Scope = func(context.Context) string { return "" } })
+	return db
+}
+
+// The second call does nothing, and says nothing went wrong.
+//
+// "Already sent" is the outcome the caller wanted, so it is not an error. A
+// caller that treated it as one would log a failure every time the sweep ran.
+func TestOnceRunsOnce(t *testing.T) {
+	db := notifyDB(t)
+	runs := 0
+	send := func() error { runs++; return nil }
+
+	for i := 0; i < 5; i++ {
+		if err := Once(context.Background(), db, "invoice-overdue:42", send); err != nil {
+			t.Fatalf("call %d: %v", i, err)
+		}
+	}
+	if runs != 1 {
+		t.Errorf("ran %d times, want 1. This is the bug that emails a customer "+
+			"the same reminder every thirty seconds.", runs)
+	}
+}
+
+// A different key is a different thing.
+func TestADifferentKeyIsNotClaimed(t *testing.T) {
+	db := notifyDB(t)
+	runs := 0
+	send := func() error { runs++; return nil }
+
+	_ = Once(context.Background(), db, "invoice-overdue:42", send)
+	_ = Once(context.Background(), db, "invoice-overdue:43", send)
+	if runs != 2 {
+		t.Errorf("ran %d times for two keys, want 2", runs)
+	}
+}
+
+// A failed send releases the claim, so the next run tries again.
+//
+// The opposite would be worse than a double send: the notification would never
+// go out, and the only evidence would be a row in a table nobody reads.
+func TestAFailedSendIsRetriedNextTime(t *testing.T) {
+	db := notifyDB(t)
+	attempts := 0
+	flaky := func() error {
+		attempts++
+		if attempts == 1 {
+			return errors.New("smtp timeout")
+		}
+		return nil
+	}
+
+	err := Once(context.Background(), db, "invoice-overdue:42", flaky)
+	if err == nil {
+		t.Fatal("the send failed and Once reported success")
+	}
+	if !strings.Contains(err.Error(), "smtp timeout") {
+		t.Errorf("the underlying error is not in %q", err)
+	}
+
+	if err := Once(context.Background(), db, "invoice-overdue:42", flaky); err != nil {
+		t.Fatalf("the retry failed: %v", err)
+	}
+	if attempts != 2 {
+		t.Errorf("attempted %d times, want 2: the failed send did not release its claim", attempts)
+	}
+
+	// And now it is claimed for good.
+	if err := Once(context.Background(), db, "invoice-overdue:42", flaky); err != nil {
+		t.Fatal(err)
+	}
+	if attempts != 2 {
+		t.Errorf("attempted %d times after the successful send, want 2", attempts)
+	}
+}
+
+// Each scope claims separately.
+//
+// Without this, the first organisation swept claims "invoice-overdue:42" and
+// no other organisation is ever notified. The failure is invisible: the log
+// says the notification was sent, and it was, to somebody else's customer.
+func TestEachScopeClaimsSeparately(t *testing.T) {
+	db := notifyDB(t)
+	var org string
+	Scope = func(context.Context) string { return org }
+
+	runs := 0
+	send := func() error { runs++; return nil }
+
+	for _, o := range []string{"org-a", "org-b", "org-a"} {
+		org = o
+		if err := Once(context.Background(), db, "invoice-overdue:42", send); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if runs != 2 {
+		t.Errorf("ran %d times for two organisations, want 2", runs)
+	}
+
+	// The stored keys carry the scope, so what claimed what is readable.
+	var keys []string
+	if err := db.Model(&models.NotificationClaim{}).Pluck("key", &keys).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"org-a|invoice-overdue:42", "org-b|invoice-overdue:42"} {
+		found := false
+		for _, got := range keys {
+			if got == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("no claim for %q, got %v", want, keys)
+		}
+	}
+}
+
+// Sent reads without claiming.
+func TestSentDoesNotClaim(t *testing.T) {
+	db := notifyDB(t)
+
+	if sent, err := Sent(context.Background(), db, "k"); err != nil || sent {
+		t.Fatalf("Sent = %v, %v before anything happened", sent, err)
+	}
+	runs := 0
+	if err := Once(context.Background(), db, "k", func() error { runs++; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if runs != 1 {
+		t.Error("Sent claimed the key, so the notification never sent")
+	}
+	if sent, err := Sent(context.Background(), db, "k"); err != nil || !sent {
+		t.Errorf("Sent = %v, %v after sending", sent, err)
+	}
+}
+
+// Forget makes a notification sendable again.
+func TestForgetReleasesAClaim(t *testing.T) {
+	db := notifyDB(t)
+	runs := 0
+	send := func() error { runs++; return nil }
+
+	_ = Once(context.Background(), db, "k", send)
+	if err := Forget(context.Background(), db, "k"); err != nil {
+		t.Fatal(err)
+	}
+	_ = Once(context.Background(), db, "k", send)
+	if runs != 2 {
+		t.Errorf("ran %d times, want 2: Forget did not release the claim", runs)
+	}
+}
+
+// A key too long to index is refused, not truncated.
+//
+// Two keys that differ past the limit would become one claim, and the second
+// notification would silently never send. That is the failure mode this whole
+// package exists to prevent, so it cannot be introduced by the storage.
+func TestAnOverlongKeyIsRefused(t *testing.T) {
+	db := notifyDB(t)
+	runs := 0
+
+	err := Once(context.Background(), db, strings.Repeat("x", 192), func() error { runs++; return nil })
+	if !errors.Is(err, ErrKeyTooLong) {
+		t.Fatalf("err = %v, want ErrKeyTooLong", err)
+	}
+	if runs != 0 {
+		t.Error("the work ran for a key that could not be claimed, so it would run again")
+	}
+
+	// And the scope counts towards the limit, because the scope is stored.
+	Scope = func(context.Context) string { return strings.Repeat("s", 100) }
+	if err := Once(context.Background(), db, strings.Repeat("x", 100), func() error { return nil }); !errors.Is(err, ErrKeyTooLong) {
+		t.Errorf("err = %v, want ErrKeyTooLong: the scope was not counted", err)
+	}
+}
+
+// An empty key is refused.
+func TestAnEmptyKeyIsRefused(t *testing.T) {
+	db := notifyDB(t)
+	if err := Once(context.Background(), db, "", func() error { return nil }); err == nil {
+		t.Error("an empty key was accepted, so every caller that forgot to build " +
+			"one would claim the same row")
+	}
+}

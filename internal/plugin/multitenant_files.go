@@ -1493,6 +1493,7 @@ func mtTenantTests(ctx Context) string {
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -1531,6 +1532,138 @@ func seed(t *testing.T, db *gorm.DB, org, id, name string) {
 	ctx := tenant.WithOrg(context.Background(), org)
 	if err := db.WithContext(ctx).Create(&Widget{ID: id, Name: name}).Error; err != nil {
 		t.Fatal(err)
+	}
+}
+
+// org is an organizations row, as ForEach reads it.
+//
+// Declared here rather than imported from models, for the same reason ForEach
+// reads the table by name: models embeds tenant.Owned, so the tenant package
+// and its test cannot import it without a cycle. The columns are the three
+// ForEach actually looks at.
+type org struct {
+	ID        string ~gorm:"primarykey;size:36"~
+	Name      string
+	Active    bool ~gorm:"not null"~
+	DeletedAt gorm.DeletedAt
+}
+
+func (org) TableName() string { return "organizations" }
+
+func orgDB(t *testing.T, rows ...org) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&org{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows {
+		if err := db.Create(&row).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	return db
+}
+
+// ForEach runs the work once per organization, with that organization set.
+//
+// The ctx is the point. A sweep that loops organizations and forgets to set
+// the tenant reads every tenant's rows into one organization's work, and the
+// query returns MORE rows rather than erroring, which is the failure no test
+// catches by accident.
+func TestForEachSetsTheOrganization(t *testing.T) {
+	db := orgDB(t,
+		org{ID: "org-a", Name: "A", Active: true},
+		org{ID: "org-b", Name: "B", Active: true},
+	)
+
+	var seen []string
+	err := tenant.ForEach(context.Background(), db, func(ctx context.Context, id string) error {
+		fromCtx, ok := tenant.FromContext(ctx)
+		if !ok {
+			t.Error("no organization on the context, so every query inside this " +
+				"callback is unscoped or refused")
+		}
+		if fromCtx != id {
+			t.Errorf("the context says %q and the argument says %q", fromCtx, id)
+		}
+		seen = append(seen, id)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seen) != 2 || seen[0] != "org-a" || seen[1] != "org-b" {
+		t.Errorf("swept %v, want org-a then org-b in order", seen)
+	}
+}
+
+// Inactive and deleted organizations are skipped.
+//
+// The deleted one is the case worth a test: ForEach reads the table by name,
+// and a query made that way does not get GORM's deleted_at scope, so without
+// an explicit condition a sweep processes every organization anybody ever
+// deleted. Which for a billing sweep means invoicing them.
+func TestForEachSkipsInactiveAndDeleted(t *testing.T) {
+	db := orgDB(t,
+		org{ID: "live", Name: "Live", Active: true},
+		org{ID: "suspended", Name: "Suspended", Active: false},
+	)
+	if err := db.Create(&org{ID: "gone", Name: "Gone", Active: true}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Delete(&org{ID: "gone"}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	var seen []string
+	if err := tenant.ForEach(context.Background(), db, func(ctx context.Context, id string) error {
+		seen = append(seen, id)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(seen) != 1 || seen[0] != "live" {
+		t.Errorf("swept %v, want only the live organization", seen)
+	}
+}
+
+// One organization's failure does not stop the rest.
+//
+// A sweep that returns at the first error leaves every organization after it
+// unprocessed, and the symptom is one customer saying their invoices stopped
+// arriving while everybody else's kept coming.
+func TestForEachKeepsGoingAfterAFailure(t *testing.T) {
+	db := orgDB(t,
+		org{ID: "org-a", Name: "A", Active: true},
+		org{ID: "org-b", Name: "B", Active: true},
+		org{ID: "org-c", Name: "C", Active: true},
+	)
+
+	var seen []string
+	boom := errors.New("smtp timeout")
+	err := tenant.ForEach(context.Background(), db, func(ctx context.Context, id string) error {
+		seen = append(seen, id)
+		if id == "org-b" {
+			return boom
+		}
+		return nil
+	})
+
+	if len(seen) != 3 {
+		t.Errorf("swept %v, want all three: a failure stopped the sweep", seen)
+	}
+	if !errors.Is(err, boom) {
+		t.Errorf("err = %v, want the underlying failure to be reachable", err)
+	}
+	// And it says which organization, because "smtp timeout" on its own sends
+	// somebody to read the whole sweep.
+	if err == nil || !strings.Contains(err.Error(), "org-b") {
+		t.Errorf("the error does not name the organization that failed: %v", err)
 	}
 }
 

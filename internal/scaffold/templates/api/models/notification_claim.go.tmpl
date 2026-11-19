@@ -1,0 +1,49 @@
+package models
+
+import (
+	"time"
+)
+
+// NotificationClaim is the record that something has already been sent.
+//
+// One row per thing-that-happens-once, with a unique index on the key, so the
+// database decides who got there first. That is the whole mechanism, and the
+// reason it is a table rather than a cache entry: a Redis key that expires or
+// is lost on a restart turns "remind this customer once" into "remind this
+// customer again", and the customer is the one who finds out.
+//
+// # Why a claim and not a log
+//
+// The row is written BEFORE the notification is sent, and removed if the send
+// fails. So the question it answers is "has anybody started sending this",
+// which is the question that matters when two replicas run the same sweep a
+// second apart. A row written after a successful send answers a different
+// question, and leaves a window in which both replicas think nobody has sent
+// it yet.
+//
+// The cost of claiming first is that a process which dies between claiming and
+// sending loses that one notification. That is the deliberate trade: losing one
+// overdue reminder is a smaller harm than sending it every thirty seconds until
+// somebody notices, which is what the alternative does when a sweep retries.
+//
+// # It grows, and it is not swept
+//
+// Nothing deletes these rows, because deleting a claim makes its notification
+// sendable again, and a retention sweep would quietly re-send everything older
+// than the window. One row is around a hundred bytes: a reminder per invoice
+// per month on ten thousand invoices is twelve megabytes a year. If a project
+// ever does need to reclaim that space, the keys are human-readable and the
+// safe thing to delete is the ones whose subject no longer exists.
+type NotificationClaim struct {
+	// Key is what was claimed, as the caller spelled it, with the scope that
+	// was active prefixed. 191 characters because MySQL cannot index a longer
+	// utf8mb4 column, and a key longer than that is hashed by the caller of
+	// notify.Once rather than silently truncated here.
+	Key       string    `gorm:"primarykey;size:191" json:"key"`
+	CreatedAt time.Time `gorm:"index" json:"created_at"`
+}
+
+// TableName is given rather than derived, because the derived name for this
+// one is notification_claims either way and saying so costs nothing next to
+// finding out that it was not.
+func (NotificationClaim) TableName() string { return "notification_claims" }

@@ -902,6 +902,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairLLMSFiles(root, opts); err != nil {
 			fmt.Printf("  ⚠ mounting /llms.txt: %v\n", err)
 		}
+		// The notification claims table. After the framework files, which
+		// deliver the model this registration names.
+		if err := repairNotifyModel(root, opts); err != nil {
+			fmt.Printf("  ⚠ registering the notification claims table: %v\n", err)
+		}
 		// The saga tables and the runner. After the framework files, which
 		// deliver the engine these two lines reference.
 		if err := repairSagaWiring(root, opts); err != nil {
