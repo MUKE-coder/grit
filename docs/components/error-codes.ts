@@ -115,6 +115,13 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         client: 'Do not retry. Hide the action rather than letting it fail, if the role is known to the client.',
       },
       {
+        code: 'METHOD_NOT_ALLOWED',
+        status: 405,
+        category: 'request',
+        meaning: 'The path exists and does not take this method.',
+        client: 'Use the method the endpoint documents. The Allow header lists what it takes.',
+      },
+      {
         code: 'NOT_FOUND',
         status: 404,
         category: 'notfound',
@@ -1059,7 +1066,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 124
+export const errorCodeCount = 125
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

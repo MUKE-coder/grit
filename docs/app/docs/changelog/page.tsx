@@ -72,6 +72,145 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.548.0 */}
+            <div className="mb-12" id="v3.548.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.548.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit plugin add mcp</h3>
+                <p>
+                  An MCP server for your app, so Claude or Cursor can use it.{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/224"
+                  target="_blank" rel="noopener noreferrer">#224</a>, written from
+                  two hand-built implementations, the second of which had about
+                  sixty tools.
+                </p>
+                <p>
+                  Not to be confused with{' '}
+                  <a href="/docs/ai-workflows/mcp">the MCP server under AI
+                  Workflows</a>, which runs on your machine and answers
+                  questions about your code. This one runs inside your deployed
+                  app and exposes its data. One helps you write the app; the
+                  other lets somebody use it. Both pages now say so.
+                </p>
+
+                <h4>A tool call goes through your own router</h4>
+                <p>
+                  This is the decision the rest follows from. A tool does not
+                  touch the database: it builds an HTTP request and runs it in
+                  process against the same gin engine that serves the browser.
+                </p>
+                <p>
+                  A Grit API decides what a caller may do in middleware and in
+                  services: authentication, the organization scope, the role,
+                  the per-resource policy, the module switch, the record-level
+                  scope, the validation tags, the audit log. A tool that queried
+                  GORM directly would bypass every one and have to reimplement
+                  them, which is two implementations that start identical and
+                  drift. What going through the router buys is that an agent is
+                  structurally incapable of doing something the same person
+                  could not do in the browser.
+                </p>
+
+                <h4>One connection is one key</h4>
+                <p>
+                  A person makes a connection with a name and the tools it may
+                  use, and that mints a secret key acting as them. The key is
+                  narrowed twice, both times derived from the tools rather than
+                  chosen: to the permissions they declare, and to the routes
+                  they call.
+                </p>
+                <p>
+                  The second is the one that matters. A read-only connection
+                  holds no POST route, so a write is refused by the API key
+                  middleware before any handler runs, whatever the agent asks
+                  for. Verified live: a connection given only{' '}
+                  <code>whoami</code> answers 403 ENDPOINT_NOT_ALLOWED on{' '}
+                  <code>GET /api/v1/users</code>. A tool whose permission the
+                  person&apos;s own role lacks is refused when the connection is
+                  made, because an agent must not be able to do more than
+                  whoever set it up.
+                </p>
+
+                <h4>The transport</h4>
+                <p>
+                  Streamable HTTP at <code>POST /mcp</code>, mounted at the root
+                  because it carries its own credential. Stateless, so it can
+                  sit behind a load balancer and scale to zero.{' '}
+                  <code>initialize</code> (2025-11-25 down to 2024-11-05),{' '}
+                  <code>ping</code>, <code>tools/list</code>,{' '}
+                  <code>tools/call</code>, and batches.
+                </p>
+                <p>
+                  A version it has never heard of gets the oldest it speaks
+                  rather than a refusal, because a client from the future can
+                  still talk over 2024-11-05 and a refusal looks like the server
+                  being down. A <code>GET</code>, which is how a client opens
+                  the stream half, answers 405 with <code>Allow: POST</code>
+                  {' '}rather than leaving it waiting. A refusal from a tool
+                  comes back as <code>isError</code> with the app&apos;s own
+                  sentence, not as a protocol error: a model told &ldquo;Check
+                  the highlighted fields: email must be valid&rdquo; can correct
+                  itself, where a protocol error makes a client give up.
+                </p>
+
+                <h4>Arguments as a model actually sends them</h4>
+                <p>
+                  The schema says number and the model sends &ldquo;5&rdquo;,
+                  because that is what the person typed. It says id and the
+                  model sends the customer&apos;s name. Refusing both is correct
+                  by the schema and useless: the call fails, the model
+                  apologises, and nobody is further forward. So the helpers are
+                  forgiving about shape and strict about meaning.
+                </p>
+                <p>
+                  What they never do is guess which record was meant. A name
+                  matching more than one returns the candidates for the model to
+                  put back to the person; picking the first match is the
+                  behaviour that quietly invoices the wrong customer. Paging is
+                  capped at 100 whatever is asked for.
+                </p>
+
+                <h4>Two things the build itself taught</h4>
+                <p>
+                  <code>internal/mcp</code> cannot import{' '}
+                  <code>internal/services</code>, because the service that
+                  creates a connection imports <code>internal/mcp</code> to read
+                  a tool&apos;s permissions and routes. Go rejects the pair
+                  outright, which is the right outcome: the server&apos;s job is
+                  to speak the protocol, not to know how this app stores
+                  credentials. So it is told how to verify a key, from{' '}
+                  <code>routes/mcp_wire.go</code>, which is above both. It also
+                  means the transport tests need no database.
+                </p>
+                <p>
+                  And a 202 for a notification only materialises through
+                  gin&apos;s own flush: <code>c.Status</code> records the code
+                  and the write happens when a body is written, so a body-less
+                  answer came back 200. The test caught it, and the handler
+                  flushes explicitly now.
+                </p>
+
+                <h4>What comes next</h4>
+                <p>
+                  Generated CRUD tools per resource, so{' '}
+                  <code>grit generate resource Invoice</code> writes{' '}
+                  <code>list_invoices</code> and the rest with schemas built
+                  from the field types. That is where the leverage is. This
+                  release is the server, the connections, and the registry those
+                  tools will register into, which is also everything a
+                  hand-written tool needs today: those go in{' '}
+                  <code>internal/mcp/custom_tools.go</code>, which Grit never
+                  rewrites. The admin screens come with the generator.
+                </p>
+              </div>
+            </div>
+
             {/* v3.547.0 */}
             <div className="mb-12" id="v3.547.0">
               <div className="flex items-center gap-3 mb-4">

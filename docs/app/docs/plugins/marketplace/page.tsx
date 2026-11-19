@@ -2,6 +2,7 @@ import Link from 'next/link'
 import {
   ArrowUpRight,
   Bell,
+  Bot,
   CreditCard,
   Download,
   Film,
@@ -63,6 +64,16 @@ const OFFICIAL: PluginEntry[] = [
     tags: ['models', 'auth', 'scoping'],
     kind: 'official',
     install: 'grit plugin add multitenant',
+  },
+  {
+    name: 'mcp',
+    title: 'MCP',
+    summary: 'An MCP server for your app: an agent held to the same permissions and audit trail a person is.',
+    href: '/docs/plugins/mcp',
+    icon: <Bot />,
+    tags: ['agents', 'auth', 'audit'],
+    kind: 'official',
+    install: 'grit plugin add mcp',
   },
   {
     name: 'impersonate',

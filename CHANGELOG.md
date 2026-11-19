@@ -23,6 +23,49 @@ Also worth knowing:
 ---
 
 
+## v3.548.0 - November 19, 2026
+
+### grit plugin add mcp
+
+An MCP server for your app, so Claude or Cursor can use it. [#224](https://github.com/MUKE-coder/grit/issues/224), written from two hand-built implementations, the second of which had about sixty tools.
+
+Not to be confused with [the MCP server under AI Workflows](https://gritframework.com/docs/ai-workflows/mcp), which runs on your machine and answers questions about your code. This one runs inside your deployed app and exposes its data. One helps you write the app; the other lets somebody use it. Both pages now say so.
+
+#### A tool call goes through your own router
+
+This is the decision the rest follows from. A tool does not touch the database: it builds an HTTP request and runs it in process against the same gin engine that serves the browser.
+
+A Grit API decides what a caller may do in middleware and in services: authentication, the organization scope, the role, the per-resource policy, the module switch, the record-level scope, the validation tags, the audit log. A tool that queried GORM directly would bypass every one and have to reimplement them, which is two implementations that start identical and drift. What going through the router buys is that an agent is structurally incapable of doing something the same person could not do in the browser.
+
+#### One connection is one key
+
+A person makes a connection with a name and the tools it may use, and that mints a secret key acting as them. The key is narrowed twice, both times derived from the tools rather than chosen: to the permissions they declare, and to the routes they call.
+
+The second is the one that matters. A read-only connection holds no POST route, so a write is refused by the API key middleware before any handler runs, whatever the agent asks for. Verified live: a connection given only `whoami` answers 403 ENDPOINT_NOT_ALLOWED on `GET /api/v1/users`. A tool whose permission the person's own role lacks is refused when the connection is made, because an agent must not be able to do more than whoever set it up.
+
+#### The transport
+
+Streamable HTTP at `POST /mcp`, mounted at the root because it carries its own credential. Stateless, so it can sit behind a load balancer and scale to zero. `initialize` (2025-11-25 down to 2024-11-05), `ping`, `tools/list`, `tools/call`, and batches.
+
+A version it has never heard of gets the oldest it speaks rather than a refusal, because a client from the future can still talk over 2024-11-05 and a refusal looks like the server being down. A `GET`, which is how a client opens the stream half, answers 405 with `Allow: POST` rather than leaving it waiting. A refusal from a tool comes back as `isError` with the app's own sentence, not as a protocol error: a model told &ldquo;Check the highlighted fields: email must be valid&rdquo; can correct itself, where a protocol error makes a client give up.
+
+#### Arguments as a model actually sends them
+
+The schema says number and the model sends &ldquo;5&rdquo;, because that is what the person typed. It says id and the model sends the customer's name. Refusing both is correct by the schema and useless: the call fails, the model apologises, and nobody is further forward. So the helpers are forgiving about shape and strict about meaning.
+
+What they never do is guess which record was meant. A name matching more than one returns the candidates for the model to put back to the person; picking the first match is the behaviour that quietly invoices the wrong customer. Paging is capped at 100 whatever is asked for.
+
+#### Two things the build itself taught
+
+`internal/mcp` cannot import `internal/services`, because the service that creates a connection imports `internal/mcp` to read a tool's permissions and routes. Go rejects the pair outright, which is the right outcome: the server's job is to speak the protocol, not to know how this app stores credentials. So it is told how to verify a key, from `routes/mcp_wire.go`, which is above both. It also means the transport tests need no database.
+
+And a 202 for a notification only materialises through gin's own flush: `c.Status` records the code and the write happens when a body is written, so a body-less answer came back 200. The test caught it, and the handler flushes explicitly now.
+
+#### What comes next
+
+Generated CRUD tools per resource, so `grit generate resource Invoice` writes `list_invoices` and the rest with schemas built from the field types. That is where the leverage is. This release is the server, the connections, and the registry those tools will register into, which is also everything a hand-written tool needs today: those go in `internal/mcp/custom_tools.go`, which Grit never rewrites. The admin screens come with the generator.
+
+
 ## v3.547.0 - November 19, 2026
 
 ### Purging from the Trash left every file the record owned

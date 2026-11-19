@@ -24,6 +24,17 @@ export default function MCPServerPage() {
             <div className="prose-grit">
               {/* ============================================================ */}
               <div className="mb-12">
+                <div className="not-prose mb-8 rounded-xl border border-border/60 bg-muted/20 p-5">
+                  <p className="text-sm text-muted-foreground">
+                    <strong className="text-foreground">This one is for building.</strong> It runs on
+                    your machine and answers questions about your code: which routes exist, what
+                    fields a model has, which files you have edited since Grit wrote them. To let an
+                    agent use your deployed app&apos;s data, with your users&apos; permissions, that is{' '}
+                    <Link href="/docs/plugins/mcp" className="text-accent hover:underline">
+                      the MCP plugin
+                    </Link>.
+                  </p>
+                </div>
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">Why</h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   An agent working in a Grit project has to answer the same questions over and over.

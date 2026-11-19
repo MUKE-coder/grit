@@ -202,6 +202,7 @@ git diff                                # and read exactly what that did`} />
           <div className="grid gap-3 sm:grid-cols-2">
             {[
               { href: '/docs/plugins/multitenant', name: 'multitenant', desc: 'Organizations, per-org roles, and automatic query scoping that fails closed.' },
+              { href: '/docs/plugins/mcp', name: 'mcp', desc: 'An MCP server for your app, so an agent works through the same permissions and audit trail a person does.' },
               { href: '/docs/plugins/impersonate', name: 'impersonate', desc: 'An admin signs in as another user, with an audit trail and one-click return.' },
               { href: '/docs/plugins/command-palette', name: 'command-palette', desc: '⌘K navigation across the admin. Frontend-only — touches no Go.' },
               { href: '/docs/plugins/saved-views', name: 'saved-views', desc: "Save a table's filters and sort as named, per-user views." },

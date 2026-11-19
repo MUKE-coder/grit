@@ -168,6 +168,24 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
+          <div className="mt-6 rounded-2xl border border-border/40 bg-card/30 p-6 md:p-8">
+            <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wider text-accent">For agents</p>
+                <h3 className="mt-2 text-2xl font-semibold tracking-tight text-fg">An MCP server for your app</h3>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg-muted">
+                  Let Claude or Cursor use your product. Every tool call runs in process through
+                  your own router, so an agent is held to the same permissions, tenancy,
+                  validation and audit trail a person is, and one connection is one revocable
+                  key narrowed to exactly the tools it was given.
+                </p>
+              </div>
+              <Button href="/docs/plugins/mcp" variant="secondary" size="md">
+                Explore the plugin
+                <ButtonArrow />
+              </Button>
+            </div>
+          </div>
         </Section>
 
         {/* ── 4. The resource definition ───────────────────────────── */}
