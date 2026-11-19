@@ -742,7 +742,7 @@ require (
 	// Keep this in step with the CLI version the release workflow installs.
 	// Wails warns on every build when the two differ, and for a long time
 	// this said 2.9.2 while the current CLI was several minor versions ahead.
-	github.com/wailsapp/wails/v2 v2.16.0
+	github.com/wailsapp/wails/v2 v2.17.1
 	gorm.io/gorm v1.31.1
 )
 
@@ -826,7 +826,7 @@ Go API (over HTTP) as the web app, admin panel, and mobile app in this monorepo.
 
 - Go 1.26+ (the go.mod pins the exact patch release)
 - pnpm 8+
-- [Wails CLI](https://wails.io/docs/gettingstarted/installation): ` + "`" + `go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0` + "`" + `
+- [Wails CLI](https://wails.io/docs/gettingstarted/installation): ` + "`" + `go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1` + "`" + `
 
 ## Development
 

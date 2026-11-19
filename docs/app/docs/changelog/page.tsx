@@ -72,6 +72,94 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.550.0 */}
+            <div className="mb-12" id="v3.550.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.550.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Wails 2.17.1, which closes two security holes, and one template that never got the last four bumps</h3>
+                <p>
+                  Grit pinned Wails v2.16.0. Two advisories have landed since,
+                  and a desktop project scaffolded before this release has both.
+                </p>
+                <ul>
+                  <li>
+                    <strong>v2.17.1</strong> fixes{' '}
+                    <a href="https://github.com/wailsapp/wails/security/advisories/GHSA-r5j2-ghh9-2jqw"
+                    target="_blank" rel="noopener noreferrer">GHSA-r5j2-ghh9-2jqw</a>,
+                    high severity at CVSS 8.3. On Linux, an iframe embedded in
+                    the app window could reach the privileged{' '}
+                    <code>window.webkit.messageHandlers.external</code> IPC
+                    bridge, because WebKitGTK does not tell the native handler
+                    which frame sent a message and the origin check ran against
+                    the top-level page rather than the calling frame.
+                  </li>
+                  <li>
+                    <strong>v2.17.0</strong> hardened <code>wails dev</code>{' '}
+                    against cross-origin and DNS-rebinding attacks on the IPC
+                    WebSocket. It accepted any origin, so a malicious page open
+                    in the developer&apos;s own browser could connect to{' '}
+                    <code>ws://localhost:34115/wails/ipc</code> and invoke the
+                    entire bound Go API.
+                  </li>
+                </ul>
+                <p>
+                  Both are now in, and a scaffolded desktop app builds and vets
+                  clean on 2.17.1 with no API changes needed.
+                </p>
+
+                <h4>The template that was eight minors behind</h4>
+                <p>
+                  Grit has two desktop <code>go.mod</code> templates: one for
+                  the app inside a monorepo, one for a standalone desktop
+                  project. The standalone one was still on{' '}
+                  <code>v2.9.1</code>, through the four releases that moved the
+                  others to v2.16.0.
+                </p>
+                <p>
+                  There was a test for exactly this, and it passed throughout:
+                  it compared the monorepo <code>go.mod</code> with the release
+                  workflow, which were the two somebody had in mind when they
+                  wrote it. The fifth site was invisible to it. So the guard now
+                  walks the templates, counts every place a Wails version is
+                  named, and fails if they are not all the same version, with
+                  the count pinned so a site that stops matching the pattern
+                  fails loudly rather than drifting quietly. Confirmed by
+                  putting v2.9.1 back: the new guard names the file, the old one
+                  stayed silent.
+                </p>
+                <p>
+                  Worth saying what the drift actually cost. Not a version
+                  warning on a build, which is what the old test was written
+                  for: a project scaffolded from the forgotten template got both
+                  advisories above.
+                </p>
+
+                <h4>Two things checked and deliberately not changed</h4>
+                <p>
+                  <strong>Wails v3 is stable</strong> (3.0.0 on 26 October,
+                  3.1.0 on 1 November) and Grit stays on v2. v3 is a different
+                  bindings generator, a different CLI and a different
+                  application API, so it is a migration with its own release and
+                  its own testing rather than a dependency bump. v2 is still
+                  maintained, as 2.17.1 shows.
+                </p>
+                <p>
+                  <strong>The Go pin is already correct.</strong> A govulncheck
+                  run over a generated desktop module reported GO-2026-6859, an
+                  HTTP/1 server crash in <code>net/http</code>. It is fixed in
+                  1.26.11 and in 1.27.4, and Grit pins 1.26.11 in CI and in
+                  every generated <code>go.mod</code>. The report came from the
+                  toolchain doing the scan, not from anything Grit ships.
+                </p>
+              </div>
+            </div>
+
             {/* v3.549.0 */}
             <div className="mb-12" id="v3.549.0">
               <div className="flex items-center gap-3 mb-4">

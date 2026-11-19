@@ -23,6 +23,32 @@ Also worth knowing:
 ---
 
 
+## v3.550.0 - November 19, 2026
+
+### Wails 2.17.1, which closes two security holes, and one template that never got the last four bumps
+
+Grit pinned Wails v2.16.0. Two advisories have landed since, and a desktop project scaffolded before this release has both.
+
+- **v2.17.1** fixes [GHSA-r5j2-ghh9-2jqw](https://github.com/wailsapp/wails/security/advisories/GHSA-r5j2-ghh9-2jqw), high severity at CVSS 8.3. On Linux, an iframe embedded in the app window could reach the privileged `window.webkit.messageHandlers.external` IPC bridge, because WebKitGTK does not tell the native handler which frame sent a message and the origin check ran against the top-level page rather than the calling frame.
+- **v2.17.0** hardened `wails dev` against cross-origin and DNS-rebinding attacks on the IPC WebSocket. It accepted any origin, so a malicious page open in the developer's own browser could connect to `ws://localhost:34115/wails/ipc` and invoke the entire bound Go API.
+
+Both are now in, and a scaffolded desktop app builds and vets clean on 2.17.1 with no API changes needed.
+
+#### The template that was eight minors behind
+
+Grit has two desktop `go.mod` templates: one for the app inside a monorepo, one for a standalone desktop project. The standalone one was still on `v2.9.1`, through the four releases that moved the others to v2.16.0.
+
+There was a test for exactly this, and it passed throughout: it compared the monorepo `go.mod` with the release workflow, which were the two somebody had in mind when they wrote it. The fifth site was invisible to it. So the guard now walks the templates, counts every place a Wails version is named, and fails if they are not all the same version, with the count pinned so a site that stops matching the pattern fails loudly rather than drifting quietly. Confirmed by putting v2.9.1 back: the new guard names the file, the old one stayed silent.
+
+Worth saying what the drift actually cost. Not a version warning on a build, which is what the old test was written for: a project scaffolded from the forgotten template got both advisories above.
+
+#### Two things checked and deliberately not changed
+
+**Wails v3 is stable** (3.0.0 on 26 October, 3.1.0 on 1 November) and Grit stays on v2. v3 is a different bindings generator, a different CLI and a different application API, so it is a migration with its own release and its own testing rather than a dependency bump. v2 is still maintained, as 2.17.1 shows.
+
+**The Go pin is already correct.** A govulncheck run over a generated desktop module reported GO-2026-6859, an HTTP/1 server crash in `net/http`. It is fixed in 1.26.11 and in 1.27.4, and Grit pins 1.26.11 in CI and in every generated `go.mod`. The report came from the toolchain doing the scan, not from anything Grit ships.
+
+
 ## v3.549.0 - November 19, 2026
 
 ### MCP tools for every resource, generated
