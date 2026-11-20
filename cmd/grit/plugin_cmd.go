@@ -58,6 +58,35 @@ func findProjectRoot() (string, error) {
 	}
 }
 
+// describeShape names a project the way a plugin's when clauses talk about it.
+//
+// For the one message that has to tell somebody why a plugin wrote nothing:
+// "this is a triple project with a next frontend and an admin panel" is
+// actionable, and "0 files, 0 patches" is not.
+func describeShape(ctx plugin.Context) string {
+	shape := ctx.Architecture
+	if shape == "" {
+		shape = "unrecognised"
+	}
+	article := "a"
+	if strings.ContainsRune("aeiou", rune(shape[0])) {
+		article = "an"
+	}
+	out := article + " " + shape + " project"
+
+	// An api or mobile project has no frontend and no panel, and the Context
+	// carries "next" for both because that is its default rather than
+	// something detected. Saying "with a next frontend" there would be the
+	// message inventing a detail to explain itself with.
+	if _, ok := plugin.HasAdminPanel(ctx); !ok {
+		return out + ", which has no admin panel"
+	}
+	if ctx.Frontend != "" {
+		out += " with a " + ctx.Frontend + " frontend"
+	}
+	return out + " and an admin panel"
+}
+
 // pluginContext builds the Context a plugin needs from the detected project.
 func pluginContext() (plugin.Context, error) {
 	root, err := findProjectRoot()
@@ -414,8 +443,23 @@ Grit reads its plugin.json and writes the files it names.`,
 			}
 
 			fmt.Println()
-			fmt.Printf("  %s %s installed (%d files, %d patches)\n",
-				color.GreenString("✅"), p.Name, len(record.Files), len(record.Injections))
+			if len(record.Files) == 0 && len(record.Injections) == 0 {
+				// "installed (0 files, 0 patches)" is a success message for
+				// something that did not happen. Every file and injection this
+				// plugin had was gated off for this project: a when clause for
+				// another architecture, or an admin path on a project with no
+				// admin panel. Saying so is the difference between a plugin
+				// that does not support this shape and a plugin that is broken,
+				// and the user cannot tell those apart from a green tick.
+				fmt.Printf("  %s %s installed nothing on this project.\n",
+					color.YellowString("⚠"), p.Name)
+				fmt.Println("    Everything it writes is gated to a project shape this one is not:")
+				fmt.Printf("    this is %s", describeShape(ctx))
+				fmt.Println(". Check the plugin's README for what it supports.")
+			} else {
+				fmt.Printf("  %s %s installed (%d files, %d patches)\n",
+					color.GreenString("✅"), p.Name, len(record.Files), len(record.Injections))
+			}
 
 			if len(p.GoDeps) > 0 {
 				fmt.Println()

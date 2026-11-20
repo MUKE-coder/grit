@@ -65,8 +65,16 @@ func LoadDir(dir string) (Plugin, error) {
 
 		Files: func(ctx Context) map[string]string {
 			out := map[string]string{}
+			_, hasAdmin := adminRootFor(ctx)
 			for _, f := range m.Files {
 				if !f.When.matches(ctx) {
+					continue
+				}
+				// An admin file on a project with no admin panel. Skipped
+				// rather than written to a path with a hole in it, the same
+				// way a node dependency for a workspace the project does not
+				// have is skipped.
+				if !hasAdmin && (needsAdminRoot(f.To) || needsAdminRoot(f.From)) {
 					continue
 				}
 				body, err := os.ReadFile(filepath.Join(dir, f.From))
@@ -79,6 +87,9 @@ func LoadDir(dir string) (Plugin, error) {
 			}
 			for _, d := range m.Directories {
 				if !d.When.matches(ctx) {
+					continue
+				}
+				if !hasAdmin && needsAdminRoot(d.To) {
 					continue
 				}
 				for rel, body := range readTree(filepath.Join(dir, d.From)) {
@@ -96,8 +107,12 @@ func LoadDir(dir string) (Plugin, error) {
 
 		Injections: func(ctx Context) []Injection {
 			var out []Injection
+			_, hasAdmin := adminRootFor(ctx)
 			for _, in := range m.Injections {
 				if !in.When.matches(ctx) {
+					continue
+				}
+				if !hasAdmin && needsAdminRoot(in.File) {
 					continue
 				}
 				code := in.Code
@@ -198,12 +213,24 @@ func listAllows(allowed []string, actual string) bool {
 // expand substitutes the placeholders a plugin may use.
 func expand(s string, ctx Context) string {
 	project := filepath.Base(ctx.Root)
+	adminRoot, _ := adminRootFor(ctx)
 	return strings.NewReplacer(
 		"{{MODULE}}", ctx.Module,
 		"{{PROJECT}}", project,
 		"{{API_ROOT}}", apiRootFor(ctx),
+		"{{ADMIN_ROOT}}", adminRoot,
 	).Replace(s)
 }
+
+// HasAdminPanel reports where a project's admin panel is, if it has one.
+//
+// Exported for the one caller outside this package: the install command, which
+// has to tell somebody why a plugin wrote nothing.
+func HasAdminPanel(ctx Context) (string, bool) { return adminRootFor(ctx) }
+
+// needsAdminRoot reports whether a path cannot be resolved without an admin
+// panel, which is how an entry gets skipped on a project that has none.
+func needsAdminRoot(s string) bool { return strings.Contains(s, "{{ADMIN_ROOT}}") }
 
 // apiRootFor is where Go code lives, project-relative, so a plugin can write
 // one path that works for --single and for a monorepo.
@@ -212,6 +239,49 @@ func apiRootFor(ctx Context) string {
 		return "."
 	}
 	return "apps/api"
+}
+
+// adminRootFor is where the admin panel's code lives, project-relative.
+//
+// {{API_ROOT}} exists so a Go path works on any architecture, and there was no
+// equivalent for the admin, which is why grit-calendar's manifest needed 21
+// file entries for 11 files: every one written twice, "apps/admin/..." and
+// "apps/admin/src/...", each with its own when clause. And double, single and
+// api projects could not be targeted at all (grit#228).
+//
+// Read off the disk rather than derived from the architecture, which is what
+// apiRootFor does. The panel lives in five different places depending on shape
+// and frontend, and exactly one of them exists in any project that has one, so
+// looking is both shorter and right for a shape nobody enumerated here. The
+// same approach as internal/generate's own resolver, which these two packages
+// cannot share because neither imports the other.
+//
+// Returns false when the project has no admin panel at all: an --api or
+// --mobile project, where a plugin's admin files should be skipped rather than
+// written to a path with a hole in it.
+func adminRootFor(ctx Context) (string, bool) {
+	for _, candidate := range []string{
+		// triple: its own application. The Vite shape first, because
+		// apps/admin exists in both and only the Vite one has src/.
+		"apps/admin/src",
+		"apps/admin",
+		// double: a section of the web app, Vite first for the same reason.
+		"apps/web/src/admin-panel",
+		"apps/web/admin-panel",
+		// single: the frontend owns the project root.
+		"src/admin-panel",
+		"frontend/src/admin-panel",
+	} {
+		if dirExists(filepath.Join(ctx.Root, filepath.FromSlash(candidate))) {
+			// The code root, not the application root. A Vite admin keeps its
+			// components under src/, so a plugin writing
+			// {{ADMIN_ROOT}}/components/x.tsx has to land in the right one of
+			// the two, and the deeper candidate is checked first for exactly
+			// that reason.
+			return candidate, true
+		}
+	}
+	return "", false
 }
 
 // validate catches the mistakes worth catching before anything is written.

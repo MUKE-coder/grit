@@ -64,6 +64,7 @@ const SYSTEM_WIDGETS: CatalogWidget[] = [
   { key: "system:severity-mix", kind: "chart", module: "System", moduleIcon: "Shield", label: "Severity mix", description: "Pie chart of event severity (24h)" },
   { key: "system:recent-activity", kind: "table", module: "System", moduleIcon: "Shield", label: "Recent activity", description: "Last 8 events across the platform" },
   { key: "system:quick-access", kind: "table", module: "System", moduleIcon: "Shield", label: "Quick access", description: "Tiles linking to each resource module" },
+  // grit:dashboard:catalog
 ];
 
 // sluggify normalises a label to a stable, lowercase key fragment.

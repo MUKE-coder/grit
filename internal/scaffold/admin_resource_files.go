@@ -1580,6 +1580,8 @@ function ResourceListView({ resource }: ResourcePageProps) {
         />
       </div>
 
+      {/* grit:resource:slot */}
+
       {!c.isFormPage && c.form.open && CustomForm && (
         <CustomForm resource={resource} item={c.form.item} onClose={c.form.close} />
       )}

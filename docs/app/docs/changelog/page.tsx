@@ -72,6 +72,103 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.558.0 */}
+            <div className="mb-12" id="v3.558.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.558.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Five admin markers, and {'{{ADMIN_ROOT}}'}</h3>
+                <p>
+                  A plugin extends the admin by injecting at a marker comment.
+                  For five of the places a real plugin wanted to extend, there
+                  was no marker, so{' '}
+                  <a href="https://github.com/daljo25/grit-calendar"
+                  target="_blank" rel="noopener noreferrer">grit-calendar</a>{' '}
+                  anchored on lines of Grit&apos;s own generated source
+                  instead: a version comment, a seeded catalogue row, a JSX
+                  condition (
+                  <a href="https://github.com/MUKE-coder/grit/issues/228"
+                  target="_blank" rel="noopener noreferrer">#228</a>).
+                </p>
+                <p>
+                  That is the one mistake in plugin authoring with no error
+                  message and no symptom. An injection at a marker that is not
+                  in the file is not refused: it does not happen, the install
+                  reports success, and the feature is absent. A release that
+                  reformatted any of those lines would have broken the plugin
+                  with nothing anywhere connecting the two.
+                </p>
+
+                <h4>It was already broken, on three of four styles</h4>
+                <p>
+                  The plugin anchored its dashboard widget on{' '}
+                  <code>import {'{'} ResourceWidgetsRow {'}'}</code> and the
+                  comment above it. Only the default dashboard has that line:{' '}
+                  <code>modern</code>, <code>minimal</code> and{' '}
+                  <code>glass</code> have no per-resource row at all. So on
+                  three of the four styles the widget silently never appeared,
+                  today, before anybody touched anything.
+                </p>
+                <p>
+                  The new markers are in all four. The guard is a loop over
+                  every style, because a test over one would have passed while
+                  three were broken, which is how this got here.
+                </p>
+
+                <h4>The five</h4>
+                <p>
+                  <code>// grit:nav:imports</code> in the sidebar,{' '}
+                  <code>// grit:dashboard:catalog</code> in the dashboard
+                  settings list, <code>// grit:dashboard:imports</code> and{' '}
+                  <code>{'{/* grit:dashboard:widgets */}'}</code> in every
+                  dashboard style, and{' '}
+                  <code>{'{/* grit:resource:slot */}'}</code> for something
+                  mounted page-level on every resource screen. An existing
+                  project gets all five from <code>grit upgrade</code>, because
+                  those admin files already travel.
+                </p>
+
+                <h4>{'{{ADMIN_ROOT}}'}</h4>
+                <p>
+                  <code>{'{{API_ROOT}}'}</code> exists so a Go path works on any
+                  architecture, and the admin had no equivalent. That is why the
+                  same plugin needed 21 file entries for 11 files: every one
+                  written twice, <code>apps/admin/...</code> and{' '}
+                  <code>apps/admin/src/...</code>, each with its own{' '}
+                  <code>when</code> clause. Double, single and api projects
+                  could not be targeted at all.
+                </p>
+                <p>
+                  It resolves off the disk rather than from the architecture
+                  string, because the panel lives in one of six places
+                  depending on shape and frontend and exactly one of them
+                  exists in any project that has one. Verified with a single
+                  manifest carrying no <code>when</code> clauses, installed on
+                  three projects:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`triple + next    ✓ apps/admin/components/markerprobe/probe-widget.tsx
+triple + vite    ✓ apps/admin/src/components/markerprobe/probe-widget.tsx
+api only         ⚠ markerprobe installed nothing on this project.`}
+                />
+                <p>
+                  That last line is new too. A plugin whose every entry was
+                  gated off used to report{' '}
+                  <code>installed (0 files, 0 patches)</code> with a green tick,
+                  which is a success message for something that did not happen
+                  and gives nobody a way to tell &quot;does not support this
+                  shape&quot; from &quot;broken&quot;. It now says so, and names
+                  the shape it found.
+                </p>
+              </div>
+            </div>
+
             {/* v3.557.0 */}
             <div className="mb-12" id="v3.557.0">
               <div className="flex items-center gap-3 mb-4">

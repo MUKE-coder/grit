@@ -143,6 +143,20 @@ an import with no route does not compile either.
 // grit:routes:custom        function level, with the route groups in scope
 // grit:models               a model to migrate
 // grit:handlers             a handler to construct
+
+Admin markers, for a plugin with a UI. Never anchor on a line of generated
+code instead: an injection at a marker that is not in the file is not refused,
+so the install reports success and the feature is simply absent.
+
+// grit:nav:content          a working surface, in the sidebar rail
+// grit:nav:system           an operational surface, in the System Hub
+// grit:nav:imports          what the nav entry references
+// grit:icons:import         a lucide icon
+// grit:icons:map            and make it reachable by name; both are needed
+// grit:dashboard:catalog    list a widget in the dashboard settings
+// grit:dashboard:imports    import a dashboard widget (all four styles)
+{/* grit:dashboard:widgets */}  render it (all four styles)
+{/* grit:resource:slot */}      something page-level on every resource screen
 ` + fence + `
 
 A marker that is not in the file is not an error at install time: the

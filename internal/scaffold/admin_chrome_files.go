@@ -614,6 +614,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { resources } from "@/resources";
+// grit:nav:imports
 import { brand } from "@repo/shared/brand";
 import { useLogout } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";

@@ -532,6 +532,16 @@ func slicesEqual(a, b []string) bool {
 	return true
 }
 
+// dirExists reports whether p is a directory.
+//
+// Beside fileExists because the pair is read together: a plugin's "from" is
+// one or the other, and telling them apart is what stopped a directory being
+// accepted as a file and installing nothing.
+func dirExists(p string) bool {
+	info, err := os.Stat(p)
+	return err == nil && info.IsDir()
+}
+
 func fileExists(p string) bool {
 	info, err := os.Stat(p)
 	return err == nil && !info.IsDir()

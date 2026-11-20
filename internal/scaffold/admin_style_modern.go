@@ -486,6 +486,7 @@ import { getIcon } from "@/lib/icons";
 // Hardcoding localhost:8080 here meant the Quick Links pointed at the wrong
 // port whenever the API moved.
 import { API_URL, apiUrl } from "@/lib/api-core";
+// grit:dashboard:imports
 
 export default function AdminDashboard() {
   const { data: user } = useMe();
@@ -625,6 +626,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* grit:dashboard:widgets */}
     </div>
   );
 }

@@ -235,11 +235,46 @@ export default function PluginAuthoringPage() {
                     A working surface, in the rail beside the resources
                   </td>
                 </tr>
-                <tr>
+                <tr className="border-b border-border/60">
                   <td className="px-4 py-3 font-mono text-xs">// grit:nav:system</td>
                   <td className="px-4 py-3 text-muted-foreground">admin CollapsibleSidebar.tsx</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     An operational surface, in the System Hub&apos;s Extensions tab
+                  </td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:nav:imports</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin CollapsibleSidebar.tsx</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    Import what the nav entry references
+                  </td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:dashboard:catalog</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin lib/dashboard-catalog.ts</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    List a widget in the dashboard settings, so somebody can turn it on
+                  </td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:dashboard:imports</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin dashboard page</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    Import a dashboard widget. Present in all four styles
+                  </td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">{/* grit:dashboard:widgets */}</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin dashboard page</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    Render it, at the end of the page. Present in all four styles
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-mono text-xs">{/* grit:resource:slot */}</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin resource-page.tsx</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    Mount something page-level on every resource screen
                   </td>
                 </tr>
               </tbody>
@@ -252,6 +287,25 @@ export default function PluginAuthoringPage() {
             that there was no anchor for a surface people open while working rather than while
             configuring.
           </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            The last five exist because a community plugin needed them and anchored on generated
+            source instead (<a href="https://github.com/MUKE-coder/grit/issues/228" target="_blank"
+            rel="noopener noreferrer">grit#228</a>). One of its anchors was a version comment;
+            another was a whole seeded catalogue row. That works until a release reformats the
+            line, and then it stops working silently, because an injection at a marker that is
+            not in the file is not refused.
+          </p>
+          <div className="my-6 flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
+            <p className="leading-relaxed text-muted-foreground">
+              <strong>Never anchor on a line of generated code.</strong> It is the one mistake here
+              with no error message and no symptom: the install reports success and the feature is
+              absent. The same plugin anchored its dashboard widget on a line only the default
+              style carries, so on <code>--style modern</code>, <code>minimal</code> and{' '}
+              <code>glass</code> the widget never appeared at all. If the marker you need does not
+              exist, ask for it.
+            </p>
+          </div>
 
           <h3 className="mb-3 mt-8 text-xl font-semibold tracking-tight">Preflight</h3>
           <p className="mb-4 leading-relaxed text-muted-foreground">
@@ -368,6 +422,17 @@ export default function PluginAuthoringPage() {
 }`}
           />
           <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            Paths get <code>{'{{ADMIN_ROOT}}'}</code> too, which is where the admin panel&apos;s
+            code lives: <code>apps/admin</code> on a triple Next project,{' '}
+            <code>apps/admin/src</code> on a Vite one, <code>apps/web/admin-panel</code> in a
+            double, <code>src/admin-panel</code> in a single. Use it and one entry covers every
+            shape; write the paths out and you need one entry per shape with its own{' '}
+            <code>when</code>, which is how a calendar plugin came to list 21 entries for 11
+            files. On a project with no admin panel at all, an entry whose path needs it is
+            skipped rather than written somewhere wrong, and the install says it installed nothing
+            and why.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
             <code>directories</code> installs a whole tree and keeps its shape, so{' '}
             <code>files/components/day/grid.tsx</code> lands at{' '}
             <code>apps/admin/components/calendar/day/grid.tsx</code>. Use it for a group of files

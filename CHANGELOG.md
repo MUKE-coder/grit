@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.558.0 - November 20, 2026
+
+### Five admin markers, and {{ADMIN_ROOT}}
+
+A plugin extends the admin by injecting at a marker comment. For five of the places a real plugin wanted to extend, there was no marker, so [grit-calendar](https://github.com/daljo25/grit-calendar) anchored on lines of Grit's own generated source instead: a version comment, a seeded catalogue row, a JSX condition ( [#228](https://github.com/MUKE-coder/grit/issues/228)).
+
+That is the one mistake in plugin authoring with no error message and no symptom. An injection at a marker that is not in the file is not refused: it does not happen, the install reports success, and the feature is absent. A release that reformatted any of those lines would have broken the plugin with nothing anywhere connecting the two.
+
+#### It was already broken, on three of four styles
+
+The plugin anchored its dashboard widget on `import { ResourceWidgetsRow }` and the comment above it. Only the default dashboard has that line: `modern`, `minimal` and `glass` have no per-resource row at all. So on three of the four styles the widget silently never appeared, today, before anybody touched anything.
+
+The new markers are in all four. The guard is a loop over every style, because a test over one would have passed while three were broken, which is how this got here.
+
+#### The five
+
+`// grit:nav:imports` in the sidebar, `// grit:dashboard:catalog` in the dashboard settings list, `// grit:dashboard:imports` and `{/* grit:dashboard:widgets */}` in every dashboard style, and `{/* grit:resource:slot */}` for something mounted page-level on every resource screen. An existing project gets all five from `grit upgrade`, because those admin files already travel.
+
+#### {{ADMIN_ROOT}}
+
+`{{API_ROOT}}` exists so a Go path works on any architecture, and the admin had no equivalent. That is why the same plugin needed 21 file entries for 11 files: every one written twice, `apps/admin/...` and `apps/admin/src/...`, each with its own `when` clause. Double, single and api projects could not be targeted at all.
+
+It resolves off the disk rather than from the architecture string, because the panel lives in one of six places depending on shape and frontend and exactly one of them exists in any project that has one. Verified with a single manifest carrying no `when` clauses, installed on three projects:
+
+```text
+triple + next    ✓ apps/admin/components/markerprobe/probe-widget.tsx
+triple + vite    ✓ apps/admin/src/components/markerprobe/probe-widget.tsx
+api only         ⚠ markerprobe installed nothing on this project.
+```
+
+That last line is new too. A plugin whose every entry was gated off used to report `installed (0 files, 0 patches)` with a green tick, which is a success message for something that did not happen and gives nobody a way to tell "does not support this shape" from "broken". It now says so, and names the shape it found.
+
+
 ## v3.557.0 - November 20, 2026
 
 ### Removing a plugin takes its dependencies with it

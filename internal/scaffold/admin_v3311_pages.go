@@ -93,6 +93,7 @@ import { SkeletonCards } from "@/components/ui/Skeleton";
 import { StatStrip } from "@/components/ui/stat-strip";
 import { DateFilter, dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
 import { ResourceWidgetsRow } from "@/components/dashboard/ResourceWidgetsRow";
+// grit:dashboard:imports
 import {
   useResourceDashboardStats,
   type ResourceDashboardStats,
@@ -456,6 +457,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* grit:dashboard:widgets */}
     </div>
   );
 }
