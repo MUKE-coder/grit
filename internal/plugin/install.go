@@ -185,6 +185,56 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 	return &record, nil
 }
 
+// removeNodeDependency takes "name": "version" back out of a package.json.
+//
+// Textual, like the add, so the file keeps its formatting and key order. The
+// version has to match what the plugin installed: a package somebody has
+// since changed, or one another plugin also needs at a different version, is
+// reported rather than removed. That is the same rule an edited injection
+// gets, and for the same reason.
+//
+// Returns false with no error when the entry is absent or not the one this
+// plugin wrote, which the caller turns into a warning.
+func removeNodeDependency(path, name, version string) (bool, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	src := string(raw)
+
+	entry := "\"" + name + "\": \"" + version + "\""
+	at := strings.Index(src, entry)
+	if at < 0 {
+		return false, nil
+	}
+
+	// Take the whole line, and the comma that joined it to its neighbour. The
+	// entry is either followed by a comma (another key follows) or preceded by
+	// one (it is last), and removing the wrong one leaves JSON that does not
+	// parse.
+	start := strings.LastIndex(src[:at], "\n")
+	if start < 0 {
+		return false, fmt.Errorf("the dependency is on the first line, which is not a package.json this wrote")
+	}
+	end := strings.Index(src[at:], "\n")
+	if end < 0 {
+		end = len(src)
+	} else {
+		end += at
+	}
+
+	line := src[start:end]
+	out := src[:start] + src[end:]
+	if !strings.Contains(line, ",") {
+		// It was the last entry, so the line before it still ends in a comma
+		// that now dangles.
+		if cut := strings.LastIndex(out[:start], ","); cut >= 0 && strings.TrimSpace(out[cut+1:start]) == "" {
+			out = out[:cut] + out[cut+1:]
+		}
+	}
+	return true, os.WriteFile(path, []byte(out), 0o644)
+}
+
 // addNodeDependency adds "name": "version" to a package.json's dependencies,
 // as text, so the file keeps its formatting and key order. A package already
 // listed there, or in devDependencies, is left as it is.
@@ -306,6 +356,56 @@ func Remove(root, name string) ([]string, error) {
 		fmt.Printf("  ✗ %s\n", rel)
 	}
 	pruneEmptyDirs(root, dirs)
+
+	// The dependencies the install added.
+	//
+	// Reverted here because nothing else does, and "removal leaves the project
+	// as it was" is the one property a plugin is judged on. Found reviewing the
+	// first community submission: every file and patch came back and
+	// "calendarkit-pro": "2.0.0" stayed in apps/admin/package.json, so
+	// pnpm install kept fetching a package nothing imported. The install side
+	// of this had the mirror-image bug once: the deps were recorded in the
+	// lockfile and never written.
+	for _, d := range record.NodeDeps {
+		if d.Workspace == "" {
+			continue
+		}
+		pkg := filepath.Join(root, d.Workspace, "package.json")
+		if !fileExists(pkg) {
+			continue
+		}
+		removed, err := removeNodeDependency(pkg, d.Name, d.Version)
+		switch {
+		case err != nil:
+			warnings = append(warnings, fmt.Sprintf(
+				"could not take %s out of %s/package.json: %v", d.Name, d.Workspace, err))
+		case removed:
+			fmt.Printf("  ✗ %s no longer depends on %s\n", d.Workspace, d.Name)
+		default:
+			// Left alone rather than guessed at: the same rule an edited
+			// injection gets. A version somebody has changed is a decision,
+			// and a package another plugin also needs is not this one's to
+			// take away.
+			warnings = append(warnings, fmt.Sprintf(
+				"%s is still in %s/package.json at a version this plugin did not write (%s): "+
+					"remove it by hand if nothing else needs it", d.Name, d.Workspace, d.Version))
+		}
+	}
+
+	// Go modules are named rather than edited out.
+	//
+	// An unused require is harmless to a build, go.sum has to agree with it,
+	// and `go mod tidy` is the tool that does this correctly. Editing go.mod
+	// by hand here would be a worse version of a command the project already
+	// has.
+	if len(record.GoDeps) > 0 {
+		names := make([]string, 0, len(record.GoDeps))
+		for _, d := range record.GoDeps {
+			names = append(names, d.Name)
+		}
+		fmt.Printf("  → %s is no longer imported. Run `go mod tidy` in the API to drop it from go.mod\n",
+			strings.Join(names, ", "))
+	}
 
 	lock.Remove(name)
 	if err := lock.Save(root); err != nil {

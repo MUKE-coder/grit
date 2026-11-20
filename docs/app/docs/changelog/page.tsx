@@ -72,6 +72,79 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.557.0 */}
+            <div className="mb-12" id="v3.557.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.557.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Removing a plugin takes its dependencies with it</h3>
+                <p>
+                  Found reviewing the first community plugin submission,{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/228"
+                  target="_blank" rel="noopener noreferrer">#228</a>, against
+                  the standard the community index states for itself: that a
+                  plugin installs and removes cleanly on a fresh project. We
+                  were not meeting it.
+                </p>
+                <p>
+                  <code>grit plugin remove</code> reverted every file and every
+                  patch, and left <code>&quot;calendarkit-pro&quot;: &quot;2.0.0&quot;</code>{' '}
+                  in <code>apps/admin/package.json</code>. So{' '}
+                  <code>pnpm install</code> went on fetching a package nothing
+                  in the project imported, and the lockfile that recorded the
+                  dependency was the only trace of where it came from.
+                </p>
+                <p>
+                  The install side of this had the mirror-image bug once: the
+                  dependencies were recorded in the lockfile and never written,
+                  which nobody noticed until a plugin needed one. That half was
+                  fixed; the removal half was never written.
+                </p>
+
+                <h4>What it does now</h4>
+                <p>
+                  npm dependencies are taken back out of the workspace&apos;s{' '}
+                  <code>package.json</code>, textually, the way they were put
+                  in, so the file keeps its formatting and key order. A version
+                  somebody has since changed is reported rather than removed,
+                  which is the same rule an edited injection gets and for the
+                  same reason: the project has made a decision, and a removal
+                  that overrides it deletes somebody&apos;s work.
+                </p>
+                <p>
+                  Go modules are named rather than edited out, with a line
+                  saying to run <code>go mod tidy</code>. An unused{' '}
+                  <code>require</code> is harmless to a build,{' '}
+                  <code>go.sum</code> has to agree with it, and hand-editing{' '}
+                  <code>go.mod</code> here would be a worse version of a command
+                  the toolchain already has.
+                </p>
+
+                <h4>Verified on the plugin that found it</h4>
+                <p>
+                  A freshly scaffolded triple project, snapshotted; the
+                  community calendar plugin installed, 12 files and 9 patches;
+                  removed; then compared byte for byte against the snapshot:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`0 differ, 0 missing, 0 left behind, out of 821 files`}
+                />
+                <p>
+                  Before this that read <code>1 differ</code>, and the one was{' '}
+                  <code>package.json</code>. The round-trip test is new too, and
+                  it asserts by parsing the result rather than by matching text:
+                  the way to get this wrong is a dangling comma, which leaves a{' '}
+                  <code>package.json</code> that pnpm refuses to read.
+                </p>
+              </div>
+            </div>
+
             {/* v3.556.0 */}
             <div className="mb-12" id="v3.556.0">
               <div className="flex items-center gap-3 mb-4">

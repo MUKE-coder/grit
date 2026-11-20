@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.557.0 - November 20, 2026
+
+### Removing a plugin takes its dependencies with it
+
+Found reviewing the first community plugin submission, [#228](https://github.com/MUKE-coder/grit/issues/228), against the standard the community index states for itself: that a plugin installs and removes cleanly on a fresh project. We were not meeting it.
+
+`grit plugin remove` reverted every file and every patch, and left `"calendarkit-pro": "2.0.0"` in `apps/admin/package.json`. So `pnpm install` went on fetching a package nothing in the project imported, and the lockfile that recorded the dependency was the only trace of where it came from.
+
+The install side of this had the mirror-image bug once: the dependencies were recorded in the lockfile and never written, which nobody noticed until a plugin needed one. That half was fixed; the removal half was never written.
+
+#### What it does now
+
+npm dependencies are taken back out of the workspace's `package.json`, textually, the way they were put in, so the file keeps its formatting and key order. A version somebody has since changed is reported rather than removed, which is the same rule an edited injection gets and for the same reason: the project has made a decision, and a removal that overrides it deletes somebody's work.
+
+Go modules are named rather than edited out, with a line saying to run `go mod tidy`. An unused `require` is harmless to a build, `go.sum` has to agree with it, and hand-editing `go.mod` here would be a worse version of a command the toolchain already has.
+
+#### Verified on the plugin that found it
+
+A freshly scaffolded triple project, snapshotted; the community calendar plugin installed, 12 files and 9 patches; removed; then compared byte for byte against the snapshot:
+
+```text
+0 differ, 0 missing, 0 left behind, out of 821 files
+```
+
+Before this that read `1 differ`, and the one was `package.json`. The round-trip test is new too, and it asserts by parsing the result rather than by matching text: the way to get this wrong is a dangling comma, which leaves a `package.json` that pnpm refuses to read.
+
+
 ## v3.556.0 - November 20, 2026
 
 ### A plugin manifest can install a directory
