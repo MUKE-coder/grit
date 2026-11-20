@@ -110,15 +110,13 @@ func skeletonManifest(name, pkg string) string {
     "Restart the API server so the new route is served.",
     "GET /api/` + name + ` returns the message."
   ],
+  "directories": [
+    {
+      "from": "files/api",
+      "to": "{{API_ROOT}}/internal/` + pkg + `"
+    }
+  ],
   "files": [
-    {
-      "from": "files/api/` + pkg + `.go",
-      "to": "{{API_ROOT}}/internal/` + pkg + `/` + pkg + `.go"
-    },
-    {
-      "from": "files/api/` + pkg + `_test.go",
-      "to": "{{API_ROOT}}/internal/` + pkg + `/` + pkg + `_test.go"
-    },
     {
       "from": "files/admin/` + name + `-card.tsx",
       "to": "apps/admin/components/` + name + `/` + name + `-card.tsx",

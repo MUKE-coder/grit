@@ -72,6 +72,114 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.556.0 */}
+            <div className="mb-12" id="v3.556.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.556.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A plugin manifest can install a directory</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/227"
+                  target="_blank" rel="noopener noreferrer">#227</a>, from{' '}
+                  <a href="https://github.com/daljo25" target="_blank"
+                  rel="noopener noreferrer">daljo25</a> while writing{' '}
+                  <code>grit-calendar</code>. A manifest listed every file it
+                  installed one by one, repeating the same <code>to</code>{' '}
+                  prefix and the same <code>when</code> clause for each: nine
+                  entries for four groups of files, where adding a component
+                  meant editing the tree and the manifest and keeping the two
+                  in step.
+                </p>
+                <CodeBlock
+                  language="json"
+                  code={`"directories": [
+  {
+    "from": "files/components",
+    "to": "apps/admin/components/calendar",
+    "when": { "architecture": ["triple"], "frontend": ["next"] }
+  }
+]`}
+                />
+                <p>
+                  The tree keeps its shape, so{' '}
+                  <code>files/components/day/grid.tsx</code> lands at{' '}
+                  <code>apps/admin/components/calendar/day/grid.tsx</code>.
+                  Every file still reaches the lockfile as its own entry, so{' '}
+                  <code>grit plugin remove</code> deletes exactly what was
+                  written and needs no second list, which is the property the
+                  issue predicted and which a real install and removal
+                  confirmed.
+                </p>
+
+                <h4>The bug underneath it</h4>
+                <p>
+                  A directory named in <code>files[].from</code> was accepted
+                  and then installed nothing. <code>validate</code> called{' '}
+                  <code>os.Stat</code>, which a directory passes;{' '}
+                  <code>os.ReadFile</code> failed at install time; and the
+                  failure was swallowed by a <code>continue</code> whose comment
+                  read &quot;a file that vanished between then and now&quot;,
+                  which is true of a deleted file and not of a directory. So the
+                  entry wrote nothing and the install reported success.
+                </p>
+                <p>
+                  Refused now, with a message naming the key to use instead, and
+                  so is the inverse: a file in <code>directories[].from</code>.
+                  So is an empty tree, which is the same failure, and so is a
+                  symlink inside one, because a link in somebody else&apos;s
+                  plugin is a way to install a file from outside it.{' '}
+                  <code>safeRelative</code> runs on every destination a tree
+                  produces rather than only on the prefix the manifest wrote
+                  down.
+                </p>
+                <p>
+                  Nothing is filtered out of a tree, deliberately. A rule that
+                  skips dotfiles is a rule somebody has to learn, and the
+                  install prints every file it writes, so a stray{' '}
+                  <code>.DS_Store</code> is visible in the output where a silent
+                  exclusion would not be.
+                </p>
+
+                <h4>The skeleton shows both forms</h4>
+                <p>
+                  <code>grit plugin new</code> now writes a{' '}
+                  <code>directories</code> entry for its Go package and a{' '}
+                  <code>files</code> entry for its one admin component, which is
+                  the distinction worth teaching: a directory for a group that
+                  shares a destination and a <code>when</code> clause, a file
+                  for a single file or an exception. The generated README
+                  explains both.
+                </p>
+                <p>
+                  Writing that README turned up something embarrassing. It
+                  contained <code>So `files/api/` + pkg + `.go`</code>{' '}
+                  literally: a Go concatenation that never ran, because its
+                  backticks were written inside the string rather than outside
+                  it. The file compiled, every other test passed, and the only
+                  way to see it was to generate a plugin and read it, which is
+                  how it was found. There is a guard for that class of mistake
+                  now, over everything the skeleton writes.
+                </p>
+
+                <h4>Verified</h4>
+                <p>
+                  A generated skeleton plugin installed into a real project
+                  through a directory entry: two files written, the API built,
+                  the test it shipped passed, both files recorded separately in
+                  the lockfile, then <code>grit plugin remove</code> deleted
+                  both and reverted both patches and the API still built. Plus
+                  ten unit tests covering the refusals, the{' '}
+                  <code>when</code> clause on a tree, the escape attempts and
+                  the placeholder expansion.
+                </p>
+              </div>
+            </div>
+
             {/* v3.555.0 */}
             <div className="mb-12" id="v3.555.0">
               <div className="flex items-center gap-3 mb-4">

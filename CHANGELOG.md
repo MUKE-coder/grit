@@ -23,6 +23,43 @@ Also worth knowing:
 ---
 
 
+## v3.556.0 - November 20, 2026
+
+### A plugin manifest can install a directory
+
+[#227](https://github.com/MUKE-coder/grit/issues/227), from [daljo25](https://github.com/daljo25) while writing `grit-calendar`. A manifest listed every file it installed one by one, repeating the same `to` prefix and the same `when` clause for each: nine entries for four groups of files, where adding a component meant editing the tree and the manifest and keeping the two in step.
+
+```json
+"directories": [
+  {
+    "from": "files/components",
+    "to": "apps/admin/components/calendar",
+    "when": { "architecture": ["triple"], "frontend": ["next"] }
+  }
+]
+```
+
+The tree keeps its shape, so `files/components/day/grid.tsx` lands at `apps/admin/components/calendar/day/grid.tsx`. Every file still reaches the lockfile as its own entry, so `grit plugin remove` deletes exactly what was written and needs no second list, which is the property the issue predicted and which a real install and removal confirmed.
+
+#### The bug underneath it
+
+A directory named in `files[].from` was accepted and then installed nothing. `validate` called `os.Stat`, which a directory passes; `os.ReadFile` failed at install time; and the failure was swallowed by a `continue` whose comment read "a file that vanished between then and now", which is true of a deleted file and not of a directory. So the entry wrote nothing and the install reported success.
+
+Refused now, with a message naming the key to use instead, and so is the inverse: a file in `directories[].from`. So is an empty tree, which is the same failure, and so is a symlink inside one, because a link in somebody else's plugin is a way to install a file from outside it. `safeRelative` runs on every destination a tree produces rather than only on the prefix the manifest wrote down.
+
+Nothing is filtered out of a tree, deliberately. A rule that skips dotfiles is a rule somebody has to learn, and the install prints every file it writes, so a stray `.DS_Store` is visible in the output where a silent exclusion would not be.
+
+#### The skeleton shows both forms
+
+`grit plugin new` now writes a `directories` entry for its Go package and a `files` entry for its one admin component, which is the distinction worth teaching: a directory for a group that shares a destination and a `when` clause, a file for a single file or an exception. The generated README explains both.
+
+Writing that README turned up something embarrassing. It contained `So `files/api/` + pkg + `.go`` literally: a Go concatenation that never ran, because its backticks were written inside the string rather than outside it. The file compiled, every other test passed, and the only way to see it was to generate a plugin and read it, which is how it was found. There is a guard for that class of mistake now, over everything the skeleton writes.
+
+#### Verified
+
+A generated skeleton plugin installed into a real project through a directory entry: two files written, the API built, the test it shipped passed, both files recorded separately in the lockfile, then `grit plugin remove` deleted both and reverted both patches and the API still built. Plus ten unit tests covering the refusals, the `when` clause on a tree, the escape attempts and the placeholder expansion.
+
+
 ## v3.555.0 - November 20, 2026
 
 ### The Vite admin's tests can import its own code

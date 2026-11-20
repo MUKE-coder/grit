@@ -336,7 +336,11 @@ export default function PluginAuthoringPage() {
             language="text"
             code={`my-plugin/
   plugin.json          the manifest
-  files/               file bodies, referenced by "from"`}
+  files/               file bodies, referenced by "from"
+    config.ts          one file, a "files" entry
+    components/        a group, a "directories" entry
+      calendar-view.tsx
+      day/grid.tsx     keeps its shape under "to"`}
           />
           <CodeBlock
             language="json"
@@ -347,8 +351,11 @@ export default function PluginAuthoringPage() {
   "nodeDeps": [
     { "name": "date-fns", "version": "4.1.0", "workspace": "apps/admin" }
   ],
+  "directories": [
+    { "from": "files/components", "to": "apps/admin/components/calendar" }
+  ],
   "files": [
-    { "from": "files/calendar.tsx", "to": "apps/admin/components/calendar.tsx" }
+    { "from": "files/config.ts", "to": "apps/admin/config/calendar.ts" }
   ],
   "injections": [
     {
@@ -361,6 +368,28 @@ export default function PluginAuthoringPage() {
 }`}
           />
           <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            <code>directories</code> installs a whole tree and keeps its shape, so{' '}
+            <code>files/components/day/grid.tsx</code> lands at{' '}
+            <code>apps/admin/components/calendar/day/grid.tsx</code>. Use it for a group of files
+            that share a destination and a <code>when</code> clause, which is most of them, and
+            use <code>files</code> for a single file or an exception. Both can appear in one
+            manifest.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Every file a tree produces is recorded in the lockfile as its own entry, so{' '}
+            <code>grit plugin remove</code> deletes exactly what was written and needs no second
+            list. Nothing is filtered out of a tree: the install prints every file it writes, so a
+            stray <code>.DS_Store</code> shows up in the output rather than in somebody&apos;s
+            repository. Symlinks are refused, because a link in a plugin&apos;s tree is a way to
+            install a file from outside it.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            A directory named in <code>files[].from</code> is refused with a message pointing here.
+            It used to be accepted and then install nothing, reporting success, which is{' '}
+            <a href="https://github.com/MUKE-coder/grit/issues/227" target="_blank"
+            rel="noopener noreferrer">grit#227</a> and the reason this key exists.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
             File bodies get <code>{'{{MODULE}}'}</code> and <code>{'{{PROJECT}}'}</code> substituted,
             so a plugin does not need to know the module path of the project installing it. Install
             it from a path or straight from a repository:

@@ -56,9 +56,37 @@ cd apps/api && go build ./...
 
 ## The manifest
 
-Required: ` + "`name`" + `, ` + "`version`" + `, ` + "`summary`" + `, and at least one file or
-injection. A plugin with neither does nothing, and ` + "`grit plugin add`" + ` says so
-rather than reporting success.
+Required: ` + "`name`" + `, ` + "`version`" + `, ` + "`summary`" + `, and at least one file,
+directory or injection. A plugin with none does nothing, and ` + "`grit plugin add`" + `
+says so rather than reporting success.
+
+### files and directories
+
+` + "`files`" + ` names one file each. ` + "`directories`" + ` installs a whole tree and
+keeps its shape, which is what the ` + "`files/api`" + ` entry in this plugin does:
+
+` + fence + `json
+"directories": [
+  { "from": "files/api", "to": "{{API_ROOT}}/internal/` + pkg + `" }
+]
+` + fence + `
+
+So ` + "`" + `files/api/` + pkg + `.go` + "`" + ` and ` + "`" + `files/api/` + pkg + `_test.go` + "`" + `
+both land under one destination, and adding a third file to that package means
+adding a file rather than editing the manifest as well.
+
+Use a directory for a group that shares a destination and a ` + "`when`" + ` clause,
+and ` + "`files`" + ` for a single file or an exception. The admin card here is a
+` + "`files`" + ` entry because it is one file with a ` + "`when`" + ` of its own.
+
+Every file a tree produces is recorded in the lockfile separately, so removal
+deletes exactly what was written. Nothing is filtered: ` + "`grit plugin add`" + `
+prints every file it writes, so a stray ` + "`.DS_Store`" + ` shows up in the output
+rather than in somebody's repository. Symlinks are refused, because a link
+inside a tree is a way to install a file from outside it.
+
+A directory named in ` + "`files[].from`" + ` is refused. It used to be accepted and
+then install nothing while reporting success.
 
 ### Placeholders
 

@@ -3,8 +3,11 @@ package plugin
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -74,6 +77,20 @@ func LoadDir(dir string) (Plugin, error) {
 				}
 				out[expand(f.To, ctx)] = expand(string(body), ctx)
 			}
+			for _, d := range m.Directories {
+				if !d.When.matches(ctx) {
+					continue
+				}
+				for rel, body := range readTree(filepath.Join(dir, d.From)) {
+					// The tree's shape is kept under "to", so a plugin's
+					// files/components/day/grid.tsx lands at
+					// <to>/day/grid.tsx. Slashes, not the host separator: a
+					// destination is a project path, and a Windows backslash
+					// in one would travel into the lockfile.
+					to := path.Join(expand(d.To, ctx), rel)
+					out[to] = expand(body, ctx)
+				}
+			}
 			return out
 		},
 
@@ -114,13 +131,29 @@ type localManifest struct {
 	NodeDeps    []Dependency `json:"nodeDeps"`
 	NextSteps   []string     `json:"nextSteps"`
 
-	Files      []localFile      `json:"files"`
-	Injections []localInjection `json:"injections"`
+	Files       []localFile      `json:"files"`
+	Directories []localDirectory `json:"directories"`
+	Injections  []localInjection `json:"injections"`
 }
 
 type localFile struct {
 	From string     `json:"from"` // relative to the plugin directory
 	To   string     `json:"to"`   // relative to the project root
+	When whenClause `json:"when"`
+}
+
+// localDirectory installs a whole tree, keeping its shape.
+//
+// Without it a plugin lists every file it writes one by one, repeating the
+// same "to" prefix and the same "when" clause for each. grit-calendar needed
+// nine entries for four groups of files, and adding a component meant editing
+// the tree and the manifest and keeping the two in step (grit#227).
+//
+// Every file still reaches the lockfile as its own entry, so removal replays
+// the install exactly and needs no second list.
+type localDirectory struct {
+	From string     `json:"from"` // a directory, relative to the plugin directory
+	To   string     `json:"to"`   // a directory, relative to the project root
 	When whenClause `json:"when"`
 }
 
@@ -196,8 +229,8 @@ func (m localManifest) validate(dir string) error {
 	if strings.TrimSpace(m.Summary) == "" {
 		return fmt.Errorf("plugin.json: summary is required (it is what `grit plugin list` shows)")
 	}
-	if len(m.Files) == 0 && len(m.Injections) == 0 {
-		return fmt.Errorf("plugin.json: a plugin with no files and no injections does nothing")
+	if len(m.Files) == 0 && len(m.Directories) == 0 && len(m.Injections) == 0 {
+		return fmt.Errorf("plugin.json: a plugin with no files, no directories and no injections does nothing")
 	}
 
 	for i, f := range m.Files {
@@ -210,8 +243,54 @@ func (m localManifest) validate(dir string) error {
 		if err := safeRelative(f.To); err != nil {
 			return fmt.Errorf("plugin.json: files[%d].to %q: %w", i, f.To, err)
 		}
-		if _, err := os.Stat(filepath.Join(dir, f.From)); err != nil {
+		info, err := os.Stat(filepath.Join(dir, f.From))
+		if err != nil {
 			return fmt.Errorf("plugin.json: files[%d].from %q is not in the plugin directory", i, f.From)
+		}
+		// A directory used to pass this stat and then fail the read at install
+		// time, where the error was swallowed as "a file that vanished": the
+		// entry installed nothing and the install reported success (grit#227).
+		if info.IsDir() {
+			return fmt.Errorf("plugin.json: files[%d].from %q is a directory. "+
+				"Use a \"directories\" entry for a tree, or name a file here", i, f.From)
+		}
+	}
+
+	for i, d := range m.Directories {
+		if d.From == "" || d.To == "" {
+			return fmt.Errorf("plugin.json: directories[%d] needs both \"from\" and \"to\"", i)
+		}
+		if err := safeRelative(d.From); err != nil {
+			return fmt.Errorf("plugin.json: directories[%d].from %q: %w", i, d.From, err)
+		}
+		if err := safeRelative(d.To); err != nil {
+			return fmt.Errorf("plugin.json: directories[%d].to %q: %w", i, d.To, err)
+		}
+		info, err := os.Stat(filepath.Join(dir, d.From))
+		if err != nil {
+			return fmt.Errorf("plugin.json: directories[%d].from %q is not in the plugin directory", i, d.From)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("plugin.json: directories[%d].from %q is a file. "+
+				"Use a \"files\" entry for one file", i, d.From)
+		}
+		// Checked here rather than at install, where there is nothing to
+		// return an error to: the whole point of this pass is that a manifest
+		// which installs nothing says so before it installs nothing.
+		tree, err := treeFiles(filepath.Join(dir, d.From))
+		if err != nil {
+			return fmt.Errorf("plugin.json: directories[%d].from %q: %w", i, d.From, err)
+		}
+		if len(tree) == 0 {
+			return fmt.Errorf("plugin.json: directories[%d].from %q holds no files, so it installs nothing", i, d.From)
+		}
+		// Every destination the tree produces, not just the prefix. A file
+		// named ../x inside the tree would otherwise climb out of the project
+		// after the prefix was joined.
+		for _, rel := range tree {
+			if err := safeRelative(path.Join(d.To, rel)); err != nil {
+				return fmt.Errorf("plugin.json: directories[%d] would install %q: %w", i, rel, err)
+			}
 		}
 	}
 
@@ -238,6 +317,66 @@ func (m localManifest) validate(dir string) error {
 		}
 	}
 	return nil
+}
+
+// treeFiles lists a directory's files, as slash-separated paths relative to it.
+//
+// Symlinks are refused rather than followed. A plugin is somebody else's code,
+// and a link named files/components/x.tsx pointing at /etc/passwd would be
+// read and installed into the project without comment, which is the same hole
+// safeRelative exists to close from the other direction.
+//
+// Nothing is filtered, deliberately. A rule that skips dotfiles would be a
+// rule somebody has to learn, and the install prints every file it writes, so
+// a stray .DS_Store is visible in the output where a silent exclusion would
+// not be.
+func treeFiles(root string) ([]string, error) {
+	var out []string
+	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.Type()&fs.ModeSymlink != 0 {
+			rel, _ := filepath.Rel(root, p)
+			return fmt.Errorf("%s is a symlink; a plugin's files have to be real files",
+				filepath.ToSlash(rel))
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, relErr := filepath.Rel(root, p)
+		if relErr != nil {
+			return relErr
+		}
+		out = append(out, filepath.ToSlash(rel))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// readTree is treeFiles with the contents, for the install.
+//
+// A file that cannot be read is skipped, the same way a missing single file is:
+// validate has already walked this tree, so anything failing here vanished
+// between load and install, and skipping beats a panic mid-install.
+func readTree(root string) map[string]string {
+	out := map[string]string{}
+	names, err := treeFiles(root)
+	if err != nil {
+		return out
+	}
+	for _, rel := range names {
+		body, readErr := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
+		if readErr != nil {
+			continue
+		}
+		out[rel] = string(body)
+	}
+	return out
 }
 
 // safeRelative refuses paths that climb out of their root.
