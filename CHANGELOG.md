@@ -23,6 +23,23 @@ Also worth knowing:
 ---
 
 
+## v3.559.0 - November 20, 2026
+
+### The first community plugin
+
+[grit-calendar](https://github.com/daljo25/grit-calendar) by [daljo25](https://github.com/daljo25) is listed in the community index, which has been empty since it was built. Monthly, weekly, daily and lane views for any resource with a date field, plus a dashboard widget. MIT.
+
+```bash
+grit plugin add github.com/daljo25/grit-calendar
+```
+
+Listing is not endorsement and the review is deliberately shallow, which the index says about itself: that the repository exists, that it holds a plugin.json, that it installs and removes cleanly on a fresh project, and that it is not obviously hostile. Nobody audits the code. It writes files into your project and you should read them, the same as any dependency.
+
+What that review cost, in Grit changes, is the four releases before this one. It found that `grit plugin remove` left a plugin's npm dependency behind (v3.557.0), that five admin extension points had no marker so the plugin anchored on generated source (v3.558.0), and that one of those anchors meant its dashboard widget silently never appeared on three of the four admin styles. The plugin's own two issues, [#227](https://github.com/MUKE-coder/grit/issues/227) and [#229](https://github.com/MUKE-coder/grit/issues/229), are v3.556.0 and v3.555.0.
+
+Which is the argument for having a community index at all. One person writing one plugin carefully found five framework faults, three of them silent.
+
+
 ## v3.558.0 - November 20, 2026
 
 ### Five admin markers, and {{ADMIN_ROOT}}

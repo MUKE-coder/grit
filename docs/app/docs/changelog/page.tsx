@@ -72,6 +72,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.559.0 */}
+            <div className="mb-12" id="v3.559.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.559.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The first community plugin</h3>
+                <p>
+                  <a href="https://github.com/daljo25/grit-calendar"
+                  target="_blank" rel="noopener noreferrer">grit-calendar</a> by{' '}
+                  <a href="https://github.com/daljo25" target="_blank"
+                  rel="noopener noreferrer">daljo25</a> is listed in the
+                  community index, which has been empty since it was built.
+                  Monthly, weekly, daily and lane views for any resource with a
+                  date field, plus a dashboard widget. MIT.
+                </p>
+                <CodeBlock
+                  terminal
+                  code={`grit plugin add github.com/daljo25/grit-calendar`}
+                />
+                <p className="mt-4">
+                  Listing is not endorsement and the review is deliberately
+                  shallow, which the index says about itself: that the
+                  repository exists, that it holds a plugin.json, that it
+                  installs and removes cleanly on a fresh project, and that it
+                  is not obviously hostile. Nobody audits the code. It writes
+                  files into your project and you should read them, the same as
+                  any dependency.
+                </p>
+                <p>
+                  What that review cost, in Grit changes, is the four releases
+                  before this one. It found that{' '}
+                  <code>grit plugin remove</code> left a plugin&apos;s npm
+                  dependency behind (v3.557.0), that five admin extension points
+                  had no marker so the plugin anchored on generated source
+                  (v3.558.0), and that one of those anchors meant its dashboard
+                  widget silently never appeared on three of the four admin
+                  styles. The plugin&apos;s own two issues,{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/227"
+                  target="_blank" rel="noopener noreferrer">#227</a> and{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/229"
+                  target="_blank" rel="noopener noreferrer">#229</a>, are
+                  v3.556.0 and v3.555.0.
+                </p>
+                <p>
+                  Which is the argument for having a community index at all. One
+                  person writing one plugin carefully found five framework
+                  faults, three of them silent.
+                </p>
+              </div>
+            </div>
+
             {/* v3.558.0 */}
             <div className="mb-12" id="v3.558.0">
               <div className="flex items-center gap-3 mb-4">

@@ -16,5 +16,13 @@
     "obviously hostile. Nobody audits the code for you. It writes files into",
     "your project and you should read them, the same as any dependency."
   ],
-  "plugins": []
+  "plugins": [
+    {
+      "name": "calendar",
+      "author": "daljo25",
+      "repo": "github.com/daljo25/grit-calendar",
+      "summary": "Monthly, weekly, daily and lane views for any resource with a date field, plus a dashboard widget",
+      "added": "2026-11-20"
+    }
+  ]
 }
