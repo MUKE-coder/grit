@@ -71,7 +71,7 @@ func TestViteAppsDeclareTheirTestLibraries(t *testing.T) {
 // root one in Tailwind v3 style, and failed on a plugin nobody had installed.
 func TestVitestConfigsPinPostCSS(t *testing.T) {
 	for name, src := range map[string]string{
-		"admin": adminVitestConfig(),
+		"admin": adminVitestConfig(Options{}),
 		"web":   webVitestConfig(),
 	} {
 		if !strings.Contains(src, "css: { postcss: { plugins: [] } }") {

@@ -72,6 +72,89 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.555.0 */}
+            <div className="mb-12" id="v3.555.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.555.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The Vite admin&apos;s tests can import its own code</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/229"
+                  target="_blank" rel="noopener noreferrer">#229</a>, reported
+                  by{' '}
+                  <a href="https://github.com/daljo25" target="_blank"
+                  rel="noopener noreferrer">daljo25</a> with a one-line
+                  reproduction. Three files decide what <code>@</code> means in
+                  a Vite admin, and they did not agree:{' '}
+                  <code>tsconfig.json</code> mapped <code>@/*</code> to{' '}
+                  <code>./src/*</code>, <code>vite.config.ts</code> resolved{' '}
+                  <code>@</code> to <code>./src</code>, and{' '}
+                  <code>vitest.config.ts</code> resolved it to the app root.
+                </p>
+                <p>
+                  So the app ran, <code>tsc</code> passed, and a test that
+                  imported app code failed before it started with{' '}
+                  <code>Failed to resolve import &quot;@/lib/utils&quot;</code>.
+                  One line.
+                </p>
+
+                <h4>What the workaround had cost</h4>
+                <p>
+                  This is the part worth reading. The scaffold had already
+                  worked around it twice, and both workarounds hid how much was
+                  missing.
+                </p>
+                <p>
+                  Eight component tests were written for the Next admin only,
+                  with a comment in the writer naming the Vite config as the
+                  reason: the table, pagination, the form schema, If-Match, the
+                  dropzone, the field inputs, conditional fields and password
+                  strength. So one supported architecture had eight fewer tests
+                  than the other for a reason that had nothing to do with it,
+                  and the gap was invisible because both suites were green. One
+                  just had less in it.
+                </p>
+                <p>
+                  And the TanStack tests imported <code>@/src/lib</code> rather
+                  than <code>@/lib</code>, which resolved only because the alias
+                  pointed at the app root. That is a workaround for the bug
+                  rather than a convention, and it meant one admin whose tests
+                  imported differently from its own components.
+                </p>
+                <p>
+                  Both are gone. All eight component tests ship to both admins,
+                  verified on a real Vite admin with its dependencies installed:
+                  13 test files, 77 tests, green. The only test that stays on
+                  one side is <code>proxy.test.ts</code>, because{' '}
+                  <code>proxy.ts</code> is the Next admin&apos;s edge gate and
+                  the Vite admin guards routes in its router, so there is
+                  nothing there for it to cover.
+                </p>
+
+                <h4>Guarded as a set</h4>
+                <p>
+                  The three aliases are now read in one test, because a test per
+                  file passes while the set disagrees, which is the whole shape
+                  of this bug. It reads the real templates rather than asserting
+                  from memory, so the day one of them moves is the day it fails.
+                </p>
+                <h4>An existing project gets it on upgrade</h4>
+                <p>
+                  The test files travel with <code>grit upgrade</code> and are
+                  manifest-guarded, so a project that has edited its{' '}
+                  <code>vitest.config.ts</code> keeps its version and is told.
+                  An upgraded Vite admin gains the eight tests: if one fails
+                  there, it is because that component has been customised, which
+                  is worth knowing rather than worth hiding.
+                </p>
+              </div>
+            </div>
+
             {/* v3.554.0 */}
             <div className="mb-12" id="v3.554.0">
               <div className="flex items-center gap-3 mb-4">

@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.555.0 - November 20, 2026
+
+### The Vite admin's tests can import its own code
+
+[#229](https://github.com/MUKE-coder/grit/issues/229), reported by [daljo25](https://github.com/daljo25) with a one-line reproduction. Three files decide what `@` means in a Vite admin, and they did not agree: `tsconfig.json` mapped `@/*` to `./src/*`, `vite.config.ts` resolved `@` to `./src`, and `vitest.config.ts` resolved it to the app root.
+
+So the app ran, `tsc` passed, and a test that imported app code failed before it started with `Failed to resolve import "@/lib/utils"`. One line.
+
+#### What the workaround had cost
+
+This is the part worth reading. The scaffold had already worked around it twice, and both workarounds hid how much was missing.
+
+Eight component tests were written for the Next admin only, with a comment in the writer naming the Vite config as the reason: the table, pagination, the form schema, If-Match, the dropzone, the field inputs, conditional fields and password strength. So one supported architecture had eight fewer tests than the other for a reason that had nothing to do with it, and the gap was invisible because both suites were green. One just had less in it.
+
+And the TanStack tests imported `@/src/lib` rather than `@/lib`, which resolved only because the alias pointed at the app root. That is a workaround for the bug rather than a convention, and it meant one admin whose tests imported differently from its own components.
+
+Both are gone. All eight component tests ship to both admins, verified on a real Vite admin with its dependencies installed: 13 test files, 77 tests, green. The only test that stays on one side is `proxy.test.ts`, because `proxy.ts` is the Next admin's edge gate and the Vite admin guards routes in its router, so there is nothing there for it to cover.
+
+#### Guarded as a set
+
+The three aliases are now read in one test, because a test per file passes while the set disagrees, which is the whole shape of this bug. It reads the real templates rather than asserting from memory, so the day one of them moves is the day it fails.
+
+#### An existing project gets it on upgrade
+
+The test files travel with `grit upgrade` and are manifest-guarded, so a project that has edited its `vitest.config.ts` keeps its version and is told. An upgraded Vite admin gains the eight tests: if one fails there, it is because that component has been customised, which is worth knowing rather than worth hiding.
+
+
 ## v3.554.0 - November 19, 2026
 
 ### A sweep over every tenant, and a notification sent once

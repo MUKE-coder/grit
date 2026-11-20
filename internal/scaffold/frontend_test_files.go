@@ -19,32 +19,46 @@ func writeFrontendTestFiles(root string, opts Options) error {
 	}
 
 	if opts.ShouldIncludeAdmin() {
-		files[filepath.Join(adminRoot, "vitest.config.ts")] = adminVitestConfig()
+		files[filepath.Join(adminRoot, "vitest.config.ts")] = adminVitestConfig(opts)
 		files[filepath.Join(adminRoot, "vitest.setup.ts")] = vitestSetup()
 		files[filepath.Join(adminRoot, "__tests__", "login.test.tsx")] = adminLoginTest()
 		files[filepath.Join(adminRoot, "__tests__", "utils.test.ts")] = adminUtilsTest()
-		libImport := "@/lib"
-		if opts.Frontend == FrontendTanStack {
-			libImport = "@/src/lib"
-		}
+		// One spelling, the one every other file in both admins uses. It was
+		// "@/src/lib" for the Vite admin, which resolved only because its
+		// vitest alias pointed at the app root: a workaround for that bug
+		// rather than a convention, and it stopped being needed when the
+		// alias was fixed (grit#229).
+		const libImport = "@/lib"
 		files[filepath.Join(adminRoot, "__tests__", "form-values.test.ts")] = adminFormValuesTest(libImport)
 		files[filepath.Join(adminRoot, "__tests__", "tiptap-extensions.test.ts")] = adminTiptapExtensionsTest(libImport)
 		files[filepath.Join(adminRoot, "__tests__", "safe-href.test.ts")] = adminSafeHrefTest(libImport)
-		// A component test needs the component's own "@/" imports to resolve,
-		// and the Vite admin's vitest config points "@" at the app root, not
-		// src/. The Next.js admin runs it.
+		// The component tests, in both admins since grit#229.
+		//
+		// They were written for the Next admin alone, and the comment here said
+		// why: a component test needs the component's own "@/" imports to
+		// resolve, and the Vite admin's vitest alias pointed at the app root
+		// rather than src/. That was this bug, not a property of the Vite
+		// admin, and with the alias fixed all eight pass there: verified on a
+		// real project with node_modules, 13 files and 77 tests.
+		//
+		// It is worth naming what the workaround cost. A supported
+		// architecture had eight fewer tests than the other one for a reason
+		// that had nothing to do with it, and the gap was invisible because
+		// both suites were green.
+		files[filepath.Join(adminRoot, "__tests__", "data-table.test.tsx")] = adminDataTableTest()
+		files[filepath.Join(adminRoot, "__tests__", "table-pagination.test.tsx")] = adminTablePaginationTest()
+		files[filepath.Join(adminRoot, "__tests__", "form-schema.test.tsx")] = adminFormSchemaTest()
+		files[filepath.Join(adminRoot, "__tests__", "if-match.test.tsx")] = adminIfMatchTest()
+		files[filepath.Join(adminRoot, "__tests__", "dropzone.test.tsx")] = adminDropzoneTest()
+		files[filepath.Join(adminRoot, "__tests__", "field-inputs.test.tsx")] = adminFieldInputsTest()
+		files[filepath.Join(adminRoot, "__tests__", "conditional-fields.test.tsx")] = adminConditionalFieldsTest()
+		files[filepath.Join(adminRoot, "__tests__", "password-strength.test.tsx")] = adminPasswordStrengthTest()
+
+		// proxy.ts is the Next admin's edge gate, and the one test that stays
+		// on one side. The Vite admin has no equivalent: its routes are
+		// guarded in the router, so there is nothing for this to cover.
 		if opts.Frontend != FrontendTanStack {
-			// proxy.ts is the Next admin's edge gate. The Vite admin has no
-			// equivalent: its routes are guarded in the router.
 			files[filepath.Join(adminRoot, "__tests__", "proxy.test.ts")] = adminProxyTest()
-			files[filepath.Join(adminRoot, "__tests__", "data-table.test.tsx")] = adminDataTableTest()
-			files[filepath.Join(adminRoot, "__tests__", "table-pagination.test.tsx")] = adminTablePaginationTest()
-			files[filepath.Join(adminRoot, "__tests__", "form-schema.test.tsx")] = adminFormSchemaTest()
-			files[filepath.Join(adminRoot, "__tests__", "if-match.test.tsx")] = adminIfMatchTest()
-			files[filepath.Join(adminRoot, "__tests__", "dropzone.test.tsx")] = adminDropzoneTest()
-			files[filepath.Join(adminRoot, "__tests__", "field-inputs.test.tsx")] = adminFieldInputsTest()
-			files[filepath.Join(adminRoot, "__tests__", "conditional-fields.test.tsx")] = adminConditionalFieldsTest()
-			files[filepath.Join(adminRoot, "__tests__", "password-strength.test.tsx")] = adminPasswordStrengthTest()
 		}
 	}
 
@@ -89,7 +103,26 @@ export default defineConfig({
 `
 }
 
-func adminVitestConfig() string {
+// adminVitestConfig is the admin's test runner config.
+//
+// The alias root is a parameter because the two admins disagree about what "@"
+// means, and this file used to pick one of them for both. The Next admin maps
+// @/* to ./*, the Vite admin to ./src/*, and this said "." in both: so in a
+// Vite project tsconfig and vite.config resolved @/lib/utils and the test
+// runner did not, and a test importing app code failed before it ran
+// (grit#229, reported with the one-line reproduction).
+//
+// It was the quiet kind of wrong. The app worked, tsc passed, and only a test
+// that reached for app code saw it, which is how the scaffold came to ship
+// eight component tests to the Next admin alone and to spell its TanStack
+// imports "@/src/lib": both were workarounds for this line.
+func adminVitestConfig(opts Options) string {
+	// The same spelling the admin's own vite.config and tsconfig use, so three
+	// files cannot disagree about one alias again.
+	aliasRoot := "."
+	if opts.Frontend == FrontendTanStack {
+		aliasRoot = "./src"
+	}
 	return `import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
@@ -109,7 +142,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "."),
+      "@": resolve(__dirname, "` + aliasRoot + `"),
     },
   },
 });
