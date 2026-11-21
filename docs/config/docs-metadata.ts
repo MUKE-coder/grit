@@ -323,7 +323,7 @@ export const docsMetadata: Record<string, DocPage> = {
   '/docs/benchmarks': {
     title: 'Benchmarks: Grit vs Laravel, Django, Next.js, Express, Bun and Encore.ts',
     description:
-      'Reproducible k6 benchmarks of Grit against Laravel 13, Django 5.1, Next.js 15, Express 5, Bun and Encore.ts: the same public CRUD resource, the same Postgres, identical container limits, 10,000 identical rows restored before every run, three repetitions, medians reported, every framework on its own ORM. Includes the full harness, the CPU evidence for which results are framework-bound and which are database-bound, the scenario Grit loses, and the three bugs the benchmark found in Grit itself.', // toolchain-version: historical (benchmark record: the versions that were measured)
+      'Reproducible k6 benchmarks of Grit against Laravel 13, Django 5.1, Next.js 15, Express 5, Bun and Encore.ts: the same public CRUD resource, the same Postgres, identical container limits, 10,000 identical rows restored before every run, three repetitions, medians reported, every framework on its own ORM. Includes the full harness, the CPU evidence for which results are framework-bound and which are database-bound, the scenario Grit loses, and the three bugs the benchmark found in Grit itself.',
   },
   '/docs/deployment/from-github': {
     title: 'Deploy from GitHub',
