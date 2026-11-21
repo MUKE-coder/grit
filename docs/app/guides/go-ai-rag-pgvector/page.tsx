@@ -419,7 +419,8 @@ func buildPrompt(chunks []Chunk, question string) string {
       <Section id="with-grit" title="Generated">
         <CodeBlock
           terminal
-          code={`grit add ai                                  # providers, streaming, usage tracking
+          code={`# The AI battery is already in a generated project: the providers,
+# the streaming endpoint and the usage tracking are scaffolded.
 grit generate resource Document \\
   --fields "title:string,content:text,embedding:vector[1536]"`}
         />

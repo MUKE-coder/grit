@@ -361,7 +361,9 @@ products, err := cache.Remember(ctx, c, key, 10*time.Minute,
         />
         <CodeBlock
           terminal
-          code={`grit add cache      # Redis client, Remember, the middleware and the keys`}
+          code={`# Nothing to install: the Redis client, Remember, the response
+# middleware and the key helpers are scaffolded into every project.
+grit start`}
         />
         <p>
           There is also response caching as middleware for public read endpoints, keyed on the

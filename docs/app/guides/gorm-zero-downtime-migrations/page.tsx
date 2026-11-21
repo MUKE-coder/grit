@@ -343,10 +343,10 @@ ORDER BY query_start;`}
         <CodeBlock
           terminal
           code={`grit generate migration add_total_cents_to_invoices
-grit generate migration --index invoices status     # emits CONCURRENTLY
+grit generate migration add_status_index --index invoices:status   # CONCURRENTLY
 grit migrate                                        # advisory lock, checksums
-grit migrate --status                               # what has run
-grit migrate --down 1`}
+grit migrate status                                 # what each run changed
+grit migrate down                                   # undo the last run`}
         />
         <p>
           The <code>--index</code> form writes <code>CREATE INDEX CONCURRENTLY</code> and marks

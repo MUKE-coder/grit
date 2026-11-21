@@ -161,7 +161,7 @@ db.Where("id = ? AND organisation_id = ?", id, orgID).First(&project)`}
           code={`grit new myapp
 cd myapp
 docker compose up -d        # Postgres, Redis, MinIO, Mailhog
-grit add multitenant        # organisations, membership, scoped queries
+grit plugin add multitenant # organisations, membership, scoped queries
 grit migrate
 grit seed
 grit start`}

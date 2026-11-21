@@ -72,6 +72,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.561.0 */}
+            <div className="mb-12" id="v3.561.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.561.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Thirty guides, a glossary, two tools and two comparisons</h3>
+                <p>
+                  A large documentation release, and one real bug fix that
+                  came out of writing it.
+                </p>
+
+                <h4>/guides</h4>
+                <p>
+                  Thirty pages at <a href="/guides">/guides</a>, in its own
+                  section outside the documentation: fifteen for people
+                  starting out and fifteen for the decisions that are
+                  expensive to get wrong. Each answers its question in plain
+                  Go and React first, with code that runs whether or not you
+                  use Grit, and the one-command version arrives at the end.
+                </p>
+                <p>
+                  The flagship, building a first full-stack app, was run
+                  rather than asserted: the module init, every endpoint
+                  including the 400 and the 404, the CORS preflight,
+                  create-next-app with those exact flags, and both halves
+                  running together with a task added through the form.
+                </p>
+
+                <h4>A glossary</h4>
+                <p>
+                  <a href="/docs/glossary">71 terms</a>, one sentence each,
+                  every one with its own anchor so anything can link to the
+                  exact definition rather than to the page.
+                </p>
+
+                <h4>Two tools</h4>
+                <p>
+                  <a href="/tools/field-builder">The field builder</a> builds
+                  a <code>--fields</code> string from all 32 types, with the
+                  contextual argument each one takes.{' '}
+                  <a href="/tools/stack-picker">The stack picker</a> asks five
+                  questions and gives the <code>grit new</code> command, with
+                  the architecture explained rather than only named. Both were
+                  verified by driving them in a browser and putting the output
+                  through the real parser and the real binary.
+                </p>
+
+                <h4>Comparisons</h4>
+                <p>
+                  <a href="/vs">/vs</a> holds short head-to-heads against
+                  PocketBase and Encore. Architectural claims only, no
+                  numbers, and each has a section saying plainly when the
+                  other one is the better choice.
+                </p>
+
+                <h4>The fix</h4>
+                <p>
+                  Five <code>--fields</code> strings in the documentation did
+                  not parse, three of them in guides published the day before:{' '}
+                  <code>enum(...)</code> is not a field type, <code>image</code>{' '}
+                  is not one either, and a vector needs its dimension in the
+                  spec. A reader copying them got an error.
+                </p>
+                <p>
+                  There is a test for it now. It walks the docs, pulls out
+                  every <code>--fields</code> value and puts it through the
+                  same parser the CLI uses, 179 of them. Prose is not
+                  compiled, which is how a command that cannot run was
+                  reviewed, built and published.
+                </p>
+              </div>
+            </div>
+
             {/* v3.560.0 */}
             <div className="mb-12" id="v3.560.0">
               <div className="flex items-center gap-3 mb-4">

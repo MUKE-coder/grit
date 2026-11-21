@@ -398,7 +398,7 @@ func TestNoRouteLeaksAcrossTenants(t *testing.T) {
       <Section id="with-grit" title="As generated code">
         <CodeBlock
           terminal
-          code={`grit add multitenant
+          code={`grit plugin add multitenant
 grit generate resource Invoice --fields "number:string,total:money" --owned-by organisation`}
         />
         <p>

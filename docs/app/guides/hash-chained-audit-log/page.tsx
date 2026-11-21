@@ -372,14 +372,17 @@ segment ever existed, which is exactly what deleting it means.`}
       <Section id="with-grit" title="Generated">
         <CodeBlock
           terminal
-          code={`grit add audit
-grit audit verify                  # the whole chain, or a range
-grit audit verify --since 30d`}
+          code={`# The chain is scaffolded into every project. Verification is an
+# endpoint rather than a command, so a scheduled job or a monitor can
+# call it:
+#
+#   GET /admin/activity/integrity
+grit start`}
         />
         <p>
-          That writes the table, the HMAC-keyed chain, the append-only grants and trigger, the
-          verification command, the checkpoints and the admin screen, with the audit write taking
-          the caller&apos;s transaction so an entry cannot exist for a rolled-back action.
+          The table, the HMAC-keyed chain, the append-only grants and trigger, the verification
+          endpoint, the checkpoints and the admin screen are all scaffolded, with the audit write
+          taking the caller&apos;s transaction so an entry cannot exist for a rolled-back action.
         </p>
         <p>
           The key is read from the environment and is deliberately not stored alongside the log,

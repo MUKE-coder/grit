@@ -439,7 +439,8 @@ RESEND_API_KEY=re_...`}
         </p>
         <CodeBlock
           terminal
-          code={`grit generate job SendInvoiceReminder --payload "invoice_id:uint"
+          code={`grit generate job SendInvoiceReminder
+grit generate job RebuildSearchIndex --cron "@every 15m"
 grit start   # api, worker and scheduler together`}
         />
         <p>

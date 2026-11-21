@@ -354,8 +354,11 @@ func (c *Consumer) Handle(ctx context.Context, e Event) error {
       <Section id="with-grit" title="Generated">
         <CodeBlock
           terminal
-          code={`grit add outbox
-grit generate event order.placed --payload "order_id:uint,total:money"`}
+          code={`# The outbox table, its migration and the relay are scaffolded into
+# every project. Writing an event is a call, not a command:
+#
+#   outbox.Write(ctx, tx, outbox.Event{Type: "order.placed", ...})
+grit migrate`}
         />
         <p>
           That writes the table, the migration, the relay with <code>SKIP LOCKED</code> and
