@@ -75,7 +75,7 @@ export function ResourceDefinitionStage() {
       initial={initial}
       poster={poster}
       script={script}
-      play="in-view"
+      play="once"
       cursor={{ at: { x: 566, y: 462 } }}
       theme={dark ? 'dark' : 'light'}
       accent={dark ? '#a99bff' : '#5b47e0'}
@@ -91,19 +91,26 @@ export function ResourceDefinitionStage() {
             </header>
 
             <div className="rd-code">
-              <Text className="rd-ln"><i>export default</i> defineResource({'{'}</Text>
-              <Text className="rd-ln rd-ln--in">name: <b>&apos;Task&apos;</b>,</Text>
+            {/* A code line is a plain span, not the kit's Text, wherever it
+                carries <b> or <i> for syntax colour. Text measures
+                children.length to size its filler bar in minimal fidelity,
+                and the length of an array of three nodes is 3, so those lines
+                came out as three-character bars. At the fidelity this stage
+                runs at, Text renders exactly this span, so nothing moved. The
+                lines whose whole content is one string still use Text. */}
+              <span className="ss-text rd-ln"><i>export default</i> defineResource({'{'}</span>
+              <span className="ss-text rd-ln rd-ln--in">name: <b>&apos;Task&apos;</b>,</span>
               <Text className="rd-ln rd-ln--in">columns: [</Text>
               <div data-target="columns">
-                <Text className="rd-ln rd-ln--in2">{'{'} name: <b>&apos;title&apos;</b>, label: <b>&apos;Title&apos;</b> {'}'},</Text>
-                <Text className="rd-ln rd-ln--in2">{'{'} name: <b>&apos;status&apos;</b>, label: <b>&apos;Status&apos;</b><span className="rd-wide-only">, filter: <i>true</i></span> {'}'},</Text>
-                <Text className="rd-ln rd-ln--in2">{'{'} name: <b>&apos;due_at&apos;</b>, label: <b>&apos;Due&apos;</b> {'}'},</Text>
+                <span className="ss-text rd-ln rd-ln--in2">{'{'} name: <b>&apos;title&apos;</b>, label: <b>&apos;Title&apos;</b> {'}'},</span>
+                <span className="ss-text rd-ln rd-ln--in2">{'{'} name: <b>&apos;status&apos;</b>, label: <b>&apos;Status&apos;</b><span className="rd-wide-only">, filter: <i>true</i></span> {'}'},</span>
+                <span className="ss-text rd-ln rd-ln--in2">{'{'} name: <b>&apos;due_at&apos;</b>, label: <b>&apos;Due&apos;</b> {'}'},</span>
                 <Collapse open={s.added} reveal="clip">
-                  <Text className="rd-ln rd-ln--in2">{'{'} name: <b>&apos;priority&apos;</b>, label: <b>&apos;Priority&apos;</b> {'}'},</Text>
+                  <span className="ss-text rd-ln rd-ln--in2">{'{'} name: <b>&apos;priority&apos;</b>, label: <b>&apos;Priority&apos;</b> {'}'},</span>
                 </Collapse>
               </div>
               <Text className="rd-ln rd-ln--in">],</Text>
-              <Text className="rd-ln">{'}'})</Text>
+              <span className="ss-text rd-ln">{'}'})</span>
             </div>
           </section>
 

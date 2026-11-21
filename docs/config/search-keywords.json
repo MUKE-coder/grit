@@ -556,5 +556,15 @@
     "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue",
     "section": "Plugins",
     "title": "Plugin marketplace"
+  },
+  "/guides": {
+    "keywords": "guide guides tutorial tutorials how to learn walkthrough article go react full stack beginner senior production",
+    "section": "Guides",
+    "title": "All guides"
+  },
+  "/guides/first-go-react-app": {
+    "keywords": "first app tutorial beginner go react full stack golang step by step cors blocked localhost 8080 3000 sqlite gin gorm fetch todo tasks hello world getting started by hand from scratch",
+    "section": "Guides",
+    "title": "Build your first full-stack app with Go and React"
   }
 }

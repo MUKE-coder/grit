@@ -5,6 +5,23 @@
 // `var version` and internal/scaffold.DefaultVersion.
 export const GRIT_VERSION = '3.560.0'
 
+// The toolchain versions a reader needs installed, in one place.
+//
+// The site said Go 1.21+ in the README's summary, Go 1.21+ and Node 18+ in the
+// install page, and Go 1.26 in the prerequisites, which is three answers to
+// the first question anybody asks. These are the real ones, taken from the
+// CLI's own constants: REQUIRED_GO is internal/scaffold.GoToolchainPin, the go
+// directive a generated go.mod carries, and PINNED_PNPM is the pnpmVersion
+// that project's package.json names. REQUIRED_NODE is Next's own floor, from
+// its engines field; the generated Dockerfiles build on Node 22.
+//
+// scripts/check-required-versions.py fails when these drift from the Go
+// source, so the pair cannot quietly disagree. Pages outside the guides still
+// carry their own copies; moving them onto these is the rest of that job.
+export const REQUIRED_GO = '1.26.11'
+export const REQUIRED_NODE = '20.9'
+export const PINNED_PNPM = '10.33.4'
+
 /**
  * Which channel the version above belongs to.
  *

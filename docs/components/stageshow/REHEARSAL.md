@@ -35,7 +35,15 @@ in the order the sentence does.
    moment, in width the row already had.
 4. Payoff holds 3.2s.
 
-Loop about 5.5s, `play="in-view"`, once. Poster is the payoff.
+Loop about 5.5s, `play="once"`: the kit's name for plays when first
+seen, then holds the end. Poster is the payoff.
+
+It shipped as `play="in-view"` in v3.560.0, which is not one of the
+kit's three values. It fell through every branch, so the script ran but
+the stage never marked itself done, and the demo replayed each time it
+scrolled back into view. `tsc` had been saying so; the docs build does
+not read it (`ignoreBuildErrors`), which is why a wrong literal reached
+a release.
 
 No leader. The gap is 12px, which is no path for one, and the gold's own note
 is that where there is no clear path the shared change carries the cause: the

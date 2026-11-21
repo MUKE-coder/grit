@@ -17,8 +17,17 @@ that rewrites it is worse than no checker. Two defences:
   by path     the changelog and the dated learnings posts are history
   by marker   `toolchain-version: historical` on or just above the line
 
+It also checks the constants the guides print from config/site.ts, which is
+the same concern from the other end: REQUIRED_GO and PINNED_PNPM are copies of
+Go constants, and a copy of a version drifts. Node is not pinned anywhere in
+the CLI, so REQUIRED_NODE is compared against Next's own engines field in an
+installed copy, and skipped with a note when there is none, rather than
+asserting a number this has not read.
+
 Run: python docs/scripts/check-toolchain-versions.py
 """
+import glob
+import json
 import os
 import re
 import sys
@@ -28,6 +37,22 @@ DOCS = os.path.dirname(HERE)
 ROOT = os.path.dirname(DOCS)
 
 MARKER = 'toolchain-version: historical'
+
+# How far above a line the marker may sit.
+#
+# It was two lines, which made the marker unusable on the pages that needed it
+# most. A sentence in JSX prose spans several lines, and a comment inserted
+# between two of them removes the space between the words either side of it:
+# JSX drops the whitespace next to an expression at a line boundary, so
+# "matters when" and "you are stuck" render as "matters whenyou are stuck".
+# There was nowhere safe to put it, and eight true sentences about the Go 1.22
+# router failed the check with no remedy that did not break the page.
+#
+# Eight lines reaches the top of an enclosing JSX element or object property,
+# which is somewhere a comment is always safe. The cost is that a marker could
+# cover a second version mention just below it; that is a smaller problem than
+# a marker that cannot be applied at all.
+WINDOW = 8
 
 # Paths whose job is to record the past.
 SKIP_PARTS = (
@@ -61,6 +86,68 @@ def pinned_next():
     return int(m.group(1))
 
 
+
+def pinned_go_patch():
+    """The exact go directive, from internal/scaffold/go_toolchain.go."""
+    src = read(os.path.join(ROOT, 'internal', 'scaffold', 'go_toolchain.go'))
+    m = re.search(r'GoToolchainPin\s*=\s*"([^"]+)"', src)
+    if not m:
+        sys.exit('could not read GoToolchainPin; this checker is now lying')
+    return m.group(1)
+
+
+def pinned_pnpm():
+    """The pnpm every generated project installs with."""
+    src = read(os.path.join(ROOT, 'internal', 'scaffold', 'infra_hygiene_repair.go'))
+    m = re.search(r'pnpmVersion\s*=\s*"([^"]+)"', src)
+    if not m:
+        sys.exit('could not read pnpmVersion; this checker is now lying')
+    return m.group(1)
+
+
+def stated_constants():
+    """What config/site.ts tells a reader to install."""
+    src = read(os.path.join(DOCS, 'config', 'site.ts'))
+    out = {}
+    for name in ('REQUIRED_GO', 'REQUIRED_NODE', 'PINNED_PNPM'):
+        m = re.search(name + r" = '([^']+)'", src)
+        if not m:
+            sys.exit('config/site.ts no longer exports %s, so the guides are '
+                     'printing something this cannot check' % name)
+        out[name] = m.group(1)
+    return out
+
+
+def constant_problems():
+    """config/site.ts against the Go constants it copies."""
+    stated = stated_constants()
+    found = []
+    for name, actual, source in (
+        ('REQUIRED_GO', pinned_go_patch(), 'internal/scaffold.GoToolchainPin'),
+        ('PINNED_PNPM', pinned_pnpm(), "internal/scaffold's pnpmVersion"),
+    ):
+        if stated[name] != actual:
+            found.append('config/site.ts %s is %s, %s is %s'
+                         % (name, stated[name], source, actual))
+
+    # Next's engines field, from any installed copy. Read, not assumed.
+    installed = sorted(glob.glob(os.path.join(
+        ROOT, 'examples', '*', 'node_modules', 'next', 'package.json')))
+    if installed:
+        with open(installed[0], encoding='utf-8') as fh:
+            engines = json.load(fh).get('engines', {}).get('node', '')
+        floor = re.search(r'(\d+\.\d+)', engines)
+        if floor and floor.group(1) != stated['REQUIRED_NODE']:
+            found.append("config/site.ts REQUIRED_NODE is %s, but Next's "
+                         'engines field says %s'
+                         % (stated['REQUIRED_NODE'], engines))
+    else:
+        print('note: no installed Next under examples/*/node_modules, so '
+              'REQUIRED_NODE (%s) was not checked against its engines field'
+              % stated['REQUIRED_NODE'])
+    return found
+
+
 GO = re.compile(r'\bGo (\d+)\.(\d+)')
 NEXT = re.compile(r'\bNext\.js (\d+)')
 
@@ -68,6 +155,8 @@ NEXT = re.compile(r'\bNext\.js (\d+)')
 def main():
     go_major, go_minor = pinned_go()
     next_major = pinned_next()
+
+    constants = constant_problems()
 
     problems = []
     for dirpath, dirs, names in os.walk(os.path.join(DOCS, 'app')):
@@ -85,7 +174,7 @@ def main():
             except (OSError, UnicodeDecodeError):
                 continue
             for i, line in enumerate(lines, 1):
-                near = lines[max(0, i - 3):i]
+                near = lines[max(0, i - WINDOW - 1):i]
                 if MARKER in line or any(MARKER in n for n in near):
                     continue
 
@@ -103,10 +192,22 @@ def main():
                             f'the scaffold pins Next.js {next_major}',
                             line.strip()[:100]))
 
+    if constants:
+        print('the versions the guides print disagree with the CLI:')
+        print('')
+        for line in constants:
+            print('  ' + line)
+        print('')
+        print('update docs/config/site.ts, or move the Go constant on '
+              'purpose and then update it')
+        print('')
+
     if not problems:
-        print(f'every stated version is current '
-              f'(Go {go_major}.{go_minor}+, Next.js {next_major})')
-        return 0
+        if not constants:
+            print(f'every stated version is current '
+                  f'(Go {go_major}.{go_minor}+, Next.js {next_major})')
+            return 0
+        return 1
 
     print(f'{len(problems)} stale version(s). Grit needs Go '
           f'{go_major}.{go_minor}+ and pins Next.js {next_major}:\n')

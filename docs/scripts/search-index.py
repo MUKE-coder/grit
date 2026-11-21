@@ -33,6 +33,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.dirname(HERE)
 APP_DOCS = os.path.join(DOCS, "app", "docs")
 APP_COURSES = os.path.join(DOCS, "app", "courses")
+APP_GUIDES = os.path.join(DOCS, "app", "guides")
 METADATA = os.path.join(DOCS, "config", "docs-metadata.ts")
 CURATED = os.path.join(DOCS, "config", "search-keywords.json")
 OUT = os.path.join(DOCS, "config", "search-index.generated.ts")
@@ -193,6 +194,110 @@ def standalone_courses():
     return sorted(out)
 
 
+# The guide pages under app/guides: the search-driven articles at /guides.
+#
+# They live outside app/docs on purpose, so routes() does not see them, and a
+# page outside /docs is invisible to this index unless something walks it. The
+# marketplace at /plugins is in search through the curated list because it is
+# one page; thirty guides are not a list to maintain by hand.
+#
+# Their titles come from each page's own `export const metadata`, the same way
+# the course pages' do, which is also why the prose and the metadata live in
+# the page rather than in config/guides.ts.
+GUIDES_MIN = 1
+
+
+def standalone_guides():
+    """Every guide page with a file of its own, titled from its metadata."""
+    out = []
+    if not os.path.isdir(APP_GUIDES):
+        return out
+    for dirpath, _dirs, files in os.walk(APP_GUIDES):
+        if "page.tsx" not in files:
+            continue
+        rel = os.path.relpath(dirpath, APP_GUIDES).replace(os.sep, "/")
+        if "[" in rel:                      # a [param] tree, if one ever lands
+            continue
+        href = "/guides" if rel == "." else "/guides/" + rel
+        src = open(os.path.join(dirpath, "page.tsx"), encoding="utf-8").read()
+        m = PAGE_METADATA.search(src)
+        if not m:
+            raise SystemExit(
+                "%s: no metadata title and description, so there is nothing to "
+                "index it by. Every guide page needs both, and they are what "
+                "search shows." % href
+            )
+        title = re.sub(r"\s+", " ", m.group(2)).strip()
+        description = re.sub(r"\s+", " ", m.group(4)).strip()
+        # The index page is the section's own landing page, so it is named for
+        # the section rather than by its one-word title.
+        if href == "/guides":
+            title = "All guides"
+        out.append((href, title, description, "Guides"))
+    if len(out) < GUIDES_MIN:
+        raise SystemExit(
+            "guides: found %d pages under app/guides, expected at least %d. "
+            "Either the pages were deleted or the walk broke, and they go "
+            "missing from search without anything saying so."
+            % (len(out), GUIDES_MIN)
+        )
+    check_guides_config({h for h, _t, _d, _s in out})
+    return sorted(out)
+
+
+# config/guides.ts decides which guides the index links; app/guides holds the
+# pages. Three entries were once marked published before their pages existed,
+# and the index linked all three to a 404.
+#
+# A check over either side alone passes while the pair is broken, so both are
+# read here, in the pass that already has the pages in hand.
+GUIDE_ENTRY = re.compile(
+    r"slug:\s*'([^']+)'.*?updated:\s*(null|'[^']*')", re.S
+)
+
+
+def check_guides_config(pages):
+    """Every published guide has a page, and every page has an entry."""
+    path = os.path.join(DOCS, "config", "guides.ts")
+    if not os.path.exists(path):
+        return
+    src = open(path, encoding="utf-8").read()
+    published, known = set(), set()
+    for m in GUIDE_ENTRY.finditer(src):
+        slug, updated = m.group(1), m.group(2)
+        known.add("/guides/" + slug)
+        if updated != "null":
+            published.add("/guides/" + slug)
+
+    pages = {p for p in pages if p != "/guides"}
+
+    missing = sorted(published - pages)
+    if missing:
+        raise SystemExit(
+            "config/guides.ts marks these published, with an `updated` "
+            "version, but there is no page for them under app/guides, so the "
+            "index links a 404:\n  " + "\n  ".join(missing)
+            + "\n\nSet `updated: null` until the page exists."
+        )
+
+    orphan = sorted(pages - known)
+    if orphan:
+        raise SystemExit(
+            "these guide pages have no entry in config/guides.ts, so they "
+            "render without a title, a reading time or a verified version, "
+            "and the index does not list them:\n  " + "\n  ".join(orphan)
+        )
+
+    unlisted = sorted(pages & known - published)
+    if unlisted:
+        raise SystemExit(
+            "these guide pages exist but config/guides.ts still says "
+            "`updated: null`, so nothing links to them:\n  "
+            + "\n  ".join(unlisted)
+            + "\n\nSet `updated` to the version you verified them against."
+        )
+
+
 def metadata():
     """title and description per route, from config/docs-metadata.ts."""
     src = open(METADATA, encoding="utf-8").read()
@@ -293,7 +398,7 @@ def main():
 
     shadowed = []
     seen_href = {i["href"] for i in items}
-    for href, name, tagline, section in dynamic() + standalone_courses():
+    for href, name, tagline, section in dynamic() + standalone_courses() + standalone_guides():
         if href in seen_href:
             # A static page of the same path, which is what Next serves: the
             # [param] template never renders this slug. One entry, not two.
@@ -316,8 +421,10 @@ def main():
 
     out = '''// Generated by scripts/search-index.py. Do not edit by hand.
 //
-// Every static route under app/docs, titled from config/docs-metadata.ts, with
-// that page's description, path and curated keywords as the searchable text.
+// Every static route under app/docs, titled from config/docs-metadata.ts,
+// plus the course pages under app/courses and the guides under
+// app/guides, each titled from its own metadata, with that page's
+// description, path and curated keywords as the searchable text.
 // Regenerate after adding a page:
 //
 //     python scripts/search-index.py
@@ -345,9 +452,9 @@ export const SEARCH_INDEX: SearchItem[] = entries
     open(OUT, "w", encoding="utf-8", newline="").write(out)
 
     print("indexed %d pages (%d static routes, %d config-driven, %d course "
-          "pages, %d curated kept)"
+          "pages, %d guides, %d curated kept)"
           % (len(items), len(routes()), len(dynamic()),
-             len(standalone_courses()), len(hand)))
+             len(standalone_courses()), len(standalone_guides()), len(hand)))
     if shadowed:
         print("a static page of the same path wins, so the config entry is skipped:")
         for href in shadowed:

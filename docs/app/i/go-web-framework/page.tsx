@@ -75,6 +75,8 @@ export default function Page() {
           meta="Standard library · ships with Go · BSD"
           what={
             <p>
+              {/* toolchain-version: historical: the Go 1.22 router, a fact
+                  rather than a requirement */}
               Since Go 1.22 the standard multiplexer matches methods and path wildcards:{' '}
               <code>mux.HandleFunc(&quot;GET /orders/{'{'}id{'}'}&quot;, h)</code>. That removed the
               main reason most projects reached for a router at all. It has no route groups and no
@@ -84,6 +86,7 @@ export default function Page() {
           pros={[
             'No dependency to audit, upgrade or outlive',
             'Every middleware and test helper in Go works with it',
+            // toolchain-version: historical: the Go 1.22 router, a fact rather than a requirement
             'Method and wildcard routing since Go 1.22',
           ]}
           cons={[
@@ -297,6 +300,7 @@ export default function Page() {
               'Fiber usually leads synthetic benchmarks because fasthttp allocates less per request. Behind a database the difference is almost always invisible, and published figures disagree with each other, so measure your own workload before treating speed as the deciding factor.',
           },
           {
+            // toolchain-version: historical: the Go 1.22 router, a fact rather than a requirement
             q: 'Do I still need a router in Go 1.22 and later?',
             a: (
               <p>
@@ -305,6 +309,7 @@ export default function Page() {
                 Echo when you want request binding and validation helpers.
               </p>
             ),
+            // toolchain-version: historical: the Go 1.22 router, a fact rather than a requirement
             text:
               'Often not. Since Go 1.22 the standard multiplexer matches methods and path wildcards, which covers most services. Chi adds nested route groups; Gin and Echo add request binding and validation helpers.',
           },
