@@ -486,7 +486,7 @@ sqlDB.SetMaxOpenConns(1)`}
         <CodeBlock
           terminal
           code={`grit generate resource Book \\
-  --fields "title:string:required,author:belongs_to:Author,isbn:string:unique,pages:int,price:money,genre:enum(fiction|nonfiction|poetry)"`}
+  --fields "title:string:required,author:belongs_to:Author,isbn:string:unique,pages:int,price:money,genre:select[fiction, nonfiction, poetry]"`}
         />
         <p>
           You get the model, the service, the handler with pagination, filtering and sorting

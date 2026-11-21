@@ -421,7 +421,7 @@ func buildPrompt(chunks []Chunk, question string) string {
           terminal
           code={`grit add ai                                  # providers, streaming, usage tracking
 grit generate resource Document \\
-  --fields "title:string,content:text,embedding:vector"`}
+  --fields "title:string,content:text,embedding:vector[1536]"`}
         />
         <p>
           A <code>vector</code> field adds the pgvector column and the HNSW index with the right

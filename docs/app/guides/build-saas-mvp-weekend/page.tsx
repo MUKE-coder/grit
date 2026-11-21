@@ -196,7 +196,7 @@ grit start`}
         <CodeBlock
           terminal
           code={`grit generate resource Project \\
-  --fields "name:string:required,status:enum(active|paused|done),due:date,notes:text" \\
+  --fields "name:string:required,status:select[active, paused, done],due:date,notes:text" \\
   --owned-by organisation`}
         />
         <p>

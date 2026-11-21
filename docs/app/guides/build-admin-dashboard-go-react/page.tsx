@@ -282,7 +282,7 @@ export default function Page() {
         <CodeBlock
           terminal
           code={`grit generate resource Invoice \\
-  --fields "number:string:required,customer:belongs_to:Customer,total:money,status:enum(draft|sent|paid),due_at:date"`}
+  --fields "number:string:required,customer:belongs_to:Customer,total:money,status:select[draft, sent, paid],due_at:date"`}
         />
         <p>
           The admin that comes with a new project already has the parts nobody enjoys building:

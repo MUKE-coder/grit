@@ -511,7 +511,7 @@ STORAGE_SECRET_KEY=...`}
         <CodeBlock
           terminal
           code={`grit generate resource Product \\
-  --fields "name:string:required,photo:image,manual:file,gallery:images"`}
+  --fields "name:string:required,photo:file:image,manual:file,gallery:files:image"`}
         />
         <p>
           That writes the presign and confirm endpoints, the type and size checks, the upload
