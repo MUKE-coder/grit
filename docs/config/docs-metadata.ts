@@ -323,7 +323,7 @@ export const docsMetadata: Record<string, DocPage> = {
   '/docs/benchmarks': {
     title: 'Benchmarks: Grit vs Laravel, Django, Next.js, Express, Bun and Encore.ts',
     description:
-      'Reproducible k6 benchmarks of Grit against Laravel 13, Django 5.1, Next.js 15, Express 5, Bun and Encore.ts: the same public CRUD resource, the same Postgres, identical container limits, 10,000 identical rows restored before every run, three repetitions, medians reported, every framework on its own ORM. Includes the full harness, the CPU evidence for which results are framework-bound and which are database-bound, the scenario Grit loses, and the three bugs the benchmark found in Grit itself.',
+      'Reproducible k6 benchmarks of Grit against Laravel 13, Django 5.1, Next.js 15, Express 5, Bun and Encore.ts: the same public CRUD resource, the same Postgres, identical container limits, 10,000 identical rows restored before every run, three repetitions, medians reported, every framework on its own ORM. Includes the full harness, the CPU evidence for which results are framework-bound and which are database-bound, the scenario Grit loses, and the three bugs the benchmark found in Grit itself.', // toolchain-version: historical (benchmark record: the versions that were measured)
   },
   '/docs/deployment/from-github': {
     title: 'Deploy from GitHub',
@@ -961,6 +961,12 @@ export const docsMetadata: Record<string, DocPage> = {
     title: 'Offline & Caching',
     description:
       'How Grit mobile apps behave offline: React Query in-memory caching, SecureStore token persistence, fast-fail networking with token refresh, and how to layer on true offline-first support.',
+  },
+
+  '/docs/contributing/first-contribution': {
+    title: 'Your first contribution',
+    description:
+      'Fix your first docs page, find a good first issue, and write an issue report a maintainer can act on. No template changes needed.',
   },
 
   // Changelog
