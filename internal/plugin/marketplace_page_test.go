@@ -9,7 +9,7 @@ import (
 )
 
 // marketplacePage is the docs page that lists every plugin for a browser.
-const marketplacePage = "docs/app/docs/plugins/marketplace/page.tsx"
+const marketplacePage = "docs/app/plugins/page.tsx"
 
 // TestMarketplacePageListsEveryPlugin compares the registry with the page.
 //

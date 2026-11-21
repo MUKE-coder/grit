@@ -318,7 +318,7 @@ GET    /api/v1/mcp-connections/:id/calls  what that agent did`}
       </div>
 
       <div className="mt-16 flex items-center justify-between border-t border-border/50 pt-8">
-        <Link href="/docs/plugins/marketplace">
+        <Link href="/plugins">
           <Button variant="ghost" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Marketplace

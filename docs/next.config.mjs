@@ -47,6 +47,16 @@ const nextConfig = {
   // are permanent: the old URLs are indexed and linked from outside the site.
   async redirects() {
     return [
+      // The marketplace moved out of the documentation and became the
+      // product page at /plugins. Somebody clicking "Plugins" wants to see
+      // what there is, and that is not a thing to read: it was the one page
+      // under /docs with a sidebar full of prose beside a grid of cards.
+      // The old URL was the canonical one for months.
+      {
+        source: '/docs/plugins/marketplace',
+        destination: '/plugins',
+        permanent: true,
+      },
       {
         source: '/docs/infrastructure/deployment',
         destination: '/docs/deployment/vps',

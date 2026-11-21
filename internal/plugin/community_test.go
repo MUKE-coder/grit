@@ -98,12 +98,18 @@ func TestRepoURLAddsAScheme(t *testing.T) {
 	}
 }
 
-// TestSubmitAndMarketplaceURLsAgree: the CLI points people at the docs page
-// and the docs page is generated from this file, so a rename that breaks one
+// TestSubmitAndMarketplaceURLsAgree: the CLI points people at the marketplace
+// page and that page is generated from this file, so a rename that breaks one
 // should break the test rather than the link.
+//
+// /plugins, not /docs/plugins/marketplace, since the marketplace stopped being
+// a documentation page: it is a grid of cards with an install command on each,
+// which is a thing to use rather than a thing to read. This test is what
+// caught the move, which is the job.
 func TestSubmitAndMarketplaceURLsAgree(t *testing.T) {
-	if !strings.HasPrefix(MarketplaceURL, "https://gritframework.dev/docs/plugins/") {
-		t.Errorf("MarketplaceURL = %q, which is not under the plugins docs", MarketplaceURL)
+	const want = "https://gritframework.dev/plugins"
+	if MarketplaceURL != want {
+		t.Errorf("MarketplaceURL = %q, want %q", MarketplaceURL, want)
 	}
 	if !strings.Contains(SubmitURL, "plugin-submission") {
 		t.Errorf("SubmitURL = %q, which does not name the submission template", SubmitURL)

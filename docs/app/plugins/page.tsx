@@ -21,7 +21,8 @@ import {
   Webhook,
   Zap,
 } from 'lucide-react'
-import { DocsShell } from '@/components/docs/shell'
+import { SiteHeader } from '@/components/site-header'
+import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock } from '@/components/code-block'
 import {
   CommunityEmpty,
@@ -33,10 +34,11 @@ import {
 import communityIndex from '@/config/community-plugins.json'
 
 export const metadata = {
-  title: 'Plugin marketplace — Grit',
+  // The root layout appends the site name, so the title is the page's own.
+  title: 'Plugins',
   description:
     'Every Grit plugin: the ten built into the CLI, the nine that ship as Go modules, and the community index. What each one does, how to install it, and how to list your own.',
-  alternates: { canonical: 'https://gritframework.dev/docs/plugins/marketplace' },
+  alternates: { canonical: 'https://gritframework.dev/plugins' },
 }
 
 // The official plugins, as `grit plugin list` reports them.
@@ -193,7 +195,10 @@ const COMMUNITY = ((communityIndex.plugins ?? []) as CommunityRecord[]).map(
 
 export default function MarketplacePage() {
   return (
-    <DocsShell>
+    <div className="relative min-h-screen bg-background isolate">
+      <SiteHeader />
+      <GridFrame />
+
         {/* ---------------------------------------------------------- hero */}
         <section className="relative overflow-hidden border-b border-border">
           <div
@@ -373,6 +378,6 @@ export default function MarketplacePage() {
             </p>
           </section>
         </div>
-    </DocsShell>
+    </div>
   )
 }

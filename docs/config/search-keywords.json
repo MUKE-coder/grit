@@ -551,5 +551,10 @@
     "keywords": "tutorial saas subscription billing example",
     "section": "Tutorials",
     "title": "Build a SaaS"
+  },
+  "/plugins": {
+    "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue",
+    "section": "Plugins",
+    "title": "Plugin marketplace"
   }
 }

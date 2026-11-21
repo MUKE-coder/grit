@@ -142,7 +142,7 @@ cd apps/api && go build ./...`} />
                 Video
               </Button>
             </Link>
-            <Link href="/docs/plugins/marketplace">
+            <Link href="/plugins">
               <Button variant="ghost" className="gap-2">
                 Marketplace
                 <ArrowRight className="h-4 w-4" />

@@ -1,0 +1,202 @@
+/* One file describes the whole screen.
+
+   Stacked cards, from the skill's gold of that name: two components at one
+   width, a small gap, the lower one off the bottom. The first arrangement
+   tried was panel-over-product, and it does not work for a table: a panel
+   straddling the window's right edge covers the columns, which is content,
+   where the rule is that a satellite covers chrome. Stacking puts the file
+   above the screen it describes, which is also the order the sentence reads
+   in, and leaves no edge for the panel to cover the wrong thing. */
+
+.rd .ss-stage {
+  overflow: hidden;
+  background: var(--ss-well);
+}
+
+.rd-file,
+.rd-screen {
+  position: absolute;
+  left: 40px;
+  width: 540px;
+  border-radius: 12px;
+  background: var(--ss-surface);
+}
+
+/* The file: the smaller object, read first. */
+.rd-file {
+  top: 40px;
+  padding-bottom: 12px;
+  box-shadow: var(--ss-shadow-satellite);
+}
+
+/* The screen: the larger object, off the bottom, so the table is cropped by
+   the stage rather than ending in a void. */
+.rd-screen {
+  top: 316px;
+  height: 420px;
+  overflow: hidden;
+  box-shadow: var(--ss-shadow-hero);
+}
+
+/* ── the file ────────────────────────────────────────────────────────── */
+
+.rd-file__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ss-line);
+}
+
+.rd-file__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--ss-accent);
+}
+
+.rd-file__name {
+  color: var(--ss-text-strong);
+  font: 560 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.rd-code {
+  padding: 14px 16px 2px;
+}
+
+/* Block, so every line is its own line. As inline spans they flowed two to a
+   row and the array read as prose. */
+.rd-ln {
+  display: block;
+  color: var(--ss-text);
+  font: 400 12px/21px ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+
+.rd-ln i { font-style: normal; opacity: 0.7; }
+.rd-ln b { color: var(--ss-accent); font-weight: 500; }
+
+.rd-ln--in { padding-left: 14px; }
+.rd-ln--in2 { padding-left: 28px; }
+
+/* ── the screen ──────────────────────────────────────────────────────── */
+
+.rd-screen__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px 11px;
+  border-bottom: 1px solid var(--ss-line);
+}
+
+.rd-title {
+  color: var(--ss-text-strong);
+  font-size: 15px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.rd-new {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 7px;
+  background: var(--ss-accent);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 560;
+}
+
+.rd-table {
+  padding: 0 16px;
+}
+
+/* Four tracks from the first frame, the last one opening into width it
+   already had: the rows widen rather than re-flowing under the cursor. */
+.rd-tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px 44px auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 36px;
+  border-bottom: 1px solid var(--ss-line);
+}
+
+.rd-tr--head {
+  min-height: 28px;
+}
+
+.rd-th {
+  color: var(--ss-text);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.rd-th--new { color: var(--ss-accent); }
+
+.rd-cell {
+  color: var(--ss-text-strong);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rd-cell--meta { color: var(--ss-text); font-size: 11.5px; }
+
+.rd-cell--pri {
+  color: var(--ss-text);
+  font-size: 11.5px;
+}
+
+/* The status column is a shape, not a word: the word budget belongs to the
+   column being added, not to the one beside it. */
+.rd-pill {
+  width: 42px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--ss-bar-2);
+}
+
+.rd-pill[data-tone='0'] { background: color-mix(in srgb, var(--ss-accent) 20%, transparent); }
+.rd-pill[data-tone='1'] { background: color-mix(in srgb, var(--ss-text) 14%, transparent); }
+.rd-pill[data-tone='2'] { background: color-mix(in srgb, var(--ss-text) 8%, transparent); }
+
+.rd-tr > .ss-collapse { width: 58px; }
+
+/* ── narrow ──────────────────────────────────────────────────────────────
+   The same two objects at the column's width: a redesign only in that the
+   file loses the lines that do not carry the story, and the table loses the
+   column that is not the point. */
+
+.rd .ss-stage[data-layout='compact'] .rd-file,
+.rd .ss-stage[data-layout='compact'] .rd-screen {
+  left: 16px;
+  width: 326px;
+}
+
+.rd .ss-stage[data-layout='compact'] .rd-file { top: 20px; }
+
+/* Below the file at its opened height, as in the wide layout: at 252 the
+   screen covered the two lines that close the file. */
+.rd .ss-stage[data-layout='compact'] .rd-screen {
+  top: 296px;
+  height: 400px;
+}
+
+/* The filter clause pushed the status line past the card's edge at this
+   width, and a line of code sliced by its own card is the fault the crop
+   rules exist for. The column names are the subject; the clause is not. */
+.rd .ss-stage[data-layout='compact'] .rd-wide-only { display: none; }
+
+.rd .ss-stage[data-layout='compact'] .rd-tr {
+  grid-template-columns: minmax(0, 1fr) 48px auto;
+  gap: 10px;
+}
+
+/* Due is the column to lose at this width: Status and Priority are what the
+   story needs, one as the table it joins and one as the thing arriving. */
+.rd .ss-stage[data-layout='compact'] .rd-due { display: none; }

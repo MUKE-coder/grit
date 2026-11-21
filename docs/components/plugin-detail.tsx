@@ -96,7 +96,7 @@ export function RelatedPlugins({ items }: { items: RelatedPlugin[] }) {
       </div>
       <p className="text-sm text-muted-foreground">
         Everything else is on the{' '}
-        <Link href="/docs/plugins/marketplace" className="text-accent hover:underline">
+        <Link href="/plugins" className="text-accent hover:underline">
           marketplace
         </Link>
         , and{' '}

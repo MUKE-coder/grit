@@ -894,12 +894,6 @@
     "keywords": "docs plugins kanban"
   },
   {
-    "title": "Marketplace",
-    "href": "/docs/plugins/marketplace",
-    "section": "Plugins",
-    "keywords": "docs plugins marketplace"
-  },
-  {
     "title": "Mcp",
     "href": "/docs/plugins/mcp",
     "section": "Plugins",
@@ -1792,5 +1786,11 @@
     "href": "/docs/plugins",
     "section": "Plugins",
     "keywords": "plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages"
+  },
+  {
+    "title": "Plugin marketplace",
+    "href": "/plugins",
+    "section": "Plugins",
+    "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue"
   }
 ]

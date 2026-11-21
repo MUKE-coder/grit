@@ -33,7 +33,7 @@ type CommunityPlugin struct {
 const SubmitURL = "https://github.com/MUKE-coder/grit/issues/new?template=plugin-submission.yml&labels=plugin-submission"
 
 // MarketplaceURL is the browsable version of this list.
-const MarketplaceURL = "https://gritframework.dev/docs/plugins/marketplace"
+const MarketplaceURL = "https://gritframework.dev/plugins"
 
 var communityCache []CommunityPlugin
 

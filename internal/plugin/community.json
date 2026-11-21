@@ -8,7 +8,7 @@
     "into the docs site for the marketplace page. Edit it here and nowhere else.",
     "",
     "To add yours, see `grit plugin submit` or",
-    "https://gritframework.dev/docs/plugins/marketplace.",
+    "https://gritframework.dev/plugins.",
     "",
     "Listing is not endorsement, and the review is deliberately shallow: that",
     "the repository exists, that it holds a plugin.json, that the plugin",

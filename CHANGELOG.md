@@ -23,6 +23,25 @@ Also worth knowing:
 ---
 
 
+## v3.560.0 - November 21, 2026
+
+### The marketplace is a page, and the homepage shows the file working
+
+Two changes to the site. The plugin marketplace is at [/plugins](https://gritframework.com/plugins) rather than buried in the documentation, and the **Make it yours** section now shows what it has always claimed.
+
+#### /plugins
+
+It was the one page under `/docs` that was a grid of cards with an install command on each: a thing to use rather than a thing to read, with a documentation sidebar beside it. It is a product page now, with the site header and no sidebar. The old URL redirects, the docs sidebar still links to it, and the docs nav points at the plugins documentation instead, because a reader already inside the docs is navigating within them.
+
+#### One file describes the whole screen
+
+That section has said so for months above a panel showing the file, and never the screen. It now carries a short demo built with the stageshow kit: the resource definition above the admin screen it produces, and `{ name: 'priority' }` added to the columns array arriving as a column in the table, in the same beat.
+
+It takes the site's theme and accent, so it is dark with Grit's violet on the landing page and light if a reader switches, and it has a design of its own at phone width rather than a squeezed copy. Nothing in it is presented as a screenshot: it is an illustration of a real mechanism, which is why the sections that *are* real screenshots of real generated projects (platforms, auth, batteries, deploy) were left exactly as they were. A faux screen would be a downgrade there.
+
+The build notes are in `components/stageshow/REHEARSAL.md`: which gold it was copied from, the layout that was tried first and why it failed, every finding the film gate reported with the frame it came from, and the one line that still fails because the gold fails it too.
+
+
 ## v3.559.0 - November 20, 2026
 
 ### The first community plugin

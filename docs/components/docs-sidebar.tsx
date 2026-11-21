@@ -247,7 +247,7 @@ const navItems: NavItem[] = [
       { title: 'Four ways to extend', href: '/docs/extending' },
       { title: 'Blueprints', href: '/docs/blueprints' },
       { title: 'What are plugins', href: '/docs/plugins/overview' },
-      { title: 'Marketplace', href: '/docs/plugins/marketplace' },
+      { title: 'Marketplace', href: '/plugins' },
       { title: 'Kanban boards', href: '/docs/plugins/kanban' },
       { title: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
       { title: 'Impersonate', href: '/docs/plugins/impersonate' },

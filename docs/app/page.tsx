@@ -16,6 +16,7 @@ import { GritInAction } from '@/components/grit-in-action'
 import { PlatformShowcase } from '@/components/platform-showcase'
 import { AuthShowcase } from '@/components/auth-showcase'
 import { ResourceDefinitionShowcase } from '@/components/resource-definition-showcase'
+import { ResourceDefinitionStage } from '@/components/stageshow/resource-definition-stage'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { HomepageBenchmarks } from '@/components/homepage-benchmarks'
@@ -190,19 +191,24 @@ export default function HomePage() {
 
         {/* ── 4. The resource definition ───────────────────────────── */}
         <Section id="customise">
-          <Reveal>
-            <SectionHeader
-              align="left"
-              eyebrow="Make it yours"
-              title={
-                <>
-                  One file describes <Highlight>the whole screen.</Highlight>
-                </>
-              }
-              lead="The generator writes it. Everything after that is yours to edit: the table, the form, the stats cards and where it sits in the sidebar."
-            />
-          </Reveal>
-          <div className="mt-12">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_620px] lg:gap-14">
+            <Reveal>
+              <SectionHeader
+                align="left"
+                eyebrow="Make it yours"
+                title={
+                  <>
+                    One file describes <Highlight>the whole screen.</Highlight>
+                  </>
+                }
+                lead="The generator writes it. Everything after that is yours to edit: the table, the form, the stats cards and where it sits in the sidebar."
+              />
+            </Reveal>
+            <Reveal>
+              <ResourceDefinitionStage />
+            </Reveal>
+          </div>
+          <div className="mt-14">
             <ResourceDefinitionShowcase />
           </div>
         </Section>

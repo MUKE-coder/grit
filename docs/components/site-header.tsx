@@ -95,9 +95,12 @@ export function SiteHeader() {
               is the one place to ask a question, and Build with AI folds into
               Docs, where the page itself lives.
 
-              Plugins points at the marketplace rather than at the plugins
-              docs index: somebody clicking "Plugins" in a product nav wants
-              to see what there is, not to read about the plugin system.
+              Plugins is /plugins, the marketplace, because somebody
+              clicking "Plugins" in a product nav wants to see what there is
+              rather than read about the plugin system. The docs nav below
+              points at the plugins documentation instead, for the reason the
+              Blueprints entry gives: a reader already inside the docs is
+              navigating within them.
               Builder came out to make room; it is linked from Docs and from
               the footer.
 
@@ -109,7 +112,7 @@ export function SiteHeader() {
                 { label: 'Guides', href: '/docs' },
                 { label: 'CLI', href: '/docs/cli' },
                 { label: 'Systems', href: '/docs/systems' },
-                { label: 'Plugins', href: '/docs/plugins/marketplace' },
+                { label: 'Plugins', href: '/docs/plugins/overview' },
                 // /docs/blueprints, not /blueprints. Blueprints belong in this
                 // nav because a reader inside the docs has no other way to
                 // reach them, but pointing at the marketing catalogue made
@@ -123,7 +126,7 @@ export function SiteHeader() {
               ]
             : [
                 { label: 'Docs', href: '/docs' },
-                { label: 'Plugins', href: '/docs/plugins/marketplace' },
+                { label: 'Plugins', href: '/plugins' },
                 { label: 'Blueprints', href: '/blueprints' },
                 { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
                 { label: 'Showcase', href: '/showcase' },
@@ -141,11 +144,7 @@ export function SiteHeader() {
               ? false
               : item.label === 'Guides'
                 ? inDocs && !DOCS_SECTIONS.some((p) => pathname.startsWith(p))
-                : item.label === 'Docs'
-                  // Docs would otherwise light up on /docs/plugins/*, where
-                  // the entry the reader followed was Plugins.
-                  ? inDocs && !pathname.startsWith('/docs/plugins')
-                  : isActive(item.href)
+                : isActive(item.href)
             return (
               <Link
                 key={item.label}

@@ -15,7 +15,7 @@ body:
 
         Accepted submissions are added to `internal/plugin/community.json`, which is
         what `grit plugin list` and the
-        [marketplace page](https://gritframework.dev/docs/plugins/marketplace) both read.
+        [marketplace page](https://gritframework.dev/plugins) both read.
 
   - type: input
     id: name

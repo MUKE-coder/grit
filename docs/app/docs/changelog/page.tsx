@@ -72,6 +72,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.560.0 */}
+            <div className="mb-12" id="v3.560.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.560.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The marketplace is a page, and the homepage shows the file working</h3>
+                <p>
+                  Two changes to the site. The plugin marketplace is at{' '}
+                  <a href="/plugins">/plugins</a> rather than buried in the
+                  documentation, and the <strong>Make it yours</strong> section
+                  now shows what it has always claimed.
+                </p>
+
+                <h4>/plugins</h4>
+                <p>
+                  It was the one page under <code>/docs</code> that was a grid
+                  of cards with an install command on each: a thing to use
+                  rather than a thing to read, with a documentation sidebar
+                  beside it. It is a product page now, with the site header and
+                  no sidebar. The old URL redirects, the docs sidebar still
+                  links to it, and the docs nav points at the plugins
+                  documentation instead, because a reader already inside the
+                  docs is navigating within them.
+                </p>
+
+                <h4>One file describes the whole screen</h4>
+                <p>
+                  That section has said so for months above a panel showing the
+                  file, and never the screen. It now carries a short demo built
+                  with the stageshow kit: the resource definition above the
+                  admin screen it produces, and{' '}
+                  <code>{'{'} name: &apos;priority&apos; {'}'}</code> added to
+                  the columns array arriving as a column in the table, in the
+                  same beat.
+                </p>
+                <p>
+                  It takes the site&apos;s theme and accent, so it is dark with
+                  Grit&apos;s violet on the landing page and light if a reader
+                  switches, and it has a design of its own at phone width
+                  rather than a squeezed copy. Nothing in it is presented as a
+                  screenshot: it is an illustration of a real mechanism, which
+                  is why the sections that <em>are</em> real screenshots of
+                  real generated projects (platforms, auth, batteries, deploy)
+                  were left exactly as they were. A faux screen would be a
+                  downgrade there.
+                </p>
+                <p>
+                  The build notes are in{' '}
+                  <code>components/stageshow/REHEARSAL.md</code>: which gold it
+                  was copied from, the layout that was tried first and why it
+                  failed, every finding the film gate reported with the frame
+                  it came from, and the one line that still fails because the
+                  gold fails it too.
+                </p>
+              </div>
+            </div>
+
             {/* v3.559.0 */}
             <div className="mb-12" id="v3.559.0">
               <div className="flex items-center gap-3 mb-4">

@@ -496,7 +496,7 @@ cd apps/api && go build ./...     # STILL compiles`}
             Put it in a public repository with the manifest at the root or in <code>plugin/</code>,
             then run <code>grit plugin submit</code> for the checklist and the submission link.
             Accepted plugins appear in <code>grit plugin list</code> and on the{' '}
-            <Link href="/docs/plugins/marketplace" className="text-accent hover:underline">
+            <Link href="/plugins" className="text-accent hover:underline">
               marketplace
             </Link>
             .
@@ -504,7 +504,7 @@ cd apps/api && go build ./...     # STILL compiles`}
 
           <div className="mt-12 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/docs/plugins/marketplace"
+              href="/plugins"
               className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent"
             >
               <span className="flex-1">

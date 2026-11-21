@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 16 to 22, 2026",
-    count: 15,
+    count: 16,
     entries: [
+      { version: "3.560.0", title: "The marketplace is a page, and the homepage shows the file working" },
       { version: "3.559.0", title: "The first community plugin" },
       { version: "3.558.0", title: "Five admin markers, and {{ADMIN_ROOT}}" },
       { version: "3.557.0", title: "Removing a plugin takes its dependencies with it" },
