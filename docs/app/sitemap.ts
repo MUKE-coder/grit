@@ -256,7 +256,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     known.add(p)
     routes.push({
       path: p,
-      priority: p.startsWith('/docs') ? 0.6 : 0.5,
+      priority: p === '/guides' ? 0.8 : p.startsWith('/guides/') ? 0.7 : p.startsWith('/docs') ? 0.6 : 0.5,
       changeFrequency: 'monthly' as const,
     })
   }

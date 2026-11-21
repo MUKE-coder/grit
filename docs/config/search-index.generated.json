@@ -1710,16 +1710,34 @@
     "keywords": "guide guides tutorial tutorials how to learn walkthrough article go react full stack beginner senior production practical building rest apis jwt auth gorm relationships docker deploys multi tenancy caching migrations each one answers problem plain first all"
   },
   {
+    "title": "Use an AI coding assistant to build a Go app properly",
+    "href": "/guides/ai-assistant-build-go-app",
+    "section": "Guides",
+    "keywords": "give assistant before writes anything prompts work go react codebase review comes back guides ai build app coding properly"
+  },
+  {
     "title": "Build an admin dashboard without writing it from scratch",
     "href": "/guides/build-admin-dashboard-go-react",
     "section": "Guides",
     "keywords": "internal admin panel actually needs costs hand build describe screen instead writing one guides dashboard go react scratch"
   },
   {
+    "title": "Build a SaaS MVP in a weekend with Go and React",
+    "href": "/guides/build-saas-mvp-weekend",
+    "section": "Guides",
+    "keywords": "two day plan tenants before anything else auth one feature billing deploy decisions expensive reverse marked guides build saas mvp weekend go react"
+  },
+  {
     "title": "Fix the errors you hit starting a Go and Docker project",
     "href": "/guides/common-go-docker-errors",
     "section": "Guides",
     "keywords": "every error message meet first hour go docker node project cause fix windows macos linux guides common errors hit starting"
+  },
+  {
+    "title": "Deploy a Go and React app to a VPS with HTTPS",
+    "href": "/guides/deploy-go-app-vps-https",
+    "section": "Guides",
+    "keywords": "vps systemd reverse proxy first deploy end server domain certificate service restarts itself guides go app https react"
   },
   {
     "title": "Run Postgres, Redis and MinIO locally with Docker Compose",
@@ -1738,6 +1756,24 @@
     "href": "/guides/gin-rest-api-tutorial",
     "section": "Guides",
     "keywords": "routing json binding validation pagination error responses gin written out hand handler shape stays readable fifty endpoints guides rest api tutorial build go"
+  },
+  {
+    "title": "Background jobs in Go: send email without slowing the API",
+    "href": "/guides/go-background-jobs-asynq",
+    "section": "Guides",
+    "keywords": "queue exists writing worker asynq redis retries idempotency scheduled jobs testing mail locally before real guides go background send email slowing api"
+  },
+  {
+    "title": "Upload files and images in Go to S3, R2 or MinIO",
+    "href": "/guides/go-file-upload-s3-presigned",
+    "section": "Guides",
+    "keywords": "presigned uploads explained browser should send file directly storage validation has happen server anyway guides go upload s3 files images r2 minio"
+  },
+  {
+    "title": "Go or Node.js for your backend: an honest comparison",
+    "href": "/guides/go-vs-nodejs-backend",
+    "section": "Guides",
+    "keywords": "each genuinely wins go costs javascript developer parts usual comparison not true guides vs nodejs backend node js honest"
   },
   {
     "title": "JWT authentication in Go, explained",

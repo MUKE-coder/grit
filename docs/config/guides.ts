@@ -99,7 +99,7 @@ export const GUIDES: Guide[] = [
       'What a VPS, systemd and a reverse proxy are, DNS, certificates, and the first deploy end to end.',
     audience: 'beginner',
     reading: '22 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-file-upload-s3-presigned',
@@ -107,7 +107,7 @@ export const GUIDES: Guide[] = [
     blurb: 'The presigned flow drawn out, why the browser uploads directly, and image renditions.',
     audience: 'beginner',
     reading: '17 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'build-admin-dashboard-go-react',
@@ -131,7 +131,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Why a queue exists, what a retry costs, and testing mail locally before it is real.',
     audience: 'beginner',
     reading: '16 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-vs-nodejs-backend',
@@ -140,7 +140,7 @@ export const GUIDES: Guide[] = [
       'Where each one genuinely wins, what Go costs a JavaScript developer, and how to learn it fast.',
     audience: 'beginner',
     reading: '15 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'build-saas-mvp-weekend',
@@ -148,7 +148,7 @@ export const GUIDES: Guide[] = [
     blurb: 'A two-day plan: auth, tenants, billing, a landing page and a deploy, in that order.',
     audience: 'beginner',
     reading: '18 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'ai-assistant-build-go-app',
@@ -157,7 +157,7 @@ export const GUIDES: Guide[] = [
       'What to give it before it writes anything, the prompts that work, and how to review what comes back.',
     audience: 'beginner',
     reading: '16 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
 
   // Seniors.
