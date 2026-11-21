@@ -6,9 +6,9 @@ costs more here than almost anywhere else on the site. They are also easy to
 get wrong: /docs/cli/doctor reads like a route and is not one, because the CLI
 reference is a single page with an anchor per command.
 
-Scoped to app/guides. Widening it to the whole site would be useful and would
-also surface years of links nobody is fixing today; this checks the pages
-being written now, and the walk is three lines from covering more.
+Scoped to the sections in ROOTS below rather than the whole site, because the
+whole site would surface years of links nobody is fixing today. Add a directory
+to ROOTS when you add a section.
 
 A link is good when the App Router would serve it:
 
@@ -27,7 +27,15 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.dirname(HERE)
 APP = os.path.join(DOCS, "app")
-GUIDES = os.path.join(APP, "guides")
+# The pages written recently, which is what this checks. Widening it to the
+# whole site would be useful and would also surface years of links nobody is
+# fixing today; add a directory here when you add a section.
+ROOTS = [
+    os.path.join(APP, "guides"),
+    os.path.join(APP, "docs", "glossary"),
+    os.path.join(APP, "tools"),
+    os.path.join(APP, "vs"),
+]
 
 # href="/..." and href={`/...`} and href: '/...'
 HREF = re.compile(r"""href[=:]\s*[{]?\s*['"`](/[^'"`#?]*)""")
@@ -59,14 +67,21 @@ def route_exists(path):
     return False
 
 
+def walk_all(roots):
+    for root in roots:
+        for entry in os.walk(root):
+            yield entry
+
+
 def main():
-    if not os.path.isdir(GUIDES):
-        print("no app/guides yet, nothing to check")
+    roots = [r for r in ROOTS if os.path.isdir(r)]
+    if not roots:
+        print("none of the checked sections exist yet, nothing to check")
         return 0
 
     problems = []
     checked = 0
-    for dirpath, _dirs, files in os.walk(GUIDES):
+    for dirpath, _dirs, files in walk_all(roots):
         for name in files:
             if not name.endswith(".tsx"):
                 continue
@@ -106,7 +121,8 @@ def main():
         print("reference, for one, is a single page with an anchor per command.")
         return 1
 
-    print("every internal link in the guides resolves (%d checked)" % checked)
+    print("every internal link and image resolves (%d checked across %d sections)"
+          % (checked, len(roots)))
     return 0
 
 

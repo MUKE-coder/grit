@@ -566,5 +566,10 @@
     "keywords": "first app tutorial beginner go react full stack golang step by step cors blocked localhost 8080 3000 sqlite gin gorm fetch todo tasks hello world getting started by hand from scratch",
     "section": "Guides",
     "title": "Build your first full-stack app with Go and React"
+  },
+  "/docs/glossary": {
+    "keywords": "glossary terms definitions vocabulary what is meaning jargon battery blueprint resource seeder policy row rule triple double single injection anchor manifest repair framework owned outbox saga tenant presigned widget scaffold generate upgrade migrate sync field type",
+    "section": "Core Concepts",
+    "title": "Glossary"
   }
 }

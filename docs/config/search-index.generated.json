@@ -786,6 +786,12 @@
     "keywords": "errors fix debug issues problems help broken stuck common solutions working grit projects including docker database build docs getting started troubleshooting"
   },
   {
+    "title": "Glossary",
+    "href": "/docs/glossary",
+    "section": "Core Concepts",
+    "keywords": "glossary terms definitions vocabulary what is meaning jargon battery blueprint resource seeder policy row rule triple double single injection anchor manifest repair framework owned outbox saga tenant presigned widget scaffold generate upgrade migrate sync field type every grit term one sentence rest each own docs"
+  },
+  {
     "title": "Governance & risk",
     "href": "/docs/governance",
     "section": "Security & Testing",

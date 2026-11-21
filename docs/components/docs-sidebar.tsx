@@ -107,6 +107,7 @@ const navItems: NavItem[] = [
       { title: 'Field Types Reference', href: '/docs/concepts/field-types' },
       { title: 'Money', href: '/docs/concepts/money' },
       { title: 'Relationships & Hierarchies', href: '/docs/admin/relationships#hierarchies' },
+      { title: 'Glossary', href: '/docs/glossary' },
       { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions' },
       { title: 'Style Variants', href: '/docs/concepts/styles' },
       { title: 'Performance', href: '/docs/concepts/performance' },
