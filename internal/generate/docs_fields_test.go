@@ -37,13 +37,18 @@ var docsFieldsExempt = map[string]bool{}
 
 func TestDocsFieldStringsParse(t *testing.T) {
 	root := repoRoot(t)
-	docs := filepath.Join(root, "docs", "app")
-	if _, err := os.Stat(docs); err != nil {
+	// app/ is the pages. components/ is where a tool or a showcase writes an
+	// example command, and those are read by somebody too.
+	roots := []string{
+		filepath.Join(root, "docs", "app"),
+		filepath.Join(root, "docs", "components"),
+	}
+	if _, err := os.Stat(roots[0]); err != nil {
 		t.Skipf("docs not present: %v", err)
 	}
 
 	checked := 0
-	err := filepath.Walk(docs, func(path string, info os.FileInfo, err error) error {
+	walk := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -83,9 +88,14 @@ func TestDocsFieldStringsParse(t *testing.T) {
 			}
 		}
 		return nil
-	})
-	if err != nil {
-		t.Fatalf("walk docs: %v", err)
+	}
+	for _, r := range roots {
+		if _, err := os.Stat(r); err != nil {
+			continue
+		}
+		if err := filepath.Walk(r, walk); err != nil {
+			t.Fatalf("walk %s: %v", r, err)
+		}
 	}
 
 	// A walk that silently matched nothing would pass forever. The docs have

@@ -1984,5 +1984,23 @@
     "href": "/plugins",
     "section": "Plugins",
     "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue"
+  },
+  {
+    "title": "Tools",
+    "href": "/tools",
+    "section": "Tools",
+    "keywords": "tools interactive builder picker generator helper"
+  },
+  {
+    "title": "Field builder",
+    "href": "/tools/field-builder",
+    "section": "Tools",
+    "keywords": "field builder fields string generate resource types select belongs_to vector money interactive copy command syntax modifiers required unique"
+  },
+  {
+    "title": "Stack picker",
+    "href": "/tools/stack-picker",
+    "section": "Tools",
+    "keywords": "stack picker chooser architecture triple double single api mobile which should i use grit new flags expo desktop sqlite postgres vite next multitenant"
   }
 ]

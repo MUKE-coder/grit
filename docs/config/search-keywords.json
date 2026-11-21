@@ -571,5 +571,20 @@
     "keywords": "glossary terms definitions vocabulary what is meaning jargon battery blueprint resource seeder policy row rule triple double single injection anchor manifest repair framework owned outbox saga tenant presigned widget scaffold generate upgrade migrate sync field type",
     "section": "Core Concepts",
     "title": "Glossary"
+  },
+  "/tools": {
+    "keywords": "tools interactive builder picker generator helper",
+    "section": "Tools",
+    "title": "Tools"
+  },
+  "/tools/field-builder": {
+    "keywords": "field builder fields string generate resource types select belongs_to vector money interactive copy command syntax modifiers required unique",
+    "section": "Tools",
+    "title": "Field builder"
+  },
+  "/tools/stack-picker": {
+    "keywords": "stack picker chooser architecture triple double single api mobile which should i use grit new flags expo desktop sqlite postgres vite next multitenant",
+    "section": "Tools",
+    "title": "Stack picker"
   }
 }

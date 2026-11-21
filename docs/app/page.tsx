@@ -427,8 +427,11 @@ export default function HomePage() {
                 Read the docs
                 <ButtonArrow />
               </Button>
-              <Button href="/docs/stack-selector" variant="secondary" size="lg">
-                Explore architectures
+              {/* The interactive one, not the prose page: somebody at the
+                  bottom of the landing page wants the command, and the
+                  picker links on to the comparison for the reasoning. */}
+              <Button href="/tools/stack-picker" variant="secondary" size="lg">
+                Pick your stack
               </Button>
             </div>
 
