@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { DocsShot } from '@/components/docs-shot'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { NODE_MIN } from '@/config/site'
 
 export const metadata = getDocMetadata('/docs/desktop')
 
@@ -53,7 +54,7 @@ export default function DesktopOverviewPage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   You need <strong className="text-foreground/80">Go 1.26.6+</strong>,{' '}
-                  <strong className="text-foreground/80">Node.js 18+</strong>, and{' '}
+                  <strong className="text-foreground/80">Node.js {NODE_MIN}+</strong>, and{' '}
                   <a href="https://wails.io/docs/gettingstarted/installation" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Wails v2</a>{' '}
                   installed. Then install the Grit CLI:
                 </p>

@@ -5,6 +5,7 @@ import { DocsShell } from "@/components/docs/shell"
 import { CodeBlock, StepWithCode } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { GO_MIN, NODE_MIN } from '@/config/site'
 
 export const metadata = getDocMetadata('/docs/getting-started/installation')
 
@@ -60,8 +61,8 @@ export default function InstallationPage() {
                 </thead>
                 <tbody className="divide-y divide-border/30">
                   {[
-                    { tool: 'Go', version: '1.21+', for: 'API server', check: 'go version' },
-                    { tool: 'Node.js', version: '18+', for: 'Frontend apps', check: 'node --version' },
+                    { tool: 'Go', version: `${GO_MIN}+`, for: 'API server', check: 'go version' },
+                    { tool: 'Node.js', version: `${NODE_MIN}+`, for: 'Frontend apps', check: 'node --version' },
                     { tool: 'pnpm', version: '8+', for: 'Package management', check: 'pnpm --version' },
                     { tool: 'Docker', version: 'Latest', for: 'Infrastructure', check: 'docker --version' },
                   ].map((row) => (

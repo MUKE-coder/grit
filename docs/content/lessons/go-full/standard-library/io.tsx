@@ -228,6 +228,7 @@ can still point outside <code>uploads</code>. The check is explicit:</p>
 if !strings.HasPrefix(full, base+string(os.PathSeparator)) {
     return errors.New("invalid path")
 }`} />
+        {/* toolchain-version: historical */}
         <p>Go 1.24 added <code>os.Root</code> for this, which opens a directory and refuses to
 escape it, and is the better answer where available.</p>
       </TipBox>

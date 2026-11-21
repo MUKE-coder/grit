@@ -430,12 +430,13 @@ export default function Page() {
             q: 'Should I just use the standard library?',
             a: (
               <p>
-                For a service with no user interface, very often yes. Go 1.22 added method and
+{/* toolchain-version: historical */}                For a service with no user interface, very often yes. Go 1.22 added method and
                 wildcard routing to <code>net/http</code>, which removed the main reason to reach
                 for a router at all. The calculation changes when you have screens, users and roles.
               </p>
             ),
             text:
+              // toolchain-version: historical
               'For a service with no user interface, often yes. Go 1.22 added method matching and wildcard routing to net/http, which removed the main reason to reach for a third-party router. The calculation changes once you have screens, users and roles.',
           },
         ]}

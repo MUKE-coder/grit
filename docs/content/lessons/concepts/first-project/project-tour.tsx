@@ -147,7 +147,7 @@ export default function Lesson() {
 └── Dockerfile               # Multi-stage build → nginx-served bundle on :3000`}
       />
       <p>
-        Standard Next.js 14+ App Router. The two folders to memorise:
+        Standard Next.js 16+ App Router. The two folders to memorise:
         <code> app/</code> for routes (each <code>page.tsx</code> is a URL)
         and <code>hooks/</code> for React Query — every API call goes through
         a hook, not a raw <code>fetch</code> inside a component.

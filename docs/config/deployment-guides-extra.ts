@@ -318,6 +318,7 @@ R2_ENDPOINT=...
         { kind: 'h3', text: '2.5 Route B — deploy with the CLI' },
         {
           kind: 'p',
+          // toolchain-version: historical (orbita's own Go floor, not Grit's)
           text: 'The `orbita` CLI is optional, but it’s the tidiest way to deploy from your machine and keep `orbita.yaml` as the source of truth. Today it’s **built from source** — there’s no `curl | sh` installer yet, and `go install` doesn’t work because of the module path — so build it once from a clone (requires Go 1.25+):',
         },
         {

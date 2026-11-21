@@ -2,6 +2,7 @@ import { CodeBlock } from '@/components/code-block'
 import { TipBox } from '@/components/course/tip-box'
 import { Exercise } from '@/components/course/exercise'
 import { KnowledgeCheck } from '@/components/course/knowledge-check'
+import { GO_MIN } from '@/config/site'
 
 export default function Lesson() {
   return (
@@ -47,7 +48,7 @@ export default function Lesson() {
 
       <h2>Path B — `go install` (if you have Go)</h2>
       <p>
-        If you already have Go 1.21+ on your machine, this is the most
+        If you already have Go {GO_MIN}+ on your machine, this is the most
         traditional path:
       </p>
 

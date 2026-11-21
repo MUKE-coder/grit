@@ -123,6 +123,7 @@ leaves the count above zero and <code>Wait</code> blocks forever.</p>
       <p>*Pass the <code>WaitGroup</code> by pointer* if it crosses a function boundary. Copying
 one gives the callee its own counter, and the original never reaches zero.</p>
 
+      {/* toolchain-version: historical */}
       <p>Since Go 1.25 there is a shorthand that removes the first two:</p>
 
       <CodeBlock language="go" code={`var wg sync.WaitGroup

@@ -5,6 +5,15 @@
 // `var version` and internal/scaffold.DefaultVersion.
 export const GRIT_VERSION = '3.560.0'
 
+// Minimum toolchain versions a reader needs. Single source of truth for
+// every place the docs state a requirement: README and CONTRIBUTING say
+// the same (Go 1.26+, Node 20+). The Go floor's patch level lives in
+// internal/scaffold/toolchain_repair.go (goToolchainFloor, currently
+// 1.26.11); only the major.minor belongs here, matching what README
+// promises a reader.
+export const GO_MIN = '1.26'
+export const NODE_MIN = '20'
+
 /**
  * Which channel the version above belongs to.
  *

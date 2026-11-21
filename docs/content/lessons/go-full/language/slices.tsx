@@ -123,6 +123,7 @@ Use the index when you need to write.</p>
 
       <TipBox tone="info">
         <p><strong>If you know JavaScript</strong></p>
+        {/* toolchain-version: historical */}
         <p>Go has no <code>map</code>, <code>filter</code>, <code>reduce</code>, <code>find</code> or <code>some</code> for slices in the
 language. Since Go 1.21 the <code>slices</code> package covers some of it:</p>
         <CodeBlock language="go" code={`slices.Contains(nums, 3)        // bool
@@ -244,7 +245,7 @@ func main() {
 up front because we know exactly how many there will be. The tie-break on
 word makes the output deterministic, which matters because map iteration
 order is random and without it two runs would disagree. And <code>min</code> is a
-builtin since Go 1.21, so <code>pairs[:min(10, len(pairs))]</code> does not panic on a
+{/* toolchain-version: historical */}builtin since Go 1.21, so <code>pairs[:min(10, len(pairs))]</code> does not panic on a
 file with fewer than ten distinct words.</p>
       </TipBox>
 

@@ -6,6 +6,7 @@ import { CodeBlock } from "@/components/code-block";
 import { Files, Folder, File } from "@/components/files";
 import { Steps, Step } from "@/components/steps";
 import { getDocMetadata } from "@/config/docs-metadata";
+import { GO_MIN, NODE_MIN } from '@/config/site'
 
 export const metadata = getDocMetadata("/docs/desktop/first-app");
 
@@ -78,8 +79,8 @@ export default function DesktopFirstAppPage() {
 
               <div className="grid gap-3 sm:grid-cols-2 mb-6">
                 {[
-                  { name: "Go", version: "1.21+", check: "go version" },
-                  { name: "Node.js", version: "18+", check: "node --version" },
+                  { name: "Go", version: `${GO_MIN}+`, check: "go version" },
+                  { name: "Node.js", version: `${NODE_MIN}+`, check: "node --version" },
                   { name: "Wails CLI", version: "v2", check: "wails version" },
                   { name: "Grit CLI", version: "Latest", check: "grit --help" },
                 ].map((tool) => (

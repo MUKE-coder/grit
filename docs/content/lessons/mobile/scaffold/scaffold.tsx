@@ -2,6 +2,7 @@ import { CodeBlock } from '@/components/code-block'
 import { TipBox } from '@/components/course/tip-box'
 import { Exercise } from '@/components/course/exercise'
 import { KnowledgeCheck } from '@/components/course/knowledge-check'
+import { NODE_MIN } from '@/config/site'
 
 export default function Lesson() {
   return (
@@ -44,7 +45,7 @@ export default function Lesson() {
 
       <h2>Prerequisites your machine needs</h2>
       <ul>
-        <li>Node 18+ and pnpm</li>
+        <li>Node {NODE_MIN}+ and pnpm</li>
         <li>
           <strong>Expo Go app</strong> on your physical phone (App Store / Play Store)
         </li>

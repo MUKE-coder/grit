@@ -312,7 +312,7 @@ go mod download`} className="mb-0" />
                   <CodeBlock terminal code={`# Install pnpm globally
 npm install -g pnpm
 
-# Or use corepack (built into Node.js 16+)
+# Or use corepack (built into Node.js since v16)
 corepack enable
 corepack prepare pnpm@latest --activate`} className="mb-0" />
                 </div>

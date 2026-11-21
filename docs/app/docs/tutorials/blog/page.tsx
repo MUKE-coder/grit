@@ -5,6 +5,7 @@ import { DocsShell } from "@/components/docs/shell";
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { NODE_MIN } from '@/config/site'
 
 export const metadata = getDocMetadata('/docs/tutorials/blog')
 
@@ -53,7 +54,7 @@ export default function TutorialBlogPage() {
               <ul className="space-y-2.5">
                 {[
                   "Go 1.26.6+ installed (an older Go downloads it)",
-                  "Node.js 18+ and pnpm installed",
+                  `Node.js ${NODE_MIN}+ and pnpm installed`,
                   "Docker and Docker Compose installed",
                   "Grit CLI installed — see /docs/getting-started/installation (one-line install script)",
                 ].map((item) => (
