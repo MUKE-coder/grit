@@ -1758,6 +1758,18 @@
     "keywords": "routing json binding validation pagination error responses gin written out hand handler shape stays readable fifty endpoints guides rest api tutorial build go"
   },
   {
+    "title": "Adding AI to a Go app: streaming, pgvector and RAG",
+    "href": "/guides/go-ai-rag-pgvector",
+    "section": "Guides",
+    "keywords": "server sent events go embeddings background job hybrid search postgres pgvector cost latency actually guides ai rag adding app streaming"
+  },
+  {
+    "title": "Authorization in Go: policies answer 403, row rules answer 404",
+    "href": "/guides/go-authorization-policies-row-rules",
+    "section": "Guides",
+    "keywords": "idor enumeration out scope record must indistinguishable missing one scoping fails closed write paths people forget guides go authorization policies row rules answer 403 404"
+  },
+  {
     "title": "Background jobs in Go: send email without slowing the API",
     "href": "/guides/go-background-jobs-asynq",
     "section": "Guides",
@@ -1770,10 +1782,70 @@
     "keywords": "presigned uploads explained browser should send file directly storage validation has happen server anyway guides go upload s3 files images r2 minio"
   },
   {
+    "title": "Choosing a Go full-stack approach in 2026",
+    "href": "/guides/go-full-stack-frameworks-compared",
+    "section": "Guides",
+    "keywords": "runtime backend infrastructure code generator library assembly four different bargains each costs outgrow not pick grit guides go full stack frameworks compared choosing approach 2026"
+  },
+  {
+    "title": "Running Go behind a load balancer",
+    "href": "/guides/go-horizontal-scaling",
+    "section": "Guides",
+    "keywords": "stateless checklist websockets redis backplane cron exactly one node read replicas writes connection pool arithmetic guides go horizontal scaling running behind load balancer"
+  },
+  {
+    "title": "Money in Go: minor units, ISO 4217 and gap-free invoice numbers",
+    "href": "/guides/go-money-currency-invoices",
+    "section": "Guides",
+    "keywords": "float wrong zero decimal three currencies break allocating remainder losing cent sequences no gaps guides go money currency invoices minor units iso 4217 gap free invoice numbers"
+  },
+  {
+    "title": "Multi-tenant SaaS in Go: row, schema or database per tenant",
+    "href": "/guides/go-multi-tenancy",
+    "section": "Guides",
+    "keywords": "decision matrix tenant isolation postgres migration cost each cross leak test every team needs few write guides go multi tenancy saas row schema database per"
+  },
+  {
+    "title": "Go project structure for production APIs",
+    "href": "/guides/go-project-structure",
+    "section": "Guides",
+    "keywords": "handler service repository layout trade offs stated transactions live cmd internal only two directories not negotiable guides go project structure production apis"
+  },
+  {
+    "title": "Caching in Go: cache-aside, jittered TTLs and stampede protection",
+    "href": "/guides/go-redis-caching-stampede",
+    "section": "Guides",
+    "keywords": "thundering herd singleflight fixed ttl synchronises expiries invalidation actually reason about guides go redis caching stampede cache aside jittered ttls protection"
+  },
+  {
+    "title": "Sagas in Go: compensating transactions without a workflow engine",
+    "href": "/guides/go-saga-pattern",
+    "section": "Guides",
+    "keywords": "do undo steps persisted state so crash resumes idempotency both directions honest account reach temporal instead guides go saga pattern sagas compensating transactions workflow engine"
+  },
+  {
+    "title": "The transactional outbox pattern in Go with Postgres",
+    "href": "/guides/go-transactional-outbox",
+    "section": "Guides",
+    "keywords": "dual writes lose events minimal outbox postgres skip locked relay idempotency keys backoff parked failures guides go transactional pattern"
+  },
+  {
+    "title": "End-to-end type safety between Go and TypeScript without GraphQL",
+    "href": "/guides/go-typescript-type-safety",
+    "section": "Guides",
+    "keywords": "tygo openapi codegen connect compared typescript annotation fetch result promise rather than check generating validator too guides go type safety end between graphql"
+  },
+  {
     "title": "Go or Node.js for your backend: an honest comparison",
     "href": "/guides/go-vs-nodejs-backend",
     "section": "Guides",
     "keywords": "each genuinely wins go costs javascript developer parts usual comparison not true guides vs nodejs backend node js honest"
+  },
+  {
+    "title": "Webhooks in Go: HMAC verification, idempotency and replay protection",
+    "href": "/guides/go-webhooks-hmac-idempotency",
+    "section": "Guides",
+    "keywords": "verifying stripe github signatures go constant time compare timestamp tolerance dedupe table sending webhooks survive bad receiver guides hmac idempotency verification replay protection"
   },
   {
     "title": "JWT authentication in Go, explained",
@@ -1788,10 +1860,28 @@
     "keywords": "each gorm relation drawn struct produces sql writes n+1 query problem every one them cause guides tutorial relationships belongs has many"
   },
   {
+    "title": "Zero-downtime Postgres migrations with GORM",
+    "href": "/guides/gorm-zero-downtime-migrations",
+    "section": "Guides",
+    "keywords": "expand contract ddl takes lock blocks every read create index concurrently automigrate stops development guides gorm zero downtime migrations postgres"
+  },
+  {
+    "title": "Tamper-evident audit logs with hash chains in Postgres",
+    "href": "/guides/hash-chained-audit-log",
+    "section": "Guides",
+    "keywords": "chaining entries so deletion detectable keying hash cannot recomputed verifying scale pruning breaking chain guides chained audit log tamper evident logs chains postgres"
+  },
+  {
     "title": "Connect a Next.js frontend to a Go backend",
     "href": "/guides/nextjs-go-backend",
     "section": "Guides",
     "keywords": "cors credentials samesite explained browser throws away response go api sent correctly login cookie disappears guides nextjs backend connect next js frontend"
+  },
+  {
+    "title": "Securing a Go API against the OWASP Top 10",
+    "href": "/guides/owasp-top-10-golang",
+    "section": "Guides",
+    "keywords": "each risk go code addresses default already safe check keeps addressed after stop paying attention guides owasp top 10 golang securing api against"
   },
   {
     "title": "Roles and permissions explained, with Go examples",

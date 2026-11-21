@@ -168,7 +168,7 @@ export const GUIDES: Guide[] = [
       'Handler, service, repository: the layout, the trade-offs against hexagonal and DDD, and where transactions live.',
     audience: 'senior',
     reading: '20 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-transactional-outbox',
@@ -176,7 +176,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Why dual writes lose events, a minimal outbox, idempotency keys and parked failures.',
     audience: 'senior',
     reading: '18 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-saga-pattern',
@@ -184,7 +184,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Do and undo steps, persisted state, and the point at which you should reach for Temporal.',
     audience: 'senior',
     reading: '18 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-multi-tenancy',
@@ -193,7 +193,7 @@ export const GUIDES: Guide[] = [
       'A decision matrix, Postgres RLS against application scoping, and the cross-tenant leak test.',
     audience: 'senior',
     reading: '22 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-authorization-policies-row-rules',
@@ -201,7 +201,7 @@ export const GUIDES: Guide[] = [
     blurb: 'IDOR, enumeration, and why an out-of-scope row must be indistinguishable from a missing one.',
     audience: 'senior',
     reading: '18 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'hash-chained-audit-log',
@@ -209,7 +209,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Chaining, verification, pruning without breaking the chain, and what auditors ask for.',
     audience: 'senior',
     reading: '17 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'gorm-zero-downtime-migrations',
@@ -217,7 +217,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Expand and contract, why AutoMigrate stops at development, and the DDL that takes a lock.',
     audience: 'senior',
     reading: '19 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-redis-caching-stampede',
@@ -225,7 +225,7 @@ export const GUIDES: Guide[] = [
     blurb: 'The thundering herd, singleflight, jitter, and invalidation you can reason about.',
     audience: 'senior',
     reading: '17 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-money-currency-invoices',
@@ -233,7 +233,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Why float is wrong, what a zero-decimal currency breaks, and row-locked sequences.',
     audience: 'senior',
     reading: '16 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-horizontal-scaling',
@@ -242,7 +242,7 @@ export const GUIDES: Guide[] = [
       'A stateless checklist, WebSockets over a Redis backplane, cron on exactly one node, read replicas.',
     audience: 'senior',
     reading: '20 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-webhooks-hmac-idempotency',
@@ -250,7 +250,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Constant-time compare, timestamp tolerance, a dedupe table, and retries that are safe.',
     audience: 'senior',
     reading: '17 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-typescript-type-safety',
@@ -258,7 +258,7 @@ export const GUIDES: Guide[] = [
     blurb: 'tygo, OpenAPI codegen and Connect compared, and what a generated Zod schema buys you.',
     audience: 'senior',
     reading: '18 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-full-stack-frameworks-compared',
@@ -267,7 +267,7 @@ export const GUIDES: Guide[] = [
       'PocketBase, Encore, Goravel, Buffalo and Grit: runtime backend, infrastructure from code, or generated code.',
     audience: 'senior',
     reading: '19 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'owasp-top-10-golang',
@@ -275,7 +275,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Each risk, the Go code that addresses it, and the check that keeps it addressed in CI.',
     audience: 'senior',
     reading: '24 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-ai-rag-pgvector',
@@ -283,7 +283,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Server-sent events, an embeddings job, hybrid search, and where the cost actually goes.',
     audience: 'senior',
     reading: '20 min',
-  updated: null,
+  updated: 'v3.560.0',
   },
 ]
 
