@@ -1710,6 +1710,12 @@
     "keywords": "guide guides tutorial tutorials how to learn walkthrough article go react full stack beginner senior production practical building rest apis jwt auth gorm relationships docker deploys multi tenancy caching migrations each one answers problem plain first all"
   },
   {
+    "title": "Build an admin dashboard without writing it from scratch",
+    "href": "/guides/build-admin-dashboard-go-react",
+    "section": "Guides",
+    "keywords": "internal admin panel actually needs costs hand build describe screen instead writing one guides dashboard go react scratch"
+  },
+  {
     "title": "Fix the errors you hit starting a Go and Docker project",
     "href": "/guides/common-go-docker-errors",
     "section": "Guides",
@@ -1728,10 +1734,34 @@
     "keywords": "first app tutorial beginner go react full stack golang step by cors blocked localhost 8080 3000 sqlite gin gorm fetch todo tasks hello world getting started hand from scratch api frontend calls checkpoint after every then same one command guides build"
   },
   {
+    "title": "Build a REST API in Go with Gin",
+    "href": "/guides/gin-rest-api-tutorial",
+    "section": "Guides",
+    "keywords": "routing json binding validation pagination error responses gin written out hand handler shape stays readable fifty endpoints guides rest api tutorial build go"
+  },
+  {
+    "title": "JWT authentication in Go, explained",
+    "href": "/guides/golang-jwt-authentication",
+    "section": "Guides",
+    "keywords": "access tokens refresh httponly cookies middleware go four mistakes make jwt auth system only look secure guides golang authentication explained"
+  },
+  {
+    "title": "GORM relationships: belongs to, has many, many to many",
+    "href": "/guides/gorm-tutorial-relationships",
+    "section": "Guides",
+    "keywords": "each gorm relation drawn struct produces sql writes n+1 query problem every one them cause guides tutorial relationships belongs has many"
+  },
+  {
     "title": "Connect a Next.js frontend to a Go backend",
     "href": "/guides/nextjs-go-backend",
     "section": "Guides",
     "keywords": "cors credentials samesite explained browser throws away response go api sent correctly login cookie disappears guides nextjs backend connect next js frontend"
+  },
+  {
+    "title": "Roles and permissions explained, with Go examples",
+    "href": "/guides/rbac-explained-golang",
+    "section": "Guides",
+    "keywords": "rbac actually check belongs go api row level rule role checks alone never catch guides explained golang roles permissions examples"
   },
   {
     "title": "Blueprints",

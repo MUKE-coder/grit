@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every internal link in a guide points at a route that exists.
+"""Every internal link and image in a guide points at something that exists.
 
 A guide's job is to send a stuck reader somewhere useful, so a link that 404s
 costs more here than almost anywhere else on the site. They are also easy to
@@ -31,6 +31,10 @@ GUIDES = os.path.join(APP, "guides")
 
 # href="/..." and href={`/...`} and href: '/...'
 HREF = re.compile(r"""href[=:]\s*[{]?\s*['"`](/[^'"`#?]*)""")
+
+# A screenshot that 404s is as bad as a link that does, and quieter: the
+# page still renders, with a gap where the evidence was.
+SRC = re.compile(r"""src[=:]\s*[{]?\s*['"`](/[^'"`#?]*)""")
 
 # Routes the file tree cannot show, because they are produced by a route
 # handler or a generateStaticParams rather than a page.tsx.
@@ -83,6 +87,15 @@ def main():
                         checked += 1
                         if not route_exists(href):
                             problems.append((rel, i, href))
+                    for m in SRC.finditer(line):
+                        src = m.group(1)
+                        if "$" in src:
+                            continue
+                        checked += 1
+                        if not os.path.isfile(
+                            os.path.join(DOCS, "public", *src.strip("/").split("/"))
+                        ):
+                            problems.append((rel, i, src + " (no such file in public/)"))
 
     if problems:
         print("%d link(s) in the guides point at a route that does not exist:\n"

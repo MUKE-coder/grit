@@ -73,7 +73,7 @@ export const GUIDES: Guide[] = [
       'Access tokens, refresh tokens, HttpOnly cookies, and the four mistakes that make an auth system fake.',
     audience: 'beginner',
     reading: '20 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'gorm-tutorial-relationships',
@@ -81,7 +81,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Each relation drawn, the struct that produces it, and the SQL GORM writes for it.',
     audience: 'beginner',
     reading: '18 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'gin-rest-api-tutorial',
@@ -90,7 +90,7 @@ export const GUIDES: Guide[] = [
       'Routing, JSON binding, validation and error responses, written out by hand before anything generates them.',
     audience: 'beginner',
     reading: '20 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'deploy-go-app-vps-https',
@@ -115,7 +115,7 @@ export const GUIDES: Guide[] = [
     blurb: 'Tables, forms, filters and widgets, and what to declare rather than build.',
     audience: 'beginner',
     reading: '15 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'rbac-explained-golang',
@@ -123,7 +123,7 @@ export const GUIDES: Guide[] = [
     blurb: 'What RBAC is in plain English, where the check belongs, and the row rule people miss.',
     audience: 'beginner',
     reading: '14 min',
-    updated: null,
+    updated: 'v3.560.0',
   },
   {
     slug: 'go-background-jobs-asynq',
