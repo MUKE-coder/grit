@@ -53,6 +53,14 @@ const nextConfig = {
       // under /docs with a sidebar full of prose beside a grid of cards.
       // The old URL was the canonical one for months.
       {
+        // /vs/laravel is the URL somebody types, and the comparison already
+        // exists at length under /i. A second, thinner page would split the
+        // subject across two URLs and rank neither.
+        source: '/vs/laravel',
+        destination: '/i/laravel-alternative-go',
+        permanent: true,
+      },
+      {
         source: '/docs/plugins/marketplace',
         destination: '/plugins',
         permanent: true,

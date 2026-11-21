@@ -586,5 +586,20 @@
     "keywords": "stack picker chooser architecture triple double single api mobile which should i use grit new flags expo desktop sqlite postgres vite next multitenant",
     "section": "Tools",
     "title": "Stack picker"
+  },
+  "/vs": {
+    "keywords": "vs versus compare comparison alternative to competitors",
+    "section": "Comparisons",
+    "title": "Comparisons"
+  },
+  "/vs/pocketbase": {
+    "keywords": "pocketbase vs alternative sqlite single binary backend baas admin hooks realtime",
+    "section": "Comparisons",
+    "title": "Grit and PocketBase"
+  },
+  "/vs/encore": {
+    "keywords": "encore vs alternative infrastructure from code services tracing provisioning cloud",
+    "section": "Comparisons",
+    "title": "Grit and Encore"
   }
 }
