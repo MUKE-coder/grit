@@ -111,6 +111,7 @@ func rootCommand() *cobra.Command {
 	rootCmd.AddCommand(studioCmd())
 	rootCmd.AddCommand(syncCmd())
 	rootCmd.AddCommand(doctorCmd())
+	rootCmd.AddCommand(explainCmd())
 	rootCmd.AddCommand(scaleCmd())
 	rootCmd.AddCommand(envCmd())
 	rootCmd.AddCommand(migrateCmd())
