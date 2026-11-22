@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/grit_banner.png" alt="Grit Framework" width="100%" />
+  <img src="images/grit_banner.png" alt="Grit: one command, grit generate resource Invoice, writes the API, database, types and admin panel of a working app. Describe your data. Get the whole app." width="100%" />
 </p>
 
 <h1 align="center">Grit</h1>
