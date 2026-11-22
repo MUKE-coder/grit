@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/concepts/money')
 
@@ -38,6 +39,7 @@ export default function MoneyPage() {
                 currency&rsquo;s smallest unit alongside the ISO 4217 code, in two database
                 columns, so the amount stays exact and the currency travels with it.
               </p>
+              <MaturityBadge areas={['money']} />
             </div>
 
             <div className="prose-grit">

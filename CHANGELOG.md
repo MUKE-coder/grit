@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.565.0 - November 22, 2026
+
+### How proven each part is, in which architecture, and what is next
+
+Three questions a team asks before building on something, and until now all three had to be inferred from the changelog.
+
+#### A maturity badge on every feature page
+
+[/docs/stability](https://gritframework.com/docs/stability) knew whether a subsystem was stable, beta or new, and the page documenting that subsystem said nothing. Twenty-two feature pages now carry the badge, with what the word means and a link to the exact row and its tests.
+
+There is no new maturity file. A second table saying the same thing in different words is the bug this project keeps finding, so each area in the existing config names the page that documents it, and the badge is a second view of the one table. `check-maturity-badges.py` reads both sides in one pass: a page that loses its badge, and a badge naming an id the config does not have, each fail the build. The second one would otherwise render nothing at all.
+
+#### Which architecture CI actually covers
+
+Also new on that page, and a different question from how proven a subsystem is. Grit scaffolds six architectures and CI does not treat them equally: the Go API is built, migrated and driven over HTTP on five databases on every push, two shapes are installed and built nightly, and three are scaffolded by no workflow at all. That last part is the useful half and it was not written down anywhere.
+
+`check-ci-coverage.py` reads the workflow files and the table together. A row claiming a workflow that no `grit new` line in it produces fails, and so does a shape a workflow scaffolds that no row mentions, so the page cannot drift into flattery in either direction.
+
+#### A roadmap, at /roadmap
+
+What is next, what is agreed but unscheduled, what is waiting on a decision with the decision named, and what has been decided against with the reason. Every line links its issue, and the page carries the date a person last went through them.
+
+The governance page used to say there was no roadmap document because one nobody updates is worse than none. That reasoning was half right, and the half it missed is that a page saying when it was last reviewed and linking every line to live state does not have the failure mode it was worried about.
+
+That page now also answers the two questions it did not: how a decision gets made, from the issue to the closing comment with the version and the evidence, and how the project is paid for. Those went there rather than onto a page of their own, because two pages about who maintains Grit is the same mistake as two tables about how proven it is.
+
+
 ## v3.564.0 - November 22, 2026
 
 ### The first hour, and the Next pin that was three weeks behind

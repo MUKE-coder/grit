@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Diagram, DiagramBox, DiagramRow, FlowArrow, DiagramLegend } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/migrations')
 
@@ -24,6 +25,7 @@ export default function MigrationsPage() {
                 unchanged. Migrations run as a separate command, never on server startup, so
                 you stay in control of when your schema changes.
               </p>
+              <MaturityBadge areas={['migrations']} />
             </div>
 
             <div className="prose-grit">

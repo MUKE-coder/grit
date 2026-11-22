@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { GRIT_VERSION } from '@/config/site'
 import { STABILITY_AREAS, statusStyle } from '@/config/stability'
+import { SHAPE_COVERAGE, depthStyle, depthMeaning } from '@/config/coverage'
 
 export const metadata = getDocMetadata('/docs/stability')
 
@@ -96,8 +97,10 @@ export default function StabilityPage() {
 
             {/* The matrix */}
             <div className="mt-8 space-y-4">
+              {/* Each row carries its id, so a feature page can link at the
+                  exact subsystem rather than at the top of a long table. */}
               {STABILITY_AREAS.map((row) => (
-                <div key={row.area} className="rounded-lg border border-border/30 bg-card/30 p-5">
+                <div key={row.area} id={row.id} className="scroll-mt-24 rounded-lg border border-border/30 bg-card/30 p-5">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     <h2 className="text-base font-semibold tracking-tight">{row.area}</h2>
                     <span className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${statusStyle[row.status]}`}>
@@ -124,6 +127,71 @@ export default function StabilityPage() {
                   </dl>
                 </div>
               ))}
+            </div>
+
+            {/* Which shapes CI actually scaffolds.
+                Separate from the table above because they answer different
+                questions: that one is how proven a subsystem is, this one is
+                which architectures it is proven in. Two of the six are not
+                scaffolded by any workflow, and a reader choosing one should
+                know that first (grit#247). */}
+            <div className="prose-grit mt-14">
+              <h2 id="coverage">Which architecture is covered, and how deeply</h2>
+              <p>
+                Everything above is about subsystems. This is about shapes. Grit scaffolds six
+                architectures and CI does not treat them equally: the Go API is built and
+                driven over HTTP on five databases on every push, two shapes are installed and
+                built nightly, and three are scaffolded by no workflow at all.
+              </p>
+              <p>
+                The table is checked against the workflow files by{' '}
+                <code>docs/scripts/check-ci-coverage.py</code>. A row claiming a workflow that
+                no <code>grit new</code> line in it produces fails the build, and so does a
+                shape a workflow scaffolds that no row mentions. A page like this one drifts
+                into flattery otherwise, and it compiles either way.
+              </p>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {SHAPE_COVERAGE.map((shape) => (
+                <div
+                  key={shape.flag}
+                  className="rounded-lg border border-border/30 bg-card/30 p-5"
+                >
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <code className="text-sm font-mono text-accent">{shape.flag}</code>
+                    <span className="text-sm font-medium">{shape.label}</span>
+                    <span
+                      className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${depthStyle[shape.depth]}`}
+                    >
+                      {shape.depth}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {shape.detail}
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mt-2 font-mono">
+                    {shape.workflows.length > 0
+                      ? shape.workflows.join(', ')
+                      : 'no workflow scaffolds this shape'}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="prose-grit mt-6">
+              <ul>
+                {(['driven', 'built', 'generated'] as const).map((depth) => (
+                  <li key={depth}>
+                    <span
+                      className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${depthStyle[depth]}`}
+                    >
+                      {depth}
+                    </span>{' '}
+                    {depthMeaning[depth]}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Release channels */}

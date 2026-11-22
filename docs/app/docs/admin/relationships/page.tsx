@@ -6,6 +6,7 @@ import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { WindowDots } from '@/components/window-dots'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/admin/relationships')
 
@@ -24,6 +25,7 @@ export default function RelationshipsPage() {
                 junction tables. The code generator handles the Go model, API handlers with eager
                 loading, Zod schemas, TypeScript types, and admin form components automatically.
               </p>
+              <MaturityBadge areas={['trees']} />
               <LaneFlow
                 id="admin-rel"
                 lanes={['Relationship', 'Generated across the stack']}

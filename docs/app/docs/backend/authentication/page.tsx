@@ -6,6 +6,7 @@ import { CodeBlock } from '@/components/code-block'
 import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/authentication')
 
@@ -24,6 +25,7 @@ export default function AuthenticationPage() {
                 and two-factor authentication (TOTP) with backup codes and trusted devices --
                 all pre-configured and ready to use.
               </p>
+              <MaturityBadge areas={['auth']} />
             </div>
 
             <div className="prose-grit">

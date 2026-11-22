@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/realtime')
 
@@ -28,6 +29,7 @@ export default function RealtimePage() {
                 subscribe to channels, presence channels say who is in one, and client
                 events go straight from one browser to the others in the channel.
               </p>
+              <MaturityBadge areas={['realtime']} />
             </div>
 
             <div className="prose-grit">

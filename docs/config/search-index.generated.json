@@ -2052,6 +2052,12 @@
     "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue"
   },
   {
+    "title": "Roadmap: what is next",
+    "href": "/roadmap",
+    "section": "About",
+    "keywords": "roadmap what is next planned future plans backlog not planned scope decisions upcoming features priorities issues milestones"
+  },
+  {
     "title": "Tools",
     "href": "/tools",
     "section": "Tools",

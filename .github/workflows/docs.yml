@@ -128,6 +128,21 @@ jobs:
         run: python3 scripts/check-error-boundaries.py
         working-directory: docs
 
+      # The stability table names the page that documents each subsystem, and
+      # that page carries the badge. Two files, one fact: a page that loses
+      # its badge goes back to saying nothing about its own maturity, and a
+      # badge naming an id the config does not have renders nothing at all.
+      - name: Every feature page carries its maturity badge
+        run: python3 scripts/check-maturity-badges.py
+        working-directory: docs
+
+      # And the coverage table against the workflows that are supposed to back
+      # it. A table of what CI covers is exactly the kind that drifts into
+      # flattery, because the page compiles whether or not it is true.
+      - name: Every coverage claim is backed by a workflow
+        run: python3 scripts/check-ci-coverage.py
+        working-directory: docs
+
   flows:
     name: the runnable blocks run
     runs-on: ubuntu-latest

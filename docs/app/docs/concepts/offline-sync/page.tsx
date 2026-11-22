@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/concepts/offline-sync')
 
@@ -18,6 +19,7 @@ export default function OfflineSyncPage() {
                 wire protocol, and three storage adapters, so the same resource behaves the
                 same way in a browser, on a phone and in the desktop app.
               </p>
+              <MaturityBadge areas={['offline']} />
             </div>
 
             <div className="prose-grit mb-10">

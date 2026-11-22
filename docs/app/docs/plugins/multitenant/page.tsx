@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
-import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = {
   title: 'Multi-tenancy plugin: Grit',
@@ -77,6 +78,7 @@ export default function MultitenantPage() {
             One user, many organizations, a different role in each, with query
             scoping that can&apos;t be forgotten.
           </p>
+          <MaturityBadge areas={['multitenancy']} />
 
           <div className="prose-grit">
             <CodeBlock language="bash" code={`grit plugin add multitenant

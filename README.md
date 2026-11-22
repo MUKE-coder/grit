@@ -27,6 +27,7 @@
   <a href="#build-something-real-in-five-minutes"><strong>5-minute tutorial</strong></a> ·
   <a href="#let-an-ai-build-it"><strong>Build with AI</strong></a> ·
   <a href="https://gritframework.dev/docs"><strong>Docs</strong></a> ·
+  <a href="https://gritframework.dev/roadmap"><strong>Roadmap</strong></a> ·
   <a href="https://github.com/MUKE-coder/grit/discussions"><strong>Discussions</strong></a> ·
   <a href="https://chat.whatsapp.com/HXsOWlp5W6o9lV4YhsY376"><strong>Community</strong></a>
 </p>
@@ -531,6 +532,18 @@ Building with Grit? Add the badge:
 ```markdown
 [![Built with Grit](https://gritframework.dev/badge/built-with-grit.svg)](https://gritframework.dev)
 ```
+
+## Who maintains this, and what is next
+
+One maintainer, which is the first thing a team evaluating Grit should weigh and the
+first thing [Governance &amp; risk](https://gritframework.dev/docs/governance) says. That
+page also covers what genuinely limits the exposure (your application does not import
+Grit at runtime, and there is a thirty-second check that proves it), how a decision gets
+made, and how the project is paid for.
+
+[The roadmap](https://gritframework.dev/roadmap) is what has not happened yet: what is
+next, what is agreed but unscheduled, what is waiting on a decision, and what has been
+decided against with the reason. Every line links to its issue.
 
 ## Contributing
 

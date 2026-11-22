@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/feature-flags')
 
@@ -26,6 +27,7 @@ export default function FeatureFlagsPage() {
                 The same engine assigns <strong>sticky A/B variants</strong> and logs
                 every exposure for rollout-health analytics.
               </p>
+              <MaturityBadge areas={['flags']} />
             </div>
 
             <div className="prose-grit">

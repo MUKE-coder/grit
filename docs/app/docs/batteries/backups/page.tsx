@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, DatabaseBackup, Clock, Download, RotateCcw, Aler
 import { Button } from '@/components/ui/button'
 import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = {
   title: 'Data & Backup — Grit',
@@ -27,6 +28,7 @@ export default function BackupsPage() {
             Manual and scheduled dumps stream straight to your object storage, you can download any
             of them, and — the part that actually matters — you can restore them.
           </p>
+          <MaturityBadge areas={['backups']} />
 
           {/* Where it lives */}
           <p className="mb-4 leading-relaxed text-muted-foreground">

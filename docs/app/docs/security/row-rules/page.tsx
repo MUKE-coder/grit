@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/security/row-rules')
 
@@ -19,6 +20,7 @@ export default function RowRulesPage() {
           somebody may use an endpoint. This answers the question after it: which rows, and under
           what conditions.
         </p>
+        <MaturityBadge areas={['owned']} />
       </div>
 
       <div className="prose-grit">

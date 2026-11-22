@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/concepts/code-generation')
 
@@ -22,6 +23,7 @@ export default function CodeGenerationPage() {
                 It generates 9 new files and injects code into 10 existing files, wiring everything
                 together automatically so your resource is immediately usable.
               </p>
+              <MaturityBadge areas={['crud']} />
             </div>
 
             <div className="prose-grit">

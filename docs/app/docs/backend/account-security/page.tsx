@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/account-security')
 
@@ -20,6 +21,7 @@ export default function AccountSecurityPage() {
                 contacts and active sessions. Plus the recovery flow behind it, which is the part
                 with the interesting security properties.
               </p>
+              <MaturityBadge areas={['twofa']} />
             </div>
 
             <div className="prose-grit">

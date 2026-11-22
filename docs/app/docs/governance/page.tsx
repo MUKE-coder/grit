@@ -121,10 +121,66 @@ cd apps/api && go build ./... && echo "builds without the CLI"`}
               believe.
             </p>
 
+            <h2 className="text-2xl font-bold tracking-tight mb-4">How a decision gets made</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              There is no committee and no RFC process. The sequence is short, and it is the
+              same one every time:
+            </p>
+            <ol className="space-y-2.5 mb-6 text-sm text-muted-foreground list-decimal pl-5">
+              <li className="leading-relaxed">
+                <strong className="text-foreground">An issue.</strong> The ones that get built
+                fastest say what you are building and what the absence costs you, because that
+                is the information the decision actually needs.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-foreground">A reply with the reasoning</strong>,
+                including when the answer is no. The reason is the useful half: a decision you
+                can read is one you can argue with, and several have been reversed that way.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-foreground">It ships as its own release</strong>, with
+                a changelog entry saying what changed and what it was verified against.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-foreground">The issue is closed with the version and
+                the evidence.</strong> Not with &ldquo;fixed&rdquo;: with what was run and what
+                it printed.
+              </li>
+            </ol>
+            <p className="text-muted-foreground leading-relaxed mb-12">
+              Where a decision is still owed, it says so on the issue and on{' '}
+              <Link href="/roadmap" className="text-accent hover:underline">the roadmap</Link>,
+              under &ldquo;waiting on a decision&rdquo;, with the question named.
+            </p>
+
+            <h2 className="text-2xl font-bold tracking-tight mb-4">How it is paid for</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Grit is MIT and nothing in it is gated. It is funded by the maintainer&apos;s
+              client work and by whoever chooses to help:{' '}
+              <Link href="/sponsor" className="text-accent hover:underline">sponsorship</Link>,
+              which is the one that makes time rather than covering a bill;{' '}
+              <Link href="/donate" className="text-accent hover:underline">one-off support</Link>;{' '}
+              <Link href="/blueprints" className="text-accent hover:underline">blueprints</Link>,
+              which are complete applications sold as source, built on the framework that stays
+              free and feeding their faults back into it; and{' '}
+              <Link href="/hire" className="text-accent hover:underline">paid work</Link> on
+              projects built with Grit.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-12">
+              There is no open-core edition, no licence tier and no plan for one. If that ever
+              changes it will be announced before it happens rather than discovered in a
+              release.
+            </p>
+
             <h2 className="text-2xl font-bold tracking-tight mb-4">Where the roadmap lives</h2>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              There is no separate roadmap document, because a roadmap nobody updates is worse
-              than none. What is true instead:
+              At{' '}
+              <Link href="/roadmap" className="text-accent hover:underline">/roadmap</Link>,
+              since November 2026. This page used to say there was no roadmap document because
+              one nobody updates is worse than none, and that reasoning was half right: the
+              answer is a page that carries the date it was last reviewed and links every line
+              to its issue, so a reader can see both the intent and the real state. These are
+              the unfiltered sources behind it:
             </p>
             <div className="grid gap-3 sm:grid-cols-2 mb-12">
               {[

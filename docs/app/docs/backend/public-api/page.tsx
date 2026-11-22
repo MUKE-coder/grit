@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/public-api')
 
@@ -20,6 +21,7 @@ export default function PublicAPIPage() {
                 <code>--public</code> adds a second, narrower surface, and the read layer that calls
                 it.
               </p>
+              <MaturityBadge areas={['publicapi']} />
             </div>
 
             <div className="prose-grit">

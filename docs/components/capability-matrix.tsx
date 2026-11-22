@@ -327,6 +327,16 @@ export function CapabilityMatrix() {
           </Link>{' '}
           and a pull request against a single cell is welcome.
         </p>
+        {/* The table says what arrives. This says how proven it is and in
+            which architecture, which is the next question a reader has and
+            had nowhere to go for (grit#247). */}
+        <Link
+          href="/docs/stability#coverage"
+          className="shrink-0 inline-flex items-center gap-1 text-sm text-accent hover:underline"
+        >
+          How proven, and in which architecture
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
         <Link
           href="/docs/batteries"
           className="shrink-0 inline-flex items-center gap-1 text-sm text-accent hover:underline"

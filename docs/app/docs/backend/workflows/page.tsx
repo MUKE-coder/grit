@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Diagram, DiagramBox, DiagramRow, DiagramArrow } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/workflows')
 
@@ -21,6 +22,7 @@ export default function WorkflowsPage() {
                 field with suggestions. A workflow turns one select field into a process the
                 server enforces, declared in the same place the field is.
               </p>
+              <MaturityBadge areas={['workflows']} />
             </div>
 
             <div className="prose-grit">

@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/outbox')
 
@@ -20,6 +21,7 @@ export default function OutboxPage() {
                 data, so the two commit together or neither does, and a relay delivers it
                 afterwards.
               </p>
+              <MaturityBadge areas={['outbox']} />
             </div>
 
             <div className="prose-grit">

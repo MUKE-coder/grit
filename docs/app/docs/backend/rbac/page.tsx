@@ -6,6 +6,7 @@ import { CodeBlock } from '@/components/code-block'
 import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/rbac')
 
@@ -23,6 +24,7 @@ export default function RBACPage() {
                 Routes can be restricted to specific roles using middleware, and the admin panel
                 adapts its UI based on the authenticated user&apos;s role.
               </p>
+              <MaturityBadge areas={['rbac']} />
             </div>
 
             <div className="prose-grit">

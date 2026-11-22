@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/admin/datatable')
 
@@ -23,6 +24,7 @@ export default function DataTablePage() {
                 cell renderers, row actions, and data export &mdash; all driven by your resource
                 definition.
               </p>
+              <MaturityBadge areas={['importexport']} />
               <LaneFlow
                 id="admin-datatable"
                 lanes={['Go API', 'DataTable', 'User sees']}

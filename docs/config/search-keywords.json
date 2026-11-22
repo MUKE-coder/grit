@@ -407,6 +407,11 @@
     "section": "Getting Started",
     "title": "Troubleshooting"
   },
+  "/docs/glossary": {
+    "keywords": "glossary terms definitions vocabulary what is meaning jargon battery blueprint resource seeder policy row rule triple double single injection anchor manifest repair framework owned outbox saga tenant presigned widget scaffold generate upgrade migrate sync field type",
+    "section": "Core Concepts",
+    "title": "Glossary"
+  },
   "/docs/infrastructure/database": {
     "keywords": "postgresql database connection pool config",
     "section": "Infrastructure",
@@ -552,11 +557,6 @@
     "section": "Tutorials",
     "title": "Build a SaaS"
   },
-  "/plugins": {
-    "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue",
-    "section": "Plugins",
-    "title": "Plugin marketplace"
-  },
   "/guides": {
     "keywords": "guide guides tutorial tutorials how to learn walkthrough article go react full stack beginner senior production",
     "section": "Guides",
@@ -567,10 +567,15 @@
     "section": "Guides",
     "title": "Build your first full-stack app with Go and React"
   },
-  "/docs/glossary": {
-    "keywords": "glossary terms definitions vocabulary what is meaning jargon battery blueprint resource seeder policy row rule triple double single injection anchor manifest repair framework owned outbox saga tenant presigned widget scaffold generate upgrade migrate sync field type",
-    "section": "Core Concepts",
-    "title": "Glossary"
+  "/plugins": {
+    "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue",
+    "section": "Plugins",
+    "title": "Plugin marketplace"
+  },
+  "/roadmap": {
+    "keywords": "roadmap what is next planned future plans backlog not planned scope decisions upcoming features priorities issues milestones",
+    "section": "About",
+    "title": "Roadmap: what is next"
   },
   "/tools": {
     "keywords": "tools interactive builder picker generator helper",
@@ -592,14 +597,14 @@
     "section": "Comparisons",
     "title": "Comparisons"
   },
-  "/vs/pocketbase": {
-    "keywords": "pocketbase vs alternative sqlite single binary backend baas admin hooks realtime",
-    "section": "Comparisons",
-    "title": "Grit and PocketBase"
-  },
   "/vs/encore": {
     "keywords": "encore vs alternative infrastructure from code services tracing provisioning cloud",
     "section": "Comparisons",
     "title": "Grit and Encore"
+  },
+  "/vs/pocketbase": {
+    "keywords": "pocketbase vs alternative sqlite single binary backend baas admin hooks realtime",
+    "section": "Comparisons",
+    "title": "Grit and PocketBase"
   }
 }

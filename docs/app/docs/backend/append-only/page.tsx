@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/append-only')
 
@@ -19,6 +20,7 @@ export default function AppendOnlyPage() {
                 consent receipts. <code>--append-only</code> makes a resource that is created and
                 read, and refused every way it could otherwise be changed or deleted.
               </p>
+              <MaturityBadge areas={['appendonly']} />
             </div>
 
             <div className="prose-grit">

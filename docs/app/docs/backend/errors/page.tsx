@@ -5,6 +5,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { errorCodeAreas, errorCodeCount } from '@/components/error-codes'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/backend/errors')
 
@@ -33,6 +34,7 @@ export default function ErrorCodesPage() {
                 Every error this API can return, what it means, and what a client should do about
                 it. {errorCodeCount} codes, and each one always arrives with the same status.
               </p>
+              <MaturityBadge areas={['errors']} />
             </div>
 
             <div className="prose-grit">

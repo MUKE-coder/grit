@@ -5,7 +5,8 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { DocsShot } from '@/components/docs-shot'
 import { getDocMetadata } from '@/config/docs-metadata'
-import { NODE_MIN } from '@/config/site'
+import { NODE_MIN } from '@/config/site'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/desktop')
 
@@ -25,6 +26,7 @@ export default function DesktopOverviewPage() {
                 scaffolds a complete desktop project with Go backend, React frontend, authentication,
                 CRUD, data export, and GORM Studio -- all compiled into a single executable.
               </p>
+              <MaturityBadge areas={['desktop-mobile']} />
             </div>
 
             <div className="prose-grit">

@@ -30,6 +30,16 @@ export type StabilityArea = {
   proof: string
   yours: string
   history?: string
+  /**
+   * The docs route that documents this subsystem, where the badge goes.
+   *
+   * A reader of a feature page could not tell whether it was a core
+   * guarantee with live tests behind it or something that shipped last
+   * month: this table knew and the page did not say (grit#247).
+   * scripts/check-maturity-badges.py pairs the two, so a route that
+   * moves, or a page that loses its badge, fails the build.
+   */
+  page?: string
 }
 
 // One row per subsystem. The rule for this table: a claim in "Grit guarantees"
@@ -39,6 +49,7 @@ export type StabilityArea = {
 export const STABILITY_AREAS: StabilityArea[] = [
   {
     id: 'auth',
+    page: '/docs/backend/authentication',
     area: 'Auth: JWT, sessions, refresh rotation',
     status: 'stable',
     guaranteed:
@@ -49,6 +60,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'twofa',
+    page: '/docs/backend/account-security',
     area: 'Two-factor, passkeys, recovery codes',
     status: 'beta',
     guaranteed: 'TOTP is RFC 6238 (HMAC-SHA1 by the spec), recovery codes are single-use, and passkey challenges are bound to a session.',
@@ -57,6 +69,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'rbac',
+    page: '/docs/backend/rbac',
     area: 'RBAC: roles, permissions, the staff group',
     status: 'beta',
     guaranteed:
@@ -67,6 +80,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'crud',
+    page: '/docs/concepts/code-generation',
     area: 'Generated CRUD: services, handlers, pagination',
     status: 'stable',
     guaranteed:
@@ -77,6 +91,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'owned',
+    page: '/docs/security/row-rules',
     area: 'Owned resources (--owned-by)',
     status: 'stable',
     guaranteed:
@@ -87,6 +102,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'locking',
+    page: '/docs/infrastructure/database',
     area: 'Optimistic locking (If-Match)',
     status: 'stable',
     guaranteed:
@@ -97,6 +113,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'encryption',
+    page: '/docs/infrastructure/database',
     area: 'Encryption at rest (:encrypted fields)',
     status: 'beta',
     guaranteed:
@@ -108,6 +125,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'multitenancy',
+    page: '/docs/plugins/multitenant',
     area: 'Multitenancy (plugin, tenant.Owned)',
     status: 'beta',
     guaranteed:
@@ -121,6 +139,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'money',
+    page: '/docs/concepts/money',
     area: 'Money (exact, multi-currency)',
     status: 'stable',
     guaranteed: 'Amounts are integer minor units with their currency, two money columns per row do not collide, and sums stay exact.',
@@ -129,6 +148,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'importexport',
+    page: '/docs/admin/datatable',
     area: 'CSV/XLSX import and export',
     status: 'beta',
     guaranteed:
@@ -139,6 +159,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'trees',
+    page: '/docs/admin/relationships',
     area: 'Trees (--tree)',
     status: 'beta',
     guaranteed:
@@ -149,6 +170,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'publicapi',
+    page: '/docs/backend/public-api',
     area: 'Public API (--public)',
     status: 'beta',
     guaranteed:
@@ -159,6 +181,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'appendonly',
+    page: '/docs/backend/append-only',
     area: 'Append-only resources',
     status: 'beta',
     guaranteed: 'Rows are created and read, never changed or deleted: a GORM guard, no mutating routes, and a database trigger that refuses the write.',
@@ -167,6 +190,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'realtime',
+    page: '/docs/backend/realtime',
     area: 'Realtime (WebSockets, Redis backplane)',
     status: 'beta',
     guaranteed: 'Events reach a user on every replica through the backplane, and a closed socket is cleaned up.',
@@ -176,6 +200,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'outbox',
+    page: '/docs/backend/outbox',
     area: 'Durable events (outbox)',
     status: 'beta',
     guaranteed: 'A durable subscriber’s work is committed with the row that triggered it, and the relay delivers it once.',
@@ -184,6 +209,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'errors',
+    page: '/docs/backend/errors',
     area: 'Error responses',
     status: 'new',
     guaranteed:
@@ -196,6 +222,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'migrations',
+    page: '/docs/backend/migrations',
     area: 'Migrations and rollback',
     status: 'new',
     guaranteed:
@@ -208,6 +235,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'backups',
+    page: '/docs/batteries/backups',
     area: 'Backups and restore',
     status: 'beta',
     guaranteed: 'A backup streams row by row, and a restore writes parents before children.',
@@ -217,6 +245,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'offline',
+    page: '/docs/concepts/offline-sync',
     area: 'Offline sync (desktop)',
     status: 'new',
     guaranteed: 'Registered models mirror to the client, and conflicts resolve by the policy you set.',
@@ -225,6 +254,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'workflows',
+    page: '/docs/backend/workflows',
     area: 'Workflows (status state machines)',
     status: 'new',
     guaranteed: 'Only declared transitions are allowed, they are guarded by role, and a transition hook commits with the move or not at all.',
@@ -234,6 +264,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'flags',
+    page: '/docs/backend/feature-flags',
     area: 'Feature flags',
     status: 'new',
     guaranteed: 'A flag can target attributes, a percentage and a date window, and flags.IsEnabled works from anywhere, answering false before the engine starts.',
@@ -243,6 +274,7 @@ export const STABILITY_AREAS: StabilityArea[] = [
   },
   {
     id: 'desktop-mobile',
+    page: '/docs/desktop',
     area: 'Desktop (Wails) and mobile (Expo)',
     status: 'new',
     guaranteed: 'Both share the monorepo API and its generated types.',

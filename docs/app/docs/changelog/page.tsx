@@ -72,6 +72,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.565.0 */}
+            <div className="mb-12" id="v3.565.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.565.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>How proven each part is, in which architecture, and what is next</h3>
+
+                <p>
+                  Three questions a team asks before building on something, and
+                  until now all three had to be inferred from the changelog.
+                </p>
+
+                <h4>A maturity badge on every feature page</h4>
+                <p>
+                  <a href="/docs/stability">/docs/stability</a> knew whether a
+                  subsystem was stable, beta or new, and the page documenting
+                  that subsystem said nothing. Twenty-two feature pages now
+                  carry the badge, with what the word means and a link to the
+                  exact row and its tests.
+                </p>
+                <p>
+                  There is no new maturity file. A second table saying the same
+                  thing in different words is the bug this project keeps
+                  finding, so each area in the existing config names the page
+                  that documents it, and the badge is a second view of the one
+                  table. <code>check-maturity-badges.py</code> reads both sides
+                  in one pass: a page that loses its badge, and a badge naming
+                  an id the config does not have, each fail the build. The
+                  second one would otherwise render nothing at all.
+                </p>
+
+                <h4>Which architecture CI actually covers</h4>
+                <p>
+                  Also new on that page, and a different question from how
+                  proven a subsystem is. Grit scaffolds six architectures and CI
+                  does not treat them equally: the Go API is built, migrated and
+                  driven over HTTP on five databases on every push, two shapes
+                  are installed and built nightly, and three are scaffolded by
+                  no workflow at all. That last part is the useful half and it
+                  was not written down anywhere.
+                </p>
+                <p>
+                  <code>check-ci-coverage.py</code> reads the workflow files and
+                  the table together. A row claiming a workflow that no{' '}
+                  <code>grit new</code> line in it produces fails, and so does a
+                  shape a workflow scaffolds that no row mentions, so the page
+                  cannot drift into flattery in either direction.
+                </p>
+
+                <h4>A roadmap, at /roadmap</h4>
+                <p>
+                  What is next, what is agreed but unscheduled, what is waiting
+                  on a decision with the decision named, and what has been
+                  decided against with the reason. Every line links its issue,
+                  and the page carries the date a person last went through them.
+                </p>
+                <p>
+                  The governance page used to say there was no roadmap document
+                  because one nobody updates is worse than none. That reasoning
+                  was half right, and the half it missed is that a page saying
+                  when it was last reviewed and linking every line to live state
+                  does not have the failure mode it was worried about.
+                </p>
+                <p>
+                  That page now also answers the two questions it did not: how a
+                  decision gets made, from the issue to the closing comment with
+                  the version and the evidence, and how the project is paid for.
+                  Those went there rather than onto a page of their own, because
+                  two pages about who maintains Grit is the same mistake as two
+                  tables about how proven it is.
+                </p>
+              </div>
+            </div>
+
             {/* v3.564.0 */}
             <div className="mb-12" id="v3.564.0">
               <div className="flex items-center gap-3 mb-4">

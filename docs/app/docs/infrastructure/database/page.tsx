@@ -6,6 +6,7 @@ import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { WindowDots } from '@/components/window-dots'
+import { MaturityBadge } from '@/components/maturity-badge'
 
 export const metadata = getDocMetadata('/docs/infrastructure/database')
 
@@ -22,6 +23,7 @@ export default function DatabasePage() {
                 Grit uses GORM as its ORM and PostgreSQL as the primary database.
                 Define your models as Go structs and run migrations with a dedicated command.
               </p>
+              <MaturityBadge areas={['locking', 'encryption']} />
               <LaneFlow
                 id="infra-db"
                 lanes={['Go models', 'grit migrate', 'PostgreSQL']}

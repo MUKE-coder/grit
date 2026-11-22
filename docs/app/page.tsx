@@ -460,6 +460,23 @@ export default function HomePage() {
               wrote.
             </p>
 
+            {/* The three questions a team asks before adopting something,
+                and the answers, at the bottom where they are looking for
+                them rather than buried in the docs tree (grit#246). */}
+            <p className="mt-10 text-[14px] leading-[1.7] text-fg-muted">
+              <Link href="/roadmap" className="g-link">
+                What is next
+              </Link>
+              {' · '}
+              <Link href="/docs/governance" className="g-link">
+                Who maintains it
+              </Link>
+              {' · '}
+              <Link href="/docs/stability" className="g-link">
+                How proven each part is
+              </Link>
+            </p>
+
             {/* Last thing on the page, where somebody who read this far is
                 looking for a way in. */}
             <SocialStrip className="mt-12 border-t border-border pt-10" />
