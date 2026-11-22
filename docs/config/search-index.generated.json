@@ -747,7 +747,7 @@
     "title": "Installation",
     "href": "/docs/getting-started/installation",
     "section": "Getting Started",
-    "keywords": "install go node pnpm setup requirements prerequisites cli brew grit up development environment requires 21+ js 18+ docker docs getting started installation"
+    "keywords": "install go node pnpm setup requirements prerequisites cli brew grit up development environment requires 26+ js 20+ docker docs getting started installation"
   },
   {
     "title": "Performance & Benchmarks",

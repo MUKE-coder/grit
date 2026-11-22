@@ -164,7 +164,7 @@ unless you genuinely want to crash, which in a server you almost never do.</p>
 
       <p>Reach for <code>any</code> rarely. It throws away everything the type system knows, and
 most uses of it in a new codebase are better served by an interface with one
-method or, since Go 1.18, by generics.</p>
+{/* toolchain-version: historical */}method or, since Go 1.18, by generics.</p>
 
       <h2>The nil interface trap</h2>
 

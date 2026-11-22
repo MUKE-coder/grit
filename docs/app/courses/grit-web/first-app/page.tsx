@@ -5,6 +5,7 @@ import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
 import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
+import { GO_MIN, NODE_MIN } from '@/config/site'
 
 export const metadata: Metadata = {
   title: 'Your First Grit App — Grit Web Course',
@@ -118,13 +119,13 @@ export default function FirstAppCourse() {
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground"><a href="https://go.dev/dl/" target="_blank" rel="noreferrer" className="text-accent hover:underline">Go</a></td>
-                  <td className="px-4 py-3"><Code>1.21+</Code></td>
+                  <td className="px-4 py-3"><Code>{`${GO_MIN}+`}</Code></td>
                   <td className="px-4 py-3">Runs the backend API server</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">go version</code></td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground"><a href="https://nodejs.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">Node.js</a></td>
-                  <td className="px-4 py-3"><Code>18+</Code></td>
+                  <td className="px-4 py-3"><Code>{`${NODE_MIN}+`}</Code></td>
                   <td className="px-4 py-3">Runs the frontend apps</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">node --version</code></td>
                 </tr>

@@ -407,7 +407,7 @@ Execute these steps in order:
                         Install Claude Code
                       </h3>
                       <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                        Install Claude Code globally using npm. You need Node.js 18+ installed.
+                        Install Claude Code globally using npm. It runs on the Node.js version Grit already requires.
                       </p>
                       <CodeBlock language="bash" filename="Terminal" code={`npm install -g @anthropic-ai/claude-code`} />
                     </div>

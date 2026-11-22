@@ -1209,6 +1209,7 @@ export const SENTINEL: SystemDesign = {
   },
 
   stack: [
+    // toolchain-version: historical (comparison table, not a Grit requirement)
     ['Language', 'Go 1.24+, no CGo'],
     ['Host', 'Gin, mounted with one call'],
     ['Storage', 'SQLite, PostgreSQL'],

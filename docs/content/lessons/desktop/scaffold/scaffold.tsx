@@ -3,6 +3,7 @@ import { TipBox } from '@/components/course/tip-box'
 import { Exercise } from '@/components/course/exercise'
 import { KnowledgeCheck } from '@/components/course/knowledge-check'
 import { Diagram } from '@/components/course/diagram'
+import { GO_MIN, NODE_MIN } from '@/config/site'
 
 export default function Lesson() {
   return (
@@ -87,8 +88,8 @@ export default function Lesson() {
 
       <h2>Prerequisites</h2>
       <ul>
-        <li>Go 1.21+ installed</li>
-        <li>Node 18+ and pnpm</li>
+        <li>Go {GO_MIN}+ installed</li>
+        <li>Node {NODE_MIN}+ and pnpm</li>
         <li>
           <strong>Wails v2 CLI</strong> —{' '}
           <code>go install github.com/wailsapp/wails/v2/cmd/wails@latest</code>

@@ -66,7 +66,7 @@ export default function Lesson() {
       <h2>What&apos;s the same across both apps</h2>
       <ul>
         <li>
-          Both use Next.js 14 App Router (no Pages Router)
+          Both use Next.js 16 App Router (no Pages Router)
         </li>
         <li>
           Both import types from <code>@workspace/shared</code>

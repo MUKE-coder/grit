@@ -17,7 +17,7 @@ exist.</p>
       <p>Go to #link(&quot;https://go.dev/dl/&quot;)[go.dev/dl] and download the installer for
 your platform. There is no version manager to install first, no equivalent of
 <code>nvm</code>, and for most people there never needs to be. Go&apos;s compatibility promise
-means a program written for Go 1.0 in 2012 still compiles today, so &quot;which
+{/* toolchain-version: historical */}means a program written for Go 1.0 in 2012 still compiles today, so &quot;which
 version&quot; is rarely a question that costs you an afternoon.</p>
 
       <p>Check it worked:</p>

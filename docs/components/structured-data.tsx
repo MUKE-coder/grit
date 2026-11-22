@@ -1,4 +1,4 @@
-import { siteConfig } from '@/config/site'
+import { GO_MIN, NODE_MIN, siteConfig } from '@/config/site'
 
 interface StructuredDataProps {
   data: Record<string, unknown>
@@ -62,7 +62,7 @@ export function SoftwareApplicationSchema() {
           priceCurrency: 'USD',
         },
         programmingLanguage: ['Go', 'TypeScript', 'JavaScript'],
-        softwareRequirements: 'Go 1.21+, Node.js 18+, pnpm',
+        softwareRequirements: `Go ${GO_MIN}+, Node.js ${NODE_MIN}+, pnpm`,
       }}
     />
   )
@@ -125,7 +125,7 @@ export function FAQPageSchema({
             name: 'What tech stack does Grit use?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Grit uses Go with Gin web framework and GORM ORM for the backend, Next.js 14+ with App Router and TypeScript for the frontend, Tailwind CSS with shadcn/ui for styling, React Query for data fetching, Zod for validation, Turborepo with pnpm for monorepo management, and Docker for infrastructure.',
+              text: 'Grit uses Go with Gin web framework and GORM ORM for the backend, Next.js 16+ with App Router and TypeScript for the frontend, Tailwind CSS with shadcn/ui for styling, React Query for data fetching, Zod for validation, Turborepo with pnpm for monorepo management, and Docker for infrastructure.',
             },
           },
           {

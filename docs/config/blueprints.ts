@@ -75,10 +75,12 @@ export interface Blueprint {
   shotKind?: 'phone' | 'screen'
 }
 
+import { GO_MIN, NODE_MIN } from '@/config/site'
+
 export const BLUEPRINT_SITE = 'https://gritframework.dev/blueprints'
 
 /** The common ending: every blueprint runs on SQLite with no Docker. */
-const COMMON_REQUIREMENTS = ['Go 1.21 or newer', 'Node 20 or newer', 'pnpm 10.33.4']
+const COMMON_REQUIREMENTS = [`Go ${GO_MIN} or newer`, `Node ${NODE_MIN} or newer`, 'pnpm 10.33.4']
 
 export const BLUEPRINTS: Blueprint[] = [
   {

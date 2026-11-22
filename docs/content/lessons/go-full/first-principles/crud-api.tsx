@@ -274,6 +274,7 @@ check you return half a page and call it success.</p>
 
       <h2>A router, written rather than imported</h2>
 
+      {/* toolchain-version: historical */}
       <p>Go 1.22 taught <code>ServeMux</code> method and wildcard patterns, so in a real project
 you would use it. Write one once anyway: a router is about forty lines, and
 knowing that number changes how you think about frameworks.</p>

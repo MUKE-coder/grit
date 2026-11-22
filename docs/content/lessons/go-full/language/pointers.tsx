@@ -161,6 +161,7 @@ sixteen bytes; copying it is cheaper than following a pointer.</p>
 
       <p>For years this was the most common Go bug in existence:</p>
 
+      {/* toolchain-version: historical */}
       <CodeBlock language="go" code={`// Go 1.21 and earlier
 for _, u := range users {
     go func() {
@@ -171,6 +172,7 @@ for _, u := range users {
       <p>The loop variable was reused across iterations, so all the goroutines shared
 one variable and usually printed the last element several times.</p>
 
+      {/* toolchain-version: historical */}
       <p><strong>Go 1.22 changed this.</strong> Loop variables are now per-iteration, and the code
 above does what it looks like it does.</p>
 

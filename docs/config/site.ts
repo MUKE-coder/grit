@@ -3,9 +3,12 @@
 // example output, verify-install lesson, animated terminal). Bump this
 // when the Go CLI releases; keep it in sync with cmd/grit/main.go's
 // `var version` and internal/scaffold.DefaultVersion.
-export const GRIT_VERSION = '3.561.0'
+export const GRIT_VERSION = '3.562.0'
 
 // The toolchain versions a reader needs installed, in one place.
+//
+// toolchain-version: historical: the next paragraph quotes the wrong
+// numbers the site used to state, which is the point of it.
 //
 // The site said Go 1.21+ in the README's summary, Go 1.21+ and Node 18+ in the
 // install page, and Go 1.26 in the prerequisites, which is three answers to
@@ -21,6 +24,19 @@ export const GRIT_VERSION = '3.561.0'
 export const REQUIRED_GO = '1.26.11'
 export const REQUIRED_NODE = '20.9'
 export const PINNED_PNPM = '10.33.4'
+
+// What a reader is told to install: "Go 1.26+", "Node 20+".
+//
+// Derived rather than written down, because the exact versions are already
+// above and two constants holding the same fact drift. The drift here would
+// be silent and slow: somebody raises REQUIRED_GO on the next Go security
+// release, check-toolchain-versions.py passes because it reads that one, and
+// twenty-five pages keep promising the old minor.
+//
+// Only the major and minor belong in prose. A page that says "Go 1.26.11+"
+// is telling a reader to match a patch release they do not need to match.
+export const GO_MIN = REQUIRED_GO.split('.').slice(0, 2).join('.')
+export const NODE_MIN = REQUIRED_NODE.split('.')[0]
 
 /**
  * Which channel the version above belongs to.

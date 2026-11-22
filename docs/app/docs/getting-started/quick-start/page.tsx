@@ -7,6 +7,7 @@ import { CodeBlock } from "@/components/code-block";
 import { Steps, Step } from "@/components/steps";
 import { CommunityCTA } from "@/components/community-cta";
 import { getDocMetadata } from '@/config/docs-metadata'
+import { GO_MIN } from '@/config/site'
 import { BookDownload } from '@/components/book-download'
 import { GRIT_VERSION } from '@/config/site'
 
@@ -55,7 +56,7 @@ export default function QuickStartPage() {
 
             <div className="grid gap-3 sm:grid-cols-2 mb-10">
               {[
-                { name: "Go", version: "1.24+", check: "go version" },
+                { name: "Go", version: `${GO_MIN}+`, check: "go version" },
                 { name: "Node.js", version: "22+", check: "node --version" },
                 { name: "pnpm", version: "9+", check: "pnpm --version" },
                 {

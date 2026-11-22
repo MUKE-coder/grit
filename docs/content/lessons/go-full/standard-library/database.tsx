@@ -192,6 +192,7 @@ if bio.Valid {
     u.Bio = bio.String
 }`} />
 
+      {/* toolchain-version: historical */}
       <p>Since Go 1.22 there is also <code>sql.Null[T]</code>, the generic version:</p>
 
       <CodeBlock language="go" code={`var bio sql.Null[string]`} />

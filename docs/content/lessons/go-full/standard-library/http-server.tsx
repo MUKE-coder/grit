@@ -75,6 +75,7 @@ with a log line:</p>
 
       <h2>Routing with ServeMux</h2>
 
+      {/* toolchain-version: historical */}
       <p>Since Go 1.22 the standard router handles methods and path parameters, which
 removed the main reason people reached for a third-party router.</p>
 

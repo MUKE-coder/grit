@@ -262,7 +262,7 @@ Use it to find what you <strong>missed</strong>, never as a target to hit.</p>
       <CodeBlock language="text" code={`BenchmarkSlugify-8    2419371    489.2 ns/op    144 B/op    3 allocs/op`} />
 
       <p>Operations per second, nanoseconds each, bytes allocated and allocation count.
-<code>b.Loop()</code> replaced the older <code>for i := 0; i &lt; b.N; i++</code> in Go 1.24 and is
+{/* toolchain-version: historical */}<code>b.Loop()</code> replaced the older <code>for i := 0; i &lt; b.N; i++</code> in Go 1.24 and is
 harder to get wrong, because it stops the compiler optimising your work away.</p>
 
       <TipBox tone="success">

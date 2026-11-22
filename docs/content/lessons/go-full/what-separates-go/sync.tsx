@@ -147,7 +147,7 @@ func report() {
 }`} />
 
       <p>The typed atomics (<code>atomic.Int64</code>, <code>atomic.Bool</code>, <code>atomic.Pointer[T]</code>) arrived
-in Go 1.19 and are much nicer than the old function forms. They cannot be
+{/* toolchain-version: historical */}in Go 1.19 and are much nicer than the old function forms. They cannot be
 copied, which the compiler enforces.</p>
 
       <p>Use atomics only for a <strong>single</strong> value. The moment two values must change

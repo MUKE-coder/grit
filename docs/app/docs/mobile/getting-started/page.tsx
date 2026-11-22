@@ -6,6 +6,7 @@ import { CodeBlock } from '@/components/code-block'
 import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { GO_MIN, NODE_MIN } from '@/config/site'
 
 export const metadata = getDocMetadata('/docs/mobile/getting-started')
 
@@ -54,8 +55,8 @@ export default function MobileGettingStartedPage() {
 
             <div className="grid gap-3 sm:grid-cols-2 mb-10">
               {[
-                { name: 'Go', version: '1.21+', check: 'go version' },
-                { name: 'Node.js', version: '18+', check: 'node --version' },
+                { name: 'Go', version: `${GO_MIN}+`, check: 'go version' },
+                { name: 'Node.js', version: `${NODE_MIN}+`, check: 'node --version' },
                 { name: 'pnpm', version: '8+', check: 'pnpm --version' },
                 { name: 'Grit CLI', version: 'Latest', check: 'grit --help' },
                 { name: 'Expo Go', version: 'iOS / Android', check: 'App Store / Play Store' },

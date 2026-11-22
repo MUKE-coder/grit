@@ -5,6 +5,7 @@ import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
 import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
+import { GO_MIN, NODE_MIN } from '@/config/site'
 
 export const metadata: Metadata = {
   title: 'Your First Desktop App — Grit Desktop Course',
@@ -148,12 +149,12 @@ export default function FirstDesktopAppCourse() {
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Go</td>
-                  <td className="px-4 py-3">1.21+</td>
+                  <td className="px-4 py-3">{GO_MIN}+</td>
                   <td className="px-4 py-3"><Code>go version</Code></td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Node.js</td>
-                  <td className="px-4 py-3">18+</td>
+                  <td className="px-4 py-3">{NODE_MIN}+</td>
                   <td className="px-4 py-3"><Code>node --version</Code></td>
                 </tr>
                 <tr className="border-b border-border/20">

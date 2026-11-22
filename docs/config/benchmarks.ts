@@ -85,6 +85,7 @@ export const GRIT = {
   name: 'Grit',
   logo: '/logos/grit.png',
   color: '#3BB4F5',
+  // toolchain-version: historical (benchmark record, not a Grit requirement)
   stack: 'Go 1.22, Gin, GORM',
 }
 
@@ -238,6 +239,7 @@ export const FRAMEWORKS: Framework[] = [
      * the same binary. Next.js saturated its own container in all four scenarios
      * (406-412% of a 400% allowance), so its figures are genuine ceilings.
      */
+    // toolchain-version: historical (benchmark record: the stack this pair was measured against)
     stack: 'Node 22, Next.js 15.5 App Router, standalone output, Prisma',
     results: {
       show:  { rps: 433, gritRps: 6822, median: '103.0 ms', gritMedian: '5.5 ms',  appCpu: 403, dbCpu: 25,  gritAppCpu: 287, gritDbCpu: 246 },

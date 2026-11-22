@@ -102,7 +102,15 @@ func readRepoFile(t *testing.T, rel string) (string, bool) {
 			if err != nil {
 				return "", false
 			}
-			return string(raw), true
+			// Normalise the line endings before anything searches this text.
+			//
+			// These tests find where one entry ends by looking for a literal
+			// newline, two spaces, brace. Git checks the file out with CRLF on
+			// Windows, so that search found nothing, every block ran to the end
+			// of the file, and three blueprints were reported as having empty
+			// install steps. Green in CI on Linux and red for every Windows
+			// contributor, which is the worst shape a failure can have.
+			return strings.ReplaceAll(string(raw), "\r\n", "\n"), true
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {

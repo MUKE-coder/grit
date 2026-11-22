@@ -4,10 +4,12 @@ A requirement is a promise: "Go 1.21 or newer" tells a reader that 1.21 will
 work. Grit's toolchain floor is 1.26.11 and `grit upgrade` rewrites a go.mod
 below it, so that promise has been false for a long time, on a page somebody
 reads before they install anything. The same for Next: the scaffold pins
-16.3.8 and three pages still say 14 or 15.
+16.3.8 and three pages still say 14 or 15. The same for Node: the docs floor
+is 20 (docs/config/site.ts NODE_MIN, matching README and CONTRIBUTING), and
+pages still said 18.
 
 Nothing catches this class, because a version in prose is just prose. So the
-real pins are read from the Go source that sets them, and every version the
+real pins are read from the sources that set them, and every version the
 docs state is compared against them.
 
 The hard part is that not every version mention is a requirement. "Generics
@@ -16,6 +18,8 @@ that rewrites it is worse than no checker. Two defences:
 
   by path     the changelog and the dated learnings posts are history
   by marker   `toolchain-version: historical` on or just above the line
+              (also covers another tool's own floor, e.g. orbita's Go 1.25+:
+              a version that is not a Grit requirement at all)
 
 It also checks the constants the guides print from config/site.ts, which is
 the same concern from the other end: REQUIRED_GO and PINNED_PNPM are copies of
@@ -59,8 +63,13 @@ SKIP_PARTS = (
     os.path.join('app', 'docs', 'changelog'),
     os.path.join('app', 'docs', 'learnings'),
     os.path.join('app', 'blog'),
+    os.path.join('content', 'blog'),
 )
 SKIP_DIRS = {'node_modules', '.next', 'out', '.git'}
+
+# Docs roots the checker walks. Requirement pages, lessons, components and
+# config all state versions a reader acts on, so all of them are checked.
+WALK_ROOTS = ('app', 'content', 'components', 'config', 'lib')
 
 
 def read(path):
@@ -85,6 +94,19 @@ def pinned_next():
         sys.exit('could not read nextVersion; this checker is now lying')
     return int(m.group(1))
 
+
+def pinned_node():
+    """The Node major a reader is told to install.
+
+    Read from REQUIRED_NODE rather than from NODE_MIN, because NODE_MIN is
+    derived from it now. A regex for a literal would quietly stop matching
+    and this checker would exit saying it is lying.
+    """
+    src = read(os.path.join(DOCS, 'config', 'site.ts'))
+    m = re.search(r"REQUIRED_NODE\s*=\s*'(\d+)", src)
+    if not m:
+        sys.exit('could not read REQUIRED_NODE; this checker is now lying')
+    return int(m.group(1))
 
 
 def pinned_go_patch():
@@ -147,50 +169,58 @@ def constant_problems():
               % stated['REQUIRED_NODE'])
     return found
 
-
 GO = re.compile(r'\bGo (\d+)\.(\d+)')
+NODE = re.compile(r'\bNode(?:\.js)? (\d+)')
 NEXT = re.compile(r'\bNext\.js (\d+)')
 
 
 def main():
     go_major, go_minor = pinned_go()
     next_major = pinned_next()
+    node_major = pinned_node()
 
     constants = constant_problems()
 
     problems = []
-    for dirpath, dirs, names in os.walk(os.path.join(DOCS, 'app')):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-        for name in names:
-            if not name.endswith(('.tsx', '.ts', '.md')):
-                continue
-            path = os.path.join(dirpath, name)
-            rel = os.path.relpath(path, ROOT).replace('\\', '/')
-            if any(part.replace('\\', '/') in rel for part in
-                   (p.replace('\\', '/') for p in SKIP_PARTS)):
-                continue
-            try:
-                lines = read(path).splitlines()
-            except (OSError, UnicodeDecodeError):
-                continue
-            for i, line in enumerate(lines, 1):
-                near = lines[max(0, i - WINDOW - 1):i]
-                if MARKER in line or any(MARKER in n for n in near):
+    for root in WALK_ROOTS:
+        for dirpath, dirs, names in os.walk(os.path.join(DOCS, root)):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            for name in names:
+                if not name.endswith(('.tsx', '.ts', '.md')):
                     continue
+                path = os.path.join(dirpath, name)
+                rel = os.path.relpath(path, ROOT).replace('\\', '/')
+                if any(part.replace('\\', '/') in rel for part in
+                       (p.replace('\\', '/') for p in SKIP_PARTS)):
+                    continue
+                try:
+                    lines = read(path).splitlines()
+                except (OSError, UnicodeDecodeError):
+                    continue
+                for i, line in enumerate(lines, 1):
+                    near = lines[max(0, i - WINDOW - 1):i]
+                    if MARKER in line or any(MARKER in n for n in near):
+                        continue
 
-                for m in GO.finditer(line):
-                    major, minor = int(m.group(1)), int(m.group(2))
-                    if (major, minor) < (go_major, go_minor):
-                        problems.append((
-                            rel, i, m.group(0),
-                            f'Grit requires Go {go_major}.{go_minor}+',
-                            line.strip()[:100]))
-                for m in NEXT.finditer(line):
-                    if int(m.group(1)) < next_major:
-                        problems.append((
-                            rel, i, m.group(0),
-                            f'the scaffold pins Next.js {next_major}',
-                            line.strip()[:100]))
+                    for m in GO.finditer(line):
+                        major, minor = int(m.group(1)), int(m.group(2))
+                        if (major, minor) < (go_major, go_minor):
+                            problems.append((
+                                rel, i, m.group(0),
+                                f'Grit requires Go {go_major}.{go_minor}+',
+                                line.strip()[:100]))
+                    for m in NODE.finditer(line):
+                        if int(m.group(1)) < node_major:
+                            problems.append((
+                                rel, i, m.group(0),
+                                f'Grit requires Node.js {node_major}+',
+                                line.strip()[:100]))
+                    for m in NEXT.finditer(line):
+                        if int(m.group(1)) < next_major:
+                            problems.append((
+                                rel, i, m.group(0),
+                                f'the scaffold pins Next.js {next_major}',
+                                line.strip()[:100]))
 
     if constants:
         print('the versions the guides print disagree with the CLI:')
@@ -205,12 +235,13 @@ def main():
     if not problems:
         if not constants:
             print(f'every stated version is current '
-                  f'(Go {go_major}.{go_minor}+, Next.js {next_major})')
+                  f'(Go {go_major}.{go_minor}+, Node.js {node_major}+, '
+                  f'Next.js {next_major})')
             return 0
         return 1
 
     print(f'{len(problems)} stale version(s). Grit needs Go '
-          f'{go_major}.{go_minor}+ and pins Next.js {next_major}:\n')
+          f'{go_major}.{go_minor}+, Node.js {node_major}+ and pins Next.js {next_major}:\n')
     for rel, line, found, why, text in problems:
         print(f'  {rel}:{line}  "{found}" ({why})')
         print(f'    {text}')

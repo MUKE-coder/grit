@@ -11,6 +11,8 @@
  * the rule that nothing is reported as done until it builds.
  */
 
+import { GO_MIN, NODE_MIN } from '@/config/site'
+
 export const BUILD_WITH_AI_PROMPT = `You are going to build a complete, production-ready application with the **Grit framework** (Go + Gin + GORM on the backend, Next.js or TanStack Router on the frontend, with a generated admin panel). Follow these steps in order.
 
 ## Step 1: Load the Grit skill before anything else
@@ -36,7 +38,7 @@ curl -fsSL https://gritframework.dev/install.sh | sh   # macOS, Linux, Git Bash
 grit version
 \`\`\`
 
-Prerequisites: Go 1.21+, Node 20+, pnpm, Docker. https://gritframework.dev/docs/prerequisites
+Prerequisites: Go ${GO_MIN}+, Node ${NODE_MIN}+, pnpm, Docker. https://gritframework.dev/docs/prerequisites
 
 ## Step 3: Understand the one thing that matters
 

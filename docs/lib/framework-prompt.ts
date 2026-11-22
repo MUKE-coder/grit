@@ -3,6 +3,8 @@
 // in every generated project (internal/scaffold/skill_file.go) plus the framework
 // conventions from CLAUDE.md / GRIT.md — kept in sync by hand.
 
+import { GO_MIN } from '@/config/site'
+
 export type ClientId = 'api' | 'website' | 'admin' | 'mobile' | 'desktop'
 export type Frontend = 'next' | 'vite'
 export type PluginId = 'multitenant' | 'impersonate' | 'command-palette' | 'saved-views'
@@ -200,7 +202,7 @@ ${feRouting}
 
 ## The tech stack (do not substitute)
 
-- **Backend:** Go 1.21+, **Gin** (web), **GORM** (ORM). PostgreSQL in prod, SQLite for tests.
+- **Backend:** Go ${GO_MIN}+, **Gin** (web), **GORM** (ORM). PostgreSQL in prod, SQLite for tests.
 - **Frontend:** ${feName} + **Tailwind CSS** + **shadcn/ui**. Data fetching is **TanStack Query (React Query)** — never raw \`fetch\` in components.
 - **Validation:** **Zod**, shared between frontend and generated from the Go types.
 - **Monorepo:** Turborepo + pnpm.
