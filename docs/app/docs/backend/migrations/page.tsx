@@ -29,6 +29,84 @@ export default function MigrationsPage() {
             </div>
 
             <div className="prose-grit">
+              {/* Before anything else: the command that answers "what is this
+                  about to do", because a migration is the highest-blast-radius
+                  thing a deploy runs (grit#58). */}
+              <div className="mb-12">
+                <h2 id="plan" className="text-2xl font-semibold tracking-tight mb-4">
+                  Look before you run it
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>grit migrate plan</code> prints what the next migration would
+                  change and changes nothing, including the migration history. It is safe
+                  to run against production, and it is the thing to run first.
+                </p>
+                <CodeBlock
+                  output="grit migrate plan"
+                  language="text"
+                  code={`$ grit migrate plan
+
+  2 changes:
+
+    ALTER TABLE "orders" ADD COLUMN "reference"
+    CREATE INDEX "idx_orders_customer_id" ON "orders"
+
+  1 warning to read first:
+
+    column orders.reference
+      NOT NULL with no default, and orders already has 412,004 rows. Postgres
+      refuses this outright; the ones that accept it write a value you did not
+      choose into every row.
+      Instead: Add it nullable, backfill it, then add the constraint.
+      grit generate migration gives you the pair to do that in.
+
+  AutoMigrate never drops a column, a table or an index, so nothing
+  in this plan loses data. The command that can is migrate down.`}
+                />
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  Two things it warns about, and only two, because a warning that fires on
+                  a dev database is a warning people learn to scroll past:
+                </p>
+                <ul className="space-y-2 mb-4 text-muted-foreground">
+                  <li className="leading-relaxed">
+                    <strong className="text-foreground">
+                      A NOT NULL column with no default, on a table that already has rows.
+                    </strong>{' '}
+                    Postgres refuses it; the dialects that accept it write a zero value
+                    into every existing row. On an empty table it is free, and the plan
+                    says nothing.
+                  </li>
+                  <li className="leading-relaxed">
+                    <strong className="text-foreground">
+                      An index build on a large table.
+                    </strong>{' '}
+                    AutoMigrate does not use <code>CONCURRENTLY</code>, so writes wait
+                    until the build finishes. The threshold is 50,000 rows: low enough to
+                    catch it early, high enough that a dev database stays quiet.
+                  </li>
+                </ul>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <strong>It reports no seconds.</strong> Lock duration depends on the
+                  table, the hardware, the concurrent load and the plan the server picks,
+                  and a number printed here would be believed. It gives the row count and
+                  says what holds the lock, which is the input to a judgement rather than
+                  a substitute for one.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>--strict</code> exits non-zero when the plan carries a warning,
+                  for a pipeline that should stop and ask somebody.
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  The prediction is not a guess from your model source. The planned shape
+                  comes from GORM&apos;s own parse of each model, which is the parse{' '}
+                  <code>AutoMigrate</code> uses, and the current shape is read from the
+                  database. The difference between them is computed by the same function
+                  that records what a run actually changed, so a plan and the run it
+                  describes cannot disagree about what counts as a change. A test in your
+                  project builds a plan, runs the migration and requires the two to match.
+                </p>
+              </div>
+
               {/* What this is not */}
               <div className="mb-12">
                 <h2 id="additive-only" className="text-2xl font-semibold tracking-tight mb-4">

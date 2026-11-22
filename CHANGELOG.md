@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.570.0 - November 22, 2026
+
+### grit migrate plan: what it would change, before it does
+
+A migration is the highest-blast-radius thing a deploy runs, and the only way to see what one would do was to do it.
+
+{`$ grit migrate plan 1 change: ALTER TABLE "orders" ADD COLUMN "owner_name" text NOT NULL 1 warning to read first: column orders.owner_name NOT NULL with no default, and orders already has 1 row. Postgres refuses this outright; the ones that accept it write a value you did not choose into every row. Instead: Add it nullable, backfill it, then add the constraint. grit generate migration gives you the pair to do that in.`} Nothing is written, including the migration history, so it is safe against production. `--strict` exits non-zero when the plan carries a warning, for a pipeline that should stop and ask somebody.
+
+#### Two warnings, and only two
+
+A NOT NULL column with no default on a table that already has rows, and an index build on a table over fifty thousand rows. Both are quiet on an empty table, because a warning that fires on a dev database is one people learn to scroll past.
+
+It reports no seconds. Lock duration depends on the table, the hardware, the concurrent load and the plan the server picks, and a number printed here would be believed. It gives the row count and says what holds the lock.
+
+The prediction is not read off your model source. The planned shape comes from GORM's own parse of each model, which is the parse AutoMigrate uses, and the difference from the live schema is computed by the same function that records what a run actually changed. A test in your project builds a plan, runs the migration and requires the two to match.
+
+#### Running it found two things
+
+The first draft printed `ALTER TABLE "orders" DROP COLUMN "owner_name"` for a column being added, because it reused the statement renderer written for `migrate down`, which spells the inverse of a change by design. A plan that prints the opposite of what is about to happen is worse than no plan. The forward renderer builds the real definition through the migrator, which is why the type and the NOT NULL are in the line above.
+
+And the plan was unreadable on SQLite: 43 lines of `PRAGMA_index_list` before the first word of the answer. A Silent log level does not stop it, and the reason is worth writing down, because it will come up again: glebarez/sqlite's GetIndexes calls `m.DB.Debug().Raw(...)`, and `Debug()` forces the level back to Info on whatever logger it is given. A level loses; a writer does not. The plan reads through a logger pointed at io.Discard.
+
+That noise is still there on a plain `grit migrate` against SQLite, 86 lines of it, because it comes from AutoMigrate itself and silencing that would hide what you ran the command to see. It is the driver's stray `Debug()`, not Grit's.
+
+`grit upgrade` delivers the plan package to an existing project. Snapshots, restore and the admin diff view from the same report are not in this: see the issue.
+
+
 ## v3.569.0 - November 22, 2026
 
 ### What you can delete, measured rather than guessed

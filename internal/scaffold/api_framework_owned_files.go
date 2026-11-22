@@ -248,6 +248,13 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "migrate", "history.go"):      apiMigrateHistoryGo(),
 		filepath.Join(apiRoot, "internal", "migrate", "history_test.go"): apiMigrateHistoryTestGo(),
 
+		// The plan: what AutoMigrate would change, worked out without changing
+		// anything. Beside history.go because it reuses Snapshot and Diff from
+		// it, so a plan and the run it describes cannot disagree about what
+		// counts as a change.
+		filepath.Join(apiRoot, "internal", "migrate", "plan.go"):      apiMigratePlanGo(),
+		filepath.Join(apiRoot, "internal", "migrate", "plan_test.go"): apiMigratePlanTestGo(),
+
 		// Checked-in SQL pairs, for the five changes AutoMigrate cannot make
 		// (grit#162). One set with cmd/migrate, which imports the embedded
 		// directory: deliver the runner without the package and the tool does

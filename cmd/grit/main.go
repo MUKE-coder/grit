@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.569.0"
+var version = "3.570.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1455,7 +1455,7 @@ func migrateCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&fresh, "fresh", false, "Drop all tables before migrating (migrate:fresh)")
 	cmd.Flags().BoolVar(&yes, "yes", false,
 		"Skip the confirmation --fresh asks for. For CI and scripts, where there is no one to answer")
-	cmd.AddCommand(migrateStatusCmd(), migrateDownCmd())
+	cmd.AddCommand(migratePlanCmd(), migrateStatusCmd(), migrateDownCmd())
 
 	return cmd
 }
@@ -1485,6 +1485,46 @@ func runMigrateTool(goArgs []string) error {
 		return err
 	}
 	return nil
+}
+
+// migratePlanCmd is `grit migrate plan`.
+//
+// A migration is the highest-blast-radius thing a deploy runs, and until this
+// the only way to see what one would do was to do it (grit#58). The plan is
+// computed from GORM's own parse of the models against the live schema, by
+// the same Diff that records what a run actually changed, so a plan and the
+// run it describes cannot disagree about what counts as a change.
+//
+// It reports no seconds. Lock duration depends on the table, the hardware and
+// the concurrent load, and a number printed here would be believed.
+func migratePlanCmd() *cobra.Command {
+	var strict bool
+
+	cmd := &cobra.Command{
+		Use:   "plan",
+		Short: "Show what a migration would change, and change nothing",
+		Long: "Print the tables, columns and indexes the next `grit migrate` would add, with a\n" +
+			"warning for the two that are worth knowing about first: a NOT NULL column with no\n" +
+			"default on a table that already has rows, and an index build on a large one.\n\n" +
+			"Nothing is written, including the migration history, so it is safe to run against\n" +
+			"production. --strict exits non-zero when the plan carries a warning, for a pipeline\n" +
+			"that should stop and ask somebody.\n\n" +
+			"AutoMigrate never drops a column, a table or an index, so no plan loses data. The\n" +
+			"command that can is grit migrate down.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			printLogo()
+			cHeading.Println("\n  What a migration would change...")
+			argv := []string{"run", "cmd/migrate/main.go", "--plan"}
+			if strict {
+				argv = append(argv, "--strict")
+			}
+			return runMigrateTool(argv)
+		},
+	}
+	cmd.Flags().BoolVar(&strict, "strict", false,
+		"exit non-zero when the plan carries a warning")
+	return cmd
 }
 
 func migrateStatusCmd() *cobra.Command {

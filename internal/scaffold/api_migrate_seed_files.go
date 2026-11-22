@@ -106,6 +106,8 @@ func main() {
 	fresh := flag.Bool("fresh", false, "Drop all tables before migrating")
 	status := flag.Bool("status", false, "Show what each recorded run changed")
 	down := flag.Bool("down", false, "Undo what the most recent run added")
+	plan := flag.Bool("plan", false, "Print what a migration would change, and change nothing")
+	strict := flag.Bool("strict", false, "With -plan, exit non-zero when the plan carries a warning")
 	sqlDown := flag.Bool("sql-down", false, "Run the down half of the most recent checked-in SQL migrations")
 	steps := flag.Int("steps", 1, "How many runs --down or --sql-down undoes")
 	dryRun := flag.Bool("dry-run", false, "With --down, print the statements and change nothing")
@@ -137,6 +139,21 @@ func main() {
 	}
 
 	switch {
+	case *plan:
+		// Before the history is read and before anything is written. A plan
+		// that needed the database to be in a particular state would be no
+		// use on the machine where you most want one.
+		p, err := migrate.BuildPlan(db, models.Models())
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		fmt.Print(migrate.Format(db, p))
+		if *strict && len(p.Risks) > 0 {
+			// For a pipeline. Without it the plan is a report, and a report
+			// in CI is a report nobody reads.
+			os.Exit(1)
+		}
+		return
 	case *status:
 		if err := showStatus(db); err != nil {
 			log.Fatalf("%v", err)

@@ -91,6 +91,105 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.570.0 */}
+            <div className="mb-12" id="v3.570.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.570.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit migrate plan: what it would change, before it does</h3>
+
+                <p>
+                  A migration is the highest-blast-radius thing a deploy runs,
+                  and the only way to see what one would do was to do it.
+                </p>
+
+                <pre className="text-[12.5px]">{`$ grit migrate plan
+
+  1 change:
+
+    ALTER TABLE "orders" ADD COLUMN "owner_name" text NOT NULL
+
+  1 warning to read first:
+
+    column orders.owner_name
+      NOT NULL with no default, and orders already has 1 row. Postgres refuses
+      this outright; the ones that accept it write a value you did not choose
+      into every row.
+      Instead: Add it nullable, backfill it, then add the constraint. grit
+      generate migration gives you the pair to do that in.`}</pre>
+
+                <p>
+                  Nothing is written, including the migration history, so it is
+                  safe against production. <code>--strict</code> exits non-zero
+                  when the plan carries a warning, for a pipeline that should
+                  stop and ask somebody.
+                </p>
+
+                <h4>Two warnings, and only two</h4>
+                <p>
+                  A NOT NULL column with no default on a table that already has
+                  rows, and an index build on a table over fifty thousand rows.
+                  Both are quiet on an empty table, because a warning that
+                  fires on a dev database is one people learn to scroll past.
+                </p>
+                <p>
+                  It reports no seconds. Lock duration depends on the table,
+                  the hardware, the concurrent load and the plan the server
+                  picks, and a number printed here would be believed. It gives
+                  the row count and says what holds the lock.
+                </p>
+                <p>
+                  The prediction is not read off your model source. The planned
+                  shape comes from GORM&apos;s own parse of each model, which is
+                  the parse AutoMigrate uses, and the difference from the live
+                  schema is computed by the same function that records what a
+                  run actually changed. A test in your project builds a plan,
+                  runs the migration and requires the two to match.
+                </p>
+
+                <h4>Running it found two things</h4>
+                <p>
+                  The first draft printed{' '}
+                  <code>ALTER TABLE &quot;orders&quot; DROP COLUMN
+                  &quot;owner_name&quot;</code> for a column being added,
+                  because it reused the statement renderer written for{' '}
+                  <code>migrate down</code>, which spells the inverse of a
+                  change by design. A plan that prints the opposite of what is
+                  about to happen is worse than no plan. The forward renderer
+                  builds the real definition through the migrator, which is why
+                  the type and the NOT NULL are in the line above.
+                </p>
+                <p>
+                  And the plan was unreadable on SQLite: 43 lines of{' '}
+                  <code>PRAGMA_index_list</code> before the first word of the
+                  answer. A Silent log level does not stop it, and the reason is
+                  worth writing down, because it will come up again:
+                  glebarez/sqlite&apos;s GetIndexes calls{' '}
+                  <code>m.DB.Debug().Raw(...)</code>, and <code>Debug()</code>{' '}
+                  forces the level back to Info on whatever logger it is given.
+                  A level loses; a writer does not. The plan reads through a
+                  logger pointed at io.Discard.
+                </p>
+                <p>
+                  That noise is still there on a plain <code>grit migrate</code>{' '}
+                  against SQLite, 86 lines of it, because it comes from
+                  AutoMigrate itself and silencing that would hide what you ran
+                  the command to see. It is the driver&apos;s stray{' '}
+                  <code>Debug()</code>, not Grit&apos;s.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the plan package to an
+                  existing project. Snapshots, restore and the admin diff view
+                  from the same report are not in this: see the issue.
+                </p>
+              </div>
+            </div>
+
             {/* v3.569.0 */}
             <div className="mb-12" id="v3.569.0">
               <div className="flex items-center gap-3 mb-4">
