@@ -106,7 +106,11 @@ EXPECTED_ABSENT = {
 
     # Created by something you opt into.
     'apps/api/internal/middleware/tenant.go': 'created by grit plugin add multitenant',
-    'apps/admin/components/calendar.tsx': 'created by the example plugin on the authoring page',
+    # The authoring page's worked example is a calendar plugin, and since
+    # v3.556.0 it installs a directory rather than one file, so the paths it
+    # names moved. They are still paths no plain project has.
+    'apps/admin/config/calendar.ts': 'created by the example plugin on the authoring page',
+    'apps/admin/components/calendar/day/grid.tsx': 'created by the example plugin on the authoring page',
     'apps/admin/messages/fr.json': 'created by grit add i18n',
     'apps/expo/lib/push.ts': 'created by grit plugin add push',
 
