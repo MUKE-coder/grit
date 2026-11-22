@@ -8,6 +8,7 @@ import { Steps, Step } from "@/components/steps";
 import { CommunityCTA } from "@/components/community-cta";
 import { getDocMetadata } from '@/config/docs-metadata'
 import { BookDownload } from '@/components/book-download'
+import { GRIT_VERSION } from '@/config/site'
 
 export const metadata = getDocMetadata('/docs/getting-started/quick-start')
 
@@ -401,7 +402,7 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
             <div className="mb-10 rounded-xl border border-accent/20 bg-accent/5 p-5">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <span className="text-accent">Upgrading?</span>
-                <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5">v3.55.0</span>
+                <span className="text-xs font-mono text-accent/60 bg-accent/10 rounded-full px-2 py-0.5">v{GRIT_VERSION}</span>
               </h3>
               <p className="text-[15px] text-muted-foreground mb-3">
                 If you have an existing Grit project and want to update the framework
