@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Metadata } from 'next'
+import { latestDigest } from '@/lib/digest'
 import { ArrowRight, Check } from 'lucide-react'
 
 import { SiteHeader } from '@/components/site-header'
@@ -58,6 +59,9 @@ const GO_INSTALL = 'go install github.com/MUKE-coder/grit/v3/cmd/grit@latest'
  * read as a signature rather than as decoration is that every section has them.
  */
 export default function HomePage() {
+  // The month in prose, beside the version number it explains.
+  const digest = latestDigest()
+
   return (
     <div className="min-h-screen bg-bg">
       <SoftwareApplicationSchema />
@@ -101,6 +105,14 @@ export default function HomePage() {
                 <Link href="/docs/versioning" className="g-link">
                   How versions work
                 </Link>
+              {digest && (
+                <>
+                  {' \u00b7 '}
+                  <Link href={`/blog/${digest.slug}`} className="g-link">
+                    {digest.title}
+                  </Link>
+                </>
+              )}
               </p>
 
               <h1 className="mt-7 text-[clamp(2.75rem,6vw,4.625rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-fg [text-wrap:balance]">

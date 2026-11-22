@@ -23,6 +23,23 @@ Also worth knowing:
 ---
 
 
+## v3.568.0 - November 22, 2026
+
+### A monthly digest, because nobody reads 757 entries
+
+This page is thorough and that is its job: it says why each change was made, which is what you want at two in the morning. It is not an answer to "what happened this month", and October had 179 releases in it.
+
+So there is a digest now, linked from the top of this page and from the home page beside the version number. [The first one covers October](https://gritframework.com/blog/whats-new-in-grit-october-2026) : six security fixes, four new commands, two bugs worth knowing about even now, and what to run.
+
+#### The draft is generated, the post is not
+
+`scripts/changelog-digest.py 2026-10` reads the month's entries, groups them, pulls out the breaking ones and the commands they mention, and writes a draft with the whole list to choose from. Which five or ten of a hundred and seventy-nine matter is the entire value of a digest, and a machine that guessed would produce a list, which is the thing there is already too much of.
+
+It parses this page through the rollup's own reader rather than a second one, and it refuses to overwrite a draft that already exists, because the edit is the part a machine cannot redo.
+
+Writing the first one found three places where the obvious summary was wrong. The injection fix in v3.454.0 is not about attacker input at all: it is the manifest recording your edit as Grit's, so the next upgrade overwrote your work. The audit chain in v3.456.0 was unkeyed rather than hashing the wrong fields. And the SQLite-versus-Postgres failures in v3.440.0 were one foreign key, not a spread of dialect differences. Each was checked against the entry before it was published, which is the reason to write these by hand.
+
+
 ## v3.567.0 - November 22, 2026
 
 ### A stable channel, for teams that cannot take a release every day

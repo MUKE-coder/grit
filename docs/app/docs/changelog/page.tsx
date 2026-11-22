@@ -5,10 +5,16 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { changelogRollup } from '@/components/changelog-rollup'
+import { latestDigest } from '@/lib/digest'
 
 export const metadata = getDocMetadata('/docs/changelog')
 
 export default function ChangelogPage() {
+  // The month in prose, for somebody who wants to know what happened rather
+  // than why one thing did. This page is the reference and is good at it;
+  // 757 entries is not an answer to "what is new" (grit#266).
+  const digest = latestDigest()
+
   return (
     <DocsShell>
             {/* Header */}
@@ -22,6 +28,19 @@ export default function ChangelogPage() {
                 bug fixes, and any breaking changes you need to be aware of.
               </p>
             </div>
+
+            {digest && (
+              <Link
+                href={`/blog/${digest.slug}`}
+                className="group mb-8 block rounded-xl border border-accent/25 bg-accent/[0.04] p-5 transition-colors hover:border-accent/40"
+              >
+                <p className="tag-mono text-accent/80 mb-1.5">Monthly digest</p>
+                <p className="font-semibold">{digest.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                  {digest.subtitle}
+                </p>
+              </Link>
+            )}
 
             {/* Releases by week, generated from the entries below it by
                 scripts/changelog-rollup.py. The detail is the point of this page;
@@ -70,6 +89,64 @@ export default function ChangelogPage() {
                 hundred past ones were breaking would be inventing a record rather than
                 reading one.
               </p>
+            </div>
+
+            {/* v3.568.0 */}
+            <div className="mb-12" id="v3.568.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.568.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A monthly digest, because nobody reads 757 entries</h3>
+
+                <p>
+                  This page is thorough and that is its job: it says why each
+                  change was made, which is what you want at two in the
+                  morning. It is not an answer to &quot;what happened this
+                  month&quot;, and October had 179 releases in it.
+                </p>
+                <p>
+                  So there is a digest now, linked from the top of this page
+                  and from the home page beside the version number.{' '}
+                  <a href="/blog/whats-new-in-grit-october-2026">
+                    The first one covers October
+                  </a>
+                  : six security fixes, four new commands, two bugs worth
+                  knowing about even now, and what to run.
+                </p>
+
+                <h4>The draft is generated, the post is not</h4>
+                <p>
+                  <code>scripts/changelog-digest.py 2026-10</code> reads the
+                  month&apos;s entries, groups them, pulls out the breaking
+                  ones and the commands they mention, and writes a draft with
+                  the whole list to choose from. Which five or ten of a hundred
+                  and seventy-nine matter is the entire value of a digest, and
+                  a machine that guessed would produce a list, which is the
+                  thing there is already too much of.
+                </p>
+                <p>
+                  It parses this page through the rollup&apos;s own reader
+                  rather than a second one, and it refuses to overwrite a draft
+                  that already exists, because the edit is the part a machine
+                  cannot redo.
+                </p>
+                <p>
+                  Writing the first one found three places where the obvious
+                  summary was wrong. The injection fix in v3.454.0 is not about
+                  attacker input at all: it is the manifest recording your edit
+                  as Grit&apos;s, so the next upgrade overwrote your work. The
+                  audit chain in v3.456.0 was unkeyed rather than hashing the
+                  wrong fields. And the SQLite-versus-Postgres failures in
+                  v3.440.0 were one foreign key, not a spread of dialect
+                  differences. Each was checked against the entry before it was
+                  published, which is the reason to write these by hand.
+                </p>
+              </div>
             </div>
 
             {/* v3.567.0 */}
