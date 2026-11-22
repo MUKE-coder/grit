@@ -23,6 +23,24 @@ Also worth knowing:
 ---
 
 
+## v3.571.0 - November 22, 2026
+
+### grit migrate plan is in the reference, and a full project was run end to end
+
+A command that is not in `docs/config/cli-commands.ts` exists and is invisible: both indexers read that file, the website's search and the one compiled into `grit docs`. `grit migrate plan` shipped yesterday without an entry, so it is there now with its output, its `--strict` flag and the three notes worth having before you run it.
+
+#### And the release protocol, run in full
+
+Nine releases landed between v3.563.0 and v3.570.0, several of them changing what a generated project contains: the Next pin, the GORM logger, the shared-types CI job, the plan package, an empty directory that stopped being written. Each was verified as it shipped. This is the cumulative check, on a project scaffolded fresh with `grit new --full`:
+
+- `go build ./...` and `go vet ./...` clean
+- `go test ./...`: 51 packages, all passing
+- `pnpm install` clean, with the Next pin at 16.4.6
+- admin, web and Expo all type-check
+
+One gap worth naming rather than leaving implied: Docker on the machine this ran on had wedged, so `grit migrate plan` is verified end to end against SQLite and not against Postgres. Its unit tests run on SQLite too. The Postgres-specific sentence in its warning is a fact about Postgres rather than a claim about the code path.
+
+
 ## v3.570.0 - November 22, 2026
 
 ### grit migrate plan: what it would change, before it does

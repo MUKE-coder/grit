@@ -91,6 +91,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.571.0 */}
+            <div className="mb-12" id="v3.571.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.571.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit migrate plan is in the reference, and a full project was run end to end</h3>
+
+                <p>
+                  A command that is not in{' '}
+                  <code>docs/config/cli-commands.ts</code> exists and is
+                  invisible: both indexers read that file, the website&apos;s
+                  search and the one compiled into{' '}
+                  <code>grit docs</code>. <code>grit migrate plan</code> shipped
+                  yesterday without an entry, so it is there now with its
+                  output, its <code>--strict</code> flag and the three notes
+                  worth having before you run it.
+                </p>
+
+                <h4>And the release protocol, run in full</h4>
+                <p>
+                  Nine releases landed between v3.563.0 and v3.570.0, several
+                  of them changing what a generated project contains: the Next
+                  pin, the GORM logger, the shared-types CI job, the plan
+                  package, an empty directory that stopped being written. Each
+                  was verified as it shipped. This is the cumulative check, on
+                  a project scaffolded fresh with <code>grit new --full</code>:
+                </p>
+                <ul>
+                  <li><code>go build ./...</code> and <code>go vet ./...</code> clean</li>
+                  <li><code>go test ./...</code>: 51 packages, all passing</li>
+                  <li><code>pnpm install</code> clean, with the Next pin at 16.4.6</li>
+                  <li>admin, web and Expo all type-check</li>
+                </ul>
+                <p>
+                  One gap worth naming rather than leaving implied: Docker on
+                  the machine this ran on had wedged, so{' '}
+                  <code>grit migrate plan</code> is verified end to end against
+                  SQLite and not against Postgres. Its unit tests run on
+                  SQLite too. The Postgres-specific sentence in its warning is
+                  a fact about Postgres rather than a claim about the code
+                  path.
+                </p>
+              </div>
+            </div>
+
             {/* v3.570.0 */}
             <div className="mb-12" id="v3.570.0">
               <div className="flex items-center gap-3 mb-4">
