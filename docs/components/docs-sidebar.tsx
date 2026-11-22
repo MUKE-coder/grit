@@ -400,6 +400,13 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Contributing',
+    icon: <Heart className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Your first contribution', href: '/docs/contributing/first-contribution' },
+    ],
+  },
+  {
     title: 'Changelog',
     icon: <FileText className="h-3.5 w-3.5" />,
     items: [

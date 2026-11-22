@@ -968,6 +968,12 @@ export const docsMetadata: Record<string, DocPage> = {
       'How Grit mobile apps behave offline: React Query in-memory caching, SecureStore token persistence, fast-fail networking with token refresh, and how to layer on true offline-first support.',
   },
 
+  '/docs/contributing/first-contribution': {
+    title: 'Your first contribution',
+    description:
+      'Fix your first docs page, find a good first issue, and write an issue report a maintainer can act on. No template changes needed.',
+  },
+
   // Changelog
   '/docs/changelog': {
     title: 'Changelog',

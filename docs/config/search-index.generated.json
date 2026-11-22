@@ -498,6 +498,12 @@
     "keywords": "typescript go types shared zod schema sync grit shares between structs schemas interfaces keeping frontend backend docs concepts type system"
   },
   {
+    "title": "Your first contribution",
+    "href": "/docs/contributing/first-contribution",
+    "section": "Documentation",
+    "keywords": "fix first docs page find good issue write report maintainer act no template changes needed contributing contribution"
+  },
+  {
     "title": "Demo Application: Grit Motors",
     "href": "/docs/demo",
     "section": "Demo",
