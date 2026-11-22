@@ -278,6 +278,15 @@ export const GUIDES: Guide[] = [
     updated: 'v3.560.0',
   },
   {
+    slug: 'migrate-gin-gorm-to-grit',
+    title: 'Move an existing Gin and GORM API into Grit',
+    blurb:
+      'One resource at a time, with both halves running, and a point at every step where you can stop.',
+    audience: 'senior',
+    reading: '18 min',
+    updated: 'v3.562.0',
+  },
+  {
     slug: 'go-ai-rag-pgvector',
     title: 'Adding AI to a Go app: streaming, pgvector and RAG',
     blurb: 'Server-sent events, an embeddings job, hybrid search, and where the cost actually goes.',

@@ -498,6 +498,12 @@
     "keywords": "typescript go types shared zod schema sync grit shares between structs schemas interfaces keeping frontend backend docs concepts type system"
   },
   {
+    "title": "Your First Contribution",
+    "href": "/docs/contributing",
+    "section": "Documentation",
+    "keywords": "contribute grit have rather than built worth more code small changes wanted setup gets refused docs contributing first contribution"
+  },
+  {
     "title": "Demo Application: Grit Motors",
     "href": "/docs/demo",
     "section": "Demo",
@@ -1876,6 +1882,12 @@
     "href": "/guides/hash-chained-audit-log",
     "section": "Guides",
     "keywords": "chaining entries so deletion detectable keying hash cannot recomputed verifying scale pruning breaking chain guides chained audit log tamper evident logs chains postgres"
+  },
+  {
+    "title": "Move an existing Gin and GORM API into Grit",
+    "href": "/guides/migrate-gin-gorm-to-grit",
+    "section": "Guides",
+    "keywords": "one resource time both halves running point every step stop still have working system guides migrate gin gorm grit move existing api"
   },
   {
     "title": "Connect a Next.js frontend to a Go backend",
