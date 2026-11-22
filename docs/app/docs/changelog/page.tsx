@@ -91,6 +91,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.569.0 */}
+            <div className="mb-12" id="v3.569.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.569.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>What you can delete, measured rather than guessed</h3>
+
+                <p>
+                  A new triple project is 819 files, and the common reaction
+                  to that number is &quot;819 files I now maintain&quot;. Most
+                  of them are not that: 124 are test files that run
+                  themselves, and the largest group is code nobody opens.{' '}
+                  <a href="/docs/concepts/what-you-can-delete">
+                    A page now says which is which
+                  </a>
+                  .
+                </p>
+
+                <h4>The part worth having is the evidence</h4>
+                <p>
+                  Six Go packages are imported by nothing:{' '}
+                  <code>money</code>, <code>jsontime</code>, <code>docx</code>,{' '}
+                  <code>stock</code>, <code>workflow</code> and{' '}
+                  <code>notify</code>, 3,079 lines between them. Checked by
+                  grepping every import in <code>apps/api</code> rather than by
+                  reading names, then by deleting all six and running{' '}
+                  <code>go build ./...</code> and <code>go test ./...</code>,
+                  which passed.
+                </p>
+                <p>
+                  They are not dead code. Generate{' '}
+                  <code>total:money,due:date</code> into the same project and
+                  the build stops with the two packages the fields need. So the
+                  rule the page gives is: delete one when you are sure you will
+                  never use the field type it serves, and take it back from a
+                  fresh scaffold if you were wrong.
+                </p>
+
+                <h4>The measurement corrected the first draft twice</h4>
+                <p>
+                  The counts were first taken on a project that already had a
+                  resource generated into it, which is not what somebody sees
+                  after <code>grit new</code>.
+                </p>
+                <p>
+                  More importantly, the list was nearly ten packages rather
+                  than six. On a project with nothing generated yet,{' '}
+                  <code>pdf</code>, <code>rowrules</code>, <code>export</code>,{' '}
+                  <code>factory</code> and <code>testkit</code> are also
+                  imported by nothing, and every one of them is used by the
+                  first resource you create. Publishing those as deletable
+                  would have been the worst kind of wrong, so the page names
+                  the condition the six were measured under and says not to
+                  read a bare project&apos;s import graph as a deletion list.
+                </p>
+
+                <h4>And one empty directory stopped being written</h4>
+                <p>
+                  Every project got an <code>apps/api/internal/docs/</code>{' '}
+                  that nothing ever wrote into and nothing referenced. Found
+                  while counting.
+                </p>
+                <p>
+                  There is no <code>--lean</code> preset, and the page says why
+                  rather than leaving it open: the only thing a preset could
+                  leave out is those six directories, which cost disk and
+                  nothing else, and the cost of leaving them out is a generator
+                  that cannot emit half its field types until you work out why.
+                  What makes a project genuinely smaller is choosing the
+                  architecture.
+                </p>
+              </div>
+            </div>
+
             {/* v3.568.0 */}
             <div className="mb-12" id="v3.568.0">
               <div className="flex items-center gap-3 mb-4">

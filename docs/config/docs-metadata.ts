@@ -183,6 +183,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'The money field type: integer minor units plus an ISO 4217 currency, stored as two columns. Why float loses cents, how zero-decimal currencies like UGX and JPY are handled, the JSON shape, the admin form and table column, and how to migrate an existing float price column.',
   },
+  '/docs/concepts/what-you-can-delete': {
+    title: 'What you can delete from a generated project',
+    description:
+      'A new triple project is 847 files and the common reaction is "847 files I now maintain". Most of them are not that. Which groups you can take out and how: the sample Blog and Post, which have a command because a resource is nine files plus sixteen injections into files it does not own; six Go packages totalling 3,079 lines that nothing in a fresh project imports, measured by grepping every import and then by deleting them and running the build and the tests; and whole apps, which are better not scaffolded than deleted. What is load-bearing, with the import graph as the evidence rather than the names. And why there is no --lean preset: the only thing it could leave out is the six directories that cost disk and nothing else.',
+  },
   '/docs/concepts/generated-files': {
     title: 'Generated File Map',
     description:

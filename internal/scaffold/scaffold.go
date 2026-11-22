@@ -109,7 +109,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.568.0"
+const DefaultVersion = "3.569.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -1209,7 +1209,6 @@ func createDirectories(root string, opts Options) error {
 		filepath.Join(root, "apps", "api", "internal", "cron"),
 		filepath.Join(root, "apps", "api", "internal", "cache"),
 		filepath.Join(root, "apps", "api", "internal", "ai"),
-		filepath.Join(root, "apps", "api", "internal", "docs"),
 		filepath.Join(root, "apps", "api", "internal", "safefetch"),
 		filepath.Join(root, "apps", "api", "internal", "authz"),
 	}

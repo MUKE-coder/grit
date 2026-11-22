@@ -23,6 +23,31 @@ Also worth knowing:
 ---
 
 
+## v3.569.0 - November 22, 2026
+
+### What you can delete, measured rather than guessed
+
+A new triple project is 819 files, and the common reaction to that number is "819 files I now maintain". Most of them are not that: 124 are test files that run themselves, and the largest group is code nobody opens. [A page now says which is which](https://gritframework.com/docs/concepts/what-you-can-delete) .
+
+#### The part worth having is the evidence
+
+Six Go packages are imported by nothing: `money`, `jsontime`, `docx`, `stock`, `workflow` and `notify`, 3,079 lines between them. Checked by grepping every import in `apps/api` rather than by reading names, then by deleting all six and running `go build ./...` and `go test ./...`, which passed.
+
+They are not dead code. Generate `total:money,due:date` into the same project and the build stops with the two packages the fields need. So the rule the page gives is: delete one when you are sure you will never use the field type it serves, and take it back from a fresh scaffold if you were wrong.
+
+#### The measurement corrected the first draft twice
+
+The counts were first taken on a project that already had a resource generated into it, which is not what somebody sees after `grit new`.
+
+More importantly, the list was nearly ten packages rather than six. On a project with nothing generated yet, `pdf`, `rowrules`, `export`, `factory` and `testkit` are also imported by nothing, and every one of them is used by the first resource you create. Publishing those as deletable would have been the worst kind of wrong, so the page names the condition the six were measured under and says not to read a bare project's import graph as a deletion list.
+
+#### And one empty directory stopped being written
+
+Every project got an `apps/api/internal/docs/` that nothing ever wrote into and nothing referenced. Found while counting.
+
+There is no `--lean` preset, and the page says why rather than leaving it open: the only thing a preset could leave out is those six directories, which cost disk and nothing else, and the cost of leaving them out is a generator that cannot emit half its field types until you work out why. What makes a project genuinely smaller is choosing the architecture.
+
+
 ## v3.568.0 - November 22, 2026
 
 ### A monthly digest, because nobody reads 757 entries

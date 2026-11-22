@@ -103,6 +103,7 @@ const navItems: NavItem[] = [
       { title: 'Offline Sync', href: '/docs/concepts/offline-sync' },
       { title: 'Code Generation', href: '/docs/concepts/code-generation' },
       { title: 'Generated File Map', href: '/docs/concepts/generated-files' },
+      { title: 'What you can delete', href: '/docs/concepts/what-you-can-delete' },
       { title: 'Type System', href: '/docs/concepts/type-system' },
       { title: 'Field Types Reference', href: '/docs/concepts/field-types' },
       { title: 'Money', href: '/docs/concepts/money' },

@@ -498,6 +498,12 @@
     "keywords": "typescript go types shared zod schema sync grit shares between structs schemas interfaces keeping frontend backend docs concepts type system"
   },
   {
+    "title": "What you can delete from a generated project",
+    "href": "/docs/concepts/what-you-can-delete",
+    "section": "Core Concepts",
+    "keywords": "triple project 847 files common reaction now maintain most them not groups take out sample blog post have command because resource nine plus sixteen injections does own six go packages totalling 079 lines nothing fresh imports measured grepping every import then deleting running build tests whole apps better scaffolded than deleted load bearing graph evidence rather names there no lean"
+  },
+  {
     "title": "Your first contribution",
     "href": "/docs/contributing/first-contribution",
     "section": "Documentation",
