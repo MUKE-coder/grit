@@ -144,7 +144,10 @@ export function QuickStart() {
 
       <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
         Sign in to the admin panel with <code className="font-mono text-foreground">admin@example.com</code> and{' '}
-        <code className="font-mono text-foreground">admin123</code>, add a group, then add a contact with a photo.
+        <code className="font-mono text-foreground">admin123</code>, add a group, then add a contact with a photo.{' '}
+        <strong className="text-foreground">Development only:</strong> the seeder uses these credentials only when{' '}
+        <code className="font-mono text-foreground">APP_ENV=development</code>. In any other environment it refuses to
+        seed them, so set <code className="font-mono text-foreground">SEED_ADMIN_PASSWORD</code> to a strong password there.
         The photo works on either path. Without Docker there is no MinIO to write to, so the API notices
         and keeps the file on local disk instead: you get the original, a converted JPEG and a thumbnail
         under <code className="font-mono text-foreground">storage/app</code>, and the admin table shows it.
