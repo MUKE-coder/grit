@@ -145,6 +145,13 @@ export default function StartPage() {
                 running a contacts book: contacts in groups, each with a photo. Pick whether
                 you want Docker or not, paste, and read the rest of this page afterwards.
               </p>
+              <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground/80">
+                Two minutes is the commands running on a machine that already has Go, Node and
+                pnpm. The first time, installing those takes longer than everything on this
+                page, and that is normal rather than a sign you are doing it wrong. Run{' '}
+                <code className="font-mono">grit doctor --env</code> to see what is missing
+                before you start.
+              </p>
             </div>
 
             {/* Installing comes first, because the block below starts with
@@ -200,8 +207,10 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 The path from nothing to deployed
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Seven steps, about ninety minutes end to end. Everything else in these docs is
-                reference you can reach for later — this is the part to read in order.
+                Seven steps, about ninety minutes of reading and typing once the toolchain is
+                installed. That is a different number from the two minutes above, which is the
+                scaffold command on its own. Everything else in these docs is reference you can
+                reach for later; this is the part to read in order.
               </p>
             </div>
 

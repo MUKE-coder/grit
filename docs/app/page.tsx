@@ -86,6 +86,23 @@ export default function HomePage() {
                 </Link>
               </div>
 
+              {/* A three-digit minor version reads as instability to anybody
+                  used to semver moving a few times a year, and the first
+                  question it raises is whether this is safe to build on.
+                  Answering it here costs one line; leaving it unanswered
+                  costs the reader. */}
+              <p className="mt-3 text-[12.5px] leading-relaxed text-fg-subtle">
+                Every merged change ships as a release, which is why the number is high.
+                Breaking changes are labelled and{' '}
+                <Link href="/docs/upgrades" className="g-link">
+                  grit upgrade
+                </Link>{' '}
+                moves a project between them.{' '}
+                <Link href="/docs/versioning" className="g-link">
+                  How versions work
+                </Link>
+              </p>
+
               <h1 className="mt-7 text-[clamp(2.75rem,6vw,4.625rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-fg [text-wrap:balance]">
                 The full-stack framework for <Highlight>Go &amp; React.</Highlight>{' '}
                 <span className="text-fg-subtle">Batteries included.</span>

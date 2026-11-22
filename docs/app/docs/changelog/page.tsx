@@ -72,6 +72,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.563.0 */}
+            <div className="mb-12" id="v3.563.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.563.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Four things the site claimed that were not true</h3>
+
+                <p>
+                  No code changed in a generated project. Every item here is a
+                  sentence on this site that a reader could check and find wrong,
+                  which is the kind of mistake that costs more than a bug.
+                </p>
+
+                <h4>The homepage said projects ship without email verification</h4>
+                <p>
+                  They have since v3.233.0. The authentication section listed
+                  email verification and API-key authentication as the things
+                  Grit does not do, long after both shipped, which undersells the
+                  product exactly as badly as an invented feature oversells it.
+                  The section now names the real limit instead: social sign-in
+                  ships with two providers, GitHub and Google, because those are
+                  the two the scaffold imports.
+                </p>
+
+                <h4>The benchmark bars paired the wrong number with the name</h4>
+                <p>
+                  Each bar put its figure before its label in the DOM, so a
+                  screen reader read a sequence of numbers and then a sequence of
+                  names. Every bar now carries one accessible label that pairs
+                  its own framework with its own figure: &quot;Grit: 1,053
+                  requests per second&quot;. The two visible spans are hidden
+                  from assistive technology so nothing is read twice.
+                </p>
+
+                <h4>Three different times to get started</h4>
+                <p>
+                  Two minutes, five minutes and ninety minutes all appeared on
+                  the getting-started path with nothing saying which counted
+                  what. The two-minute figure is the commands on a machine that
+                  already has Go, Node, pnpm and Docker. The ninety-minute figure
+                  is reading and typing through the whole tutorial. Both now say
+                  so, and the first points at <code>grit doctor --env</code> for
+                  the part that is not two minutes.
+                </p>
+
+                <h4>Why the version number is in the three thousands</h4>
+                <p>
+                  A first-time reader sees v3.563.0 and reasonably wonders what
+                  kind of project has had five hundred releases this year. The
+                  answer is that every merged change ships as one, and the
+                  homepage now says that under the badge, next to the
+                  deprecation policy and <code>grit upgrade</code>.
+                </p>
+
+                <h4>Also: the nightly canary is green again</h4>
+                <p>
+                  <code>scripts/check-docs-paths.py</code> had a stale exemption
+                  from v3.556.0, when the plugin-authoring page&apos;s worked
+                  example moved from installing one file to installing a
+                  directory. The check that catches a stale exemption is the
+                  reason it failed rather than passing quietly, which is the
+                  behaviour you want from it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.562.0 */}
             <div className="mb-12" id="v3.562.0">
               <div className="flex items-center gap-3 mb-4">

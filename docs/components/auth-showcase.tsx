@@ -9,11 +9,15 @@ import { WindowDots } from '@/components/window-dots'
 /**
  * Authentication, as shipped.
  *
- * Written against the scaffold source rather than from memory, which is why
- * two things are stated as absent: there is no email-verification flow (the
- * User model has EmailVerifiedAt, but only an IdP ever sets it), and there is
- * no API-key auth. Claiming either would be the kind of thing a reader checks
- * in thirty seconds and never trusts you again after.
+ * Written against the scaffold source rather than from memory, because a
+ * claim here is the kind of thing a reader checks in thirty seconds and
+ * never trusts you again after.
+ *
+ * That cuts both ways, and this page got it wrong in the other direction
+ * for months: it stated email verification and API-key auth as absent long
+ * after both shipped. Understating is not the safe side of the trade. When
+ * you touch this file, check the scaffold again: a generated project has
+ * handlers for verification, API keys, TOTP, passkeys, magic links and SSO.
  *
  * The provider list is exactly the two goth providers the scaffold imports.
  * Adding a logo here without adding the provider package is a lie with a
@@ -279,11 +283,16 @@ export function AuthShowcase() {
         </div>
       </div>
 
-      {/* Stating the gaps costs one line and buys the rest of the page. */}
+      {/* Stating the limits costs one line and buys the rest of the page.
+          Keep this honest in both directions: it claimed email verification
+          and API keys were missing for months after both shipped, which
+          undersells the product as surely as an invented feature oversells
+          it, and a reader who checks finds the page wrong either way. */}
       <p className="text-[11.5px] text-fg-subtle mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-[var(--measure)]">
-        Not included, so you are not surprised later: there is no email-verification flow (the
-        field exists and social sign-in sets it, but nothing sends a verification mail), and no
-        API-key authentication; machine callers use the same JWT flow.
+        The limit worth knowing: social sign-in ships with two providers, GitHub and Google,
+        because those are the two the scaffold actually imports. Adding a third is a goth
+        provider and a pair of environment variables, and nothing on this page pretends it is
+        already there.
       </p>
     </div>
   )

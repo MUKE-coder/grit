@@ -83,8 +83,22 @@ function Bar({
   faded?: boolean
 }) {
   return (
-    <div className="flex h-full flex-1 flex-col justify-end items-center min-w-0">
+    // The number is printed above the bar and the name below it, which reads
+    // correctly with eyes and backwards without them: in DOM order the pair
+    // comes out as "1,180 ... Grit", so the previous bar's name sits next to
+    // this bar's number. A screen reader, a text browser or a page fetcher
+    // reported the figures swapped, which on a benchmark chart is the worst
+    // possible thing to get wrong.
+    //
+    // One accessible name on the group fixes it without moving a pixel: the
+    // two spans are decoration once the group says what it is.
+    <div
+      role="img"
+      aria-label={`${label}: ${value.toLocaleString()} requests per second`}
+      className="flex h-full flex-1 flex-col justify-end items-center min-w-0"
+    >
       <span
+        aria-hidden="true"
         className="mb-1.5 text-[11px] sm:text-xs font-bold tabular-nums whitespace-nowrap"
         style={{ color: labelColor }}
       >
@@ -100,7 +114,10 @@ function Bar({
           opacity: faded ? 0.95 : 1,
         }}
       />
-      <span className="mt-1.5 text-[10px] text-muted-foreground/70 whitespace-nowrap">
+      <span
+        aria-hidden="true"
+        className="mt-1.5 text-[10px] text-muted-foreground/70 whitespace-nowrap"
+      >
         {label}
       </span>
     </div>

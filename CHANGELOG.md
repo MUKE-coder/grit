@@ -23,6 +23,33 @@ Also worth knowing:
 ---
 
 
+## v3.563.0 - November 22, 2026
+
+### Four things the site claimed that were not true
+
+No code changed in a generated project. Every item here is a sentence on this site that a reader could check and find wrong, which is the kind of mistake that costs more than a bug.
+
+#### The homepage said projects ship without email verification
+
+They have since v3.233.0. The authentication section listed email verification and API-key authentication as the things Grit does not do, long after both shipped, which undersells the product exactly as badly as an invented feature oversells it. The section now names the real limit instead: social sign-in ships with two providers, GitHub and Google, because those are the two the scaffold imports.
+
+#### The benchmark bars paired the wrong number with the name
+
+Each bar put its figure before its label in the DOM, so a screen reader read a sequence of numbers and then a sequence of names. Every bar now carries one accessible label that pairs its own framework with its own figure: "Grit: 1,053 requests per second". The two visible spans are hidden from assistive technology so nothing is read twice.
+
+#### Three different times to get started
+
+Two minutes, five minutes and ninety minutes all appeared on the getting-started path with nothing saying which counted what. The two-minute figure is the commands on a machine that already has Go, Node, pnpm and Docker. The ninety-minute figure is reading and typing through the whole tutorial. Both now say so, and the first points at `grit doctor --env` for the part that is not two minutes.
+
+#### Why the version number is in the three thousands
+
+A first-time reader sees v3.563.0 and reasonably wonders what kind of project has had five hundred releases this year. The answer is that every merged change ships as one, and the homepage now says that under the badge, next to the deprecation policy and `grit upgrade`.
+
+#### Also: the nightly canary is green again
+
+`scripts/check-docs-paths.py` had a stale exemption from v3.556.0, when the plugin-authoring page's worked example moved from installing one file to installing a directory. The check that catches a stale exemption is the reason it failed rather than passing quietly, which is the behaviour you want from it.
+
+
 ## v3.562.0 - November 22, 2026
 
 ### grit doctor --env, grit explain, and a CLI reference you can search offline
