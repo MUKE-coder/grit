@@ -310,6 +310,44 @@ const ciLintStep = `      - name: Lint (Biome)
         run: pnpm lint
 `
 
+// ciSharedJob checks that packages/shared is what the Go models imply.
+//
+// Nothing else in this workflow can tell. The build compiles the Go, the
+// type-check reads the TypeScript, and both are happy with a shared type that
+// is a release behind its model: the field is simply absent, and the first
+// thing that notices is a screen reading undefined (grit#255).
+//
+// It installs the Grit CLI at the version that scaffolded the project rather
+// than at latest, for the reason /docs/governance gives about pinning: a
+// release should not be able to change what your CI asserts. Raise it when
+// you upgrade.
+func ciSharedJob(opts Options) string {
+	if !opts.ShouldIncludeShared() {
+		return ""
+	}
+	version := opts.Version
+	if version == "" {
+		version = DefaultVersion
+	}
+	return `
+  shared:
+    name: Shared types match the models
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: {{API_DIR}}/go.mod
+          cache-dependency-path: {{API_DIR}}/go.sum
+      - name: Install the Grit CLI
+        run: go install github.com/MUKE-coder/grit/v3/cmd/grit@v` + version + `
+      # Writes nothing. It prints the first line of every shared file that is
+      # not what its model implies, and exits non-zero.
+      - name: grit sync --check
+        run: grit sync --check
+`
+}
+
 // ciYAML is .github/workflows/ci.yml: the tests, on every push and pull request.
 func ciYAML(opts Options) string {
 	l := ciLayoutFor(opts)
@@ -391,5 +429,5 @@ jobs:
       # actually fail on a regression.
       - name: Benchmarks compile and run
         run: go test -run XXX -bench . -benchtime 1x ./internal/handlers/
-`+web)
+`+web+ciSharedJob(opts))
 }

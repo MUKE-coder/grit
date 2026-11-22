@@ -23,6 +23,27 @@ Also worth knowing:
 ---
 
 
+## v3.566.0 - November 22, 2026
+
+### grit sync --check, and a CI job that runs it
+
+`grit sync` regenerates the TypeScript and the Zod schemas from the Go models, and the whole end-to-end type story rests on somebody having run it. Nothing checked that anybody had. A field added to a model and never synced compiles, type-checks and tests green: the field is simply absent from the client, and the first thing that notices is a screen reading undefined.
+
+{`$ grit sync --check \u2717 packages/shared/types/post.ts line 6, from model Post on disk: version: number; the model: colour: string; Run grit sync and commit what it writes.`} It writes nothing and exits non-zero, which is what makes it safe on a pull request. A check that repaired what it found could not be run there, and that is the only place it is worth running.
+
+#### Every generated project now runs it
+
+A **Shared types match the models** job in `.github/workflows/ci.yml`, in any project with a shared package. The CLI is pinned to the version that scaffolded the project rather than to latest, for the reason [governance](https://gritframework.com/docs/governance) gives about pinning: a release should not be able to change what your CI asserts. `grit upgrade` adds the job to a project that predates it.
+
+#### What it checks, and the number that decided it
+
+The literal rule, every model implies a type and a schema, was the first thing built and the first thing measured: on a freshly scaffolded triple project it reported **78 missing files**, on a project nobody had touched. packages/shared does not mirror every framework model and never did, because nothing on a client validates an OAuth exchange code.
+
+So it checks the shared files that are there against their models, which is the question the report was actually about. A fresh project passes, and everything `grit generate resource` writes has both files, so a generated resource is covered either way. Verified in both directions against a real project: clean on a fresh scaffold, and red with the exact line when a field is added to a model and not synced.
+
+Which models get a shared file and where it goes is now one function rather than two copies, because the writer and the checker disagreeing about a path is the failure that would make this pass forever while comparing nothing. A test runs the real sync over a project and then the real check, and requires it to find nothing.
+
+
 ## v3.565.0 - November 22, 2026
 
 ### How proven each part is, in which architecture, and what is next

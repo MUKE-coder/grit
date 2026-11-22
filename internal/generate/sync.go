@@ -73,16 +73,13 @@ func Sync() error {
 		manifest.DerivedFrom(filePath)
 
 		for _, s := range structs {
-			// Skip User — it has custom schemas already
-			if s.Name == "User" {
+			if skipSharedType(s.Name) {
 				continue
 			}
 
-			kebab := strings.ReplaceAll(toSnakeCase(s.Name), "_", "-")
-
 			// Write TypeScript type
 			tsContent := buildTSType(s)
-			tsPath := filepath.Join(sharedRoot, "types", kebab+".ts")
+			tsPath := sharedTypePath(sharedRoot, s.Name)
 			if err := writeFileWithDirs(tsPath, tsContent); err != nil {
 				return fmt.Errorf("writing %s: %w", tsPath, err)
 			}
@@ -90,7 +87,7 @@ func Sync() error {
 
 			// Write Zod schema
 			zodContent := buildZodSchema(s)
-			zodPath := filepath.Join(sharedRoot, "schemas", kebab+".ts")
+			zodPath := sharedSchemaPath(sharedRoot, s.Name)
 			if err := writeFileWithDirs(zodPath, zodContent); err != nil {
 				return fmt.Errorf("writing %s: %w", zodPath, err)
 			}
@@ -938,4 +935,33 @@ func isAutoField(jsonName string) bool {
 		"version": true,
 	}
 	return auto[jsonName]
+}
+
+// skipSharedType reports a model that packages/shared does not get from sync.
+//
+// User has hand-written schemas: it carries the auth fields, and regenerating
+// it from the struct would overwrite rules the struct does not express.
+//
+// Shared with sync --check rather than repeated there. The pair "which models,
+// and where their files go" is exactly the kind that drifts, and a check
+// looking at a different path from the writer would pass while comparing
+// nothing.
+func skipSharedType(model string) bool {
+	return model == "User"
+}
+
+// sharedTypePath is where a model's TypeScript interface goes.
+func sharedTypePath(sharedRoot, model string) string {
+	return filepath.Join(sharedRoot, "types", sharedFileBase(model)+".ts")
+}
+
+// sharedSchemaPath is where a model's Zod schema goes.
+func sharedSchemaPath(sharedRoot, model string) string {
+	return filepath.Join(sharedRoot, "schemas", sharedFileBase(model)+".ts")
+}
+
+// sharedFileBase turns BlogPost into blog-post, which is the TypeScript file
+// naming convention the rest of the project follows.
+func sharedFileBase(model string) string {
+	return strings.ReplaceAll(toSnakeCase(model), "_", "-")
 }

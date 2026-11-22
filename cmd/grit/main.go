@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.565.0"
+var version = "3.566.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -2731,12 +2731,34 @@ func startServerCmd() *cobra.Command {
 }
 
 func syncCmd() *cobra.Command {
+	var check bool
+
 	cmd := &cobra.Command{
 		Use:   "sync",
 		Short: "Sync Go types to TypeScript types and Zod schemas",
-		Long:  "Parse Go model files and regenerate TypeScript types and Zod schemas in packages/shared.",
+		Long: `Parse Go model files and regenerate TypeScript types and Zod schemas in packages/shared.
+
+With --check it writes nothing and exits non-zero if packages/shared is not
+what the models imply, which is the form to run in CI: a field added to a
+model and never synced otherwise passes the build and reaches a client as
+undefined.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
+
+			// --check first, and before the manifest session: it writes
+			// nothing, so it has nothing to record, and starting a session
+			// for it would make a read-only command take the project lock.
+			if check {
+				drift, err := generate.SyncCheck()
+				if err != nil {
+					return err
+				}
+				if !generate.PrintSyncCheck(drift) {
+					cmd.SilenceUsage = true
+					return fmt.Errorf("packages/shared does not match the Go models")
+				}
+				return nil
+			}
 
 			// Record what it writes. Without this the manifest kept the hash
 			// the generator wrote, the bytes on disk no longer matched it,
@@ -2759,6 +2781,8 @@ func syncCmd() *cobra.Command {
 			return generate.Sync()
 		},
 	}
+	cmd.Flags().BoolVar(&check, "check", false,
+		"report what sync would change and exit non-zero, writing nothing")
 	cmd.AddCommand(syncDoctorCmd())
 	return cmd
 }

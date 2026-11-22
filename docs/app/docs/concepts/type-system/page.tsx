@@ -382,6 +382,50 @@ import { API_ROUTES, ROLES } from "@shared/constants";`} />
   \u2713 packages/shared/schemas/invoice.ts
 
   \u2705 Synced 2 model(s) to TypeScript + Zod`} />
+
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  grit sync --check, for CI
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The weakness of a manual step is that nothing notices when it is skipped.
+                  A field added to a model and never synced compiles, type-checks and tests
+                  green: the field is simply absent from the client, and the first thing that
+                  notices is a screen reading <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">undefined</code>.
+                </p>
+                <CodeBlock
+                  output="grit sync --check"
+                  language="bash"
+                  code={`$ grit sync --check
+
+  \u2717 packages/shared/types/post.ts
+      line 6, from model Post
+        on disk:   version: number;
+        the model: colour: string;
+
+  \u2717 packages/shared/schemas/post.ts
+      line 8, from model Post
+        on disk:   version: z.number().int(),
+        the model: colour: z.string(),
+
+  Run grit sync and commit what it writes.`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  It writes nothing and exits non-zero, which is what makes it safe to run on
+                  a pull request. Every project Grit scaffolds already runs it: the{' '}
+                  <strong>Shared types match the models</strong> job in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.github/workflows/ci.yml</code>,
+                  pinned to the CLI version that scaffolded the project.{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit upgrade</code>{' '}
+                  adds it to a project that predates it.
+                </p>
+                <p className="text-[14px] text-muted-foreground/80 leading-relaxed">
+                  It checks the shared files that exist, rather than requiring one per model.
+                  A fresh project has types for sixteen models and schemas for nine, because
+                  nothing on a client validates an OAuth exchange code, and a check that
+                  reported seventy-eight missing files on day one would be one nobody ran.
+                  Everything <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>{' '}
+                  writes has both.
+                </p>
               </div>
 
               {/* Auto-Skipped Fields */}

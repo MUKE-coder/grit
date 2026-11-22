@@ -72,6 +72,87 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.566.0 */}
+            <div className="mb-12" id="v3.566.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.566.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit sync --check, and a CI job that runs it</h3>
+
+                <p>
+                  <code>grit sync</code> regenerates the TypeScript and the Zod
+                  schemas from the Go models, and the whole end-to-end type
+                  story rests on somebody having run it. Nothing checked that
+                  anybody had. A field added to a model and never synced
+                  compiles, type-checks and tests green: the field is simply
+                  absent from the client, and the first thing that notices is a
+                  screen reading undefined.
+                </p>
+
+                <pre className="text-[12.5px]">{`$ grit sync --check
+
+  \u2717 packages/shared/types/post.ts
+      line 6, from model Post
+        on disk:   version: number;
+        the model: colour: string;
+
+  Run grit sync and commit what it writes.`}</pre>
+
+                <p>
+                  It writes nothing and exits non-zero, which is what makes it
+                  safe on a pull request. A check that repaired what it found
+                  could not be run there, and that is the only place it is
+                  worth running.
+                </p>
+
+                <h4>Every generated project now runs it</h4>
+                <p>
+                  A <strong>Shared types match the models</strong> job in{' '}
+                  <code>.github/workflows/ci.yml</code>, in any project with a
+                  shared package. The CLI is pinned to the version that
+                  scaffolded the project rather than to latest, for the reason{' '}
+                  <a href="/docs/governance">governance</a> gives about pinning:
+                  a release should not be able to change what your CI asserts.{' '}
+                  <code>grit upgrade</code> adds the job to a project that
+                  predates it.
+                </p>
+
+                <h4>What it checks, and the number that decided it</h4>
+                <p>
+                  The literal rule, every model implies a type and a schema, was
+                  the first thing built and the first thing measured: on a
+                  freshly scaffolded triple project it reported{' '}
+                  <strong>78 missing files</strong>, on a project nobody had
+                  touched. packages/shared does not mirror every framework model
+                  and never did, because nothing on a client validates an OAuth
+                  exchange code.
+                </p>
+                <p>
+                  So it checks the shared files that are there against their
+                  models, which is the question the report was actually about. A
+                  fresh project passes, and everything{' '}
+                  <code>grit generate resource</code> writes has both files, so
+                  a generated resource is covered either way. Verified in both
+                  directions against a real project: clean on a fresh scaffold,
+                  and red with the exact line when a field is added to a model
+                  and not synced.
+                </p>
+                <p>
+                  Which models get a shared file and where it goes is now one
+                  function rather than two copies, because the writer and the
+                  checker disagreeing about a path is the failure that would
+                  make this pass forever while comparing nothing. A test runs
+                  the real sync over a project and then the real check, and
+                  requires it to find nothing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.565.0 */}
             <div className="mb-12" id="v3.565.0">
               <div className="flex items-center gap-3 mb-4">
