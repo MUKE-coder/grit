@@ -860,6 +860,38 @@ export const CLI_COMMANDS: CliCommand[] = [
     keywords: ['versions', 'version', 'upgrade', 'outdated', 'behind', 'sentinel', 'pulse', 'gorm-studio', 'batteries', 'sync', 'audit'],
   },
   {
+    id: 'explain',
+    name: 'grit explain',
+    category: 'Meta',
+    summary: 'What a file is for, who wrote it, and whether an upgrade will rewrite it.',
+    example: 'grit explain apps/api/internal/models/product.go',
+    output: [
+      '  apps/api/internal/models/product.go',
+      '',
+      '  A GORM model: the table, its columns, its validation rules and its',
+      '  hooks. This is the source the generator derives the handler, the',
+      '  shared type and the admin screen from.',
+      '',
+      '  Written by  resource:Product  (Grit 3.561.0)',
+      '',
+      '  Grit wrote this and it has not been edited, so an upgrade may',
+      '  rewrite it.',
+    ],
+    purpose:
+      'A generated project arrives with several hundred files and nothing says which are yours, which are the framework\u2019s, and which will be rewritten the next time you upgrade. Reading a file tells you what it does; it does not tell you whether your change to it will survive.',
+    useCases: [
+      'Before editing a generated file, to find out whether the edit is kept.',
+      'When a change you made disappeared after an upgrade.',
+      'Working out which of two similar files is the one to change.',
+    ],
+    notes: [
+      'The editing advice comes from the manifest rather than from the path, so it is about this project: a file you have already edited is reported as yours, because that is what grit upgrade treats it as.',
+      'A file Grit never wrote is reported as yours even when it sits in a generated directory.',
+    ],
+    files: [],
+    keywords: ['explain', 'file', 'what is', 'generated', 'owned', 'upgrade', 'edit', 'manifest'],
+  },
+  {
     id: 'doctor',
     name: 'grit doctor',
     category: 'Meta',
@@ -880,6 +912,7 @@ export const CLI_COMMANDS: CliCommand[] = [
     notes: [
       'Exits non-zero when anything is an error, so it works as a CI step with no wrapper.',
       'Warnings do not fail it. The distinction is whether the finding is wrong or only risky.',
+      'grit doctor --env checks the MACHINE instead of a project: Go, Node, pnpm, Docker and the ports a generated project needs. It takes no project, so run it before grit new. Add --no-docker for a project on SQLite and local storage, or --no-node for an API-only one.',
     ],
     files: [],
     keywords: ['doctor', 'check', 'lint', 'ci', 'security', 'audit', 'scoping'],

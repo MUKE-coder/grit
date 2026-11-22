@@ -2113,7 +2113,7 @@ grit upgrade`}
 │   ├── --full                # Everything + docs site
 │   ├── --next / --vite       # Frontend: Next.js or TanStack (Vite)
 │   ├── --style <variant>     # Admin style: default, modern, minimal, glass, centered
-│   ├── --theme <name>        # Theme: atlas, aurora, pulse
+│   ├── --theme <name>        # Theme: atlas, aurora, pulse, coral, amber, sky, mono, emerald
 │   ├── --here                # Scaffold into the current directory
 │   └── --force               # Allow a non-empty directory
 │

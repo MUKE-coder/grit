@@ -23,6 +23,37 @@ Also worth knowing:
 ---
 
 
+## v3.561.0 - November 22, 2026
+
+### Thirty guides, a glossary, two tools and two comparisons
+
+A large documentation release, and one real bug fix that came out of writing it.
+
+#### /guides
+
+Thirty pages at [/guides](https://gritframework.com/guides), in its own section outside the documentation: fifteen for people starting out and fifteen for the decisions that are expensive to get wrong. Each answers its question in plain Go and React first, with code that runs whether or not you use Grit, and the one-command version arrives at the end.
+
+The flagship, building a first full-stack app, was run rather than asserted: the module init, every endpoint including the 400 and the 404, the CORS preflight, create-next-app with those exact flags, and both halves running together with a task added through the form.
+
+#### A glossary
+
+[71 terms](https://gritframework.com/docs/glossary), one sentence each, every one with its own anchor so anything can link to the exact definition rather than to the page.
+
+#### Two tools
+
+[The field builder](https://gritframework.com/tools/field-builder) builds a `--fields` string from all 32 types, with the contextual argument each one takes. [The stack picker](https://gritframework.com/tools/stack-picker) asks five questions and gives the `grit new` command, with the architecture explained rather than only named. Both were verified by driving them in a browser and putting the output through the real parser and the real binary.
+
+#### Comparisons
+
+[/vs](https://gritframework.com/vs) holds short head-to-heads against PocketBase and Encore. Architectural claims only, no numbers, and each has a section saying plainly when the other one is the better choice.
+
+#### The fix
+
+Five `--fields` strings in the documentation did not parse, three of them in guides published the day before: `enum(...)` is not a field type, `image` is not one either, and a vector needs its dimension in the spec. A reader copying them got an error.
+
+There is a test for it now. It walks the docs, pulls out every `--fields` value and puts it through the same parser the CLI uses, 179 of them. Prose is not compiled, which is how a command that cannot run was reviewed, built and published.
+
+
 ## v3.560.0 - November 21, 2026
 
 ### The marketplace is a page, and the homepage shows the file working

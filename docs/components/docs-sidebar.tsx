@@ -107,6 +107,7 @@ const navItems: NavItem[] = [
       { title: 'Field Types Reference', href: '/docs/concepts/field-types' },
       { title: 'Money', href: '/docs/concepts/money' },
       { title: 'Relationships & Hierarchies', href: '/docs/admin/relationships#hierarchies' },
+      { title: 'Glossary', href: '/docs/glossary' },
       { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions' },
       { title: 'Style Variants', href: '/docs/concepts/styles' },
       { title: 'Performance', href: '/docs/concepts/performance' },
@@ -396,6 +397,13 @@ const navItems: NavItem[] = [
       { title: 'The expert skills', href: '/docs/expert-skills' },
       { title: 'LLM Skill Guide', href: '/docs/ai-skill' },
       { title: 'Complete LLM Reference', href: '/docs/ai-skill/llm-guide' },
+    ],
+  },
+  {
+    title: 'Contributing',
+    icon: <Heart className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Your first contribution', href: '/docs/contributing/first-contribution' },
     ],
   },
   {

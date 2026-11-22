@@ -115,13 +115,33 @@ export function CodeBlock({
           {({ tokens, getLineProps, getTokenProps }) => (
             <pre className="p-4 text-[13px] leading-6 font-mono overflow-x-auto" style={{ background: 'transparent' }}>
               {tokens.map((line, i) => {
-                const raw = trimmedCode.split('\n')[i] ?? ''
+                const lines = trimmedCode.split('\n')
+                const raw = lines[i] ?? ''
                 if (raw.trim() === '') return <div key={i} className="h-5" />
                 const isComment = raw.trimStart().startsWith('#')
+                // A line continuing the one above is part of the same
+                // command, so it gets no prompt. Without this a wrapped
+                // pipeline reads as several commands, and somebody copying
+                // line by line runs several broken ones.
+                const prev = (lines[i - 1] ?? '').trimEnd()
+                const continues =
+                  prev.endsWith('\\') ||
+                  prev.endsWith('|') ||
+                  prev.endsWith('&&') ||
+                  prev.endsWith('||')
                 return (
                   <div key={i} {...getLineProps({ line })} className="flex">
                     {!isComment && (
-                      <span className="text-sky-600/70 dark:text-sky-400/60 select-none mr-2 shrink-0">$</span>
+                      <span
+                        className={
+                          continues
+                            ? 'select-none mr-2 shrink-0 opacity-0'
+                            : 'text-sky-600/70 dark:text-sky-400/60 select-none mr-2 shrink-0'
+                        }
+                        aria-hidden={continues || undefined}
+                      >
+                        $
+                      </span>
                     )}
                     <span className={isComment ? 'text-slate-500 dark:text-muted-foreground text-xs' : ''}>
                       {line.map((token, key) => (

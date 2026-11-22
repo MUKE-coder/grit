@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.560.0"
+var version = "3.561.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -111,6 +111,7 @@ func rootCommand() *cobra.Command {
 	rootCmd.AddCommand(studioCmd())
 	rootCmd.AddCommand(syncCmd())
 	rootCmd.AddCommand(doctorCmd())
+	rootCmd.AddCommand(explainCmd())
 	rootCmd.AddCommand(scaleCmd())
 	rootCmd.AddCommand(envCmd())
 	rootCmd.AddCommand(migrateCmd())

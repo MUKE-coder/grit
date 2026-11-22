@@ -556,5 +556,50 @@
     "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue",
     "section": "Plugins",
     "title": "Plugin marketplace"
+  },
+  "/guides": {
+    "keywords": "guide guides tutorial tutorials how to learn walkthrough article go react full stack beginner senior production",
+    "section": "Guides",
+    "title": "All guides"
+  },
+  "/guides/first-go-react-app": {
+    "keywords": "first app tutorial beginner go react full stack golang step by step cors blocked localhost 8080 3000 sqlite gin gorm fetch todo tasks hello world getting started by hand from scratch",
+    "section": "Guides",
+    "title": "Build your first full-stack app with Go and React"
+  },
+  "/docs/glossary": {
+    "keywords": "glossary terms definitions vocabulary what is meaning jargon battery blueprint resource seeder policy row rule triple double single injection anchor manifest repair framework owned outbox saga tenant presigned widget scaffold generate upgrade migrate sync field type",
+    "section": "Core Concepts",
+    "title": "Glossary"
+  },
+  "/tools": {
+    "keywords": "tools interactive builder picker generator helper",
+    "section": "Tools",
+    "title": "Tools"
+  },
+  "/tools/field-builder": {
+    "keywords": "field builder fields string generate resource types select belongs_to vector money interactive copy command syntax modifiers required unique",
+    "section": "Tools",
+    "title": "Field builder"
+  },
+  "/tools/stack-picker": {
+    "keywords": "stack picker chooser architecture triple double single api mobile which should i use grit new flags expo desktop sqlite postgres vite next multitenant",
+    "section": "Tools",
+    "title": "Stack picker"
+  },
+  "/vs": {
+    "keywords": "vs versus compare comparison alternative to competitors",
+    "section": "Comparisons",
+    "title": "Comparisons"
+  },
+  "/vs/pocketbase": {
+    "keywords": "pocketbase vs alternative sqlite single binary backend baas admin hooks realtime",
+    "section": "Comparisons",
+    "title": "Grit and PocketBase"
+  },
+  "/vs/encore": {
+    "keywords": "encore vs alternative infrastructure from code services tracing provisioning cloud",
+    "section": "Comparisons",
+    "title": "Grit and Encore"
   }
 }

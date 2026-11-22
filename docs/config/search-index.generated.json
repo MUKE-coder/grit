@@ -498,6 +498,12 @@
     "keywords": "typescript go types shared zod schema sync grit shares between structs schemas interfaces keeping frontend backend docs concepts type system"
   },
   {
+    "title": "Your first contribution",
+    "href": "/docs/contributing/first-contribution",
+    "section": "Documentation",
+    "keywords": "fix first docs page find good issue write report maintainer act no template changes needed contributing contribution"
+  },
+  {
     "title": "Demo Application: Grit Motors",
     "href": "/docs/demo",
     "section": "Demo",
@@ -784,6 +790,12 @@
     "href": "/docs/getting-started/troubleshooting",
     "section": "Getting Started",
     "keywords": "errors fix debug issues problems help broken stuck common solutions working grit projects including docker database build docs getting started troubleshooting"
+  },
+  {
+    "title": "Glossary",
+    "href": "/docs/glossary",
+    "section": "Core Concepts",
+    "keywords": "glossary terms definitions vocabulary what is meaning jargon battery blueprint resource seeder policy row rule triple double single injection anchor manifest repair framework owned outbox saga tenant presigned widget scaffold generate upgrade migrate sync field type every grit term one sentence rest each own docs"
   },
   {
     "title": "Governance & risk",
@@ -1704,6 +1716,252 @@
     "keywords": "receive third party webhooks safely grit verify stripe github generic hmac signatures dedup provider external id replay events safe retries courses webhook receiver verifiers"
   },
   {
+    "title": "All guides",
+    "href": "/guides",
+    "section": "Guides",
+    "keywords": "guide guides tutorial tutorials how to learn walkthrough article go react full stack beginner senior production practical building rest apis jwt auth gorm relationships docker deploys multi tenancy caching migrations each one answers problem plain first all"
+  },
+  {
+    "title": "Use an AI coding assistant to build a Go app properly",
+    "href": "/guides/ai-assistant-build-go-app",
+    "section": "Guides",
+    "keywords": "give assistant before writes anything prompts work go react codebase review comes back guides ai build app coding properly"
+  },
+  {
+    "title": "Build an admin dashboard without writing it from scratch",
+    "href": "/guides/build-admin-dashboard-go-react",
+    "section": "Guides",
+    "keywords": "internal admin panel actually needs costs hand build describe screen instead writing one guides dashboard go react scratch"
+  },
+  {
+    "title": "Build a SaaS MVP in a weekend with Go and React",
+    "href": "/guides/build-saas-mvp-weekend",
+    "section": "Guides",
+    "keywords": "two day plan tenants before anything else auth one feature billing deploy decisions expensive reverse marked guides build saas mvp weekend go react"
+  },
+  {
+    "title": "Fix the errors you hit starting a Go and Docker project",
+    "href": "/guides/common-go-docker-errors",
+    "section": "Guides",
+    "keywords": "every error message meet first hour go docker node project cause fix windows macos linux guides common errors hit starting"
+  },
+  {
+    "title": "Deploy a Go and React app to a VPS with HTTPS",
+    "href": "/guides/deploy-go-app-vps-https",
+    "section": "Guides",
+    "keywords": "vps systemd reverse proxy first deploy end server domain certificate service restarts itself guides go app https react"
+  },
+  {
+    "title": "Run Postgres, Redis and MinIO locally with Docker Compose",
+    "href": "/guides/docker-compose-postgres-redis",
+    "section": "Guides",
+    "keywords": "container actually compose file explained line named volumes healthchecks port collisions catch everyone windows guides docker postgres redis run minio locally"
+  },
+  {
+    "title": "Build your first full-stack app with Go and React",
+    "href": "/guides/first-go-react-app",
+    "section": "Guides",
+    "keywords": "first app tutorial beginner go react full stack golang step by cors blocked localhost 8080 3000 sqlite gin gorm fetch todo tasks hello world getting started hand from scratch api frontend calls checkpoint after every then same one command guides build"
+  },
+  {
+    "title": "Build a REST API in Go with Gin",
+    "href": "/guides/gin-rest-api-tutorial",
+    "section": "Guides",
+    "keywords": "routing json binding validation pagination error responses gin written out hand handler shape stays readable fifty endpoints guides rest api tutorial build go"
+  },
+  {
+    "title": "Adding AI to a Go app: streaming, pgvector and RAG",
+    "href": "/guides/go-ai-rag-pgvector",
+    "section": "Guides",
+    "keywords": "server sent events go embeddings background job hybrid search postgres pgvector cost latency actually guides ai rag adding app streaming"
+  },
+  {
+    "title": "Authorization in Go: policies answer 403, row rules answer 404",
+    "href": "/guides/go-authorization-policies-row-rules",
+    "section": "Guides",
+    "keywords": "idor enumeration out scope record must indistinguishable missing one scoping fails closed write paths people forget guides go authorization policies row rules answer 403 404"
+  },
+  {
+    "title": "Background jobs in Go: send email without slowing the API",
+    "href": "/guides/go-background-jobs-asynq",
+    "section": "Guides",
+    "keywords": "queue exists writing worker asynq redis retries idempotency scheduled jobs testing mail locally before real guides go background send email slowing api"
+  },
+  {
+    "title": "Upload files and images in Go to S3, R2 or MinIO",
+    "href": "/guides/go-file-upload-s3-presigned",
+    "section": "Guides",
+    "keywords": "presigned uploads explained browser should send file directly storage validation has happen server anyway guides go upload s3 files images r2 minio"
+  },
+  {
+    "title": "Choosing a Go full-stack approach in 2026",
+    "href": "/guides/go-full-stack-frameworks-compared",
+    "section": "Guides",
+    "keywords": "runtime backend infrastructure code generator library assembly four different bargains each costs outgrow not pick grit guides go full stack frameworks compared choosing approach 2026"
+  },
+  {
+    "title": "Running Go behind a load balancer",
+    "href": "/guides/go-horizontal-scaling",
+    "section": "Guides",
+    "keywords": "stateless checklist websockets redis backplane cron exactly one node read replicas writes connection pool arithmetic guides go horizontal scaling running behind load balancer"
+  },
+  {
+    "title": "Money in Go: minor units, ISO 4217 and gap-free invoice numbers",
+    "href": "/guides/go-money-currency-invoices",
+    "section": "Guides",
+    "keywords": "float wrong zero decimal three currencies break allocating remainder losing cent sequences no gaps guides go money currency invoices minor units iso 4217 gap free invoice numbers"
+  },
+  {
+    "title": "Multi-tenant SaaS in Go: row, schema or database per tenant",
+    "href": "/guides/go-multi-tenancy",
+    "section": "Guides",
+    "keywords": "decision matrix tenant isolation postgres migration cost each cross leak test every team needs few write guides go multi tenancy saas row schema database per"
+  },
+  {
+    "title": "Go project structure for production APIs",
+    "href": "/guides/go-project-structure",
+    "section": "Guides",
+    "keywords": "handler service repository layout trade offs stated transactions live cmd internal only two directories not negotiable guides go project structure production apis"
+  },
+  {
+    "title": "Caching in Go: cache-aside, jittered TTLs and stampede protection",
+    "href": "/guides/go-redis-caching-stampede",
+    "section": "Guides",
+    "keywords": "thundering herd singleflight fixed ttl synchronises expiries invalidation actually reason about guides go redis caching stampede cache aside jittered ttls protection"
+  },
+  {
+    "title": "Sagas in Go: compensating transactions without a workflow engine",
+    "href": "/guides/go-saga-pattern",
+    "section": "Guides",
+    "keywords": "do undo steps persisted state so crash resumes idempotency both directions honest account reach temporal instead guides go saga pattern sagas compensating transactions workflow engine"
+  },
+  {
+    "title": "The transactional outbox pattern in Go with Postgres",
+    "href": "/guides/go-transactional-outbox",
+    "section": "Guides",
+    "keywords": "dual writes lose events minimal outbox postgres skip locked relay idempotency keys backoff parked failures guides go transactional pattern"
+  },
+  {
+    "title": "End-to-end type safety between Go and TypeScript without GraphQL",
+    "href": "/guides/go-typescript-type-safety",
+    "section": "Guides",
+    "keywords": "tygo openapi codegen connect compared typescript annotation fetch result promise rather than check generating validator too guides go type safety end between graphql"
+  },
+  {
+    "title": "Go or Node.js for your backend: an honest comparison",
+    "href": "/guides/go-vs-nodejs-backend",
+    "section": "Guides",
+    "keywords": "each genuinely wins go costs javascript developer parts usual comparison not true guides vs nodejs backend node js honest"
+  },
+  {
+    "title": "Webhooks in Go: HMAC verification, idempotency and replay protection",
+    "href": "/guides/go-webhooks-hmac-idempotency",
+    "section": "Guides",
+    "keywords": "verifying stripe github signatures go constant time compare timestamp tolerance dedupe table sending webhooks survive bad receiver guides hmac idempotency verification replay protection"
+  },
+  {
+    "title": "JWT authentication in Go, explained",
+    "href": "/guides/golang-jwt-authentication",
+    "section": "Guides",
+    "keywords": "access tokens refresh httponly cookies middleware go four mistakes make jwt auth system only look secure guides golang authentication explained"
+  },
+  {
+    "title": "GORM relationships: belongs to, has many, many to many",
+    "href": "/guides/gorm-tutorial-relationships",
+    "section": "Guides",
+    "keywords": "each gorm relation drawn struct produces sql writes n+1 query problem every one them cause guides tutorial relationships belongs has many"
+  },
+  {
+    "title": "Zero-downtime Postgres migrations with GORM",
+    "href": "/guides/gorm-zero-downtime-migrations",
+    "section": "Guides",
+    "keywords": "expand contract ddl takes lock blocks every read create index concurrently automigrate stops development guides gorm zero downtime migrations postgres"
+  },
+  {
+    "title": "Tamper-evident audit logs with hash chains in Postgres",
+    "href": "/guides/hash-chained-audit-log",
+    "section": "Guides",
+    "keywords": "chaining entries so deletion detectable keying hash cannot recomputed verifying scale pruning breaking chain guides chained audit log tamper evident logs chains postgres"
+  },
+  {
+    "title": "Move an existing Gin and GORM API into Grit",
+    "href": "/guides/migrate-gin-gorm-to-grit",
+    "section": "Guides",
+    "keywords": "one resource time both halves running point every step stop still have working system guides migrate gin gorm grit move existing api"
+  },
+  {
+    "title": "Connect a Next.js frontend to a Go backend",
+    "href": "/guides/nextjs-go-backend",
+    "section": "Guides",
+    "keywords": "cors credentials samesite explained browser throws away response go api sent correctly login cookie disappears guides nextjs backend connect next js frontend"
+  },
+  {
+    "title": "Securing a Go API against the OWASP Top 10",
+    "href": "/guides/owasp-top-10-golang",
+    "section": "Guides",
+    "keywords": "each risk go code addresses default already safe check keeps addressed after stop paying attention guides owasp top 10 golang securing api against"
+  },
+  {
+    "title": "Roles and permissions explained, with Go examples",
+    "href": "/guides/rbac-explained-golang",
+    "section": "Guides",
+    "keywords": "rbac actually check belongs go api row level rule role checks alone never catch guides explained golang roles permissions examples"
+  },
+  {
+    "title": "Errors the CLI explains",
+    "href": "/e",
+    "section": "Errors",
+    "keywords": "every error grit cli explains each cause fix port docker not running go node found version below floor pnpm missing errors"
+  },
+  {
+    "title": "Docker is not running",
+    "href": "/e/docker-not-running",
+    "section": "Errors",
+    "keywords": "docker daemon did not answer means each operating system whether need all running"
+  },
+  {
+    "title": "go: command not found",
+    "href": "/e/go-not-found",
+    "section": "Errors",
+    "keywords": "go not installed path install each operating system reason reinstalling often does help found command"
+  },
+  {
+    "title": "Your Go is older than Grit needs",
+    "href": "/e/go-too-old",
+    "section": "Errors",
+    "keywords": "generated project pins go version reason older patches carry standard library vulnerabilities code reaches too old than grit needs"
+  },
+  {
+    "title": "node: command not found",
+    "href": "/e/node-not-found",
+    "section": "Errors",
+    "keywords": "node not installed path installing version manager worth do need all found command"
+  },
+  {
+    "title": "Your Node is older than the frontend needs",
+    "href": "/e/node-too-old",
+    "section": "Errors",
+    "keywords": "next js declares minimum node version older one fails during build rather than install upgrade too old frontend needs"
+  },
+  {
+    "title": "This is not a Grit project",
+    "href": "/e/not-a-grit-project",
+    "section": "Errors",
+    "keywords": "grit commands look json project root do command cannot find one not"
+  },
+  {
+    "title": "pnpm: command not found",
+    "href": "/e/pnpm-not-found",
+    "section": "Errors",
+    "keywords": "generated projects install pnpm rather than npm because workspace layout depends version pinned not found command"
+  },
+  {
+    "title": "Port already in use",
+    "href": "/e/port-in-use",
+    "section": "Errors",
+    "keywords": "port grit project needs taken something else find has free move already"
+  },
+  {
     "title": "Blueprints",
     "href": "/blueprints",
     "section": "Blueprints",
@@ -1792,5 +2050,41 @@
     "href": "/plugins",
     "section": "Plugins",
     "keywords": "plugin plugins marketplace install add official community go module kanban multitenant stripe webhooks push video saved views impersonate command palette device pairing mcp extend extension catalogue"
+  },
+  {
+    "title": "Tools",
+    "href": "/tools",
+    "section": "Tools",
+    "keywords": "tools interactive builder picker generator helper"
+  },
+  {
+    "title": "Field builder",
+    "href": "/tools/field-builder",
+    "section": "Tools",
+    "keywords": "field builder fields string generate resource types select belongs_to vector money interactive copy command syntax modifiers required unique"
+  },
+  {
+    "title": "Stack picker",
+    "href": "/tools/stack-picker",
+    "section": "Tools",
+    "keywords": "stack picker chooser architecture triple double single api mobile which should i use grit new flags expo desktop sqlite postgres vite next multitenant"
+  },
+  {
+    "title": "Comparisons",
+    "href": "/vs",
+    "section": "Comparisons",
+    "keywords": "vs versus compare comparison alternative to competitors"
+  },
+  {
+    "title": "Grit and Encore",
+    "href": "/vs/encore",
+    "section": "Comparisons",
+    "keywords": "encore vs alternative infrastructure from code services tracing provisioning cloud"
+  },
+  {
+    "title": "Grit and PocketBase",
+    "href": "/vs/pocketbase",
+    "section": "Comparisons",
+    "keywords": "pocketbase vs alternative sqlite single binary backend baas admin hooks realtime"
   }
 ]

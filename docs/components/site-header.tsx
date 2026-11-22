@@ -85,7 +85,7 @@ export function SiteHeader() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-1">
-          {/* Five destinations.
+          {/* Eight destinations.
               It was nine, then seven, and it still read as a toolbar rather
               than a navigation bar: by the time a reader has scanned seven
               labels and six coloured icons they have stopped looking for the
@@ -109,7 +109,7 @@ export function SiteHeader() {
               it, not back out to the marketing pages. */}
           {(inDocs
             ? [
-                { label: 'Guides', href: '/docs' },
+                { label: 'Overview', href: '/docs' },
                 { label: 'CLI', href: '/docs/cli' },
                 { label: 'Systems', href: '/docs/systems' },
                 { label: 'Plugins', href: '/docs/plugins/overview' },
@@ -126,6 +126,7 @@ export function SiteHeader() {
               ]
             : [
                 { label: 'Docs', href: '/docs' },
+                { label: 'Guides', href: '/guides' },
                 { label: 'Plugins', href: '/plugins' },
                 { label: 'Blueprints', href: '/blueprints' },
                 { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
@@ -138,11 +139,14 @@ export function SiteHeader() {
             // through isActive() would prefix-match "https://…" against the
             // pathname for no reason.
             //
-            // Guides is every /docs page that is not one of the other four, so
-            // a prefix match would light it up on all of them.
+            // Overview is every /docs page that is not one of the other
+            // four, so a prefix match would light it up on all of them. It
+            // was called Guides until /guides existed, at which point one
+            // label meant two destinations and this special case, which keys
+            // off the label, silently claimed the other one.
             const active = item.external
               ? false
-              : item.label === 'Guides'
+              : item.label === 'Overview'
                 ? inDocs && !DOCS_SECTIONS.some((p) => pathname.startsWith(p))
                 : isActive(item.href)
             return (

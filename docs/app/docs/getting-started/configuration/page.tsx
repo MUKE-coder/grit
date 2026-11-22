@@ -751,7 +751,7 @@ SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=sentinel
 SENTINEL_SECRET_KEY=change-me
 
-# Theme — atlas, aurora, pulse
+# Theme — atlas, aurora, pulse, coral, amber, sky, mono, emerald
 THEME=atlas`} />
             </div>
 

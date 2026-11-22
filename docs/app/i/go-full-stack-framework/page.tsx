@@ -427,6 +427,7 @@ export default function Page() {
               'PocketBase if a single SQLite file suits the deployment, because its admin dashboard is the product. Grit if you need Postgres and want the admin generated into your own repository. Older options include GoAdmin and QOR.',
           },
           {
+            // toolchain-version: historical: the Go 1.22 router, a fact rather than a requirement
             q: 'Should I just use the standard library?',
             a: (
               <p>
@@ -435,6 +436,7 @@ export default function Page() {
                 for a router at all. The calculation changes when you have screens, users and roles.
               </p>
             ),
+            // toolchain-version: historical: the Go 1.22 router, a fact rather than a requirement
             text:
               // toolchain-version: historical
               'For a service with no user interface, often yes. Go 1.22 added method matching and wildcard routing to net/http, which removed the main reason to reach for a third-party router. The calculation changes once you have screens, users and roles.',

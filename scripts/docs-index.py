@@ -365,6 +365,53 @@ def system_pages():
     return pages
 
 
+def cli_command_pages():
+    """Every command in docs/config/cli-commands.ts, as its own entry.
+
+    The site renders these at /docs/cli with an anchor each, so the url
+    carries the fragment: a search for "explain" should land on the command,
+    not at the top of a page listing forty of them.
+    """
+    path = os.path.join(DOCS, "config", "cli-commands.ts")
+    if not os.path.isfile(path):
+        return []
+    source = read(path)
+
+    pages = []
+    # Each entry opens with `id: '<slug>',` at the top of its object.
+    starts = [m.start() for m in re.finditer(r"^    id: '[a-z0-9-]+',$", source, re.M)]
+    for i, start in enumerate(starts):
+        block = source[start: starts[i + 1] if i + 1 < len(starts) else len(source)]
+
+        def field(key):
+            match = re.search(r"\b%s:\s*'((?:[^'\\\n]|\\.)*)'" % key, block)
+            return ts_string(match.group(1)) if match else ""
+
+        slug = field("id")
+        name = field("name")
+        if not slug or not name:
+            continue
+
+        # Everything long enough to be a sentence: the purpose, the use
+        # cases and the notes. The short literals are ids, categories and
+        # keywords, which the title and the url already carry.
+        prose = []
+        for raw in TS_STRING.findall(block):
+            text = clean(ts_string(raw))
+            if len(text) >= 40:
+                prose.append(text)
+
+        pages.append({
+            "url": "/docs/cli#%s" % slug,
+            "title": name,
+            "description": field("summary"),
+            "headings": [name, field("example")],
+            "text": " ".join(prose)[:6000],
+            "kind": "docs",
+        })
+    return pages
+
+
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.S)
 
 
@@ -461,7 +508,7 @@ def main():
         sys.exit("docs/ not found; run this from the repository root")
 
     meta = metadata()
-    pages = doc_pages(meta) + system_pages() + markdown_pages() + course_pages()
+    pages = doc_pages(meta) + system_pages() + cli_command_pages() + markdown_pages() + course_pages()
     # The dynamic route itself indexes the template, not a page anybody reads.
     pages = [p for p in pages if "[" not in p["url"]]
     pages.sort(key=lambda p: p["url"])

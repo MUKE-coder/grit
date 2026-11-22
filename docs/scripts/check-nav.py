@@ -11,9 +11,12 @@ Two things are checked, and the second is the one that bites quietly:
 
 1. Every link in the in-docs set starts with /docs.
 
-2. Every entry in that set, apart from Guides, is in DOCS_SECTIONS. Guides is
+2. Every entry in that set, apart from Overview, is in DOCS_SECTIONS. Overview
    "every /docs page that is not one of the others", so a section missing from
-   that list underlines Guides as well as its own entry, on every page it owns.
+   that list underlines Overview as well as its own entry, on every page it
+   owns. The entry is called Overview and not Guides because /guides is now a
+   section of its own in the product nav, and the header's active-state check
+   keys off the label.
 
 Run: python docs/scripts/check-nav.py
 """
@@ -50,13 +53,14 @@ def main() -> None:
                 f"Clicking it swaps the header to the product nav, which is what "
                 f"somebody reports as two different navbars"
             )
-        # Guides is the catch-all and is deliberately absent from DOCS_SECTIONS.
-        if label == "Guides":
+        # Overview is the catch-all and is deliberately absent from
+        # DOCS_SECTIONS.
+        if label == "Overview":
             continue
         if not any(href.startswith(p) for p in sections):
             problems.append(
                 f"{label!r} ({href}) is in the docs nav and not in DOCS_SECTIONS, "
-                f"so its pages underline Guides as well as {label!r}"
+                f"so its pages underline Overview as well as {label!r}"
             )
 
     # The other direction: a section listed for a nav entry that no longer exists.
@@ -64,7 +68,7 @@ def main() -> None:
         if not any(href.startswith(prefix) for _, href in in_docs):
             problems.append(
                 f"DOCS_SECTIONS lists {prefix!r}, which no nav entry points at. "
-                f"Guides will not light up on those pages and nothing else will either"
+                f"Overview will not light up on those pages and nothing else will either"
             )
 
     if problems:

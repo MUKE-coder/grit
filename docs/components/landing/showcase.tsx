@@ -27,12 +27,6 @@ const PROJECTS: Project[] = [
     tag: 'SaaS',
   },
   {
-    name: 'Golang Battles',
-    desc: 'Competitive Go coding platform with real-time WebSocket battles, ELO ranking, and sandbox execution.',
-    url: '#',
-    tag: 'Platform',
-  },
-  {
     name: 'GORM Studio',
     desc: 'Visual database browser for GORM. View tables, run queries, export data. Embedded in every Grit project.',
     url: 'https://github.com/MUKE-coder/gorm-studio',
@@ -68,7 +62,8 @@ export function Showcase() {
   return (
     <>
       <ul className="mt-12 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2 lg:grid-cols-3">
-        {PROJECTS.map((project) => {
+        {/* Entries without a real URL are hidden, not linked to '#'. See #235. */}
+        {PROJECTS.filter((project) => project.url.startsWith('http')).map((project) => {
           const external = project.url.startsWith('http')
           return (
             <li key={project.name}>
