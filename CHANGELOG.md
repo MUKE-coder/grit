@@ -23,6 +23,60 @@ Also worth knowing:
 ---
 
 
+## v3.562.0 - November 22, 2026
+
+### grit doctor --env, grit explain, and a CLI reference you can search offline
+
+#### grit doctor --env
+
+Checks the machine rather than a project: Go, Node, pnpm, Docker and the ports a generated project needs. It takes no project and looks for none, because the question is one somebody asks before `grit new`.
+
+```bash
+grit doctor --env
+grit doctor --env --no-docker   # a project on SQLite and local storage
+grit doctor --env --no-node     # an API-only project
+```
+
+Every failure carries the address of a page that explains it. Those pages are at [/e](https://gritframework.com/e), with the fix above the explanation, because they are read by somebody who is stuck and in a hurry. A test pairs the catalogue in `internal/clierr` with the pages, so a slug can never point at a 404.
+
+#### grit explain
+
+A generated project arrives with several hundred files and nothing says which are yours, which are the framework's, and which will be rewritten the next time you upgrade.
+
+```bash
+grit explain apps/api/internal/models/product.go
+```
+
+It prints what the file is for, who wrote it, which Grit version, what it was generated from, and whether an upgrade will rewrite it. The editing advice comes from the manifest rather than from the path, so it is about your project: a file you have already edited is reported as yours, because that is what `grit upgrade` treats it as.
+
+#### The CLI reference, offline
+
+Nothing read the CLI command reference into the index the binary embeds, so `grit docs search` could not find any of the forty-odd commands. An agent working inside a project could not look one up. There is a reader now, and each command is an entry of its own with its anchor.
+
+```bash
+grit docs search "explain"
+# grit explain
+#   /docs/cli#explain
+```
+
+#### From contributors
+
+Six pull requests, all of them fixing something that was wrong rather than adding something that was missing.
+
+- Every page that stated a toolchain version said Go 1.21 and Node 18. Twenty-five files now read `GO_MIN` and `NODE_MIN` from one place, including the JSON-LD the search engines read. *aryankalantri*
+- The cheatsheet and the configuration page offered three themes; the generator ships eight. *aryankalantri*
+- The Quick Start showed v3.55.0 in its upgrade badge while its own header showed the current version. *aryankalantri*
+- A showcase card linked to `#`, so it went nowhere. Removed, with a checker so the next one cannot. *aryankalantri*
+- [A first-contribution page](https://gritframework.com/docs/contributing/first-contribution) for people who learned Grit and want to start with a docs fix. *aryankalantri*
+- The start page printed the default admin login with nothing saying it is development only. *m1ss-chief*
+
+#### Also
+
+A migration guide, [moving an existing Gin and GORM API across one resource at a time](https://gritframework.com/guides/migrate-gin-gorm-to-grit), with a stopping point at every step. And [a first-contribution page](https://gritframework.com/docs/contributing) for people who used Grit rather than built it.
+
+One rendering fix with reach beyond this release: a terminal code block put a `$` prompt on every line, so a wrapped pipeline read as several separate commands. A line following one that ends in a backslash, a pipe or `&&` is a continuation now and gets no prompt.
+
+
 ## v3.561.0 - November 22, 2026
 
 ### Thirty guides, a glossary, two tools and two comparisons

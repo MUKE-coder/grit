@@ -72,6 +72,130 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.562.0 */}
+            <div className="mb-12" id="v3.562.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.562.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit doctor --env, grit explain, and a CLI reference you can search offline</h3>
+
+                <h4>grit doctor --env</h4>
+                <p>
+                  Checks the machine rather than a project: Go, Node, pnpm,
+                  Docker and the ports a generated project needs. It takes no
+                  project and looks for none, because the question is one
+                  somebody asks before <code>grit new</code>.
+                </p>
+                <CodeBlock
+                  terminal
+                  code={`grit doctor --env
+grit doctor --env --no-docker   # a project on SQLite and local storage
+grit doctor --env --no-node     # an API-only project`}
+                />
+                <p>
+                  Every failure carries the address of a page that explains
+                  it. Those pages are at <a href="/e">/e</a>, with the fix
+                  above the explanation, because they are read by somebody who
+                  is stuck and in a hurry. A test pairs the catalogue in{' '}
+                  <code>internal/clierr</code> with the pages, so a slug can
+                  never point at a 404.
+                </p>
+
+                <h4>grit explain</h4>
+                <p>
+                  A generated project arrives with several hundred files and
+                  nothing says which are yours, which are the framework&apos;s,
+                  and which will be rewritten the next time you upgrade.
+                </p>
+                <CodeBlock
+                  terminal
+                  code={`grit explain apps/api/internal/models/product.go`}
+                />
+                <p>
+                  It prints what the file is for, who wrote it, which Grit
+                  version, what it was generated from, and whether an upgrade
+                  will rewrite it. The editing advice comes from the manifest
+                  rather than from the path, so it is about your project: a
+                  file you have already edited is reported as yours, because
+                  that is what <code>grit upgrade</code> treats it as.
+                </p>
+
+                <h4>The CLI reference, offline</h4>
+                <p>
+                  Nothing read the CLI command reference into the index the
+                  binary embeds, so <code>grit docs search</code> could not
+                  find any of the forty-odd commands. An agent working inside
+                  a project could not look one up. There is a reader now, and
+                  each command is an entry of its own with its anchor.
+                </p>
+                <CodeBlock
+                  terminal
+                  code={`grit docs search "explain"
+# grit explain
+#   /docs/cli#explain`}
+                />
+
+                <h4>From contributors</h4>
+                <p>
+                  Six pull requests, all of them fixing something that was
+                  wrong rather than adding something that was missing.
+                </p>
+                <ul>
+                  <li>
+                    Every page that stated a toolchain version said Go 1.21 and
+                    Node 18. Twenty-five files now read <code>GO_MIN</code> and
+                    <code>NODE_MIN</code> from one place, including the JSON-LD
+                    the search engines read. <em>aryankalantri</em>
+                  </li>
+                  <li>
+                    The cheatsheet and the configuration page offered three
+                    themes; the generator ships eight. <em>aryankalantri</em>
+                  </li>
+                  <li>
+                    The Quick Start showed v3.55.0 in its upgrade badge while
+                    its own header showed the current version.
+                    <em>aryankalantri</em>
+                  </li>
+                  <li>
+                    A showcase card linked to <code>#</code>, so it went nowhere.
+                    Removed, with a checker so the next one cannot.
+                    <em>aryankalantri</em>
+                  </li>
+                  <li>
+                    <a href="/docs/contributing/first-contribution">A first-contribution
+                    page</a> for people who learned Grit and want to start with a
+                    docs fix. <em>aryankalantri</em>
+                  </li>
+                  <li>
+                    The start page printed the default admin login with nothing
+                    saying it is development only. <em>m1ss-chief</em>
+                  </li>
+                </ul>
+
+                <h4>Also</h4>
+                <p>
+                  A migration guide, <a href="/guides/migrate-gin-gorm-to-grit">moving an
+                  existing Gin and GORM API across one resource at a time</a>,
+                  with a stopping point at every step. And{' '}
+                  <a href="/docs/contributing">a first-contribution page</a>{' '}
+                  for people who used Grit rather than built it.
+                </p>
+                <p>
+                  One rendering fix with reach beyond this release: a terminal
+                  code block put a <code>$</code> prompt on every line, so a
+                  wrapped pipeline read as several separate commands. A line
+                  following one that ends in a backslash, a pipe or{' '}
+                  <code>&amp;&amp;</code> is a continuation now and gets no
+                  prompt.
+                </p>
+              </div>
+            </div>
+
             {/* v3.561.0 */}
             <div className="mb-12" id="v3.561.0">
               <div className="flex items-center gap-3 mb-4">
