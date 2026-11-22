@@ -61,6 +61,14 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // /docs/prerequisites has three sub-pages and no index, so the bare
+        // URL has always been a 404. The README and the AI build prompt both
+        // handed it out, which makes it a link somebody has already copied.
+        source: '/docs/prerequisites',
+        destination: '/docs/getting-started/prerequisites',
+        permanent: true,
+      },
+      {
         source: '/docs/plugins/marketplace',
         destination: '/plugins',
         permanent: true,

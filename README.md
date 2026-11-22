@@ -112,7 +112,7 @@ flowchart LR
 The Grit CLI itself needs none of these. No Docker, or low on RAM? Grit also runs against
 free cloud tiers (Neon, Upstash, Cloudflare R2, Resend):
 [installing without Docker](https://gritframework.dev/docs/getting-started/installation).
-[Full prerequisites](https://gritframework.dev/docs/prerequisites).
+[Full prerequisites](https://gritframework.dev/docs/getting-started/prerequisites).
 
 ### 2. Install the CLI
 

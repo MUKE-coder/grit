@@ -38,7 +38,7 @@ curl -fsSL https://gritframework.dev/install.sh | sh   # macOS, Linux, Git Bash
 grit version
 \`\`\`
 
-Prerequisites: Go ${GO_MIN}+, Node ${NODE_MIN}+, pnpm, Docker. https://gritframework.dev/docs/prerequisites
+Prerequisites: Go ${GO_MIN}+, Node ${NODE_MIN}+, pnpm, Docker. https://gritframework.dev/docs/getting-started/prerequisites
 
 ## Step 3: Understand the one thing that matters
 
