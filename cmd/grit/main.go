@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.566.0"
+var version = "3.567.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -1883,6 +1883,20 @@ func upgradeCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 
+			// --to stable is a version like any other once it is resolved.
+			// Resolved here rather than inside upgradeToVersion so the
+			// version printed, compared and fetched is the same string
+			// (grit#245).
+			if strings.EqualFold(strings.TrimSpace(to), "stable") {
+				resolved, rerr := selfupdate.ResolveChannel("stable")
+				if rerr != nil {
+					cmd.SilenceUsage = true
+					return rerr
+				}
+				cMuted.Printf("  Stable channel: v%s\n\n", resolved)
+				to = resolved
+			}
+
 			// A named version is applied by that version's own binary, since
 			// the templates are compiled in. Nothing below may run: the steps
 			// after scaffold.Upgrade are this CLI's repairs, and running them
@@ -2061,7 +2075,7 @@ func upgradeCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite every file, including ones you have edited")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Say what the upgrade would change and change nothing: runs it on a copy and diffs the two")
-	cmd.Flags().StringVar(&to, "to", "", "Apply a named version's framework files instead of this CLI's (e.g. --to 3.455.0). Downloads that release, verifies its signed checksum, caches it in ~/.grit/versions and runs it. Your installed CLI is not changed")
+	cmd.Flags().StringVar(&to, "to", "", "Apply a named version's framework files instead of this CLI's (e.g. --to 3.455.0), or --to stable for the channel. Downloads that release, verifies its signed checksum, caches it in ~/.grit/versions and runs it. Your installed CLI is not changed")
 	cmd.Flags().BoolVar(&showDiff, "diff", false, "Upgrade, and show what it would have changed in the files it leaves alone. Use --dry-run to look without upgrading")
 	// Says "and upgrades" out loud. Every other tool with a --plan means a dry
 	// run, so this one reads as one, and somebody ran it on a project with no
@@ -2078,6 +2092,7 @@ func updateCmd() *cobra.Command {
 	var forceRelease bool
 	var wantVersion string
 	var allowDowngrade bool
+	var channel string
 
 	cmd := &cobra.Command{
 		Use:     "update",
@@ -2092,7 +2107,15 @@ Behaviour:
   4. If Go is NOT installed, downloads the matching binary from the
      GitHub release for your OS / arch and atomically swaps it in.
 
+Channels:
+  edge     the newest release. The default, and what Grit has always done.
+  stable   the newest release at least a week old whose first week of
+           nightly canary runs all came back green. For a team that cannot
+           take a release every day. No backports: a fix lands on edge and
+           reaches stable when it has aged.
+
 Flags:
+  --channel        edge (default) or stable.
   --from-release   Skip the 'go install' path and always pull the
                    binary directly from GitHub releases.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -2102,6 +2125,29 @@ Flags:
 			spinner := color.New(color.FgHiBlack)
 
 			cHeading.Printf("\n  Grit self-update — current: v%s\n\n", version)
+
+			// A channel resolves to a version, and from there this is the
+			// ordinary pinned-version path. Resolved before the latest-release
+			// check, because on the stable channel the latest release is not
+			// the question.
+			if channel != "" && !strings.EqualFold(channel, "edge") {
+				if wantVersion != "" {
+					cmd.SilenceUsage = true
+					return fmt.Errorf("--channel and --version both name a release to install: pass one")
+				}
+				resolved, rerr := selfupdate.ResolveChannel(channel)
+				if rerr != nil {
+					cmd.SilenceUsage = true
+					return rerr
+				}
+				if resolved != "" {
+					spinner.Printf("  → Channel %s: v%s\n", strings.ToLower(channel), resolved)
+					wantVersion = resolved
+					// Moving onto stable from a newer edge build is a
+					// downgrade, and it is the point of asking for it.
+					allowDowngrade = true
+				}
+			}
 
 			// 1. Check latest first. Both strategies (go install / GitHub binary)
 			//    do the same thing when already on latest — namely, nothing. Do
@@ -2266,6 +2312,8 @@ Flags:
 		},
 	}
 
+	cmd.Flags().StringVar(&channel, "channel", "",
+		"edge (default) or stable: the newest release that has aged a week with a green canary")
 	cmd.Flags().BoolVar(&forceRelease, "from-release", false,
 		"Skip 'go install' and download the binary directly from the GitHub release")
 	cmd.Flags().StringVar(&wantVersion, "version", "",

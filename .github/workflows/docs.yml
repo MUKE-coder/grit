@@ -143,6 +143,14 @@ jobs:
         run: python3 scripts/check-ci-coverage.py
         working-directory: docs
 
+      # Four files hold one fact: the config the promoter writes, the
+      # route that serves it, the URL compiled into the CLI, and the
+      # version the site says is current. Each compiles while the set is
+      # wrong, and the symptom is a --channel stable that always fails.
+      - name: The stable channel is consistent
+        run: python3 scripts/check-stable-channel.py
+        working-directory: docs
+
   flows:
     name: the runnable blocks run
     runs-on: ubuntu-latest

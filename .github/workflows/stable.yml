@@ -1,0 +1,71 @@
+name: Stable channel
+
+# Moves the stable channel forward, when the rule allows it.
+#
+# Grit ships every merged change, several times a day. That is right for the
+# project and wrong for a team with a change-control process: a handful of
+# releases have fixed a regression from the days before, so the newest release
+# is occasionally the worst one to be on (grit#245).
+#
+# The rule lives in scripts/promote-stable.py and nowhere else. It is the
+# newest release that is at least a week old and had every scheduled canary
+# run in that week come back green.
+#
+# This commits docs/config/stable.ts rather than force-pushing a tag, so the
+# move is a diff somebody can read afterwards. The docs deploy publishes it at
+# /stable.json, which is what `grit update --channel stable` reads.
+
+on:
+  schedule:
+    # 07:00 UTC, after the nightly canary has finished, so today's run counts.
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stable-channel
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # The rule decides which release every cautious team installs, so it
+      # is checked before it is used. No network: it runs against cases
+      # chosen because each one went wrong while the rule was written.
+      - name: The rule behaves as described
+        run: python3 scripts/promote-stable.py --self-test
+
+      # Report first, unconditionally, so the run's log says what the rule saw
+      # even on the days it moves nothing. A promoter that is silent when it
+      # declines is one nobody can debug.
+      - name: What the rule says
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/promote-stable.py
+
+      - name: Promote
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/promote-stable.py --write
+
+      - name: Commit, if it moved
+        run: |
+          if git diff --quiet -- docs/config/stable.ts; then
+            echo "stable did not move today"
+            exit 0
+          fi
+          version=$(grep -oP "version: '\K[^']+" docs/config/stable.ts)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/config/stable.ts
+          git commit -m "chore(stable): promote v${version}
+
+          Moved by .github/workflows/stable.yml. The rule is in
+          scripts/promote-stable.py: the newest release at least seven days
+          old whose first week of scheduled canary runs all came back green."
+          git push

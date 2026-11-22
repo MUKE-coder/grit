@@ -4,6 +4,7 @@ import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { GRIT_VERSION } from '@/config/site'
+import { STABLE, STABLE_MIN_AGE_DAYS } from '@/config/stable'
 
 export const metadata = getDocMetadata('/docs/versioning')
 
@@ -249,10 +250,77 @@ instead. This name will be removed no sooner than v4.0.0.`}
               </li>
             </ul>
 
+            <h2 id="channels" className="text-2xl font-bold tracking-tight mb-4">
+              Two channels: edge and stable
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Every merged change ships as a release, several times a day. That is right
+              for the project and wrong for a team with a change-control process, and it
+              has a real cost rather than a theoretical one: a handful of releases have
+              fixed a regression introduced in the days before, so the newest release is
+              occasionally the worst one to be on.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2 mb-6">
+              <div className="rounded-xl border border-border/50 bg-card/40 p-5">
+                <div className="flex items-baseline gap-2 mb-1.5">
+                  <span className="font-semibold text-sm">edge</span>
+                  <code className="font-mono text-[13px] text-accent">v{GRIT_VERSION}</code>
+                </div>
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  The newest release. What <code>grit update</code> and{' '}
+                  <code>go install @latest</code> give you, and what every fix lands on
+                  first.
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/50 bg-card/40 p-5">
+                <div className="flex items-baseline gap-2 mb-1.5">
+                  <span className="font-semibold text-sm">stable</span>
+                  <code className="font-mono text-[13px] text-accent">v{STABLE.version}</code>
+                </div>
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  Published {STABLE.released}, promoted {STABLE.promoted} after{' '}
+                  {STABLE.canaryRuns} green nightly canary runs. For a team that cannot
+                  take a release every day.
+                </p>
+              </div>
+            </div>
+
+            <CodeBlock
+              language="bash"
+              code={`grit update --channel stable     # install the stable release
+grit upgrade --to stable         # move a project to it
+curl -s https://gritframework.dev/stable.json   # what the channel says today`}
+            />
+
+            <p className="text-muted-foreground leading-relaxed mb-4 mt-6">
+              <strong>The rule, in full.</strong> stable is the newest release that is at
+              least {STABLE_MIN_AGE_DAYS} days old and had every scheduled canary run in
+              those {STABLE_MIN_AGE_DAYS} days come back green. A machine decides it,
+              daily, and the decision is a commit to{' '}
+              <code>docs/config/stable.ts</code> rather than a tag somebody moved, so you
+              can read the diff that promoted it.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              <strong>What that proves, and what it does not.</strong> The canary
+              scaffolds a project from the main branch rather than from the candidate
+              tag, so a green week means the scaffolder has been healthy through that
+              week rather than that this exact release was canaried. What it buys is the
+              thing worth having: the last week of releases is excluded, and that is
+              where a regression and its fix both live.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-10">
+              <strong>There are still no backports.</strong> A fix lands on edge and
+              reaches stable when it has aged. If you need one sooner, take the edge
+              release: nothing about this channel makes edge less supported, and stable
+              is behind by design.
+            </p>
+
             <h2 className="text-2xl font-bold tracking-tight mb-4">Upgrading the CLI</h2>
             <CodeBlock
               language="bash"
-              code={`grit update          # latest release
+              code={`grit update          # latest release (edge)
+grit update --channel stable    # the stable channel
 grit update --version 3.455.0   # a named release, not the latest
 grit version         # what you are on
 

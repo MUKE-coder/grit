@@ -5,7 +5,8 @@ import { DocsShell } from "@/components/docs/shell"
 import { CodeBlock, StepWithCode } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
-import { GO_MIN, NODE_MIN } from '@/config/site'
+import { GO_MIN, NODE_MIN, GRIT_VERSION } from '@/config/site'
+import { STABLE } from '@/config/stable'
 
 export const metadata = getDocMetadata('/docs/getting-started/installation')
 
@@ -82,7 +83,27 @@ export default function InstallationPage() {
 
           {/* Installation Steps */}
           <div className="mb-14">
-            <h2 className="text-xl font-semibold text-foreground mb-8">Install the Grit CLI</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Install the Grit CLI</h2>
+
+            {/* Which version you are about to get, before you run anything.
+                Everything here installs edge, and a team with a change-control
+                process should know the other one exists (grit#245). */}
+            <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border/50 bg-card/30 px-5 py-4 text-sm">
+              <span>
+                <span className="text-muted-foreground">edge</span>{' '}
+                <code className="font-mono text-[13px] text-accent">v{GRIT_VERSION}</code>
+                <span className="text-muted-foreground"> — what everything below installs</span>
+              </span>
+              <span>
+                <span className="text-muted-foreground">stable</span>{' '}
+                <code className="font-mono text-[13px] text-accent">v{STABLE.version}</code>
+                <span className="text-muted-foreground"> — </span>
+                <code className="font-mono text-[12.5px]">grit update --channel stable</code>
+              </span>
+              <Link href="/docs/versioning#channels" className="text-accent hover:underline">
+                What the channels mean
+              </Link>
+            </div>
 
             <StepWithCode
               number="01"

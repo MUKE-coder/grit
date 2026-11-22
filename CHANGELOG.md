@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.567.0 - November 22, 2026
+
+### A stable channel, for teams that cannot take a release every day
+
+Grit ships every merged change, several times a day. That is right for the project and has a real cost rather than a theoretical one: a handful of releases have fixed a regression introduced in the days before, so the newest release is occasionally the worst one to be on.
+
+{`grit update --channel stable # install the stable release grit upgrade --to stable # move a project to it curl -s https://gritframework.dev/stable.json`} The rule, and what it proves stable is the newest release that is at least seven days old and had every scheduled canary run in those seven days come back green. A machine decides it daily, and the decision is a commit to `docs/config/stable.ts` rather than a tag somebody force-pushed, so the move is a diff you can read.
+
+Said honestly, because the honest version is less than it sounds: the canary scaffolds from the main branch rather than from the candidate tag, so a green week means the scaffolder has been healthy through that week, not that this exact release was canaried. What it buys is the thing worth having: the last week of releases is excluded, and that is where a regression and its fix both live.
+
+There are still no backports and no SLA. A fix lands on edge and reaches stable when it has aged. Nothing here makes edge less supported: stable is behind by design.
+
+#### The rule changed once, because of a number
+
+The first version said "every scheduled canary since it published must be green". Run against real data it chose nothing at all: the canary failed on two days in November, so every release older than a week had a failure somewhere after it, and none would have been promotable for another week. A single dependency-drift failure would freeze the channel the same way.
+
+So the evidence is bounded to the release's own ageing window, which is also what the report asked for. A failure three weeks later says nothing about a release that already aged out clean. The rule has a self-test of six cases, each one something that went wrong while it was being written, and it runs in CI before the promotion does.
+
+#### And the four files that have to agree
+
+The config the promoter writes, the route that serves `/stable.json`, the URL compiled into the CLI, and the version the site calls current. Each compiles and builds while the set of them is wrong, and the symptom would be a `--channel stable` that always fails. `check-stable-channel.py` reads all four and runs in the docs workflow.
+
+
 ## v3.566.0 - November 22, 2026
 
 ### grit sync --check, and a CI job that runs it

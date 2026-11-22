@@ -72,6 +72,86 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.567.0 */}
+            <div className="mb-12" id="v3.567.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.567.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A stable channel, for teams that cannot take a release every day</h3>
+
+                <p>
+                  Grit ships every merged change, several times a day. That is
+                  right for the project and has a real cost rather than a
+                  theoretical one: a handful of releases have fixed a
+                  regression introduced in the days before, so the newest
+                  release is occasionally the worst one to be on.
+                </p>
+
+                <pre className="text-[12.5px]">{`grit update --channel stable     # install the stable release
+grit upgrade --to stable         # move a project to it
+curl -s https://gritframework.dev/stable.json`}</pre>
+
+                <h4>The rule, and what it proves</h4>
+                <p>
+                  stable is the newest release that is at least seven days old
+                  and had every scheduled canary run in those seven days come
+                  back green. A machine decides it daily, and the decision is a
+                  commit to <code>docs/config/stable.ts</code> rather than a
+                  tag somebody force-pushed, so the move is a diff you can
+                  read.
+                </p>
+                <p>
+                  Said honestly, because the honest version is less than it
+                  sounds: the canary scaffolds from the main branch rather than
+                  from the candidate tag, so a green week means the scaffolder
+                  has been healthy through that week, not that this exact
+                  release was canaried. What it buys is the thing worth having:
+                  the last week of releases is excluded, and that is where a
+                  regression and its fix both live.
+                </p>
+                <p>
+                  There are still no backports and no SLA. A fix lands on edge
+                  and reaches stable when it has aged. Nothing here makes edge
+                  less supported: stable is behind by design.
+                </p>
+
+                <h4>The rule changed once, because of a number</h4>
+                <p>
+                  The first version said &quot;every scheduled canary since it
+                  published must be green&quot;. Run against real data it chose
+                  nothing at all: the canary failed on two days in November, so
+                  every release older than a week had a failure somewhere after
+                  it, and none would have been promotable for another week. A
+                  single dependency-drift failure would freeze the channel the
+                  same way.
+                </p>
+                <p>
+                  So the evidence is bounded to the release&apos;s own ageing
+                  window, which is also what the report asked for. A failure
+                  three weeks later says nothing about a release that already
+                  aged out clean. The rule has a self-test of six cases, each
+                  one something that went wrong while it was being written, and
+                  it runs in CI before the promotion does.
+                </p>
+
+                <h4>And the four files that have to agree</h4>
+                <p>
+                  The config the promoter writes, the route that serves{' '}
+                  <code>/stable.json</code>, the URL compiled into the CLI, and
+                  the version the site calls current. Each compiles and builds
+                  while the set of them is wrong, and the symptom would be a{' '}
+                  <code>--channel stable</code> that always fails.{' '}
+                  <code>check-stable-channel.py</code> reads all four and runs
+                  in the docs workflow.
+                </p>
+              </div>
+            </div>
+
             {/* v3.566.0 */}
             <div className="mb-12" id="v3.566.0">
               <div className="flex items-center gap-3 mb-4">
