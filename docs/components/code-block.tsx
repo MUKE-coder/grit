@@ -63,6 +63,20 @@ interface CodeBlockProps {
    * workflow is what makes the claim true.
    */
   verify?: string
+  /**
+   * Marks this block as captured OUTPUT rather than commands to type, naming
+   * the command that produced it (output="grit new").
+   *
+   * It renders the same. It is read by internal/docscheck, which otherwise
+   * treats every line of a block as a command and asks the CLI about it: the
+   * next steps `grit new` prints are an aligned two-column table, so
+   * "grit migrate            create database tables" read as a subcommand
+   * called create and failed the build.
+   *
+   * The named command is still checked, so the marker cannot be used to
+   * smuggle a command the CLI would refuse past the checker.
+   */
+  output?: string
 }
 
 export function CodeBlock({

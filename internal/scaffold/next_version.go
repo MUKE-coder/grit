@@ -43,4 +43,16 @@ package scaffold
 // 16.4.3 rather than the newest: 16.4.4 and 16.4.5 were two and three days
 // old, inside the release-age window this file already argues for, and
 // 16.4.3 is thirteen days old and carries the same fixes.
-const nextVersion = "16.4.3"
+//
+// Moved 16.4.3 -> 16.4.6 on 2026-11-22, for seven MODERATE advisories that
+// all land on it, every one patched in 16.4.5: information disclosure across
+// root params, two cache leaks across root param values, an SVG rejection
+// bypass in image optimization, HttpOnly cookie exposure on Edge routes,
+// cross-client response injection when a self-hosted app forwards a fetched
+// response, and cache poisoning of shared fallback shells. Found by running
+// pnpm audit in a freshly scaffolded project rather than by reading a feed,
+// which is the only place the pin and the advisories meet.
+//
+// 16.4.6 was published 2026-11-09, thirteen days before the move, so it is
+// past the release-age cutoff the paragraph above argues for.
+const nextVersion = "16.4.6"

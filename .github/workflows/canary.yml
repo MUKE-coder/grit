@@ -188,6 +188,21 @@ jobs:
           cd /tmp/canary/app
           pnpm audit --audit-level high 2>&1 | tee /tmp/pnpm-audit.log || true
 
+      # Not advisory-only: the versions Grit pins exactly are the project's own
+      # decision, and moving one is a one-line change in a template.
+      #
+      # The step above would not have caught the case this exists for. On
+      # 2026-11-22 the pinned Next carried seven MODERATE advisories, all
+      # patched three weeks earlier, and `--audit-level high` filtered every
+      # one of them out. Nothing else reads the pin.
+      - name: Advisories against the versions Grit pins
+        if: always()
+        # pipefail, or the step reports tee's exit status and the gate
+        # never fails. The whole point of this step is its exit code.
+        run: |
+          set -o pipefail
+          python3 scripts/audit-pinned.py /tmp/canary/app 2>&1 | tee /tmp/pinned-audit.log
+
       # The resolved versions are the actual evidence: diffing this against the
       # last green run is how you find which package moved.
       - name: Capture resolved dependency versions

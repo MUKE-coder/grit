@@ -109,7 +109,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.563.0"
+const DefaultVersion = "3.564.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -181,6 +181,20 @@ func (o *Options) Normalize() {
 // ValidStyles lists all supported admin panel style variants.
 var ValidStyles = []string{"default", "modern", "minimal", "glass", "centered"}
 
+// DefaultDBProvider, DefaultStorageDriver and DefaultTheme are what a project
+// gets when the flag is absent.
+//
+// Exported because the interactive picker has to open on the same choice. A
+// picker that opens on something the validator would not have chosen makes
+// Enter mean a different project from the documented command, and nothing
+// anywhere says so: that is exactly how `grit new` came to open on Full while
+// /docs/start recommended --triple (grit#240).
+const (
+	DefaultDBProvider    = "postgres"
+	DefaultStorageDriver = "minio"
+	DefaultTheme         = "atlas"
+)
+
 // DBProviderOrder is the order the picker offers the engines in, commonest
 // first. A map has no order, and a picker whose options move between runs is
 // one people stop reading.
@@ -198,7 +212,7 @@ var DBProviders = map[string]string{
 // reach for.
 func (o *Options) ValidateDBProvider() error {
 	if o.DBProvider == "" {
-		o.DBProvider = "postgres"
+		o.DBProvider = DefaultDBProvider
 		return nil
 	}
 	normalised := map[string]string{
@@ -233,7 +247,7 @@ var StorageDrivers = map[string]string{
 // spellings people reach for.
 func (o *Options) ValidateStorageDriver() error {
 	if o.StorageDriver == "" {
-		o.StorageDriver = "minio"
+		o.StorageDriver = DefaultStorageDriver
 		return nil
 	}
 	normalised := map[string]string{
@@ -277,7 +291,7 @@ var ValidThemes = []string{"atlas", "aurora", "pulse", "coral", "amber", "sky", 
 // chosen as the default because it works for the widest audience.
 func (o *Options) ValidateTheme() error {
 	if o.Theme == "" {
-		o.Theme = "atlas"
+		o.Theme = DefaultTheme
 		return nil
 	}
 	for _, t := range ValidThemes {

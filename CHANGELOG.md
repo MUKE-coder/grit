@@ -23,6 +23,39 @@ Also worth knowing:
 ---
 
 
+## v3.564.0 - November 22, 2026
+
+### The first hour, and the Next pin that was three weeks behind
+
+#### Next moves to 16.4.6
+
+The pinned 16.4.3 carried seven MODERATE advisories, every one of them patched in 16.4.5 three weeks earlier: information disclosure across root params, two cache leaks across root param values, an SVG rejection bypass in image optimization, HttpOnly cookie exposure on Edge routes, cross-client response injection when a self-hosted app forwards a fetched response, and cache poisoning of shared fallback shells. Every project generated in those three weeks has them. Run `grit upgrade`, or raise the `next` line in each app's package.json.
+
+#### And the check that should have said so
+
+The nightly canary audits a scaffolded project at `--audit-level high`, advisory only, which is right for a graph of a few thousand build-time packages and wrong for the dozen versions Grit picks. It filtered all seven out.
+
+`scripts/audit-pinned.py` now runs beside it and fails the canary on an advisory at any severity against a package written as an exact version in a template, because those are the project's own decision. It needs no list to maintain: a pin is a decision, a range is the graph. Today that is next, react, react-dom, biome and nine Tiptap packages.
+
+#### Pressing Enter through grit new now gives the documented project
+
+The architecture list opened on Full while [/docs/start](https://gritframework.com/docs/start) recommended `--triple --next`, so the thing the docs told a newcomer to ask for and the thing they got by pressing Enter were different projects, and nothing said so. Every picker now opens on the recommended answer and marks it, and one line above the first question says Enter is the way through.
+
+The test reads both sides in one pass: it drives the form with Enter and compares the result against the command parsed out of the page. A test over the picker alone passes while the page says something else, which is how the pair came apart.
+
+#### The Quick Start now shows what each command prints
+
+It had no screenshots, no command output, and never gave the seeded admin password, so a first-time reader reached "open the admin at :3001" with a login screen and nothing to type. It now carries the credentials, what `grit new`, `grit migrate`, `grit start` and `grit generate resource` each print, and three screenshots of a real generated project: the sign-in screen, the dashboard, and the Posts screen one command later.
+
+It also answers the question the generator's own next steps raise: no, you do not restart `grit start`, because the API runs under air. The one step that is not automatic is `grit migrate`.
+
+Those transcripts needed a marker. Every line of a code block is checked against the real command tree, and the two-column table `grit new` ends with reads as `grit migrate create`. A block can now say `output="grit new myapp"`, which names what produced it and is skipped, while the command it names is still checked, so the marker cannot smuggle anything past the build.
+
+#### Seeding a new project no longer prints two red blocks
+
+The API-key seeder looks for a key it expects to be absent, and GORM logged that lookup as an error, in red, with a file and a line number. On a first `grit seed` it looked exactly like a failure. A project now connects with `IgnoreRecordNotFoundError` set, and keeps everything else the default logger did, so a slow query still reports itself. `grit upgrade` applies it to an existing project.
+
+
 ## v3.563.0 - November 22, 2026
 
 ### Four things the site claimed that were not true

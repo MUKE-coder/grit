@@ -92,6 +92,12 @@ func Extract(root string) ([]Sample, error) {
 func extractFile(rel, src string) []Sample {
 	lines := strings.Split(strings.ReplaceAll(src, "\r\n", "\n"), "\n")
 	verify := ""
+	// A block marked output="<cmd>" is a transcript of what <cmd> printed, not
+	// a list of things to type. Every line of it would otherwise be read as a
+	// command: the two-column "Next steps" table `grit new` prints turned
+	// "grit migrate            create database tables" into a subcommand
+	// called create.
+	skipping := false
 	inLiteral := false
 	var out []Sample
 
@@ -106,6 +112,24 @@ func extractFile(rel, src string) []Sample {
 			if id, ok := verifyID(raw); ok {
 				verify = id
 			}
+			// The command named by the marker is still checked. Otherwise the
+			// marker would be a way to put any command on a page without the
+			// CLI ever being asked about it.
+			if cmd, ok := outputOf(raw); ok {
+				skipping = true
+				if cleaned, ok := cleanCommand(cmd); ok {
+					out = append(out, Sample{File: rel, Line: i + 1, Command: cleaned})
+				}
+			}
+		}
+
+		if skipping {
+			// The marker sits above the block, so the flag is cleared by the
+			// same close that ends it.
+			if openedInLiteral && !inLiteral {
+				skipping = false
+			}
+			continue
 		}
 
 		var candidates []string
@@ -192,6 +216,25 @@ func splitEscapedNewlines(candidates []string) []string {
 // verifyID reads verify="<id>" off a CodeBlock prop.
 func verifyID(line string) (string, bool) {
 	const marker = `verify="`
+	at := strings.Index(line, marker)
+	if at < 0 {
+		return "", false
+	}
+	rest := line[at+len(marker):]
+	end := strings.Index(rest, `"`)
+	if end <= 0 {
+		return "", false
+	}
+	return rest[:end], true
+}
+
+// outputOf reads output="<command>" off a CodeBlock prop.
+//
+// Same shape as verifyID, and deliberately a string rather than a bare boolean
+// prop: a bare word is too easy to match in prose, and naming the command that
+// produced the transcript is worth having written down anyway.
+func outputOf(line string) (string, bool) {
+	const marker = `output="`
 	at := strings.Index(line, marker)
 	if at < 0 {
 		return "", false

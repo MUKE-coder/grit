@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.563.0"
+var version = "3.564.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -305,6 +305,11 @@ func newCmd() *cobra.Command {
 
 			if !anyFlagSet {
 				printLogo()
+				// One line before the first question, because a newcomer
+				// facing six architectures has no basis for choosing and the
+				// way out is Enter (grit#240).
+				fmt.Println(prompt.Hint())
+				fmt.Println()
 				// Keep empty values so the prompt can collect architecture/frontend.
 				opts.Architecture = ""
 				opts.Frontend = ""

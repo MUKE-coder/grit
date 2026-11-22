@@ -995,6 +995,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 		fmt.Printf("  ⚠ wiring the database callback chain: %v\n", err)
 	}
 
+	// The GORM logger, which stops reporting the record-not-found a seeder
+	// expects. Last of the database.go repairs and outside the architecture
+	// blocks, for the same reason as the one above: it has to read the file
+	// the others leave behind, and its anchor is one line none of them touch.
+	if err := repairDBLogger(root, opts); err != nil {
+		fmt.Printf("  ⚠ quietening the GORM logger: %v\n", err)
+	}
+
 	// --- Shared package ---
 	if hasShared {
 		spinner.Printf("  → Updating shared package config...\n")

@@ -1953,7 +1953,21 @@ func Connect(dsn string) (*gorm.DB, error) {
 	// backend. No measured gain, real downsides, so: opt in with
 	// DB_PREPARED_STATEMENTS=true if your own numbers disagree.
 	gormCfg := &gorm.Config{
-		Logger:      logger.Default.LogMode(logLevel),
+		// ErrRecordNotFound is never worth a log line: every caller that can
+		// get one handles it, and GORM prints it in red with a file and a line
+		// number, which on a first run looks exactly like a failure. Seeding a
+		// new project printed two such blocks for two lookups whose whole
+		// purpose was to miss (grit#238). Everything else about the default
+		// logger is kept, so a slow query still reports itself.
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold:             200 * time.Millisecond,
+				LogLevel:                  logLevel,
+				IgnoreRecordNotFoundError: true,
+				Colorful:                  true,
+			},
+		),
 		PrepareStmt: os.Getenv("DB_PREPARED_STATEMENTS") == "true",
 	}
 

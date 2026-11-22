@@ -7,6 +7,51 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
+// Recommended is the project somebody gets by pressing Enter through every
+// question, and the one /docs/start tells a newcomer to ask for by name:
+//
+//	grit new my-app --triple --next
+//
+// It is data rather than five accidents of list order because the picker and
+// that page have to agree, and they did not. The architecture list opened on
+// Full, so the documented recommendation and the thing a beginner got by
+// pressing Enter were different projects, with nothing anywhere saying so
+// (grit#240). TestEnterThroughThePromptGivesTheDocumentedProject reads both
+// sides in one pass, because a test per side passes while the pair is broken.
+var Recommended = struct {
+	Architecture  string
+	Frontend      string
+	Theme         string
+	DBProvider    string
+	StorageDriver string
+}{
+	Architecture:  string(scaffold.ArchTriple),
+	Frontend:      string(scaffold.FrontendNext),
+	Theme:         scaffold.DefaultTheme,
+	DBProvider:    scaffold.DefaultDBProvider,
+	StorageDriver: scaffold.DefaultStorageDriver,
+}
+
+// recommendedSuffix marks the option Enter already lands on.
+//
+// Marking it is the whole point: a list of six architectures with nothing
+// distinguishing them is a decision a newcomer has no basis for making, and
+// the first question of their first command is the worst place to ask for one.
+const recommendedSuffix = "  (recommended)"
+
+// Hint is the line printed above the first question.
+//
+// Separate from printing it so a test can read it, and worded for the person
+// who has no preference yet: the way out of five questions is Enter, and the
+// project it produces is the one every guide assumes.
+func Hint() string {
+	return ui.Note(
+		"New to Grit? Press Enter on every question.",
+		"That gives you "+Recommended.Architecture+" + "+Recommended.Frontend+
+			", the combination every guide here assumes.",
+	)
+}
+
 // RunNewProjectPrompt shows an interactive prompt for project configuration.
 // Returns the selected architecture and frontend. Skips prompts for fields
 // that are already set (via CLI flags).
@@ -27,6 +72,11 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	db := opts.DBProvider
 	storage := opts.StorageDriver
 
+	// Open each picker on the recommended answer rather than on whatever
+	// happens to be first in the list. huh writes the highlighted option on
+	// submit, so this is what makes Enter mean the documented project.
+	preselect(&arch, &frontend, &theme, &db, &storage)
+
 	form := newProjectForm(opts, &arch, &frontend, &theme, &db, &storage)
 
 	// One theme for every picker, from internal/ui: huh's default draws a
@@ -38,6 +88,34 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 		return err
 	}
 
+	applyAnswers(opts, arch, frontend, theme, db, storage)
+	return nil
+}
+
+// preselect fills in the recommended answer for anything still unset.
+//
+// Only the empty ones: a value already there came from a flag, and the group
+// asking about it is hidden.
+func preselect(arch, frontend, theme, db, storage *string) {
+	for ptr, want := range map[*string]string{
+		arch:     Recommended.Architecture,
+		frontend: Recommended.Frontend,
+		theme:    Recommended.Theme,
+		db:       Recommended.DBProvider,
+		storage:  Recommended.StorageDriver,
+	} {
+		if *ptr == "" {
+			*ptr = want
+		}
+	}
+}
+
+// applyAnswers writes the picked values back onto the options.
+//
+// Separate from running the form so the test that drives the form as a
+// bubbletea model ends up with the same Options a real `grit new` would, and
+// not with its own idea of what the answers mean.
+func applyAnswers(opts *scaffold.Options, arch, frontend, theme, db, storage string) {
 	if arch == "full" {
 		// Full is a shorthand, not an architecture. Normalize() turns opts.Full
 		// into triple + web + admin + docs + expo + desktop.
@@ -49,7 +127,6 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	opts.Theme = theme
 	opts.DBProvider = db
 	opts.StorageDriver = storage
-	return nil
 }
 
 // newProjectForm builds the pickers.
@@ -72,9 +149,10 @@ func newProjectForm(
 			huh.NewSelect[string]().
 				Key("arch").
 				Title("Select architecture").
+				Description("Press Enter to take the recommendation; every guide assumes it.").
 				Options(
 					huh.NewOption("Full — Web + Admin + API + Docs + Expo + Desktop (everything)", "full"),
-					huh.NewOption("Triple — Web + Admin + API (Turborepo)", string(scaffold.ArchTriple)),
+					huh.NewOption(mark("Triple — Web + Admin + API (Turborepo)", string(scaffold.ArchTriple), Recommended.Architecture), string(scaffold.ArchTriple)),
 					huh.NewOption("Double — Web + API (Turborepo)", string(scaffold.ArchDouble)),
 					huh.NewOption("Single — Go API + embedded React SPA (one binary)", string(scaffold.ArchSingle)),
 					huh.NewOption("API Only — Go API (no frontend)", string(scaffold.ArchAPI)),
@@ -88,8 +166,8 @@ func newProjectForm(
 				Key("frontend").
 				Title("Select frontend framework").
 				Options(
-					huh.NewOption("Next.js — SSR, SEO, App Router", string(scaffold.FrontendNext)),
-					huh.NewOption("TanStack Router — Vite, fast builds, small bundle (SPA)", string(scaffold.FrontendTanStack)),
+					huh.NewOption(mark("Next.js — SSR, SEO, App Router", string(scaffold.FrontendNext), Recommended.Frontend), string(scaffold.FrontendNext)),
+					huh.NewOption(mark("TanStack Router — Vite, fast builds, small bundle (SPA)", string(scaffold.FrontendTanStack), Recommended.Frontend), string(scaffold.FrontendTanStack)),
 				).
 				Value(frontend),
 		).WithHideFunc(func() bool {
@@ -111,7 +189,7 @@ func newProjectForm(
 				Title("Select visual theme").
 				Description("Drives auth layout, dashboard tokens, fonts, and brand colors.").
 				Options(
-					huh.NewOption("Atlas — split-screen, blue/white, team/organisation (Inter)", "atlas"),
+					huh.NewOption(mark("Atlas — split-screen, blue/white, team/organisation (Inter)", "atlas", Recommended.Theme), "atlas"),
 					huh.NewOption("Aurora — Apple-inspired, monochrome black/white/grey (Geist)", "aurora"),
 					huh.NewOption("Pulse — Cloudflare-inspired, premium blue, elevated cards (Onest)", "pulse"),
 					huh.NewOption("Coral — a card over a blurred glimpse of the app, rose (Inter)", "coral"),
@@ -169,6 +247,18 @@ func newProjectForm(
 	)
 }
 
+// mark appends the recommended suffix when this option is the recommended one.
+//
+// Taking the value and the recommendation rather than a bool so the label and
+// the thing being recommended cannot come apart: move the recommendation and
+// every label follows it.
+func mark(label, value, recommended string) string {
+	if value != recommended {
+		return label
+	}
+	return label + recommendedSuffix
+}
+
 // storageOptions builds the picker's list from the providers the flag accepts.
 //
 // Labelled "<name> — <what it means>", with the description
@@ -188,7 +278,8 @@ func storageOptions() []huh.Option[string] {
 		if label == "" {
 			label = name
 		}
-		options = append(options, huh.NewOption(label+" — "+scaffold.StorageDrivers[name], name))
+		options = append(options, huh.NewOption(
+			mark(label+" — "+scaffold.StorageDrivers[name], name, Recommended.StorageDriver), name))
 	}
 	return options
 }
@@ -210,7 +301,8 @@ func databaseOptions() []huh.Option[string] {
 		if label == "" {
 			label = name
 		}
-		options = append(options, huh.NewOption(label+" — "+scaffold.DBProviders[name], name))
+		options = append(options, huh.NewOption(
+			mark(label+" — "+scaffold.DBProviders[name], name, Recommended.DBProvider), name))
 	}
 	return options
 }

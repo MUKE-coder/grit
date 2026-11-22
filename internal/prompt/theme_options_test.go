@@ -14,15 +14,24 @@ import (
 // learned about them. Nothing failed: `grit new` simply showed three options,
 // so for everybody who does not pass --theme the new layouts had not shipped.
 // A missing option is invisible in a way a rejected flag is not.
+//
+// Read as values out of the theme select rather than as the exact characters
+// around them. The check used to be Contains(`", "atlas")`), which stopped
+// matching the day one option gained a (recommended) marker and started being
+// built by a helper: the option was still there, and the test said it was
+// gone.
 func TestThePickerOffersEveryTheme(t *testing.T) {
-	source, err := os.ReadFile("prompt.go")
-	if err != nil {
-		t.Fatalf("reading prompt.go: %v", err)
+	offered := map[string]bool{}
+	for _, value := range optionValues(themeSelectBlock(t)) {
+		offered[value] = true
 	}
-	picker := string(source)
+	if len(offered) == 0 {
+		t.Fatal("no options parsed out of the theme select, so this test is " +
+			"reading the wrong block rather than finding a missing theme")
+	}
 
 	for _, theme := range scaffold.ValidThemes {
-		if !strings.Contains(picker, `", "`+theme+`")`) {
+		if !offered[theme] {
 			t.Errorf("theme %q is accepted by --theme but the interactive picker never offers it", theme)
 		}
 	}

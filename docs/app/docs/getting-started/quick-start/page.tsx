@@ -9,6 +9,7 @@ import { CommunityCTA } from "@/components/community-cta";
 import { getDocMetadata } from '@/config/docs-metadata'
 import { GO_MIN } from '@/config/site'
 import { BookDownload } from '@/components/book-download'
+import { DocsShot } from '@/components/docs-shot'
 import { GRIT_VERSION } from '@/config/site'
 
 export const metadata = getDocMetadata('/docs/getting-started/quick-start')
@@ -136,19 +137,78 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
               </div>
               <CodeBlock terminal code="grit new myapp" className="mb-0 glow-purple-sm" />
+
+              {/* Captured from a real run. A reader who cannot tell a slow step
+                  from a failed one has no way to know whether to keep waiting. */}
+              <details className="mt-4 rounded-xl border border-border/60 bg-card/30 px-5 py-4">
+                <summary className="cursor-pointer text-[14px] font-medium">
+                  What it prints
+                </summary>
+                <div className="mt-3">
+                  <CodeBlock
+                    output="grit new myapp"
+                    language="text"
+                    code={`  ✓ Directory structure
+  ✓ Configuration files
+  ✓ Go API                                        391ms
+  ✓ Migration and seed tools
+  ✓ Batteries                                     721ms
+  ✓ Blog example
+  ✓ Go dependencies                               2.3s
+  ✓ Docker setup
+  ✓ Shared package
+  ✓ Web app                                       106ms
+  ✓ Admin panel                                   748ms
+  ✓ Frontend tests
+
+  Created myapp  Triple · Atlas · postgres · 4.4s
+
+  Next steps
+
+    cd myapp
+    docker compose up -d    Postgres, Redis, MinIO, Mailhog
+    pnpm install            frontend deps, one time
+    grit migrate            create database tables
+    grit seed               sample data, optional
+    grit start              run everything`}
+                    className="mb-0"
+                  />
+                  <p className="text-[13px] text-muted-foreground mt-3 leading-relaxed">
+                    Then a table of every address the project will serve on. The timings are
+                    from one machine and yours will differ; what matters is that every line
+                    is a tick and the last one says <strong>Created</strong>.
+                  </p>
+                </div>
+              </details>
+
               <div className="prose-grit mt-4">
                 <p>
                   The <strong>interactive CLI</strong> walks you through selecting an architecture mode
-                  and frontend option. Grit supports <strong>5 architecture modes</strong>:{' '}
-                  <code>single</code> (API only), <code>double</code> (API + web),{' '}
-                  <code>triple</code> (API + web + admin), <code>api</code> (headless API),
-                  and <code>mobile</code> (API + Expo). It also supports <strong>2 frontend options</strong>:{' '}
+                  and frontend option. Grit supports <strong>6 architecture modes</strong>:{' '}
+                  <code>full</code> (everything), <code>triple</code> (API + web + admin),{' '}
+                  <code>double</code> (API + web), <code>single</code> (one binary: Go API with
+                  the React app embedded), <code>api</code> (headless, no frontend), and{' '}
+                  <code>mobile</code> (API + Expo). It also supports <strong>2 frontend options</strong>:{' '}
                   <code>Next.js</code> and <code>TanStack Router (Vite)</code>.
                 </p>
                 <p>
                   The project name must be lowercase, alphanumeric, and hyphens
                   only (e.g., <code>my-saas-app</code>). It must start with a
                   letter and cannot end with a hyphen.
+                </p>
+              </div>
+
+              {/* Five questions is four more decisions than a newcomer has any
+                  basis for making, so say what Enter does. The CLI prints the
+                  same line above its first question (grit#240). */}
+              <div className="mt-4 rounded-xl border border-accent/25 bg-accent/[0.04] p-5">
+                <p className="text-[15px] leading-relaxed">
+                  <strong>New to Grit? Press Enter on every question.</strong> Every picker opens
+                  on the recommended answer, so pressing Enter through the prompt gives you the
+                  same project as{' '}
+                  <code className="font-mono text-[14px] text-accent">grit new myapp --triple --next</code>{' '}
+                  with Postgres and MinIO: the combination every guide here assumes. The CLI
+                  prints this line above the first question too.
                 </p>
               </div>
 
@@ -259,6 +319,74 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                   model.
                 </blockquote>
               </div>
+
+              <details className="mt-4 rounded-xl border border-border/60 bg-card/30 px-5 py-4">
+                <summary className="cursor-pointer text-[14px] font-medium">
+                  What <code className="font-mono text-[13px]">grit migrate</code> prints the first time
+                </summary>
+                <div className="mt-3">
+                  <CodeBlock
+                    output="grit migrate"
+                    language="text"
+                    code={`  Running database migrations...
+Database pool: up to 25 connections from this process (DB_MAX_OPEN_CONNS)
+Database connected successfully
+================================================================
+DATABASE MIGRATION: 44 model(s) registered
+================================================================
+  + created *models.User
+  + created *models.Session
+  + created *models.PasswordResetToken
+  ... 41 more
+----------------------------------------------------------------
+Migration done: 44 table(s) created, 0 altered (+0 column(s)), 0 unchanged.
+================================================================
+
+  + table blogs
+  + table posts
+  + table sessions
+  + table users
+  ... 40 more
+
+This is the baseline run, the one that built the schema. It cannot be
+rolled back: use grit migrate --fresh to start over.`}
+                    className="mb-0"
+                  />
+                  <p className="text-[13px] text-muted-foreground mt-3 leading-relaxed">
+                    Run it again and the summary reads{' '}
+                    <code className="font-mono text-[12.5px]">0 table(s) created, 0 altered, 44 unchanged</code>.
+                    That is the normal result rather than a failure: it means your models and
+                    your schema already agree.
+                  </p>
+                </div>
+              </details>
+
+              {/* The seeder prints these and /docs/start lists them, and the
+                  Quick Start left a reader at a login screen with no password
+                  (grit#238). */}
+              <div className="mt-4 rounded-xl border border-accent/25 bg-accent/[0.04] p-5">
+                <p className="text-[15px] font-semibold mb-2">Your login</p>
+                <p className="text-[15px] leading-relaxed">
+                  <code className="font-mono text-[14px] text-accent">admin@example.com</code>
+                  {' / '}
+                  <code className="font-mono text-[14px] text-accent">admin123</code>
+                </p>
+                <p className="text-[13px] text-muted-foreground mt-3 leading-relaxed">
+                  That is the dev default, and the seeder says so as it creates the account:
+                  change it before production, or set{' '}
+                  <code className="font-mono text-[12.5px]">SEED_ADMIN_PASSWORD</code> before
+                  seeding and it uses that instead. Four demo users (jane, robert, emily and
+                  michael, all at <code className="font-mono text-[12.5px]">example.com</code>)
+                  share the same password.
+                </p>
+                <p className="text-[13px] text-muted-foreground mt-3 leading-relaxed">
+                  <code className="font-mono text-[12.5px]">grit seed</code> also prints a
+                  publishable and a secret API key, and writes them into{' '}
+                  <code className="font-mono text-[12.5px]">apps/web/.env.local</code> and{' '}
+                  <code className="font-mono text-[12.5px]">apps/admin/.env.local</code> for
+                  you. The secret one is shown that once and never again.
+                </p>
+              </div>
             </Step>
 
             {/* Step 5 */}
@@ -272,6 +400,68 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                 </p>
               </div>
               <CodeBlock terminal code="grit start" className="mb-0 glow-purple-sm" />
+
+              <details className="mt-4 rounded-xl border border-border/60 bg-card/30 px-5 py-4">
+                <summary className="cursor-pointer text-[14px] font-medium">
+                  What it prints
+                </summary>
+                <div className="mt-3">
+                  <CodeBlock
+                    output="grit start"
+                    language="text"
+                    code={`  Starting API + client apps in parallel...
+  API hot-reload via air (bundled, first run downloads it, then cached).
+  Press Ctrl+C to stop everything.
+
+  Recording output to .grit/logs/dev.log
+[web] apps/admin dev$ rm -rf .next && next dev --webpack --port 3001
+[web] apps/web dev$ rm -rf .next && next dev --webpack --port 3000
+[web] apps/web dev: ▲ Next.js 16.4.6 (webpack)
+[web] apps/web dev: - Local:         http://localhost:3000
+[web] apps/web dev: ✓ Ready in 564ms
+[web] apps/admin dev: - Local:         http://localhost:3001
+[web] apps/admin dev: ✓ Ready in 566ms
+[api] watching .
+[api] building...
+[api] running...
+[api] [GIN-debug] GET  /api/v1/posts  --> handlers.(*PostHandler).List-fm
+  ... one line per route
+[api] Server starting on port 8080
+[api] GORM Studio available at http://localhost:8080/studio
+[api] API Documentation at http://localhost:8080/docs
+[api] Pulse dashboard at http://localhost:8080/pulse/ui/
+[api] Sentinel dashboard at http://localhost:8080/sentinel/ui`}
+                    className="mb-0"
+                  />
+                  <p className="text-[13px] text-muted-foreground mt-3 leading-relaxed">
+                    Two prefixes, interleaved: <code>[api]</code> is the Go server under air,
+                    and <code>[web]</code> carries both Next apps. The frontends are ready
+                    when each prints its own <strong>Ready in</strong>; the API is ready at{' '}
+                    <strong>Server starting on port 8080</strong>, which arrives last because
+                    it compiles first. The hundreds of <code>[GIN-debug]</code> lines between
+                    them are one per route and are not a problem. All of it is also written
+                    to <code>.grit/logs/dev.log</code>, so you can read what scrolled past.
+                    If a port is already taken, that app fails and{' '}
+                    <code>grit start</code> stops the rest rather than leaving half a stack
+                    running.
+                  </p>
+                </div>
+              </details>
+
+              <DocsShot
+                src="/images/quickstart/admin-login.png"
+                alt="The admin panel sign-in screen, with email and password fields"
+                label="localhost:3001/login"
+                caption="The admin at :3001 opens here. Sign in with the account grit seed created: admin@example.com / admin123."
+              />
+
+              <DocsShot
+                src="/images/quickstart/admin-dashboard.png"
+                alt="The admin dashboard, showing stat cards, recent activity and a severity chart"
+                label="localhost:3001"
+                caption="What you land on after signing in. The numbers come from the rows grit seed wrote, so a dashboard of zeroes means the seed step was skipped rather than that something failed."
+              />
+
               <div className="prose-grit mt-4">
                 <p>
                   Need just one app? Use a subcommand: <code>grit start server</code>{" "}
@@ -396,6 +586,75 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                   <Link href="/docs/concepts/generated-files" className="text-accent hover:underline">Generated File Map</Link>.)
                 </p>
               </div>
+
+              <details className="mt-4 rounded-xl border border-border/60 bg-card/30 px-5 py-4">
+                <summary className="cursor-pointer text-[14px] font-medium">
+                  What it prints
+                </summary>
+                <div className="mt-3">
+                  <CodeBlock
+                    output="grit generate resource Post"
+                    language="text"
+                    code={`  Generating resource: Post
+
+  ✓ apps/api/internal/models/post.go
+  ✓ apps/api/internal/services/post.go
+  ✓ apps/api/internal/handlers/post.go
+  ✓ apps/api/internal/policies/post.go
+  ✓ packages/shared/schemas/post.ts
+  ✓ packages/shared/types/post.ts
+  ✓ apps/web/hooks/use-posts.ts
+  ✓ apps/admin/resources/posts/posts.ts
+  ✓ apps/admin/app/(dashboard)/resources/posts/page.tsx
+  ... 6 more
+
+  Injecting into existing files...
+  ✓ Injected model into AutoMigrate
+  ✓ Routes in internal/routes/post_routes.go
+  ✓ Injected permissions into the authz catalog
+  ✓ Injected resource into registry list
+  ... 12 more
+
+  Resource Post generated successfully!
+
+  Next steps:
+    1. cd apps/api && go build ./...
+    2. grit migrate   (creates the posts table)
+    3. Restart the API server
+    4. The admin panel will show Posts in the sidebar
+
+  ✓ apps/api/internal/access/registry.go now covers 209 routes`}
+                    className="mb-0"
+                  />
+                </div>
+              </details>
+
+              {/* Step 3 of the generator's own next steps reads as a chore and
+                  usually is not one. Answer it here rather than leaving a
+                  reader to guess (grit#238). */}
+              <div className="mt-4 rounded-xl border border-border/60 bg-card/30 p-5">
+                <p className="text-[15px] font-semibold mb-2">
+                  Do I need to restart <code className="font-mono text-[14px]">grit start</code>?
+                </p>
+                <p className="text-[15px] leading-relaxed text-muted-foreground">
+                  No. <code className="font-mono text-[14px]">grit start</code> runs the Go
+                  API under <strong>air</strong>, so the new handler and model are rebuilt
+                  and reloaded on their own, and both Next apps pick up the new admin page
+                  the same way. The step that is not automatic is{' '}
+                  <code className="font-mono text-[14px]">grit migrate</code>: the table does
+                  not exist until you run it, and until then the new screen answers with a
+                  database error. The generator&apos;s own &quot;Restart the API server&quot;
+                  line is for running the server by hand with{' '}
+                  <code className="font-mono text-[14px]">go run</code>.
+                </p>
+              </div>
+
+              <DocsShot
+                src="/images/quickstart/posts-screen.png"
+                alt="The generated Posts screen in the admin, with a data table and a create button"
+                label="localhost:3001/resources/posts"
+                caption="The Posts screen one command later: a sidebar entry, a searchable table with column controls, and a create form built from the same field list you typed."
+              />
             </Step>
             </Steps>
 

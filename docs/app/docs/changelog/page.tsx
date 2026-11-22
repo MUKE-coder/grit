@@ -72,6 +72,107 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.564.0 */}
+            <div className="mb-12" id="v3.564.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.564.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The first hour, and the Next pin that was three weeks behind</h3>
+
+                <h4>Next moves to 16.4.6</h4>
+                <p>
+                  The pinned 16.4.3 carried seven MODERATE advisories, every one
+                  of them patched in 16.4.5 three weeks earlier: information
+                  disclosure across root params, two cache leaks across root
+                  param values, an SVG rejection bypass in image optimization,
+                  HttpOnly cookie exposure on Edge routes, cross-client response
+                  injection when a self-hosted app forwards a fetched response,
+                  and cache poisoning of shared fallback shells. Every project
+                  generated in those three weeks has them. Run{' '}
+                  <code>grit upgrade</code>, or raise the <code>next</code> line
+                  in each app&apos;s package.json.
+                </p>
+
+                <h4>And the check that should have said so</h4>
+                <p>
+                  The nightly canary audits a scaffolded project at{' '}
+                  <code>--audit-level high</code>, advisory only, which is right
+                  for a graph of a few thousand build-time packages and wrong for
+                  the dozen versions Grit picks. It filtered all seven out.
+                </p>
+                <p>
+                  <code>scripts/audit-pinned.py</code> now runs beside it and
+                  fails the canary on an advisory at any severity against a
+                  package written as an exact version in a template, because
+                  those are the project&apos;s own decision. It needs no list to
+                  maintain: a pin is a decision, a range is the graph. Today that
+                  is next, react, react-dom, biome and nine Tiptap packages.
+                </p>
+
+                <h4>Pressing Enter through grit new now gives the documented project</h4>
+                <p>
+                  The architecture list opened on Full while{' '}
+                  <a href="/docs/start">/docs/start</a> recommended{' '}
+                  <code>--triple --next</code>, so the thing the docs told a
+                  newcomer to ask for and the thing they got by pressing Enter
+                  were different projects, and nothing said so. Every picker now
+                  opens on the recommended answer and marks it, and one line above
+                  the first question says Enter is the way through.
+                </p>
+                <p>
+                  The test reads both sides in one pass: it drives the form with
+                  Enter and compares the result against the command parsed out of
+                  the page. A test over the picker alone passes while the page
+                  says something else, which is how the pair came apart.
+                </p>
+
+                <h4>The Quick Start now shows what each command prints</h4>
+                <p>
+                  It had no screenshots, no command output, and never gave the
+                  seeded admin password, so a first-time reader reached &quot;open
+                  the admin at :3001&quot; with a login screen and nothing to type.
+                  It now carries the credentials, what{' '}
+                  <code>grit new</code>, <code>grit migrate</code>,{' '}
+                  <code>grit start</code> and{' '}
+                  <code>grit generate resource</code> each print, and three
+                  screenshots of a real generated project: the sign-in screen, the
+                  dashboard, and the Posts screen one command later.
+                </p>
+                <p>
+                  It also answers the question the generator&apos;s own next steps
+                  raise: no, you do not restart <code>grit start</code>, because
+                  the API runs under air. The one step that is not automatic is{' '}
+                  <code>grit migrate</code>.
+                </p>
+                <p>
+                  Those transcripts needed a marker. Every line of a code block is
+                  checked against the real command tree, and the two-column table{' '}
+                  <code>grit new</code> ends with reads as{' '}
+                  <code>grit migrate create</code>. A block can now say{' '}
+                  <code>output=&quot;grit new myapp&quot;</code>, which names what
+                  produced it and is skipped, while the command it names is still
+                  checked, so the marker cannot smuggle anything past the build.
+                </p>
+
+                <h4>Seeding a new project no longer prints two red blocks</h4>
+                <p>
+                  The API-key seeder looks for a key it expects to be absent, and
+                  GORM logged that lookup as an error, in red, with a file and a
+                  line number. On a first <code>grit seed</code> it looked exactly
+                  like a failure. A project now connects with{' '}
+                  <code>IgnoreRecordNotFoundError</code> set, and keeps everything
+                  else the default logger did, so a slow query still reports
+                  itself. <code>grit upgrade</code> applies it to an existing
+                  project.
+                </p>
+              </div>
+            </div>
+
             {/* v3.563.0 */}
             <div className="mb-12" id="v3.563.0">
               <div className="flex items-center gap-3 mb-4">
