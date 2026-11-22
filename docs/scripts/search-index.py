@@ -34,6 +34,7 @@ DOCS = os.path.dirname(HERE)
 APP_DOCS = os.path.join(DOCS, "app", "docs")
 APP_COURSES = os.path.join(DOCS, "app", "courses")
 APP_GUIDES = os.path.join(DOCS, "app", "guides")
+APP_ERRORS = os.path.join(DOCS, "app", "e")
 METADATA = os.path.join(DOCS, "config", "docs-metadata.ts")
 CURATED = os.path.join(DOCS, "config", "search-keywords.json")
 OUT = os.path.join(DOCS, "config", "search-index.generated.ts")
@@ -205,43 +206,58 @@ def standalone_courses():
 # the course pages' do, which is also why the prose and the metadata live in
 # the page rather than in config/guides.ts.
 GUIDES_MIN = 1
+ERRORS_MIN = 1
 
 
 def standalone_guides():
-    """Every guide page with a file of its own, titled from its metadata."""
+    """The guides at /guides."""
+    return walk_section(APP_GUIDES, "/guides", "Guides", GUIDES_MIN,
+                        index_title="All guides")
+
+
+def standalone_errors():
+    """The explanation pages at /e, which the CLI prints the address of."""
+    return walk_section(APP_ERRORS, "/e", "Errors", ERRORS_MIN,
+                        index_title="Errors the CLI explains")
+
+
+def walk_section(root, prefix, section, minimum, index_title=None):
+    """Every page with a file of its own under root, titled from its metadata.
+    """
     out = []
-    if not os.path.isdir(APP_GUIDES):
+    if not os.path.isdir(root):
         return out
-    for dirpath, _dirs, files in os.walk(APP_GUIDES):
+    for dirpath, _dirs, files in os.walk(root):
         if "page.tsx" not in files:
             continue
-        rel = os.path.relpath(dirpath, APP_GUIDES).replace(os.sep, "/")
+        rel = os.path.relpath(dirpath, root).replace(os.sep, "/")
         if "[" in rel:                      # a [param] tree, if one ever lands
             continue
-        href = "/guides" if rel == "." else "/guides/" + rel
+        href = prefix if rel == "." else prefix + "/" + rel
         src = open(os.path.join(dirpath, "page.tsx"), encoding="utf-8").read()
         m = PAGE_METADATA.search(src)
         if not m:
             raise SystemExit(
                 "%s: no metadata title and description, so there is nothing to "
-                "index it by. Every guide page needs both, and they are what "
-                "search shows." % href
+                "index it by. Every page in this section needs both, and "
+                "they are what search shows." % href
             )
         title = re.sub(r"\s+", " ", m.group(2)).strip()
         description = re.sub(r"\s+", " ", m.group(4)).strip()
         # The index page is the section's own landing page, so it is named for
         # the section rather than by its one-word title.
-        if href == "/guides":
-            title = "All guides"
-        out.append((href, title, description, "Guides"))
-    if len(out) < GUIDES_MIN:
+        if href == prefix and index_title:
+            title = index_title
+        out.append((href, title, description, section))
+    if len(out) < minimum:
         raise SystemExit(
-            "guides: found %d pages under app/guides, expected at least %d. "
-            "Either the pages were deleted or the walk broke, and they go "
-            "missing from search without anything saying so."
-            % (len(out), GUIDES_MIN)
+            "%s: found %d pages under %s, expected at least %d. Either the "
+            "pages were deleted or the walk broke, and they go missing from "
+            "search without anything saying so."
+            % (section, len(out), os.path.relpath(root, DOCS), minimum)
         )
-    check_guides_config({h for h, _t, _d, _s in out})
+    if prefix == "/guides":
+        check_guides_config({h for h, _t, _d, _s in out})
     return sorted(out)
 
 
@@ -398,7 +414,7 @@ def main():
 
     shadowed = []
     seen_href = {i["href"] for i in items}
-    for href, name, tagline, section in dynamic() + standalone_courses() + standalone_guides():
+    for href, name, tagline, section in dynamic() + standalone_courses() + standalone_guides() + standalone_errors():
         if href in seen_href:
             # A static page of the same path, which is what Next serves: the
             # [param] template never renders this slug. One entry, not two.
@@ -452,9 +468,10 @@ export const SEARCH_INDEX: SearchItem[] = entries
     open(OUT, "w", encoding="utf-8", newline="").write(out)
 
     print("indexed %d pages (%d static routes, %d config-driven, %d course "
-          "pages, %d guides, %d curated kept)"
+          "pages, %d guides, %d errors, %d curated kept)"
           % (len(items), len(routes()), len(dynamic()),
-             len(standalone_courses()), len(standalone_guides()), len(hand)))
+             len(standalone_courses()), len(standalone_guides()),
+             len(standalone_errors()), len(hand)))
     if shadowed:
         print("a static page of the same path wins, so the config entry is skipped:")
         for href in shadowed:

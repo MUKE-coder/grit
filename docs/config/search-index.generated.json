@@ -1896,6 +1896,60 @@
     "keywords": "rbac actually check belongs go api row level rule role checks alone never catch guides explained golang roles permissions examples"
   },
   {
+    "title": "Errors the CLI explains",
+    "href": "/e",
+    "section": "Errors",
+    "keywords": "every error grit cli explains each cause fix port docker not running go node found version below floor pnpm missing errors"
+  },
+  {
+    "title": "Docker is not running",
+    "href": "/e/docker-not-running",
+    "section": "Errors",
+    "keywords": "docker daemon did not answer means each operating system whether need all running"
+  },
+  {
+    "title": "go: command not found",
+    "href": "/e/go-not-found",
+    "section": "Errors",
+    "keywords": "go not installed path install each operating system reason reinstalling often does help found command"
+  },
+  {
+    "title": "Your Go is older than Grit needs",
+    "href": "/e/go-too-old",
+    "section": "Errors",
+    "keywords": "generated project pins go version reason older patches carry standard library vulnerabilities code reaches too old than grit needs"
+  },
+  {
+    "title": "node: command not found",
+    "href": "/e/node-not-found",
+    "section": "Errors",
+    "keywords": "node not installed path installing version manager worth do need all found command"
+  },
+  {
+    "title": "Your Node is older than the frontend needs",
+    "href": "/e/node-too-old",
+    "section": "Errors",
+    "keywords": "next js declares minimum node version older one fails during build rather than install upgrade too old frontend needs"
+  },
+  {
+    "title": "This is not a Grit project",
+    "href": "/e/not-a-grit-project",
+    "section": "Errors",
+    "keywords": "grit commands look json project root do command cannot find one not"
+  },
+  {
+    "title": "pnpm: command not found",
+    "href": "/e/pnpm-not-found",
+    "section": "Errors",
+    "keywords": "generated projects install pnpm rather than npm because workspace layout depends version pinned not found command"
+  },
+  {
+    "title": "Port already in use",
+    "href": "/e/port-in-use",
+    "section": "Errors",
+    "keywords": "port grit project needs taken something else find has free move already"
+  },
+  {
     "title": "Blueprints",
     "href": "/blueprints",
     "section": "Blueprints",

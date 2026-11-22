@@ -35,6 +35,7 @@ ROOTS = [
     os.path.join(APP, "docs", "glossary"),
     os.path.join(APP, "tools"),
     os.path.join(APP, "vs"),
+    os.path.join(APP, "e"),
 ]
 
 # href="/..." and href={`/...`} and href: '/...'

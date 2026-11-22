@@ -20,6 +20,8 @@ import (
 func doctorCmd() *cobra.Command {
 	var asJSON bool
 	var queryLog string
+	var envOnly bool
+	var skipNode, skipDocker bool
 
 	cmd := &cobra.Command{
 		Use:   "doctor",
@@ -32,8 +34,18 @@ func doctorCmd() *cobra.Command {
 			"Everything it reads is a file, so it needs no database and no running\n" +
 			"server. The one exception reads a file a run produced: record one with\n" +
 			"GRIT_QUERY_LOG=.grit/queries.jsonl and it reports the same query issued\n" +
-			"many times inside one request, which is what an N+1 looks like.",
+			"many times inside one request, which is what an N+1 looks like.\n\n" +
+			"grit doctor --env checks the machine instead of a project: whether Go, Node,\n" +
+			"pnpm and Docker are installed and new enough, and whether the ports a project\n" +
+			"needs are free. It needs no project, so run it before grit new.",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// --env answers "is this machine ready", which is a question
+			// somebody asks BEFORE there is a project. Looking for a project
+			// root first would answer a different question, badly.
+			if envOnly {
+				return runEnvDoctor(cmd.Context(), asJSON, skipNode, skipDocker)
+			}
+
 			root, err := scaffold.FindProjectRoot()
 			if err != nil {
 				return err
@@ -97,6 +109,13 @@ func doctorCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Print the report as JSON, for CI")
+	cmd.Flags().BoolVar(&envOnly, "env", false,
+		"Check this MACHINE rather than a project: Go, Node, pnpm, Docker and the ports a "+
+			"generated project needs. Run it before grit new; it needs no project")
+	cmd.Flags().BoolVar(&skipNode, "no-node", false,
+		"With --env: skip Node and pnpm, for an API-only project")
+	cmd.Flags().BoolVar(&skipDocker, "no-docker", false,
+		"With --env: skip Docker, for a project on SQLite and local storage")
 	cmd.Flags().StringVar(&queryLog, "queries", "",
 		"A recorded query log to read (default .grit/queries.jsonl when it exists). "+
 			"Record one with GRIT_QUERY_LOG=<path> while the app or its tests run.")
