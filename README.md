@@ -501,7 +501,9 @@ published binary. Breaking changes are labelled in the
 thing [Governance & risk](https://gritframework.dev/docs/governance) says, along with what
 limits the exposure and how the project is funded. The
 [roadmap](https://gritframework.dev/roadmap) lists what is next, what is waiting on a
-decision, and what was decided against.
+decision, and what was decided against. For what he is optimising for, and why the
+framework is shaped this way, he answers that at length in
+[Why I built Grit](https://gritframework.dev/blog/why-i-built-grit-the-long-answer).
 
 **Can we adopt it in an existing codebase?** Yes, one piece at a time:
 [using Grit with an existing project](https://gritframework.dev/docs/getting-started/existing-projects).

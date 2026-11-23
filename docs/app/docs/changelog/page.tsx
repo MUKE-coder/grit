@@ -91,6 +91,30 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.573.0 */}
+            <div className="mb-12" id="v3.573.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.573.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The creator&apos;s answer reaches the two pages that already asked the question</h3>
+
+                <p>
+                  The README answers &quot;who maintains it&quot; without saying what that
+                  person is optimising for, and it is the first thing most
+                  developers see. The course introduction names him and then
+                  explains the motivation in the third person. Both now link{' '}
+                  <a href="/blog/why-i-built-grit-the-long-answer">the long answer</a>,
+                  rather than carrying a third copy of a personal account that
+                  would eventually contradict the other two.
+                </p>
+              </div>
+            </div>
+
             {/* v3.572.0 */}
             <div className="mb-12" id="v3.572.0">
               <div className="flex items-center gap-3 mb-4">

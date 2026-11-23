@@ -216,6 +216,18 @@ export default function IntroductionToGritCourse() {
           </p>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
+            In his own words, and worth reading before the rest of this course, because every
+            decision below follows from one of three things he is obsessed with:{' '}
+            <a
+              href="https://gritframework.dev/blog/why-i-built-grit-the-long-answer"
+              className="text-accent hover:underline"
+            >
+              Why I built Grit, the long answer
+            </a>
+            .
+          </p>
+
+          <p className="text-muted-foreground leading-relaxed mb-4">
             The key insight: most web applications need the <strong className="text-foreground">same 80% of
             infrastructure</strong>. Only 20% is unique business logic. Grit gives you the 80% so you can
             focus on the 20% that makes your app special.

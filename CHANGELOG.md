@@ -23,6 +23,13 @@ Also worth knowing:
 ---
 
 
+## v3.573.0 - November 23, 2026
+
+### The creator's answer reaches the two pages that already asked the question
+
+The README answers "who maintains it" without saying what that person is optimising for, and it is the first thing most developers see. The course introduction names him and then explains the motivation in the third person. Both now link [the long answer](https://gritframework.com/blog/why-i-built-grit-the-long-answer), rather than carrying a third copy of a personal account that would eventually contradict the other two.
+
+
 ## v3.572.0 - November 23, 2026
 
 ### Word from the Creator
