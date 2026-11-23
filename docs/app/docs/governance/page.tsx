@@ -36,7 +36,12 @@ export default function GovernancePage() {
                   </p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     Pretending otherwise would be worse than useless. What follows is what
-                    actually reduces the exposure, and what does not.
+                    actually reduces the exposure, and what does not. If you also want to know
+                    what that person is optimising for,{' '}
+                    <Link href="/blog/why-i-built-grit-the-long-answer" className="text-accent hover:underline">
+                      he answers that at length
+                    </Link>
+                    .
                   </p>
                 </div>
               </div>

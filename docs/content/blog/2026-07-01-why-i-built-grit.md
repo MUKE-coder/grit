@@ -117,4 +117,11 @@ Start on the product.**
 
 Tomorrow in **The Daily Grit**: your first Grit app, step by step.
 
+---
+
+**The longer answer.** This post is about the pain that made me start. If you want the
+thinking underneath it, the three things I am obsessed with and the chain from each of
+them to a decision in the framework, that is
+[Why I built Grit: the long answer](/blog/why-i-built-grit-the-long-answer).
+
 *Describe your data. Get the whole app.*

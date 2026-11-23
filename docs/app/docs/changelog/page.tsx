@@ -91,6 +91,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.572.0 */}
+            <div className="mb-12" id="v3.572.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.572.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Word from the Creator</h3>
+
+                <p>
+                  Somebody asked why Grit exists, and the answer was longer and
+                  more specific than anything the site had. It is on the home
+                  page now, in the first person, between the projects built
+                  with Grit and the FAQ: three things he is obsessed with, and
+                  the chain from each of them to a decision in the framework.
+                </p>
+                <p>
+                  Performance, because he tried Node, the MERN stack, Next.js
+                  on its own, Hono, Encore.ts and Laravel before Go. Interfaces,
+                  because he was a graphic designer before he was a programmer
+                  and an admin panel that looks generated is not finished.
+                  Security, because the clients he works with have millions of
+                  customers and want control of the server, the firewall, the
+                  logs and the audit trail rather than a checkbox.
+                </p>
+                <p>
+                  Then the chain: why Go but still Next.js, why a monorepo, why{' '}
+                  <strong>triple is the default</strong> (a serious product has
+                  two web apps, the customer site and the admin, against one
+                  API), and why the generator exists at all. That last one is
+                  the argument worth reading: the per-table work is identical
+                  every time and <em>predictable</em>, because you already know
+                  the table is called Product and that it holds a name, a price
+                  and an image, so a machine should write that first version.
+                </p>
+                <p>
+                  Sentinel, Pulse and GORM Studio each get their one-line
+                  reason, which is the same reason: he needed it twice.
+                </p>
+
+                <h4>And the long version, as a post</h4>
+                <p>
+                  <a href="/blog/why-i-built-grit-the-long-answer">
+                    Why I built Grit: the long answer
+                  </a>
+                  . The original{' '}
+                  <a href="/blog/why-i-built-grit">Why I built Grit</a> is about
+                  the pain that made him start; this is the thinking underneath
+                  it, and the two now point at each other rather than competing
+                  for the same question.
+                </p>
+                <p>
+                  The philosophy page and the governance page link it too. Both
+                  argue in the third person and name what each decision costs,
+                  which is the right register for them, and neither can say
+                  &quot;I was a graphic designer before I was a programmer&quot;
+                  even though that sentence explains a surprising amount.
+                </p>
+              </div>
+            </div>
+
             {/* v3.571.0 */}
             <div className="mb-12" id="v3.571.0">
               <div className="flex items-center gap-3 mb-4">

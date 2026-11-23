@@ -23,6 +23,25 @@ Also worth knowing:
 ---
 
 
+## v3.572.0 - November 23, 2026
+
+### Word from the Creator
+
+Somebody asked why Grit exists, and the answer was longer and more specific than anything the site had. It is on the home page now, in the first person, between the projects built with Grit and the FAQ: three things he is obsessed with, and the chain from each of them to a decision in the framework.
+
+Performance, because he tried Node, the MERN stack, Next.js on its own, Hono, Encore.ts and Laravel before Go. Interfaces, because he was a graphic designer before he was a programmer and an admin panel that looks generated is not finished. Security, because the clients he works with have millions of customers and want control of the server, the firewall, the logs and the audit trail rather than a checkbox.
+
+Then the chain: why Go but still Next.js, why a monorepo, why **triple is the default** (a serious product has two web apps, the customer site and the admin, against one API), and why the generator exists at all. That last one is the argument worth reading: the per-table work is identical every time and *predictable*, because you already know the table is called Product and that it holds a name, a price and an image, so a machine should write that first version.
+
+Sentinel, Pulse and GORM Studio each get their one-line reason, which is the same reason: he needed it twice.
+
+#### And the long version, as a post
+
+[Why I built Grit: the long answer](https://gritframework.com/blog/why-i-built-grit-the-long-answer) . The original [Why I built Grit](https://gritframework.com/blog/why-i-built-grit) is about the pain that made him start; this is the thinking underneath it, and the two now point at each other rather than competing for the same question.
+
+The philosophy page and the governance page link it too. Both argue in the third person and name what each decision costs, which is the right register for them, and neither can say "I was a graphic designer before I was a programmer" even though that sentence explains a surprising amount.
+
+
 ## v3.571.0 - November 22, 2026
 
 ### grit migrate plan is in the reference, and a full project was run end to end

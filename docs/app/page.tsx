@@ -28,6 +28,7 @@ import { Batteries } from '@/components/landing/batteries'
 import { DeployPipeline } from '@/components/landing/deploy-pipeline'
 import { BlueprintsBand } from '@/components/landing/blueprints'
 import { Showcase } from '@/components/landing/showcase'
+import { Creator } from '@/components/landing/creator'
 import { Faq, FAQS } from '@/components/landing/faq'
 import { DayOne } from '@/components/landing/day-one'
 
@@ -416,7 +417,25 @@ export default function HomePage() {
           <Showcase />
         </Section>
 
-        {/* ── 12. FAQ ──────────────────────────────────────────────── */}
+        {/* ── 12. Word from the Creator ────────────────────────────── */}
+        <Section id="creator" wash="left">
+          <Reveal>
+            <SectionHeader
+              eyebrow="Word from the Creator"
+              title={
+                <>
+                  Why I <Highlight>built Grit.</Highlight>
+                </>
+              }
+              lead="Somebody asked, and this is the answer: three things I am obsessed with, and every decision in the framework that follows from one of them."
+            />
+          </Reveal>
+          <div className="mt-12">
+            <Creator />
+          </div>
+        </Section>
+
+        {/* ── 13. FAQ ──────────────────────────────────────────────── */}
         <Section id="faq">
           <Reveal>
             <SectionHeader
@@ -433,7 +452,7 @@ export default function HomePage() {
           </div>
         </Section>
 
-        {/* ── 13. The last word ────────────────────────────────────── */}
+        {/* ── 14. The last word ────────────────────────────────────── */}
         <Section id="start" grid wash="right">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.07] tracking-[-0.04em] text-fg [text-wrap:balance]">

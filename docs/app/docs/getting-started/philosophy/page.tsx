@@ -92,6 +92,16 @@ export default function PhilosophyPage() {
             <div className="prose-grit">
               {/* ============================================================ */}
               <h2>Why Grit exists</h2>
+              <p className="rounded-lg border border-accent/20 bg-accent/5 p-4 text-sm leading-relaxed">
+                <strong className="text-foreground">In the creator&apos;s words.</strong> This page
+                argues the case and names what each decision costs. The other half is why one
+                person made these particular choices, which is a question only he can answer:{' '}
+                <Link href="/blog/why-i-built-grit-the-long-answer" className="text-accent hover:underline">
+                  Why I built Grit, the long answer
+                </Link>
+                . Performance, interfaces and security, and the chain from each of them to a
+                decision in the framework.
+              </p>
               <p>
                 Every project runs into two separate sets of problems, and they belong to different
                 people. One set costs the developer the first two weeks. The other belongs to the
