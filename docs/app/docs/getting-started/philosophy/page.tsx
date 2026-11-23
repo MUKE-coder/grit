@@ -289,6 +289,17 @@ export default function PhilosophyPage() {
               {/* ============================================================ */}
               <h2>Why Go &mdash; and when it is the wrong answer</h2>
               <p>
+                The choice was made by elimination rather than from a feature list. Grit&apos;s
+                author went through Node and the MERN stack, Next.js doing the whole thing, Hono,
+                Encore.ts and Laravel, chasing an application that stays fast once it is on a
+                server rather than only on a laptop. Go and Rust were the two that answered it,
+                and Go won because a whole team can read it. He tells that story in{' '}
+                <Link href="/blog/why-i-built-grit-the-long-answer" className="text-accent hover:underline">
+                  his own words
+                </Link>
+                ; what follows is the case on the merits, which has to stand without him.
+              </p>
+              <p>
                 Go is small, explicit, and boring in the way infrastructure should be. It compiles
                 to a single static binary with no runtime to install, which collapses most of what
                 deployment usually costs. Its concurrency model suits the work a product backend

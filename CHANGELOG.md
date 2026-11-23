@@ -23,6 +23,15 @@ Also worth knowing:
 ---
 
 
+## v3.574.0 - November 23, 2026
+
+### Why Go now says how the choice was made, not only what Go is
+
+The section argued from properties, and argued them well, including when Go is the wrong answer. What it was missing is the path: Node and the MERN stack, Next.js doing the whole thing, Hono, Encore.ts and Laravel, all tried first, chasing an application that is still fast once it is on a server rather than only on a laptop. Go and Rust were the two that answered it, and Go won because a whole team can read it.
+
+That is a stronger argument than any property list, because anybody can look up that Go compiles to a static binary and nobody else can tell you what they tried before it. The rest of the section still stands on the merits without him, which it has to.
+
+
 ## v3.573.0 - November 23, 2026
 
 ### The creator's answer reaches the two pages that already asked the question
