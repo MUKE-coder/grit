@@ -91,6 +91,83 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.575.0 */}
+            <div className="mb-12" id="v3.575.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.575.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>How to add an image field, where people look for it</h3>
+
+                <p>
+                  The most asked question about the generator was answered by
+                  one row of a table and one line of prose, inside a 741-line
+                  page called <em>Field Types Reference</em>. Searching
+                  &quot;image field&quot; returned a battery page and a course
+                  lesson above it, which is what a title made of words nobody
+                  types will do.
+                </p>
+
+                <h4>Three places, because it was missing from all three</h4>
+                <p>
+                  <a href="/docs/concepts/file-fields">
+                    Image, file and upload fields
+                  </a>{' '}
+                  is a page of its own, titled and keyworded with the words
+                  people search: photo, avatar, logo, gallery, attachment,
+                  upload. It answers the first question in two lines and then
+                  the follow-ups: what a FileRef stores and why it is not a
+                  path string, what the admin gives you, the accept aliases,
+                  and the three things that catch people, including that a
+                  file field is nullable and a files field is not.
+                </p>
+                <p>
+                  The home page has a <strong>field types</strong> section: the
+                  six that get asked about, each as the thing you type and the
+                  thing you get. An image, several files, a link to another
+                  table, and the three ways to offer a choice. The reference
+                  keeps all thirty-two, because that is what a reference is
+                  for and nobody browses one.
+                </p>
+                <p>
+                  The thing worth knowing that was nowhere: the accept list is
+                  not only a browser hint. It travels as{' '}
+                  <code>?accepts=image&amp;max_size=N</code> and the upload
+                  handler resolves the aliases itself through{' '}
+                  <code>internal/files/accepts.go</code>, so a client that
+                  edits the request, or never used your form, gets the same
+                  answer.
+                </p>
+
+                <h4>And the walkthrough video</h4>
+                <p>
+                  A full walkthrough now sits above <em>How it works</em>,
+                  because a page that explains in prose before offering the
+                  video has already lost the people who would rather watch.
+                </p>
+                <p>
+                  It is a facade rather than an iframe. A YouTube embed is
+                  roughly a megabyte of third-party JavaScript and a set of
+                  cookies, paid for by every visitor including the majority who
+                  never press play, which would be an odd thing to ship on a
+                  page whose argument is that the framework is fast. The poster
+                  is served from this origin and the iframe is created on the
+                  first click. Measured: zero requests to YouTube before the
+                  click, and the player loads on it.
+                </p>
+                <p>
+                  Every field example on both the page and the section was run
+                  through the real generator, and the Go types, the admin field
+                  definitions and the upload query string are its output rather
+                  than prose written from memory.
+                </p>
+              </div>
+            </div>
+
             {/* v3.574.0 */}
             <div className="mb-12" id="v3.574.0">
               <div className="flex items-center gap-3 mb-4">

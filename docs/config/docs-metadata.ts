@@ -173,6 +173,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'How Grit code generation works: generating full-stack resources with models, handlers, services, Zod schemas, TypeScript types, hooks, and admin pages.',
   },
+  '/docs/concepts/file-fields': {
+    title: 'Image, file and upload fields',
+    description:
+      'How to add a photo, an avatar, a logo, a document or a gallery to a resource. cover:file[image] is one file and gallery:files[image] is many; the brackets say what it accepts and leaving them off accepts anything the server allows. What it writes: a *files.FileRef JSON column rather than a string holding a path, so the admin can show a thumbnail and a size without a second request and deleting a record can delete its files. What you get: a dropzone with preview and progress, the accept list wired in, and image processing with EXIF stripped on the way in. The accept list is enforced by the API as well as the browser, through ?accepts= and internal/files/accepts.go, so a client that edits the request gets the same answer. Plus the accept aliases (image, video, audio, pdf, doc, all), where the bytes go per STORAGE_DRIVER, and the three things that catch people: a file field is nullable and a files field is not, required does not mean the upload succeeded, and renaming the field does not move the files.',
+  },
   '/docs/concepts/field-types': {
     title: 'Field Types Reference',
     description:

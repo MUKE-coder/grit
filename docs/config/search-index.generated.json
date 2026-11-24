@@ -456,6 +456,12 @@
     "keywords": "conditional condition if when visible hidden show hide depends on another field requiredif visiblewhen requiredwhen select options every type grit generate resource fields go typescript zod schema default admin form control table column single source truth mapping docs concepts types reference"
   },
   {
+    "title": "Image, file and upload fields",
+    "href": "/docs/concepts/file-fields",
+    "section": "Core Concepts",
+    "keywords": "add photo avatar logo document gallery resource cover file image one files many brackets say accepts leaving them off anything server allows writes fileref json column rather than string holding path so admin show thumbnail size second request deleting record delete dropzone preview progress accept list wired processing exif stripped way enforced api well browser through internal go client edits"
+  },
+  {
     "title": "Generated File Map",
     "href": "/docs/concepts/generated-files",
     "section": "Core Concepts",

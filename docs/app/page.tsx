@@ -28,6 +28,8 @@ import { Batteries } from '@/components/landing/batteries'
 import { DeployPipeline } from '@/components/landing/deploy-pipeline'
 import { BlueprintsBand } from '@/components/landing/blueprints'
 import { Showcase } from '@/components/landing/showcase'
+import { Walkthrough } from '@/components/landing/walkthrough'
+import { FieldTypes } from '@/components/landing/field-types'
 import { Creator } from '@/components/landing/creator'
 import { Faq, FAQS } from '@/components/landing/faq'
 import { DayOne } from '@/components/landing/day-one'
@@ -150,6 +152,24 @@ export default function HomePage() {
         <ToolMarquee />
 
         {/* ── 2. Seven commands ────────────────────────────────────── */}
+        {/* ── Walkthrough ──────────────────────────────────────────── */}
+        <Section id="walkthrough">
+          <Reveal>
+            <SectionHeader
+              eyebrow="Watch it"
+              title={
+                <>
+                  The whole thing, <Highlight>in one sitting.</Highlight>
+                </>
+              }
+              lead="A full walkthrough: scaffolding a project, generating a resource, and what you get on the other side."
+            />
+          </Reveal>
+          <div className="mt-12">
+            <Walkthrough />
+          </div>
+        </Section>
+
         <Section id="how-it-works">
           <Reveal>
             <SectionHeader
@@ -241,6 +261,22 @@ export default function HomePage() {
           <div className="mt-14">
             <ResourceDefinitionShowcase />
           </div>
+        </Section>
+
+        {/* ── Field types ──────────────────────────────────────────── */}
+        <Section id="field-types" wash="right">
+          <Reveal>
+            <SectionHeader
+              eyebrow="Field types"
+              title={
+                <>
+                  An image field is <Highlight>one word.</Highlight>
+                </>
+              }
+              lead="The six people ask about most, and what each one writes. Images, several files at once, a link to another table, and the three ways to offer a choice."
+            />
+          </Reveal>
+          <FieldTypes />
         </Section>
 
         {/* ── 5. Every platform ────────────────────────────────────── */}

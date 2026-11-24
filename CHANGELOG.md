@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.575.0 - November 24, 2026
+
+### How to add an image field, where people look for it
+
+The most asked question about the generator was answered by one row of a table and one line of prose, inside a 741-line page called *Field Types Reference*. Searching "image field" returned a battery page and a course lesson above it, which is what a title made of words nobody types will do.
+
+#### Three places, because it was missing from all three
+
+[Image, file and upload fields](https://gritframework.com/docs/concepts/file-fields) is a page of its own, titled and keyworded with the words people search: photo, avatar, logo, gallery, attachment, upload. It answers the first question in two lines and then the follow-ups: what a FileRef stores and why it is not a path string, what the admin gives you, the accept aliases, and the three things that catch people, including that a file field is nullable and a files field is not.
+
+The home page has a **field types** section: the six that get asked about, each as the thing you type and the thing you get. An image, several files, a link to another table, and the three ways to offer a choice. The reference keeps all thirty-two, because that is what a reference is for and nobody browses one.
+
+The thing worth knowing that was nowhere: the accept list is not only a browser hint. It travels as `?accepts=image&max_size=N` and the upload handler resolves the aliases itself through `internal/files/accepts.go`, so a client that edits the request, or never used your form, gets the same answer.
+
+#### And the walkthrough video
+
+A full walkthrough now sits above *How it works*, because a page that explains in prose before offering the video has already lost the people who would rather watch.
+
+It is a facade rather than an iframe. A YouTube embed is roughly a megabyte of third-party JavaScript and a set of cookies, paid for by every visitor including the majority who never press play, which would be an odd thing to ship on a page whose argument is that the framework is fast. The poster is served from this origin and the iframe is created on the first click. Measured: zero requests to YouTube before the click, and the player loads on it.
+
+Every field example on both the page and the section was run through the real generator, and the Go types, the admin field definitions and the upload query string are its output rather than prose written from memory.
+
+
 ## v3.574.0 - November 23, 2026
 
 ### Why Go now says how the choice was made, not only what Go is

@@ -106,6 +106,7 @@ const navItems: NavItem[] = [
       { title: 'What you can delete', href: '/docs/concepts/what-you-can-delete' },
       { title: 'Type System', href: '/docs/concepts/type-system' },
       { title: 'Field Types Reference', href: '/docs/concepts/field-types' },
+      { title: 'Image & file fields', href: '/docs/concepts/file-fields' },
       { title: 'Money', href: '/docs/concepts/money' },
       { title: 'Relationships & Hierarchies', href: '/docs/admin/relationships#hierarchies' },
       { title: 'Glossary', href: '/docs/glossary' },
