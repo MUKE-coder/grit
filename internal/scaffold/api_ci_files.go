@@ -160,33 +160,18 @@ updates:
 // govulncheckAllowTXT is .github/govulncheck-allow.txt, the called
 // vulnerabilities security.yml accepts. The same list Grit's own scan keeps:
 // remove an entry here when the fix ships, and never add one without a reason
-// and an issue.
+// and an issue. It has shipped empty since v3.576.0.
 func govulncheckAllowTXT() string {
 	return `# Called vulnerabilities the govulncheck job in security.yml accepts, one per line:
 #   <OSV id> | <why it is accepted> | <issue tracking the real fix>
 # Each prints as a warning on every run. Remove a line as soon as a fix ships;
 # anything not listed fails the scan.
 #
-# This entry ships with the project, because every Grit project inherits it from
-# the same framework code and there is no version to move to: the advisory
-# affects every release of crewjam/saml and is marked Fixed in: N/A. Without the
-# line, a brand-new project's CI is red on its first push with nothing it can do.
-#
-# What it actually costs you:
-#
-#   The trace is handlers.SSOHandler.SAMLACS -> saml.ServiceProvider.ParseResponse,
-#   on POST /api/v1/auth/saml/:slug/acs. Reaching the vulnerable call needs a
-#   registered service provider AND an enabled row in sso_connections, and it
-#   needs MODULE_SSO=true, which is the default-off flag that decides whether the
-#   route is mounted at all. With no IdP configured the request takes the failure
-#   redirect and the process survives.
-#
-#   So this is unreachable in a project that has not configured SAML, and live in
-#   one that has. The finding is a nil-pointer panic plus a namespace-blind
-#   Subject.NameID in assertion parsing, and the second half of that is the
-#   authentication-bypass-shaped one. If you turn SAML on, you are accepting it:
-#   delete this line and decide deliberately rather than inheriting the decision.
-GO-2026-6909 | crewjam/saml assertion parsing: no fixed version exists. Unreachable unless MODULE_SSO=true and an sso_connections row is enabled; see the note above before turning SAML on. | https://github.com/MUKE-coder/grit/issues/187
+# Empty, and empty is the intended state. The one entry this file used to ship
+# with was GO-2026-6909 in github.com/crewjam/saml, accepted because the
+# advisory was marked Fixed in: N/A and there was no version to move to. v0.5.2
+# fixed it, Grit pins v0.5.2, and the line went away with the advisory
+# (grit#187). An exception here is a last resort: fix the pin first.
 `
 }
 

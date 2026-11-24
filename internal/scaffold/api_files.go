@@ -287,7 +287,7 @@ require (
 	// procurement asks for, and it cannot be hand-rolled safely — assertion
 	// signature verification, audience restriction and clock-skew handling are
 	// exactly the places a DIY implementation becomes an auth bypass.
-	github.com/crewjam/saml v0.5.1
+	github.com/crewjam/saml v0.5.2
 	// Pure-Go WebP, so image optimisation does not cost the static
 	// cross-compiled binary. Lossless (VP8L) only: there is no pure-Go
 	// lossy WebP encoder, which is why lossy compression targets JPEG.
@@ -307,7 +307,13 @@ require (
 	// Linked in through goth's gothic, which still asks for v1.6.2 from 2018.
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/sessions v1.4.0
-	github.com/gorilla/websocket v1.5.3
+	// A pseudo-version, deliberately. GO-2026-6278 is the WebSocket mask key
+	// being drawn from math/rand, reintroduced in v1.5.3, and upstream fixed it
+	// on master without cutting a release: the advisory's own fixed version IS
+	// this commit. v1.5.2 is the newest clean tag and going back there loses two
+	// releases of other fixes, so this goes forward instead. Replace it with
+	// v1.5.4 the day that tag exists.
+	github.com/gorilla/websocket v1.5.4-0.20240701034025-d67f41855da4
 	github.com/hibiken/asynq v0.24.1
 	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
@@ -328,15 +334,15 @@ require (
 	//
 	// Inert until OTEL_EXPORTER_OTLP_ENDPOINT is set: with no endpoint the
 	// global provider is a no-op and a span costs an allocation.
-	go.opentelemetry.io/otel v1.45.0
+	go.opentelemetry.io/otel v1.47.0
 	// Pulled in by the OTLP exporter even on the HTTP transport: the
 	// collector proto package depends on it. Pinned rather than left to
 	// whatever the otel modules ask for, which was v1.77.0 and carries two
 	// reachable advisories, and v1.83.1 carries CVE-2026-84445.
 	google.golang.org/grpc v1.83.2
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0
-	go.opentelemetry.io/otel/sdk v1.45.0
-	go.opentelemetry.io/otel/trace v1.45.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.47.0
+	go.opentelemetry.io/otel/sdk v1.47.0
+	go.opentelemetry.io/otel/trace v1.47.0
 	golang.org/x/crypto v0.57.0
 	// singleflight, which collapses concurrent cache misses in middleware/cache.go.
 	golang.org/x/sync v0.23.0
@@ -379,8 +385,9 @@ require (
 	github.com/jackc/pgx/v5 v5.9.2 // GO-2026-5004
 	github.com/quic-go/quic-go v0.59.1 // GO-2026-5676, GO-2025-4233
 	// CVE-2026-33487: XML Digital Signature validation could be bypassed. On the
-	// SAML assertion path that is an authentication bypass, and crewjam/saml
-	// v0.5.1 is its newest release and still asks for the vulnerable version.
+	// SAML assertion path that is an authentication bypass. crewjam/saml v0.5.2
+	// asks for v1.6.1 itself, so this floor is belt and braces now rather than
+	// the only thing holding the version up. Left in place: raise, never lower.
 	github.com/russellhaering/goxmldsig v1.6.0 // CVE-2026-33487
 	golang.org/x/image v0.45.0 // GO-2026-5066, -5062, -5032, -5031, -4815, CVE-2026-46603
 	// HTTP/2 again, and reached from the API's own server: GO-2026-6617 is the
@@ -949,10 +956,10 @@ type ModuleFlags struct {
 	//
 	// Every other battery costs nothing to leave on. This one mounts four
 	// public endpoints, and POST /auth/saml/:slug/acs parses a signed
-	// assertion through github.com/crewjam/saml, which carries a called
-	// advisory with no fixed version: GO-2026-6909, a nil-pointer panic and a
-	// namespace-blind Subject.NameID. Most projects never configure an IdP, so
-	// the route was surface nobody asked for (grit#187).
+	// assertion through github.com/crewjam/saml. GO-2026-6909, the advisory
+	// that made this a flag, is fixed in v0.5.2 and that is what Grit pins, so
+	// what is left is the surface: most projects never configure an IdP, and
+	// four public routes nobody asked for stay unmounted (grit#187).
 	//
 	// Turning it on is a deliberate act, and the docs say what it costs.
 	SSO bool
@@ -8955,9 +8962,10 @@ func mountAuthRoutes(v1 *gin.RouterGroup, authHandler *handlers.AuthHandler, sso
 	// side, so like the OAuth callbacks these unversioned paths must keep
 	// working across API version bumps.
 	//
-	// /acs is the one that parses an assertion through crewjam/saml, which is
-	// where GO-2026-6909 lives with no fixed version, so MODULE_SSO=false is
-	// what keeps it off the router (grit#187).
+	// /acs is the one that parses an assertion through crewjam/saml. The
+	// advisory that made this a flag, GO-2026-6909, is fixed in the pinned
+	// v0.5.2; MODULE_SSO=false is what keeps four public routes most projects
+	// never configure off the router (grit#187).
 	if ssoEnabled {
 		samlGroup := auth.Group("/saml")
 		{

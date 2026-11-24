@@ -121,3 +121,92 @@ func requireAtFloors(paths ...string) string {
 	}
 	return b.String()
 }
+
+// The four advisories published on 2026-11-24 reach an EXISTING project, and
+// the scaffold moving does nothing for one. otel was in frameworkRequires,
+// which only adds a module a project lacks, so a project that already had
+// internal/tracing kept v1.45.0 through every upgrade; saml and websocket were
+// in neither list. This runs the real floor list against a go.mod carrying all
+// three vulnerable versions.
+func TestTheNovemberAdvisoriesAreRaisedOnAnExistingProject(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte(`module app
+
+go 1.26.11
+
+require (
+	github.com/crewjam/saml v0.5.1
+	github.com/gorilla/websocket v1.5.3
+	go.opentelemetry.io/otel v1.45.0
+	go.opentelemetry.io/otel/sdk v1.45.0
+	go.opentelemetry.io/otel/trace v1.45.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0
+)
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var fetched []string
+	orig := goGet
+	goGet = func(_ string, specs ...string) error { fetched = specs; return nil }
+	defer func() { goGet = orig }()
+
+	if _, err := raiseFrameworkDeps(dir); err != nil {
+		t.Fatalf("raising: %v", err)
+	}
+
+	for _, want := range []string{
+		"github.com/crewjam/saml@v0.5.2",
+		"github.com/gorilla/websocket@v1.5.4-0.20240701034025-d67f41855da4",
+		"go.opentelemetry.io/otel@v1.47.0",
+		"go.opentelemetry.io/otel/sdk@v1.47.0",
+		"go.opentelemetry.io/otel/trace@v1.47.0",
+		"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.47.0",
+	} {
+		var found bool
+		for _, got := range fetched {
+			if got == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("grit upgrade does not raise %s, so an existing project keeps the "+
+				"advisory however many times it upgrades. Raised: %v", want, fetched)
+		}
+	}
+}
+
+// websocket's floor is a PRE-RELEASE, because upstream fixed GO-2026-6278 on
+// master and never tagged it. A pre-release sorts below the release it is a
+// pre-release of, so the day v1.5.4 is cut, a project that moved to the real
+// tag must not be dragged back to a commit from July 2024.
+func TestThePreReleaseWebsocketFloorNeverDowngrades(t *testing.T) {
+	const floor = "v1.5.4-0.20240701034025-d67f41855da4"
+
+	// It is the floor the templates ship, or this test is about nothing.
+	var declared string
+	for _, d := range frameworkDeps {
+		if d.Path == "github.com/gorilla/websocket" {
+			declared = d.Floor
+		}
+	}
+	if declared != floor {
+		t.Fatalf("the websocket floor is %q, not the pre-release this test is about", declared)
+	}
+
+	for _, tc := range []struct {
+		current string
+		raise   bool
+		why     string
+	}{
+		{"v1.5.3", true, "the vulnerable release the advisory names"},
+		{"v1.5.2", true, "clean, but two releases of other fixes behind"},
+		{floor, false, "already there: raising it again would run go get on every upgrade"},
+		{"v1.5.4", false, "the real tag, once it exists, is ABOVE a pre-release of itself"},
+		{"v1.6.0", false, "past it"},
+	} {
+		if got := versionLess(tc.current, floor); got != tc.raise {
+			t.Errorf("websocket %s: raise = %v, want %v (%s)", tc.current, got, tc.raise, tc.why)
+		}
+	}
+}

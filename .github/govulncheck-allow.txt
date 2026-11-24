@@ -2,19 +2,14 @@
 #   <OSV id> | <why it is accepted> | <issue tracking the real fix>
 # Remove a line as soon as a fix ships. Anything not listed fails the scan.
 #
-# This is the same entry a generated project now ships with, for the same
-# reason: the advisory affects every release of crewjam/saml and is marked
-# Fixed in: N/A, so there is no version to move to. See
-# internal/scaffold/api_ci_files.go (govulncheckAllowTXT), which has the long
-# form of the note, and keep the two in step.
+# Empty, and empty is the intended state. This file held one entry,
+# GO-2026-6909 in crewjam/saml, accepted from v3.490.0 because the advisory was
+# marked Fixed in: N/A and there was no version to move to. v0.5.2 fixed it on
+# 2026-11-24, the scaffolded go.mod pins v0.5.2, and the line went away with the
+# advisory (grit#187).
 #
-# The trace is handlers.SSOHandler.SAMLACS -> saml.ServiceProvider.ParseResponse,
-# on POST /api/v1/auth/saml/:slug/acs. Since v3.490.0 that route is mounted only
-# when MODULE_SSO=true, which defaults to false, and reaching the vulnerable
-# call additionally needs an enabled row in sso_connections. So it is
-# unreachable in the app this job scaffolds, and live in one that turns SAML on.
-#
-# govulncheck is static, so the flag does not make it go away: the symbol stays
-# reachable from main whatever the condition says at run time. That is why the
-# line is here as well as in the template.
-GO-2026-6909 | crewjam/saml assertion parsing: no fixed version exists. Unreachable unless MODULE_SSO=true and an sso_connections row is enabled. | https://github.com/MUKE-coder/grit/issues/187
+# Before adding a line here, try to make the pin move instead. govulncheck is
+# static, so a runtime flag never makes a finding go away: the symbol stays
+# reachable from main whatever the condition says. An entry is an accepted risk,
+# not a silenced warning, and it belongs in the template's copy too
+# (internal/scaffold/api_ci_files.go, govulncheckAllowTXT).

@@ -3,10 +3,11 @@ package scaffold
 // Giving an existing project the SSO module flag.
 //
 // grit#187: SSO mounts four public endpoints, and POST /auth/saml/:slug/acs
-// parses a signed assertion through github.com/crewjam/saml, which carries a
-// called advisory with no fixed version. Most projects never configure an IdP,
-// so MODULE_SSO now decides whether any of it is mounted, defaulting off for a
-// new project.
+// parses a signed assertion through github.com/crewjam/saml. Most projects
+// never configure an IdP, so MODULE_SSO decides whether any of it is mounted,
+// defaulting off for a new project. GO-2026-6909, the advisory that first made
+// this a flag, is fixed in the pinned v0.5.2; the surface argument is what
+// keeps the default off.
 //
 // Two things make this an upgrade problem rather than a template change.
 //
@@ -41,10 +42,10 @@ const (
 		"\t//\n" +
 		"\t// Every other battery costs nothing to leave on. This one mounts four\n" +
 		"\t// public endpoints, and POST /auth/saml/:slug/acs parses a signed\n" +
-		"\t// assertion through github.com/crewjam/saml, which carries a called\n" +
-		"\t// advisory with no fixed version: GO-2026-6909, a nil-pointer panic and a\n" +
-		"\t// namespace-blind Subject.NameID. Most projects never configure an IdP, so\n" +
-		"\t// the route was surface nobody asked for (grit#187).\n" +
+		"\t// assertion through github.com/crewjam/saml. GO-2026-6909, the advisory\n" +
+		"\t// that made this a flag, is fixed in v0.5.2 and that is what Grit pins, so\n" +
+		"\t// what is left is the surface: most projects never configure an IdP, and\n" +
+		"\t// four public routes nobody asked for stay unmounted (grit#187).\n" +
 		"\t//\n" +
 		"\t// Turning it on is a deliberate act, and the docs say what it costs.\n" +
 		"\tSSO bool\n"
@@ -159,9 +160,10 @@ func preserveSSOInEnv(root string) error {
 		"# what this project did before the flag existed, so upgrading changed nothing." + nl +
 		"#" + nl +
 		"# A new project gets false. It mounts four public endpoints, and" + nl +
-		"# POST /auth/saml/:slug/acs parses a signed assertion through crewjam/saml," + nl +
-		"# which has a called advisory with no fixed version (GO-2026-6909). If you do" + nl +
-		"# not configure an IdP, set this to false and the routes are never mounted." + nl +
+		"# POST /auth/saml/:slug/acs parses a signed assertion through crewjam/saml." + nl +
+		"# GO-2026-6909 is fixed in the pinned v0.5.2, so what is left is the surface:" + nl +
+		"# if you do not configure an IdP, set this to false and the routes are never" + nl +
+		"# mounted." + nl +
 		"MODULE_SSO=true" + nl
 
 	if err := writeRepaired(path, src); err != nil {
@@ -169,7 +171,7 @@ func preserveSSOInEnv(root string) error {
 	}
 	fmt.Println("  ✓ .env: MODULE_SSO=true, which is what this project did before the flag " +
 		"existed. Set it to false if you do not use SAML or OIDC: it mounts four public " +
-		"endpoints, one of which carries an advisory with no fix (grit#187)")
+		"endpoints most projects never configure (grit#187)")
 	return nil
 }
 
@@ -208,9 +210,10 @@ const (
 	}
 `
 	samlRoutesNew = `	//
-	// /acs is the one that parses an assertion through crewjam/saml, which is
-	// where GO-2026-6909 lives with no fixed version, so MODULE_SSO=false is
-	// what keeps it off the router (grit#187).
+	// /acs is the one that parses an assertion through crewjam/saml. The
+	// advisory that made this a flag, GO-2026-6909, is fixed in the pinned
+	// v0.5.2; MODULE_SSO=false is what keeps four public routes most projects
+	// never configure off the router (grit#187).
 	if ssoEnabled {
 		samlGroup := auth.Group("/saml")
 		{

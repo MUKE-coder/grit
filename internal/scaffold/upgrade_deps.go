@@ -48,6 +48,25 @@ var frameworkDeps = []FrameworkDep{
 	{"golang.org/x/crypto", "v0.57.0", "govulncheck flags releases before v0.56.0"},
 	{"filippo.io/edwards25519", "v1.2.0", "govulncheck flags releases before v1.1.1"},
 	{"github.com/gorilla/mux", "v1.8.1", "goth's gothic links it in and still asks for v1.6.2, from 2018"},
+	// Published on 2026-11-24, all four reachable from a generated project, and
+	// none of them raised by anything that was already here. otel is in
+	// frameworkRequires, which only ADDS a module a project lacks, so a project
+	// that already had it stayed on v1.45.0; saml and websocket were in neither
+	// list. The scaffold moving is half a fix: an existing project needs a floor.
+	{"go.opentelemetry.io/otel", "v1.47.0",
+		"GO-2026-6975: reachable from internal/tracing's middleware through trace.autoSpan.SetAttributes"},
+	{"go.opentelemetry.io/otel/sdk", "v1.47.0", "GO-2026-6974, the same defect in the SDK's span implementation"},
+	{"go.opentelemetry.io/otel/trace", "v1.47.0", "GO-2026-6974, the same defect in the span API"},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp", "v1.47.0",
+		"moves with the other three: the otel modules are released as a set and mixing versions across it is not supported"},
+	{"github.com/crewjam/saml", "v0.5.2",
+		"GO-2026-6909: a nil-pointer panic in validateAssertion and a namespace-blind Subject.NameID, reachable from POST /auth/saml/:slug/acs. This is the advisory that was marked Fixed in: N/A for months and that MODULE_SSO defaulting to false was a mitigation for; v0.5.2 is the first release that fixes it"},
+	// A pre-release floor, which versionLess handles in both directions: v1.5.3
+	// is below it on the patch number, and a future tagged v1.5.4 sorts ABOVE a
+	// pre-release of itself, so this never downgrades somebody who got there
+	// first. Replace it with v1.5.4 when upstream cuts the tag.
+	{"github.com/gorilla/websocket", "v1.5.4-0.20240701034025-d67f41855da4",
+		"GO-2026-6278: the WebSocket mask key came from math/rand, reintroduced in v1.5.3 and fixed upstream on master without a release, so the advisory's own fixed version is this commit"},
 }
 
 // frameworkRequires are modules a framework-owned file imports, which an
@@ -65,11 +84,11 @@ var frameworkDeps = []FrameworkDep{
 var frameworkRequires = []struct {
 	Path, Version, NeededBy, Why string
 }{
-	{"go.opentelemetry.io/otel", "v1.45.0", "internal/tracing/tracing.go",
+	{"go.opentelemetry.io/otel", "v1.47.0", "internal/tracing/tracing.go",
 		"internal/tracing imports it; inert until OTEL_EXPORTER_OTLP_ENDPOINT is set"},
-	{"go.opentelemetry.io/otel/sdk", "v1.45.0", "internal/tracing/tracing.go", "the tracer provider"},
-	{"go.opentelemetry.io/otel/trace", "v1.45.0", "internal/tracing/tracing.go", "the span API"},
-	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp", "v1.45.0",
+	{"go.opentelemetry.io/otel/sdk", "v1.47.0", "internal/tracing/tracing.go", "the tracer provider"},
+	{"go.opentelemetry.io/otel/trace", "v1.47.0", "internal/tracing/tracing.go", "the span API"},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp", "v1.47.0",
 		"internal/tracing/tracing.go", "the OTLP/HTTP exporter"},
 }
 

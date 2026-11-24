@@ -552,11 +552,10 @@ MODULE_TWOFACTOR=true
 # Enterprise SSO (OIDC + SAML). The one module that defaults to false.
 #
 # It mounts four public endpoints, and POST /auth/saml/:slug/acs parses a signed
-# assertion through github.com/crewjam/saml, which has a called advisory with no
-# fixed version: GO-2026-6909, a nil-pointer panic and a namespace-blind
-# Subject.NameID in assertion parsing. Most projects never configure an IdP, so
-# this is off until you need it. Turning it on means accepting that advisory:
-# see docs/security for what it is and is not.
+# assertion through github.com/crewjam/saml. GO-2026-6909, the advisory that
+# made this a flag, is fixed in the pinned v0.5.2, so what is left is the
+# surface: most projects never configure an IdP, so this is off until you need
+# it. See docs/security for what turning it on mounts.
 MODULE_SSO=false
 
 # AI — Vercel AI Gateway (one key, hundreds of models)

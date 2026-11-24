@@ -32,9 +32,8 @@ func init() {
 //
 // SSO is the only one, and it is here rather than absent so that adding
 // another is a deliberate edit to this list. Its cost is four public
-// endpoints, one of which parses a SAML assertion through a package with a
-// called advisory and no fixed version, and most projects never configure an
-// identity provider.
+// endpoints, one of which parses a SAML assertion, and most projects never
+// configure an identity provider.
 var defaultOff = map[string]bool{"sso": true}
 
 // Default ON: an existing app upgrading must behave exactly as before.

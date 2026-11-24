@@ -22,9 +22,9 @@ func TestSSOIsAModuleAndDefaultsOff(t *testing.T) {
 		t.Error("ModuleFlags has no SSO field, so there is no flag to gate the SAML routes with")
 	}
 	if !strings.Contains(cfg, `SSO: getEnv("MODULE_SSO", "false") == "true"`) {
-		t.Error(`SSO does not default to false. It is the only module whose cost is a public ` +
-			`endpoint: POST /auth/saml/:slug/acs parses an assertion through crewjam/saml, ` +
-			`which carries a called advisory with no fixed version`)
+		t.Error(`SSO does not default to false. It is the only module whose cost is four ` +
+			`public endpoints a project with no identity provider never configures, one of ` +
+			`them POST /auth/saml/:slug/acs`)
 	}
 	// The other flags stay as they were. A sweep that turned them all off would
 	// pass the line above and break every project.
@@ -169,29 +169,48 @@ func TestSSORepairWarnsOnAnEditedFile(t *testing.T) {
 	}
 }
 
-// TestAllowlistShipsTheSAMLEntry. Every project inherits the same called
-// vulnerability from the same framework code, so every project was going to
-// write the same line, and until it did its CI was red with nothing it could do.
-func TestAllowlistShipsTheSAMLEntry(t *testing.T) {
-	allow := govulncheckAllowTXT()
+// TestTheSAMLAdvisoryIsPinnedOutNotAllowlisted reads both sides of one
+// decision, because a test per side passes while the pair is broken.
+//
+// From v3.490.0 to v3.575.0 the allowlist shipped GO-2026-6909, the crewjam/saml
+// assertion-parsing advisory, because it was marked Fixed in: N/A and a new
+// project's CI was otherwise red on its first push with nothing it could do.
+// v0.5.2 fixed it. So the entry is gone, and it is only safe for it to be gone
+// because the pin moved: an allowlist that forgets the advisory while the go.mod
+// still asks for v0.5.1 is a project that is quietly vulnerable AND green.
+func TestTheSAMLAdvisoryIsPinnedOutNotAllowlisted(t *testing.T) {
+	const fixed = "github.com/crewjam/saml v0.5.2"
 
-	// The gate matches ^GO-dddd-dddd, so the entry has to start the line.
-	var found bool
-	for _, line := range strings.Split(allow, "\n") {
+	gomod := apiGoMod(Options{ProjectName: "app"})
+	pinned := strings.Contains(gomod, fixed)
+
+	var allowed string
+	for _, line := range strings.Split(govulncheckAllowTXT(), "\n") {
 		if strings.HasPrefix(line, "GO-2026-6909 ") {
-			found = true
-			if !strings.Contains(line, "MODULE_SSO") {
-				t.Error("the entry does not say what makes it unreachable, which is the " +
-					"condition somebody has to re-read the day they enable SAML")
-			}
-			if !strings.Contains(line, "issues/187") {
-				t.Error("the entry names no issue, which the file's own format requires")
-			}
+			allowed = line
 		}
 	}
-	if !found {
-		t.Error("the allowlist does not ship the crewjam/saml entry, so a new project's " +
-			"security.yml fails on its first push with no version to move to")
+
+	switch {
+	case !pinned && allowed == "":
+		t.Errorf("the scaffolded go.mod does not pin %q and nothing accepts GO-2026-6909 "+
+			"either, so a generated project is vulnerable on the SAML assertion path and "+
+			"its own security.yml will fail telling it so. Raise the pin.", fixed)
+	case !pinned:
+		t.Errorf("the scaffolded go.mod does not pin %q, so the advisory is still live and "+
+			"is being accepted rather than fixed: %s", fixed, allowed)
+	case allowed != "":
+		t.Errorf("crewjam/saml is pinned at the fixed v0.5.2, so GO-2026-6909 can no longer "+
+			"fire, yet the allowlist still accepts it:\n  %s\nAn entry for an advisory that "+
+			"cannot fire is one nobody will question the day a real one needs adding.", allowed)
+	}
+
+	// The whole file, not just that id: empty is the intended state, and an
+	// entry arriving without a reason and an issue is how it stops being.
+	for _, line := range strings.Split(govulncheckAllowTXT(), "\n") {
+		if strings.HasPrefix(line, "GO-") && strings.Count(line, "|") < 2 {
+			t.Errorf("the allowlist has an entry with no reason and no issue: %q", line)
+		}
 	}
 }
 

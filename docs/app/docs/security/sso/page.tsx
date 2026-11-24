@@ -39,37 +39,32 @@ export default function SSOPage() {
               exist.
             </p>
             <p>
-              There is a reason beyond tidiness.{' '}
+              The flag exists because of an advisory.{' '}
               <code>POST /api/v1/auth/saml/:slug/acs</code> parses a signed
-              assertion through <code>github.com/crewjam/saml</code>, and that
-              package carries a live advisory with{' '}
-              <strong>no fixed version</strong>:
-            </p>
-            <CodeBlock
-              language="text"
-              code={`GO-2026-6909
-  Nil-pointer panic in validateAssertion and namespace-blind Subject.NameID
-  in github.com/crewjam/saml
-
-  Fixed in: N/A`}
-            />
-            <p>
-              A nil-pointer panic is a denial of service. The namespace-blind{' '}
-              <code>Subject.NameID</code> is the authentication-bypass-shaped
-              half, and it is the one to weigh. Reaching either needs a
-              registered service provider and an enabled row in{' '}
-              <code>sso_connections</code>, so it is unreachable in a project
-              that has not configured SAML and live in one that has.
+              assertion through <code>github.com/crewjam/saml</code>, and for
+              most of 2026 that package carried GO-2026-6909 with{' '}
+              <code>Fixed in: N/A</code>: a nil-pointer panic, and a
+              namespace-blind <code>Subject.NameID</code> that was the
+              authentication-bypass-shaped half.
             </p>
             <p>
-              Which means <strong>turning SAML on is accepting that advisory</strong>,
-              and there is no version to upgrade to. A generated project ships{' '}
-              <code>.github/govulncheck-allow.txt</code> with the finding
-              already listed, so its CI is green and the warning prints on every
-              run. If you enable SAML, read that entry and decide deliberately
-              rather than inheriting the decision: OIDC alone does not touch
-              this code path, so a customer who can use OpenID Connect instead
-              of SAML costs you nothing here.
+              <strong>That one is fixed.</strong> crewjam/saml v0.5.2 landed on
+              2026-11-24 and a generated project pins it, so the advisory no
+              longer applies and{' '}
+              <code>.github/govulncheck-allow.txt</code> ships empty. Grit
+              shipped the pin in v3.576.0; a project generated before that gets
+              it from <code>grit upgrade</code>.
+            </p>
+            <p>
+              So what is left is not a known bug, it is surface. Four public
+              endpoints that answer for a connection a project without an
+              identity provider has never configured, and one of them parses
+              attacker-supplied signed XML, which is a category of code where
+              the next advisory tends to come from. That is the reason the
+              module still defaults off, and it is a weaker reason than the one
+              it replaces: if you need SAML, turn it on. OIDC does not touch
+              this code path at all, so a customer who can use OpenID Connect
+              instead costs you nothing here.
             </p>
 
             <h2 id="providers">What works</h2>

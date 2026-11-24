@@ -89,9 +89,8 @@ var modulesTestSSOEdits = []struct{ old, new string }{
 			"//\n" +
 			"// SSO is the only one, and it is here rather than absent so that adding\n" +
 			"// another is a deliberate edit to this list. Its cost is four public\n" +
-			"// endpoints, one of which parses a SAML assertion through a package with a\n" +
-			"// called advisory and no fixed version, and most projects never configure an\n" +
-			"// identity provider.\n" +
+			"// endpoints, one of which parses a SAML assertion, and most projects never\n" +
+			"// configure an identity provider.\n" +
 			"var defaultOff = map[string]bool{\"sso\": true}\n" +
 			"\n" +
 			"// Default ON: an existing app upgrading must behave exactly as before.\n",
