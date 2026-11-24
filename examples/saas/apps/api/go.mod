@@ -40,7 +40,7 @@ require (
 	// procurement asks for, and it cannot be hand-rolled safely — assertion
 	// signature verification, audience restriction and clock-skew handling are
 	// exactly the places a DIY implementation becomes an auth bypass.
-	github.com/crewjam/saml v0.5.1
+	github.com/crewjam/saml v0.5.2
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-pdf/fpdf v1.4.3
@@ -56,7 +56,7 @@ require (
 	// Linked in through goth's gothic, which still asks for v1.6.2 from 2018.
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/sessions v1.4.0
-	github.com/gorilla/websocket v1.5.3
+	github.com/gorilla/websocket v1.5.4-0.20240701034025-d67f41855da4
 	github.com/hibiken/asynq v0.24.1
 	github.com/joho/godotenv v1.5.1
 	github.com/markbates/goth v1.80.0
@@ -77,13 +77,13 @@ require (
 	//
 	// Inert until OTEL_EXPORTER_OTLP_ENDPOINT is set: with no endpoint the
 	// global provider is a no-op and a span costs an allocation.
-	go.opentelemetry.io/otel v1.45.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0
-	go.opentelemetry.io/otel/sdk v1.45.0
-	go.opentelemetry.io/otel/trace v1.45.0
-	golang.org/x/crypto v0.57.0
+	go.opentelemetry.io/otel v1.47.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.47.0
+	go.opentelemetry.io/otel/sdk v1.47.0
+	go.opentelemetry.io/otel/trace v1.47.0
+	golang.org/x/crypto v0.58.0
 	// singleflight, which collapses concurrent cache misses in middleware/cache.go.
-	golang.org/x/sync v0.23.0
+	golang.org/x/sync v0.24.0
 	// Pulled in by the OTLP exporter even on the HTTP transport: the
 	// collector proto package depends on it. Pinned rather than left to
 	// whatever the otel modules ask for, which was v1.77.0 and carries two
@@ -121,7 +121,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.0 // indirect
 	github.com/aws/smithy-go v1.27.3 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/beevik/etree v1.6.0 // indirect
+	github.com/beevik/etree v1.8.1 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -145,13 +145,12 @@ require (
 	github.com/go-webauthn/x v0.3.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
@@ -189,18 +188,19 @@ require (
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.45.0 // indirect
-	go.opentelemetry.io/otel/metric v1.45.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.47.0 // indirect
+	go.opentelemetry.io/otel/log v1.47.0 // indirect
+	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.67.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
@@ -223,8 +223,8 @@ require (
 	// CVE-2026-33487: XML Digital Signature validation could be bypassed. On the
 	// SAML assertion path that is an authentication bypass, and crewjam/saml
 	// v0.5.1 is its newest release and still asks for the vulnerable version.
-	github.com/russellhaering/goxmldsig v1.6.0 // CVE-2026-33487
+	github.com/russellhaering/goxmldsig v1.6.1 // CVE-2026-33487
 	golang.org/x/image v0.45.0 // indirect; GO-2026-5066, -5062, -5032, -5031, -4815, CVE-2026-46603
 	golang.org/x/oauth2 v0.36.0 // indirect; CVE-2025-22868
-	golang.org/x/text v0.42.0 // indirect; GO-2026-5970
+	golang.org/x/text v0.43.0 // indirect; GO-2026-5970
 )

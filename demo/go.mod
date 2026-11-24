@@ -11,9 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/gorilla/sessions v1.4.0
 	github.com/joho/godotenv v1.5.1
-	github.com/markbates/goth v1.80.0
 	github.com/redis/go-redis/v9 v9.4.0
 	golang.org/x/crypto v0.47.0
 	gorm.io/datatypes v1.2.7
@@ -29,8 +27,6 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.20.1 // indirect
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.1 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.15.0 // indirect
@@ -64,11 +60,7 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/gorilla/context v1.1.1 // indirect
-	github.com/gorilla/mux v1.6.2 // indirect
-	github.com/gorilla/securecookie v1.1.2 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/gorilla/websocket v1.5.4-0.20240701034025-d67f41855da4 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.6.0 // indirect
@@ -77,7 +69,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -90,6 +82,7 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.54.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/shirou/gopsutil/v4 v4.26.4 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
@@ -101,12 +94,10 @@ require (
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/oauth2 v0.17.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/tools v0.41.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
