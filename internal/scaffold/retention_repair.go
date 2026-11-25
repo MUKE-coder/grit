@@ -28,6 +28,16 @@ func repairRetentionSweep(root string, opts Options) error {
 	workers := filepath.Join(jobs, "workers.go")
 	cron := filepath.Join(apiRoot, "internal", "cron", "cron.go")
 
+	// What the handler calls, rather than the Trash job beside it. A project
+	// older than the Trash sweep has no Trash job to anchor on and still has
+	// everything retention needs: the sweep and trash.go arrive with the
+	// framework-owned files, and the registry has carried Shared for longer.
+	// examples/library is such a project, and the first version of this repair
+	// declined it.
+	sweep := filepath.Join(apiRoot, "internal", "services", "retention.go")
+	registry := filepath.Join(apiRoot, "internal", "sync", "registry.go")
+	canRun := func() bool { return fileExists(sweep) && fileContains(registry, "var Shared *Registry") }
+
 	// In order, each step only where the one before it landed. The handler
 	// names the task type, so wiring it without the constant is "undefined:
 	// TypeRetentionSweep" and a project that does not compile. Scheduling a
@@ -39,7 +49,7 @@ func repairRetentionSweep(root string, opts Options) error {
 		needs func() bool
 	}{
 		{client, repairRetentionTaskTypeSource, func() bool { return true }},
-		{workers, repairRetentionWorkerSource, func() bool { return fileContains(client, "TypeRetentionSweep") }},
+		{workers, repairRetentionWorkerSource, func() bool { return canRun() && fileContains(client, "TypeRetentionSweep") }},
 		{cron, repairRetentionCronSource, func() bool { return fileContains(workers, "func handleRetentionSweep") }},
 	}
 	for _, s := range steps {
@@ -59,10 +69,15 @@ func repairRetentionTaskTypeSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "TypeRetentionSweep") {
 		return src, nil, nil
 	}
+	// Beside the Trash sweep's, or the audit prune's in a project older than
+	// the Trash.
 	_, after, ok := lineWith(src, "TypeTrashPurgeExpired ")
 	if !ok {
-		return src, nil, []string{"its task-type list is not the one Grit wrote, so retention:sweep " +
-			"has no constant: add TypeRetentionSweep = \"retention:sweep\""}
+		_, after, ok = lineWith(src, "TypeAuditPrune ")
+	}
+	if !ok {
+		return src, nil, []string{"its task-type list has neither TypeTrashPurgeExpired nor TypeAuditPrune " +
+			"to put the new one beside, so retention:sweep has no constant: add TypeRetentionSweep = \"retention:sweep\""}
 	}
 	src = src[:after] + "\tTypeRetentionSweep = \"retention:sweep\"\n" + src[after:]
 	return src, []string{"retention:sweep has a task type"}, nil
@@ -76,20 +91,18 @@ func repairRetentionWorkerSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "mux.HandleFunc(TypeRetentionSweep") || strings.Contains(src, "func handleRetentionSweep") {
 		return src, nil, nil
 	}
-	// The sweep is the Trash's purge, and the handler reads the registry the
-	// Trash's handler reads. A worker without that handler predates both.
-	if !strings.Contains(src, "func handleTrashPurgeExpired") {
-		return src, nil, []string{"its worker has no Trash sweep, which the retention sweep is built on, " +
-			"so retention:sweep was not wired: add handleRetentionSweep from a new project's internal/jobs/workers.go"}
-	}
-
 	out := src
 	var warn []string
+	// Beside the Trash sweep's registration, or above the marker every
+	// generated worker has, for a project older than the Trash.
+	const registration = "\tmux.HandleFunc(TypeRetentionSweep, handleRetentionSweep(deps))\n"
 	if _, after, ok := lineWith(out, "mux.HandleFunc(TypeTrashPurgeExpired"); ok {
-		out = out[:after] + "\tmux.HandleFunc(TypeRetentionSweep, handleRetentionSweep(deps))\n" + out[after:]
+		out = out[:after] + registration + out[after:]
+	} else if at := strings.Index(out, "\t// grit:jobs\n"); at >= 0 {
+		out = out[:at] + registration + out[at:]
 	} else {
-		warn = append(warn, "its worker mux is not the one Grit wrote, so retention:sweep has no handler: "+
-			"add mux.HandleFunc(TypeRetentionSweep, handleRetentionSweep(deps))")
+		warn = append(warn, "its worker mux has neither the Trash sweep nor the grit:jobs marker, so "+
+			"retention:sweep has no handler: add mux.HandleFunc(TypeRetentionSweep, handleRetentionSweep(deps))")
 	}
 	// Both are there already wherever the Trash handler is, which is checked
 	// above. Asked anyway, because the cost of being wrong is "undefined:
