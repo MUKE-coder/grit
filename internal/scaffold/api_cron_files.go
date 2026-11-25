@@ -97,7 +97,7 @@ func New(redisURL string, autoBanEvery time.Duration) (*Scheduler, error) {
 		Type:     "uploads:cleanup_orphans",
 	})
 
-	// The bin's retention sweep, daily at 03:40. Deleted rows are restorable
+` + retentionCronRegistration + `	// The bin's retention sweep, daily at 03:40. Deleted rows are restorable
 	// for services.TrashRetentionDays and then removed for good; without this
 	// the bin is a table that only grows, and "deleted" never becomes deleted.
 	_, err = scheduler.Register("40 3 * * *", asynq.NewTask("trash:purge_expired", nil), asynq.MaxRetry(3), asynq.Timeout(time.Hour))

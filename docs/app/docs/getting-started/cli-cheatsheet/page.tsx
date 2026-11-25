@@ -477,6 +477,10 @@ export default function CLICheatsheetPage() {
                     desc="Created and read, never changed or deleted: for ledgers and audit trails"
                   />
                   <TerminalCard
+                    cmd='grit g resource ChatMessage --fields "body:text,attachment:file" --retain 90d'
+                    desc="Removed for good 90 days after they are created, with their files: the retention a privacy policy promises"
+                  />
+                  <TerminalCard
                     cmd='grit g job ReconcileLedger --cron "30 23 * * *"'
                     desc="A background job with its handler registered, run every night at 23:30"
                   />
@@ -544,6 +548,11 @@ export default function CLICheatsheetPage() {
                           flag: "--append-only",
                           type: "bool",
                           desc: "Rows are created and read, never changed or deleted: read and create routes, a GORM guard and a database trigger",
+                        },
+                        {
+                          flag: "--retain",
+                          type: "string",
+                          desc: "Remove rows this long after they are created, with their files: whole days, weeks or hours (e.g. 90d, 2w, 36h). A nightly job does the removing",
                         },
                         {
                           flag: "--seed",
@@ -2127,6 +2136,7 @@ grit upgrade`}
 │   │   ├── --roles "..."     # Restrict routes to roles
 │   │   ├── --owned-by user  # Each row belongs to a user; scope every route to them
 │   │   ├── --audit-reads    # Record every read in the tamper-evident activity log
+│   │   ├── --retain 90d     # Remove rows (and their files) 90 days after creation
 │   │   ├── --seed            # Also generate a seeder (one example row)
 │   │   ├── --faker           # Also generate a gofakeit seeder (implies --seed)
 │   │   └── --count <n>       # Rows for the faker seeder (default 10)

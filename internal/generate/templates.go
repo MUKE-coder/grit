@@ -180,6 +180,10 @@ func (g *Generator) writeGoModel(names Names) error {
 			break
 		}
 	}
+	// retention sorts after phone and before sequence.
+	if g.Definition.Retain != "" {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/retention\"", g.Module))
+	}
 	if hasAuto {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
 	}
@@ -620,6 +624,7 @@ func (m *%s) GetOwnerID() string {
 	}
 	content += g.erasureModelInit(names)
 	content += g.confidentialModelInit(names)
+	content += g.retentionModelInit(names)
 	content += sensitiveMarshalJSON(names, fields)
 
 	// Path resolution, the cycle refusal, and the two accessors a breadcrumb

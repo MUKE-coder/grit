@@ -52,6 +52,7 @@ const (
 	TypeBackupWeekly          = "backup:weekly"           // v3.31.77 (legacy)
 	TypeBackupScheduled       = "backup:scheduled"        // settings-driven auto backup
 	TypeAuditPrune            = "audit:prune"             // activity-log retention
+	TypeRetentionSweep        = "retention:sweep"         // per-resource --retain windows
 )
 
 // Default per-task settings used when a caller doesn't override via
@@ -364,6 +365,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeSecurityAutoBan, handleSecurityAutoBan(deps))
 	mux.HandleFunc(TypeBackupWeekly, handleBackupWeekly(deps))
 	mux.HandleFunc(TypeBackupScheduled, handleBackupScheduled(deps))
+	mux.HandleFunc(TypeRetentionSweep, handleRetentionSweep(deps))
 	// grit:jobs
 
 	go func() {
@@ -546,6 +548,8 @@ func handleTrashPurgeExpired(deps WorkerDeps) func(ctx context.Context, task *as
 		return nil
 	}
 }
+
+` + retentionJobHandler + `
 
 // handleSecurityAutoBan bans the addresses that keep attacking.
 //

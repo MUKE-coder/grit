@@ -1,0 +1,35 @@
+package retention
+
+import (
+	"testing"
+	"time"
+)
+
+type message struct{ ID string }
+
+// A zero window puts the cutoff at now, so the next sweep would empty the
+// table. Refusing to start is the cheaper way to find out.
+func TestRegisterRefusesAWindowThatWouldDeleteEverything(t *testing.T) {
+	for _, window := range []time.Duration{0, -time.Hour} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("Register accepted a window of %v", window)
+				}
+			}()
+			Register(&message{}, window)
+		}()
+	}
+}
+
+func TestPoliciesIsACopy(t *testing.T) {
+	Register(&message{}, 90*24*time.Hour)
+	got := Policies()
+	if len(got) == 0 {
+		t.Fatal("the registered policy is missing")
+	}
+	got[0].Window = time.Nanosecond
+	if Policies()[0].Window == time.Nanosecond {
+		t.Error("changing the returned slice changed the registry")
+	}
+}

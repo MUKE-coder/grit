@@ -66,7 +66,9 @@ export default function CompliancePage() {
                 notifications), and every resource generated with <code>--owned-by</code>, so the
                 records a person owns go with them. Each table is counted as it goes. Append-only
                 resources are the exception: their rows cannot be deleted by design, and which of
-                retention or erasure wins is a decision for the project.
+                retention or erasure wins is a decision for the project. To remove a
+                resource&apos;s rows after a fixed time whoever owns them, see{' '}
+                <Link href="/docs/backend/retention">Data retention</Link>.
               </li>
               <li>
                 <strong>Anonymizes the user row in place</strong> rather than deleting it (so

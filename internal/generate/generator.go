@@ -255,6 +255,11 @@ func (g *Generator) Run() error {
 			return err
 		}
 	}
+	if g.Definition.Retain != "" {
+		if err := g.prepareRetention(); err != nil {
+			return err
+		}
+	}
 	if g.Definition.AuditReads {
 		if err := g.prepareReadAudit(); err != nil {
 			return err
@@ -1164,5 +1169,5 @@ func (g *Generator) checkFlagCombinations() error {
 			"anonymous and unscoped, so marking a resource confidential and then publishing " +
 			"it hands every row to the internet")
 	}
-	return nil
+	return g.Definition.checkRetention()
 }

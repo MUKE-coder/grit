@@ -647,6 +647,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBackgroundWork(root, opts); err != nil {
 			fmt.Printf("  ⚠ bounding background work: %v\n", err)
 		}
+		// Per-resource retention (grit#260): the registry and the sweep came
+		// with the framework-owned files above, and this schedules the sweep.
+		if err := repairRetentionSweep(root, opts); err != nil {
+			fmt.Printf("  ⚠ scheduling the retention sweep: %v\n", err)
+		}
 		// The formatted field types: internal/fieldtypes and the call that
 		// installs it, so a resource generated with email, url, domain, tel,
 		// country, color, percent, rating, time or json fields is checked on

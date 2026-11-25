@@ -1,0 +1,55 @@
+// Package retention is how long each resource keeps its rows.
+//
+// A registry rather than a list, for the reason erasure is one: a resource
+// generated with --retain declares its window from its own model file, so
+// removing the resource removes its policy with it, and there is no central
+// list for anybody to forget (grit#260).
+//
+// It imports nothing from the app, because the models import it. The sweep
+// that enforces the windows is services.RetentionService.
+package retention
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+// Policy is one resource's window: rows created longer ago than Window are
+// removed for good, along with the files they point at.
+type Policy struct {
+	Model  interface{}
+	Window time.Duration
+}
+
+var (
+	mu       sync.RWMutex
+	policies []Policy
+)
+
+// Register keeps rows of model for window after they are created. Call it from
+// the model file's init():
+//
+//	func init() { retention.Register(&Message{}, 90*24*time.Hour) }
+//
+// A window that is not positive panics, so the app refuses to start. Zero
+// would put the cutoff at now and the next sweep would delete every row in the
+// table, which is never what somebody editing this line meant.
+func Register(model interface{}, window time.Duration) {
+	if window <= 0 {
+		panic(fmt.Sprintf("retention: %T registered with a window of %v; "+
+			"a window must be positive, or remove the Register call to keep rows forever",
+			model, window))
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	policies = append(policies, Policy{Model: model, Window: window})
+}
+
+// Policies is every registered window. A copy, so the sweep reading it cannot
+// race an init() that is still registering.
+func Policies() []Policy {
+	mu.RLock()
+	defer mu.RUnlock()
+	return append([]Policy(nil), policies...)
+}
