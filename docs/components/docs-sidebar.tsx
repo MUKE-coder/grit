@@ -333,6 +333,7 @@ const navItems: NavItem[] = [
       { title: 'Test the build locally', href: '/docs/deployment/build-locally' },
       { title: 'Go-live checklist', href: '/docs/deployment/checklist' },
       { title: 'More than one instance', href: '/docs/deployment/multiple-instances' },
+      { title: 'Kubernetes', href: '/docs/deployment/kubernetes' },
       { title: 'Deploy command', href: '/docs/deployment/deploy-command' },
       { title: 'VPS walkthrough', href: '/docs/deployment/vps' },
       { title: 'Orbita', href: '/docs/deployment/orbita' },

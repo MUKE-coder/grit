@@ -564,6 +564,12 @@
     "keywords": "deploy github repository push continuous ci cd actions auto branch main pipeline production docker compose file explained line grit project onto committing secrets deployment platforms differ some run real engine others translate their own model changes hostnames drops depends ordering docs"
   },
   {
+    "title": "Kubernetes: manifests for a cluster",
+    "href": "/docs/deployment/kubernetes",
+    "section": "Deployment",
+    "keywords": "grit deploy k8s writes plain kubernetes manifests kustomization api frontends project has migration job applied before rollout autoscaler config map secret template probes healthz readyz rather than health carries image tag there no worker deployment docs cluster"
+  },
+  {
     "title": "Running More Than One Instance: Replicas Behind a Load Balancer",
     "href": "/docs/deployment/multiple-instances",
     "section": "Deployment",

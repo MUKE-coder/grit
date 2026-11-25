@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.579.0"
+var version = "3.580.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -3422,6 +3422,9 @@ func deployCmd() *cobra.Command {
 	var rollbackDeploy bool
 	var railway, railwayProvision, railwayNoDomain, dryRun bool
 	var railwayService, railwayEnv string
+	var k8s bool
+	var k8sNamespace, k8sImage, k8sWebImage, k8sAdminImage, k8sOut string
+	var k8sReplicas int
 
 	cmd := &cobra.Command{
 		Use:   "deploy",
@@ -3433,6 +3436,11 @@ func deployCmd() *cobra.Command {
 			"With --railway, deploy to Railway instead: link the project, push the variables from .env, upload the API and generate a URL.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
+
+			if k8s {
+				return writeKubernetesManifests(k8sConfigFromFlags(
+					k8sNamespace, k8sImage, k8sWebImage, k8sAdminImage, k8sOut, k8sReplicas))
+			}
 
 			if railway {
 				return deploy.Railway(deploy.RailwayConfig{
@@ -3577,7 +3585,105 @@ func deployCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&railwayNoDomain, "no-domain", false, "Skip generating a public URL")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print every command that would run, and run none of them")
 
+	cmd.Flags().BoolVar(&k8s, "k8s", false, "Write Kubernetes manifests into deploy/k8s instead of deploying")
+	cmd.Flags().StringVar(&k8sNamespace, "k8s-namespace", "", "Namespace for the manifests (default: the app name)")
+	cmd.Flags().StringVar(&k8sImage, "k8s-image", "", "API image, with its tag (default: <app>-api:latest)")
+	cmd.Flags().StringVar(&k8sWebImage, "k8s-web-image", "", "Web image; defaults to <app>-web:<api tag> when the project has a web app")
+	cmd.Flags().StringVar(&k8sAdminImage, "k8s-admin-image", "", "Admin image; defaults to <app>-admin:<api tag> when the project has an admin app")
+	cmd.Flags().StringVar(&k8sOut, "k8s-out", "", "Where to write them (default: deploy/k8s)")
+	cmd.Flags().IntVar(&k8sReplicas, "k8s-replicas", 2, "Starting API replicas, and the HPA floor")
+
 	return cmd
+}
+
+// k8sConfigFromFlags reads the project and fills in everything the flags
+// did not say.
+//
+// The frontends are detected by looking for the Dockerfile that would build
+// them rather than by reading grit.json's architecture, because what decides
+// whether a Deployment can exist is whether there is an image to run, and an
+// older project may have no grit.json at all.
+func k8sConfigFromFlags(namespace, image, webImage, adminImage, out string, replicas int) deploy.K8sConfig {
+	cfg := deploy.K8sConfig{
+		Namespace:  namespace,
+		Image:      image,
+		WebImage:   webImage,
+		AdminImage: adminImage,
+		OutDir:     out,
+		Replicas:   replicas,
+	}
+
+	root, err := scaffold.FindProjectRoot()
+	if err != nil {
+		return cfg
+	}
+	cfg.AppName = filepath.Base(root)
+	if cfg.OutDir == "" {
+		cfg.OutDir = filepath.Join(root, "deploy", "k8s")
+	}
+	if cfg.Image == "" {
+		cfg.Image = cfg.AppName + "-api:latest"
+	}
+
+	// The frontends take the API's tag, so one deploy ships one version of
+	// everything rather than a new API against last week's admin.
+	tag := "latest"
+	if i := strings.LastIndex(cfg.Image, ":"); i >= 0 && !strings.Contains(cfg.Image[i:], "/") {
+		tag = cfg.Image[i+1:]
+	}
+	for _, app := range []struct {
+		dir   string
+		field *string
+	}{
+		{"web", &cfg.WebImage},
+		{"admin", &cfg.AdminImage},
+	} {
+		if *app.field != "" {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(root, "apps", app.dir, "Dockerfile")); err == nil {
+			*app.field = cfg.AppName + "-" + app.dir + ":" + tag
+		}
+	}
+
+	// APP_URL in the project's .env is the one place a project already says
+	// what it is called from outside, so the Ingress host comes from there
+	// rather than from a flag nobody would remember to pass.
+	cfg.Domain = domainFromEnv(root)
+	return cfg
+}
+
+// domainFromEnv reads the host out of APP_URL, or returns empty.
+func domainFromEnv(root string) string {
+	data, err := os.ReadFile(filepath.Join(root, ".env")) // #nosec G304 -- the project's own .env
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		value, ok := strings.CutPrefix(line, "APP_URL=")
+		if !ok {
+			continue
+		}
+		value = strings.Trim(strings.TrimSpace(value), `"'`)
+		value = strings.TrimPrefix(strings.TrimPrefix(value, "https://"), "http://")
+		host, _, _ := strings.Cut(value, "/")
+		host, _, _ = strings.Cut(host, ":")
+		// localhost is what a development .env says, and an Ingress for it
+		// is an Ingress nobody can reach.
+		if host == "" || host == "localhost" || strings.HasPrefix(host, "127.") {
+			return ""
+		}
+		return host
+	}
+	return ""
+}
+
+// writeKubernetesManifests runs the generator and reports what it wrote.
+func writeKubernetesManifests(cfg deploy.K8sConfig) error {
+	fmt.Println()
+	fmt.Printf("  Kubernetes manifests for %s\n\n", cfg.AppName)
+	return deploy.Kubernetes(cfg)
 }
 
 // upgradeInstalledPlugins updates every plugin this project has installed, with

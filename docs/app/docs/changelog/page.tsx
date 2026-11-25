@@ -91,6 +91,91 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.580.0 */}
+            <div className="mb-12" id="v3.580.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.580.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Kubernetes output</h3>
+
+                <p>
+                  <code>grit deploy --k8s</code> writes the manifests for your
+                  project into <code>deploy/k8s</code>: the API, the frontends
+                  it actually has, a migration Job, an autoscaler, a config
+                  map, a secret template and a kustomization. It deploys
+                  nothing. There is a{" "}
+                  <Link href="/docs/deployment/kubernetes">page</Link> beside
+                  the one about running more than one instance.
+                </p>
+
+                <h4>Plain manifests rather than a chart</h4>
+                <p>
+                  The request said &quot;a Helm chart (or Kustomize base)&quot;
+                  and this is the second, for a reason worth stating. Every
+                  file it writes is valid YAML, so the generator is checked by
+                  parsing its own output with a real YAML parser and by running
+                  it through <code>kubectl kustomize</code>. A chart cannot be
+                  checked that way, because{" "}
+                  <code>{'{{- if .Values.x }}'}</code> is not YAML, and a
+                  template that produces broken manifests looks exactly like
+                  one that does not until somebody runs it against a cluster.
+                </p>
+
+                <h4>Three things the manifests get right that are easy to get wrong</h4>
+                <p>
+                  <strong>The probes are <code>/healthz</code> and{" "}
+                  <code>/readyz</code>, not <code>/api/health</code>.</strong>{" "}
+                  All three are served and they answer different questions.{" "}
+                  <code>/api/health</code> probes every dependency, which is
+                  right for the System Health page and wrong for readiness: a
+                  slow object store would pull every pod out of the load
+                  balancer over something that does not stop it serving
+                  requests.
+                </p>
+                <p>
+                  <strong>The migration Job carries the image tag in its
+                  name.</strong> A Job&apos;s pod template is immutable, so a
+                  fixed name means the second deploy is rejected for changing a
+                  field that cannot change, and the deploy fails on its first
+                  step with a message about immutability rather than about
+                  anything you did. It is a Job rather than an initContainer
+                  because an initContainer runs once per replica,
+                  concurrently.
+                </p>
+                <p>
+                  <strong>The secret template is unreachable by{" "}
+                  <code>apply -k</code>.</strong> It holds placeholders and is
+                  left out of the kustomization on purpose. It is the one file
+                  in the set that is dangerous when applied by accident: an API
+                  that starts with a placeholder signing key mints tokens
+                  anybody can forge and reports itself perfectly healthy.
+                </p>
+
+                <h4>And one thing it does not write</h4>
+                <p>
+                  A worker Deployment, which the request also asked for. A Grit
+                  API process starts its own asynq worker whenever Redis is
+                  reachable, and there is no worker-only binary to put in a
+                  Deployment, so generating one would have produced a chart
+                  that does not deploy. The consequence is written into the
+                  manifests instead of hidden: every API replica is also a
+                  queue consumer, so scaling for HTTP load scales the queue
+                  with it.
+                </p>
+                <p>
+                  Postgres, Redis and object storage are not generated either.
+                  On a cluster they are nearly always a managed service, and a
+                  generated single-replica database with no backups looks
+                  production-ready and is not.
+                </p>
+              </div>
+            </div>
+
             {/* v3.579.0 */}
             <div className="mb-12" id="v3.579.0">
               <div className="flex items-center gap-3 mb-4">

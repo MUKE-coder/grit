@@ -384,6 +384,11 @@ export const docsMetadata: Record<string, DocPage> = {
       'How grit new --i18n and grit add i18n translate a Grit project: the grit_locale cookie the API, web app and admin share, next-intl catalogues in English, Spanish, French and Swahili, the language switcher, translating the admin through t(key, fallback), your resources’ labels under resources.<slug>, adding a language, and what grit upgrade repairs in projects from before v3.222.0.',
   },
 
+  '/docs/deployment/kubernetes': {
+    title: 'Kubernetes: manifests for a cluster',
+    description:
+      'grit deploy --k8s writes plain Kubernetes manifests and a kustomization into deploy/k8s: the API, the frontends the project has, a migration Job applied before the rollout, an autoscaler, a config map and a secret template. Why the probes are /healthz and /readyz rather than /api/health, why the migration Job carries the image tag, and why there is no worker Deployment.',
+  },
   '/docs/deployment/multiple-instances': {
     title: 'Running More Than One Instance: Replicas Behind a Load Balancer',
     description:
