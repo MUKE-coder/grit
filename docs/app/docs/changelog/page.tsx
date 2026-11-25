@@ -91,6 +91,79 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.581.0 */}
+            <div className="mb-12" id="v3.581.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.581.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The field builder says what each field produces</h3>
+
+                <p>
+                  The{" "}
+                  <Link href="/tools/field-builder">field builder</Link> could
+                  build you a <code>--fields</code> string and nothing else. It
+                  answered &quot;what is the syntax&quot;, which is the easier
+                  question. The one people actually have is &quot;what do I
+                  get&quot;, and the only way to find out was to run the
+                  command and read the files.
+                </p>
+                <p>
+                  Every field now shows its Go column with the GORM tag, its
+                  TypeScript type, its Zod rule and its admin control, with a
+                  line for the thing none of those four say: that money is two
+                  columns and never a float, that a slug is filled by the
+                  server and never appears on the form, that a check is one
+                  JSON column rather than a join table.
+                </p>
+
+                <h4>It is computed, not written down</h4>
+                <p>
+                  A table of what the generator produces, typed into a page
+                  next to the generator, is true on the day it is written. The
+                  day somebody changes <code>GoType</code> or{" "}
+                  <code>FormFieldType</code> the website starts describing a
+                  framework that no longer exists, and nothing fails, because
+                  nobody reads a marketing page against the source.
+                </p>
+                <p>
+                  So the data is built by asking the same methods the generator
+                  asks, and{" "}
+                  <code>TestFieldPreviewDataIsCurrent</code> fails when the
+                  committed copy drifts from them. Regenerating it is one
+                  command with <code>-update</code>.
+                </p>
+
+                <h4>The modifiers change the answer, so the preview follows them</h4>
+                <p>
+                  The first version of this showed the shape for the type and
+                  ignored the tick boxes, which meant a field marked{" "}
+                  <strong>required</strong> displayed{" "}
+                  <code>z.string().optional()</code> directly beneath the
+                  ticked box. That is a confident interface being wrong, which
+                  is worse than no interface.
+                </p>
+                <p>
+                  <code>Required</code> drops the <code>.optional()</code> and
+                  adds <code>.min(1, &quot;Required&quot;)</code>;{" "}
+                  <code>Unique</code> adds <code>uniqueIndex</code> to the
+                  column. Both variants are generated from the same methods
+                  rather than recomputed in TypeScript, because a second
+                  implementation of a rule is a second thing to keep in step.
+                </p>
+
+                <p>
+                  This is not the browser playground that issue asks for, which
+                  would show the whole file a resource produces. It answers the
+                  part of the question a static page honestly can.
+                </p>
+              </div>
+            </div>
+
             {/* v3.580.0 */}
             <div className="mb-12" id="v3.580.0">
               <div className="flex items-center gap-3 mb-4">

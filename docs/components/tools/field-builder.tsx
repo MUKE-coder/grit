@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Check, Copy, Plus, Trash2 } from 'lucide-react'
+import { FIELD_PREVIEWS, shapeFor } from '@/config/field-preview.generated'
 
 /**
  * Build a --fields string without memorising the syntax.
@@ -86,6 +87,22 @@ interface Row {
   extra: string
   required: boolean
   unique: boolean
+}
+
+/**
+ * snake_case to PascalCase, the way the generator names a struct field.
+ *
+ * Only for the Go line in the preview. It is the one place the field's own
+ * name appears in generated code on this page, and "due_at string" reads as
+ * something the model would never contain.
+ */
+function pascal(name: string): string {
+  return name
+    .trim()
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
 }
 
 let nextKey = 1
@@ -187,6 +204,70 @@ function problemsFor(r: Row): string | null {
     return 'Name the field to build the slug from, such as title.'
   }
   return null
+}
+
+
+/**
+ * What one field turns into, across the stack.
+ *
+ * The question the builder could not answer before was the one people
+ * actually have, which is not "what is the syntax" but "what do I get". A
+ * money field is two columns and never a float; a slug is filled by the
+ * server and never appears on the form; a check is a JSON column rather than
+ * a join table. Those are the things somebody finds out after generating,
+ * and they are why the command gets run twice.
+ *
+ * Every value here comes from config/field-preview.generated.ts, which is
+ * built from Field.GoType, GORMTag, TSType, ZodType and FormFieldType in
+ * internal/generate. It is not a table somebody wrote next to the generator
+ * and hoped would stay true: TestFieldPreviewDataIsCurrent fails when it
+ * drifts.
+ */
+function Produces({ row }: { row: Row }) {
+  const p = FIELD_PREVIEWS[row.type]
+  if (!p) return null
+
+  // The modifiers change the answer, so the preview has to follow them.
+  // required drops the .optional() and adds .min(1), unique adds
+  // uniqueIndex to the column. Showing the unmodified shape beside a
+  // ticked box is a confident interface being wrong.
+  const shape = shapeFor(p, { required: row.required, unique: row.unique })
+
+  const cells: { label: string; value: string }[] = [
+    {
+      label: 'Go',
+      value:
+        (row.name.trim() !== '' ? pascal(row.name) + ' ' : '') +
+        shape.go +
+        (shape.gorm !== '' ? '  `gorm:"' + shape.gorm + '"`' : ''),
+    },
+    { label: 'TypeScript', value: shape.ts },
+    { label: 'Zod', value: shape.zod },
+    // A slug has no control because the server fills it, and saying so is
+    // more useful than leaving a gap the reader has to interpret.
+    { label: 'Admin', value: shape.control !== '' ? shape.control : 'not on the form' },
+  ]
+
+  return (
+    <div className="mt-3 rounded-lg border border-border/40 bg-background/50 p-3">
+      <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">
+        What this produces
+      </p>
+      <dl className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+        {cells.map((c) => (
+          <div key={c.label} className="flex min-w-0 items-baseline gap-2">
+            <dt className="w-[5.5rem] shrink-0 text-[11px] text-muted-foreground">{c.label}</dt>
+            <dd className="min-w-0 break-all font-mono text-[12px] text-foreground">{c.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {p.note && (
+        <p className="mt-2 border-t border-border/40 pt-2 text-[12px] leading-relaxed text-muted-foreground">
+          {p.note}
+        </p>
+      )}
+    </div>
+  )
 }
 
 export function FieldBuilder() {
@@ -416,6 +497,7 @@ export function FieldBuilder() {
                   {problem}
                 </p>
               )}
+              <Produces row={r} />
             </div>
           )
         })}

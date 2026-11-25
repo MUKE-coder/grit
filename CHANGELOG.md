@@ -23,6 +23,29 @@ Also worth knowing:
 ---
 
 
+## v3.581.0 - November 25, 2026
+
+### The field builder says what each field produces
+
+The{" "} [field builder](https://gritframework.com/tools/field-builder) could build you a `--fields` string and nothing else. It answered "what is the syntax", which is the easier question. The one people actually have is "what do I get", and the only way to find out was to run the command and read the files.
+
+Every field now shows its Go column with the GORM tag, its TypeScript type, its Zod rule and its admin control, with a line for the thing none of those four say: that money is two columns and never a float, that a slug is filled by the server and never appears on the form, that a check is one JSON column rather than a join table.
+
+#### It is computed, not written down
+
+A table of what the generator produces, typed into a page next to the generator, is true on the day it is written. The day somebody changes `GoType` or{" "} `FormFieldType` the website starts describing a framework that no longer exists, and nothing fails, because nobody reads a marketing page against the source.
+
+So the data is built by asking the same methods the generator asks, and{" "} `TestFieldPreviewDataIsCurrent` fails when the committed copy drifts from them. Regenerating it is one command with `-update`.
+
+#### The modifiers change the answer, so the preview follows them
+
+The first version of this showed the shape for the type and ignored the tick boxes, which meant a field marked{" "} **required** displayed{" "} `z.string().optional()` directly beneath the ticked box. That is a confident interface being wrong, which is worse than no interface.
+
+`Required` drops the `.optional()` and adds `.min(1, "Required")`;{" "} `Unique` adds `uniqueIndex` to the column. Both variants are generated from the same methods rather than recomputed in TypeScript, because a second implementation of a rule is a second thing to keep in step.
+
+This is not the browser playground that issue asks for, which would show the whole file a resource produces. It answers the part of the question a static page honestly can.
+
+
 ## v3.580.0 - November 25, 2026
 
 ### Kubernetes output
