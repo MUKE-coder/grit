@@ -1375,9 +1375,15 @@ func generateResourceCmd() *cobra.Command {
 				def.Unique = cols
 				fmt.Printf("  • --unique: a row is unique by (%s)\n", strings.Join(cols, ", "))
 			}
-
 			if err := gen.Run(); err != nil {
 				return err
+			}
+			// Said back once, because it is the one flag whose effect is a
+			// deletion that happens later, unattended, every night. After Run,
+			// so a value Run refuses is never announced as the policy.
+			if def.Retain != "" {
+				fmt.Printf("  • --retain %s: rows are removed for good %s after they are created, with their files\n",
+					def.Retain, def.Retain)
 			}
 
 			// --seed / --faker: also emit a seeder for this resource.

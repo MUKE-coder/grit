@@ -255,6 +255,11 @@ func (g *Generator) Run() error {
 			return err
 		}
 	}
+	if g.Definition.Retain != "" {
+		if err := g.prepareRetention(); err != nil {
+			return err
+		}
+	}
 	if g.Definition.AuditReads {
 		if err := g.prepareReadAudit(); err != nil {
 			return err

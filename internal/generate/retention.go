@@ -2,9 +2,12 @@ package generate
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // maxRetention is the longest window --retain accepts. Past it the value is
@@ -81,6 +84,64 @@ func (d *ResourceDefinition) checkRetention() error {
 		return fmt.Errorf("--retain and --append-only cannot be combined: append-only " +
 			"rows can never be deleted, so the retention sweep could not remove them. " +
 			"Generate the resource with one or the other")
+	}
+	// Both of these are rows that other rows point at by foreign key, which
+	// GORM creates when it migrates. A tree's parent is always older than its
+	// children, so it crosses the window first and the database refuses to
+	// delete it, every night. Line items point at their record, and the models
+	// register in file-name order, so invoice.go is swept before
+	// invoice_item.go and meets the same refusal. Refused until the sweep
+	// orders its tables by their references.
+	if d.Tree {
+		return fmt.Errorf("--retain and --tree cannot be combined yet: a parent is always " +
+			"older than its children, so the database would refuse to delete it while they remain")
+	}
+	if d.Items != nil {
+		return fmt.Errorf("--retain and --items cannot be combined yet: the record would be " +
+			"swept before its lines, and the database refuses to delete a record its lines still point at")
+	}
+	return nil
+}
+
+// retentionModelInit registers the model's window with the retention package
+// from its own file, so removing the resource removes its policy with it.
+func (g *Generator) retentionModelInit(names Names) string {
+	window, err := g.Definition.RetentionWindow()
+	if err != nil || window == 0 {
+		return ""
+	}
+	return fmt.Sprintf(`
+// init keeps %[1]s rows for %[2]s after they are created (--retain %[2]s): the
+// nightly retention sweep removes older ones, and releases their files to the
+// orphan upload sweep. See internal/retention.
+func init() { retention.Register(&%[1]s{}, %[3]s) }
+`, names.Pascal, g.Definition.Retain, retentionGoExpr(window))
+}
+
+// retentionGoExpr writes a window as Go a person can read back as the policy:
+// 90*24*time.Hour rather than 2160*time.Hour. Weeks become days, because
+// time has no unit for either and days is what a policy is written in.
+func retentionGoExpr(window time.Duration) string {
+	day := 24 * time.Hour
+	if window%day == 0 {
+		return fmt.Sprintf("%d*24*time.Hour", window/day)
+	}
+	return fmt.Sprintf("%d*time.Hour", window/time.Hour)
+}
+
+// prepareRetention makes sure the retention package is there for the model to
+// import, and says so when the project has no sweep to enforce the window.
+func (g *Generator) prepareRetention() error {
+	api := g.APIRoot()
+	if err := scaffold.WriteRetentionPackage(api, g.Module, false); err != nil {
+		return err
+	}
+	// The model compiles with only the package, so nothing else would notice
+	// that no job reads it. A window nobody enforces is worse than none,
+	// because the privacy policy says the rows are going.
+	if !fileExists(filepath.Join(api, "internal", "services", "retention.go")) {
+		fmt.Println("  ⚠ This project has no retention sweep yet, so nothing will remove these")
+		fmt.Println("    rows until you run grit upgrade.")
 	}
 	return nil
 }

@@ -1,6 +1,9 @@
 package generate
 
 import (
+	"go/format"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -85,5 +88,86 @@ func TestRetainRefusesWhatTheSweepCouldNotKeep(t *testing.T) {
 	ok := &Generator{Definition: &ResourceDefinition{Name: "Message", Retain: "90d"}, Module: "app"}
 	if err := ok.checkFlagCombinations(); err != nil {
 		t.Errorf("a plain --retain 90d was refused: %v", err)
+	}
+}
+
+func TestRetentionGoExprReadsAsThePolicy(t *testing.T) {
+	for window, want := range map[time.Duration]string{
+		90 * 24 * time.Hour: "90*24*time.Hour",
+		14 * 24 * time.Hour: "14*24*time.Hour", // --retain 2w
+		36 * time.Hour:      "36*time.Hour",
+	} {
+		if got := retentionGoExpr(window); got != want {
+			t.Errorf("retentionGoExpr(%v) = %q, want %q", window, got, want)
+		}
+	}
+}
+
+// Rows other rows point at by foreign key would be refused by the database
+// every night, so the combinations are refused up front instead.
+func TestRetainRefusesRowsOtherRowsPointAt(t *testing.T) {
+	tree := &Generator{Definition: &ResourceDefinition{Name: "Category", Retain: "90d", Tree: true}, Module: "app"}
+	if err := tree.checkFlagCombinations(); err == nil || !strings.Contains(err.Error(), "--tree") {
+		t.Errorf("--retain with --tree was not refused by name: %v", err)
+	}
+	items := &Generator{Definition: &ResourceDefinition{Name: "Invoice", Retain: "90d",
+		Items: &ResourceDefinition{Name: "InvoiceItem"}}, Module: "app"}
+	if err := items.checkFlagCombinations(); err == nil || !strings.Contains(err.Error(), "--items") {
+		t.Errorf("--retain with --items was not refused by name: %v", err)
+	}
+}
+
+// The policy lives in the model file, so the model has it, the package it
+// imports exists, and removing the resource takes the policy with it. Two
+// words, because a one-word fixture cannot tell name variants apart.
+func TestRetainIsWrittenToTheModelAndRemovedWithIt(t *testing.T) {
+	const module = "myapp/apps/api"
+	root := setupMinimalProject(t, module)
+	def, err := ParseInlineFields("ChatMessage", "body:text,attachment:file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	def.Retain = "90d"
+
+	if err := newTestGenerator(root, module, def).Run(); err != nil {
+		t.Fatalf("Run(): %v", err)
+	}
+
+	api := filepath.Join(root, "apps", "api", "internal")
+	model, err := os.ReadFile(filepath.Join(api, "models", "chat_message.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`"myapp/apps/api/internal/retention"`,
+		"func init() { retention.Register(&ChatMessage{}, 90*24*time.Hour) }",
+	} {
+		if !strings.Contains(string(model), want) {
+			t.Errorf("the model is missing %s:\n%s", want, model)
+		}
+	}
+	if _, err := format.Source(model); err != nil {
+		t.Errorf("the model is not valid Go: %v", err)
+	}
+	// An older project has no package for the model to import.
+	if _, err := os.Stat(filepath.Join(api, "retention", "retention.go")); err != nil {
+		t.Errorf("the retention package was not written for the model to import: %v", err)
+	}
+
+	names := MakeNames("ChatMessage")
+	t.Chdir(root)
+	if err := RemoveResource("ChatMessage"); err != nil {
+		t.Fatalf("RemoveResource: %v", err)
+	}
+	for _, line := range survivors(t, root, names) {
+		t.Errorf("remove left this behind: %s", line)
+	}
+}
+
+// Without --retain the model is exactly what it was before the flag existed.
+func TestNoRetainWritesNoPolicy(t *testing.T) {
+	g := &Generator{Definition: &ResourceDefinition{Name: "Message"}, Module: "app"}
+	if got := g.retentionModelInit(MakeNames("Message")); got != "" {
+		t.Errorf("a resource without --retain got a policy:\n%s", got)
 	}
 }
