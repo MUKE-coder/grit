@@ -97,21 +97,7 @@ func New(redisURL string, autoBanEvery time.Duration) (*Scheduler, error) {
 		Type:     "uploads:cleanup_orphans",
 	})
 
-	// Per-resource retention (grit#260), daily at 03:00: rows of every resource
-	// generated with --retain are removed once older than its window. Before
-	// the orphan sweep at 03:15 on purpose: the files those rows pointed at are
-	// released to it, so they go the same night rather than a day later.
-	_, err = scheduler.Register("0 3 * * *", asynq.NewTask("retention:sweep", nil), asynq.MaxRetry(3), asynq.Timeout(2*time.Hour))
-	if err != nil {
-		return nil, fmt.Errorf("registering retention sweep: %w", err)
-	}
-	RegisteredTasks = append(RegisteredTasks, Task{
-		Name:     "Remove rows past their retention window",
-		Schedule: "0 3 * * *",
-		Type:     "retention:sweep",
-	})
-
-	// The bin's retention sweep, daily at 03:40. Deleted rows are restorable
+` + retentionCronRegistration + `	// The bin's retention sweep, daily at 03:40. Deleted rows are restorable
 	// for services.TrashRetentionDays and then removed for good; without this
 	// the bin is a table that only grows, and "deleted" never becomes deleted.
 	_, err = scheduler.Register("40 3 * * *", asynq.NewTask("trash:purge_expired", nil), asynq.MaxRetry(3), asynq.Timeout(time.Hour))
