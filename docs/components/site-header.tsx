@@ -127,6 +127,7 @@ export function SiteHeader() {
             : [
                 { label: 'Docs', href: '/docs' },
                 { label: 'Guides', href: '/guides' },
+                { label: 'Tutorials', href: '/tutorials' },
                 { label: 'Plugins', href: '/plugins' },
                 { label: 'Blueprints', href: '/blueprints' },
                 { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },

@@ -592,6 +592,11 @@
     "section": "Tools",
     "title": "Stack picker"
   },
+  "/tutorials": {
+    "keywords": "video videos tutorial tutorials watch youtube walkthrough screencast course lesson learn beginner senior getting started first project generate resource admin panel roles permissions deploy ai agent",
+    "section": "Tutorials",
+    "title": "Video tutorials"
+  },
   "/vs": {
     "keywords": "vs versus compare comparison alternative to competitors",
     "section": "Comparisons",

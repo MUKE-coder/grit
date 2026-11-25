@@ -28,6 +28,7 @@ import {
   MessageSquare,
   CreditCard,
   GitBranch,
+  Youtube,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocsShell } from '@/components/docs/shell'
@@ -146,8 +147,16 @@ export default function TutorialsPage() {
                 <span className="text-foreground font-medium">focused tutorial</span> and finish
                 something concrete in about 30 minutes. All free and self-paced.
               </p>
-              <div className="mt-6">
+              <div className="mt-6 flex flex-wrap items-center gap-3">
                 <CopyPromptButton />
+                {/* People who would rather watch than read are the ones this
+                    page loses first, so the way out is beside the way in. */}
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/tutorials">
+                    <Youtube className="mr-1.5 h-4 w-4" />
+                    Watch on video instead
+                  </Link>
+                </Button>
               </div>
             </div>
 

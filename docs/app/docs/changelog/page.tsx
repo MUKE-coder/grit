@@ -91,6 +91,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.578.0 */}
+            <div className="mb-12" id="v3.578.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.578.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A place to put the videos</h3>
+
+                <p>
+                  The walkthrough has existed since v3.575.0 and lived in one
+                  section of the landing page, which is where it is found by
+                  somebody already being sold to rather than by somebody
+                  looking for a tutorial. There is a{" "}
+                  <Link href="/tutorials">/tutorials</Link> section now, and
+                  the walkthrough is its first entry.
+                </p>
+
+                <h4>Outside the docs, like /guides and /plugins</h4>
+                <p>
+                  A video library is a way in rather than a reference.
+                  Somebody arrives from YouTube or a search, and the docs
+                  shell around them, a sidebar of 230 reference pages, is
+                  furniture for a different job. So it gets the marketing
+                  chrome instead, the same decision <code>/guides</code> and{" "}
+                  <code>/plugins</code> made.
+                </p>
+                <p>
+                  That decision has a cost and it is worth stating rather than
+                  discovering. The index the binary embeds for{" "}
+                  <code>grit docs search</code> walks <code>app/docs</code> and
+                  nothing else, so this page is not in it, exactly as the
+                  thirty guides and the plugin marketplace are not. The
+                  website&apos;s own search does cover it, through a curated
+                  entry, which is how <code>/plugins</code> is handled and for
+                  the same reason: one page is a list entry, thirty would need
+                  a walker.
+                </p>
+
+                <h4>One facade, two pages</h4>
+                <p>
+                  The embed is still a facade rather than an iframe: the
+                  poster is served from this origin and the YouTube embed is
+                  created on the first click, so nothing is requested from
+                  YouTube before somebody asks for it. It used to be a
+                  component on the landing page with the video id written into
+                  it. A page listing several videos would have paid a
+                  megabyte of third-party JavaScript several times over, and a
+                  second copy of a privacy decision is a second place for it
+                  to be got wrong, so the component takes the video and both
+                  pages pass one in.
+                </p>
+                <p>
+                  The videos themselves are declared once, in{" "}
+                  <code>config/videos.ts</code>, so the home page and the
+                  library cannot disagree about a title. Nothing goes in that
+                  list before it is published and watchable: a &quot;coming
+                  soon&quot; card is a page telling somebody to come back,
+                  which is worse than a short list.
+                </p>
+
+                <h4>And the ten that follow</h4>
+                <p>
+                  The series that #264 asked for is now its own issue, with
+                  ten videos, the audience and target length for each, what
+                  each has to show and what it has to land, split between
+                  beginners and seniors. Five answer &quot;how do I start&quot;
+                  and five answer the questions a senior asks instead: what
+                  the generator writes and how to take it over, the API
+                  contract, multi-tenancy, what to do when it is slow, and
+                  working with an AI coding agent.
+                </p>
+              </div>
+            </div>
+
             {/* v3.577.0 */}
             <div className="mb-12" id="v3.577.0">
               <div className="flex items-center gap-3 mb-4">

@@ -2088,6 +2088,12 @@
     "keywords": "stack picker chooser architecture triple double single api mobile which should i use grit new flags expo desktop sqlite postgres vite next multitenant"
   },
   {
+    "title": "Video tutorials",
+    "href": "/tutorials",
+    "section": "Tutorials",
+    "keywords": "video videos tutorial tutorials watch youtube walkthrough screencast course lesson learn beginner senior getting started first project generate resource admin panel roles permissions deploy ai agent"
+  },
+  {
     "title": "Comparisons",
     "href": "/vs",
     "section": "Comparisons",
