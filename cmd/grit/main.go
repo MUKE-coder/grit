@@ -1215,6 +1215,7 @@ func generateResourceCmd() *cobra.Command {
 	var auditReads bool
 	var confidential bool
 	var unique string
+	var retain string
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -1329,7 +1330,7 @@ func generateResourceCmd() *cobra.Command {
 			gen.Force = force
 			// Merged, not assigned: a flag left at its default must not erase
 			// what a --from file declared.
-			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly, auditReads, confidential)
+			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly, auditReads, confidential, retain)
 			def = gen.Definition
 
 			// The flag only helps somebody who knows it exists. When the
@@ -1414,6 +1415,8 @@ func generateResourceCmd() *cobra.Command {
 		"Record every read of this resource in the tamper-evident activity log: who read which rows, when, from where. For health records and other data where access itself must be accountable")
 	cmd.Flags().BoolVar(&confidential, "confidential", false,
 		"Administrators cannot read this resource. The owner sees their own rows; a holder of <resource>.read.confidential sees everything and every read is audited; everyone else gets an empty list and a 404. Needs --owned-by. For customer documents: medical records, legal files, coursework")
+	cmd.Flags().StringVar(&retain, "retain", "",
+		"Delete rows this long after they are created, with their stored files: a whole number of days, weeks or hours (e.g. --retain 90d, 2w, 36h). For the retention a privacy policy promises")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 

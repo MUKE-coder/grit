@@ -99,7 +99,7 @@ func TestConfidentialRefusesTheCombinationsThatCannotWork(t *testing.T) {
 // did not mean "and keep no record".
 func TestConfidentialImpliesAuditedReads(t *testing.T) {
 	d := &ResourceDefinition{Name: "MedicalRecord"}
-	d.ApplyFlags(false, false, "patient", false, false, false, true)
+	d.ApplyFlags(false, false, "patient", false, false, false, true, "")
 	if !d.AuditReads {
 		t.Error("--confidential does not turn on read auditing, so a grant holder can read " +
 			"everything and leave no trace, which defeats granting it to a named person")

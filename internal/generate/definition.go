@@ -116,6 +116,19 @@ type ResourceDefinition struct {
 	// It requires OwnedBy, because a confidential resource with no owner
 	// column is readable by nobody, which is never what anybody meant.
 	Confidential bool `yaml:"confidential,omitempty"`
+
+	// Retain is how long a row is kept after it is created, as written: 90d,
+	// 2w, 36h. Set by --retain. Empty keeps rows until somebody deletes them,
+	// which is what every resource did before this existed.
+	//
+	// For the promise a privacy policy makes ("messages are deleted after 90
+	// days"), which trash, erasure and the audit prune could not keep: trash
+	// only purges what was already deleted, erasure only what one person owns,
+	// and the prune only the activity log (grit#260).
+	//
+	// Kept as the string that was typed, so a definition file reads the way
+	// the policy is written. ParseRetention turns it into a window.
+	Retain string `yaml:"retain,omitempty"`
 }
 
 // ConfidentialPermission is the grant that reads this resource despite the
@@ -151,11 +164,14 @@ func (d *ResourceDefinition) IsOwned() bool { return d.OwnerField() != nil }
 // default erased the file's value: owned_by: user in a YAML file generated a
 // resource every signed-in account could read and edit, with no warning, and
 // tree, public, tenant_owned and append_only were dropped the same way.
-func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenantOwned, appendOnly, auditReads, confidential bool) {
+func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenantOwned, appendOnly, auditReads, confidential bool, retain string) {
 	d.Public = d.Public || public
 	d.Tree = d.Tree || tree
 	if ownedBy != "" {
 		d.OwnedBy = ownedBy
+	}
+	if retain != "" {
+		d.Retain = retain
 	}
 	d.TenantOwned = d.TenantOwned || tenantOwned
 	d.AppendOnly = d.AppendOnly || appendOnly

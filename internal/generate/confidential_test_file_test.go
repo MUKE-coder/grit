@@ -37,7 +37,7 @@ func confidentialWithAParent(t *testing.T) *Generator {
 		t.Fatalf("parsing the fields: %v", err)
 	}
 	// grit generate resource Record --owned-by user --confidential
-	def.ApplyFlags(false, false, "user", false, false, false, true)
+	def.ApplyFlags(false, false, "user", false, false, false, true, "")
 	def.EnsureOwnerField()
 
 	if owner := def.OwnerField(); owner == nil {

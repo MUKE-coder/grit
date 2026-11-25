@@ -1163,5 +1163,5 @@ func (g *Generator) checkFlagCombinations() error {
 			"anonymous and unscoped, so marking a resource confidential and then publishing " +
 			"it hands every row to the internet")
 	}
-	return nil
+	return g.Definition.checkRetention()
 }

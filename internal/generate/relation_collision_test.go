@@ -31,7 +31,7 @@ func twoRelationsToOneModel(t *testing.T) *Generator {
 	}
 	// The shape they actually had: plus --owned-by user, a third relation to
 	// the same model.
-	def.ApplyFlags(false, false, "user", false, false, false, false)
+	def.ApplyFlags(false, false, "user", false, false, false, false, "")
 	def.EnsureOwnerField()
 
 	var toUser int
