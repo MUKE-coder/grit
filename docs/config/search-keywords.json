@@ -129,6 +129,11 @@
     "section": "Backend (Go API)",
     "title": "Append-only Records"
   },
+  "/docs/backend/retention": {
+    "keywords": "retain retention delete after 90 days expire expiry purge privacy policy gdpr data minimisation minimization old rows cleanup sweep ttl",
+    "section": "Backend (Go API)",
+    "title": "Data Retention"
+  },
   "/docs/backend/authentication": {
     "keywords": "jwt login register auth token password 2fa totp oauth google github trusted devices backup codes refresh",
     "section": "Backend (Go API)",

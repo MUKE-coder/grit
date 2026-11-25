@@ -295,6 +295,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'grit generate resource --append-only: rows created and read, never changed or deleted. Read and create routes, a GORM guard, and a database trigger that stops raw SQL too.',
   },
+  '/docs/backend/retention': {
+    title: 'Data retention',
+    description:
+      'grit generate resource --retain 90d: rows older than the window are removed for good every night, with the files they point at. For the retention a privacy policy promises.',
+  },
   '/docs/backend/rbac': {
     title: 'RBAC',
     description:
