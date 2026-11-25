@@ -1,0 +1,105 @@
+package services
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/retention"
+	"{{MODULE}}/internal/sync"
+)
+
+// RetentionService enforces the windows resources declared with --retain:
+// rows created longer ago than their window are removed for good (grit#260).
+//
+// The removing is TrashService.purge, deliberately. It already pages through
+// the rows, deletes exactly the ones it read, and releases each row's uploads
+// to the orphan sweep, which takes the renditions and the kept original with
+// them and spares a file another record still points at. A second copy of
+// that loop here would be a second place for those rules to drift, and the
+// copy that drifts costs somebody a file (see files.ReleaseRefs).
+//
+// The price is the one the Trash already pays: the files go on the orphan
+// sweep's next pass, within a day, rather than in this one. Erasure is the
+// path that cannot wait, and it deletes immediately.
+type RetentionService struct {
+	DB       *gorm.DB
+	Registry *sync.Registry
+
+	// Policies is where the windows come from. Nil means the ones the models
+	// registered; a test sets it so it does not depend on the global registry.
+	Policies func() []retention.Policy
+}
+
+// Sweep removes every row past its resource's window and returns how many
+// went, per table.
+//
+// Unscoped, through purge: a row already in the Trash is still a row the
+// policy promised to remove, so being soft-deleted yesterday does not buy it
+// another thirty days.
+//
+// One table failing does not stop the others. A resource whose sweep breaks
+// should not keep every other resource's data past its promise too, so the
+// failures are collected and returned together, and the job reports them.
+func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) {
+	if s.Registry == nil {
+		return nil, fmt.Errorf("no resource registry: the retention sweep cannot read any table")
+	}
+	list := retention.Policies
+	if s.Policies != nil {
+		list = s.Policies
+	}
+
+	trash := &TrashService{DB: s.DB, Registry: s.Registry}
+	out := map[string]int64{}
+	var errs []error
+	for _, p := range list() {
+		table, err := s.table(ctx, p.Model)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if table == "" {
+			continue
+		}
+		cutoff := time.Now().Add(-p.Window)
+		n, err := trash.purge(ctx, table, "created_at < ?", cutoff)
+		if n > 0 {
+			out[table] += n
+		}
+		if err != nil {
+			errs = append(errs, fmt.Errorf("sweeping %s: %w", table, err))
+		}
+	}
+	return out, errors.Join(errs...)
+}
+
+// table resolves a registered model to the table purge works on, or "" when
+// the table has not been migrated yet, which is not an error: there is nothing
+// in it to keep past a window.
+func (s *RetentionService) table(ctx context.Context, model interface{}) (string, error) {
+	stmt := &gorm.Statement{DB: s.DB}
+	if err := stmt.Parse(model); err != nil {
+		return "", fmt.Errorf("resolving %T: %w", model, err)
+	}
+	table := stmt.Schema.Table
+
+	// The window is measured from created_at. A model without one would fail
+	// as SQL every night with an error that does not say why.
+	if stmt.Schema.LookUpField("created_at") == nil {
+		return "", fmt.Errorf("%s has a retention window but no created_at column to measure it from", table)
+	}
+	// purge reads rows through the sync registry. A resource missing from it
+	// would be skipped with nothing said, and its rows kept past the promise.
+	if _, err := s.Registry.New(table); err != nil {
+		return "", fmt.Errorf("%s has a retention window but is not in the sync registry, "+
+			"so the sweep cannot read it: register it in routes.go", table)
+	}
+	if !s.DB.WithContext(ctx).Migrator().HasTable(table) {
+		return "", nil
+	}
+	return table, nil
+}
