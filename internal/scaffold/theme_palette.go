@@ -339,9 +339,23 @@ func rgba(hex string, alpha float64) string {
 // the web app's. They were already the same nineteen lines, and the scoped
 // block below is the second thing in a row that had to be written twice to be
 // right once.
+// themeTokenMapCSS is the @theme block alone, which belongs at the top of a
+// stylesheet: it is what every utility colour resolves through.
 func themeTokenMapCSS() string {
-	return "@theme {\n" + themeTokenMap + `}
+	return "@theme {\n" + themeTokenMap + "}\n"
+}
 
+// themeScopedTokenCSS re-declares the same mappings for a theme scoped to a
+// surface rather than to <html>, and is emitted at the END of a stylesheet.
+//
+// Last because it is an override, and because a more specific selector that
+// comes before the plain ones is what noDescendingSpecificity reports: three
+// warnings in the admin sheet and one in the web sheet, on a clean scaffold
+// (grit#304). Nothing a page renders changes either way, since specificity
+// decides between these and not source order, so the lint is about reading
+// the file and the file reads better with the override at the bottom.
+func themeScopedTokenCSS() string {
+	return `
 /* The same mappings again, for a theme scoped to a surface instead of to
  * <html>.
  *

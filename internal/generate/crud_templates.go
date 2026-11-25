@@ -338,6 +338,12 @@ type %sLinks struct {
 		if f.IsRelationship() {
 			continue
 		}
+		// A secret is not an ordering key. Encrypted columns fell out of this
+		// loop already, because crypto.EncryptedString is not one of the Go
+		// types below; sensitive ones are plain strings and did not (grit#306).
+		if f.IsSecret() {
+			continue
+		}
 		if FieldType(f.Type) == FieldMoney {
 			p.sortCols += fmt.Sprintf(`, "%s_amount": true`, toSnakeCase(f.Name))
 			continue
@@ -355,10 +361,12 @@ type %sLinks struct {
 	}
 
 	// Filterable: wider than sortable (a bool or a foreign key is worth
-	// filtering by), but ciphertext cannot be matched.
+	// filtering by), but a secret is never filterable. Equality on a column
+	// the API will not return is an oracle that answers one row or none, and
+	// on anything lower-entropy than a hash that is enumeration (grit#306).
 	p.filterCols = `"id": true`
 	for _, f := range g.Definition.Fields {
-		if f.IsManyToMany() || f.Encrypted {
+		if f.IsManyToMany() || f.IsSecret() {
 			continue
 		}
 		col := toSnakeCase(f.Name)

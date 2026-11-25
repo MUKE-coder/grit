@@ -2328,7 +2328,7 @@ export function useResourceController<T = Record<string, unknown>>(
       }
     }
     return defaults;
-  }, [statsEnabled, customStatCards, statsConfig, resource.icon, dateParams, showArchived, data, isLoading, countBy]);
+  }, [statsEnabled, customStatCards, statsConfig, resource.icon, dateParams, showArchived, data, isLoading, countBy, pluralName]);
 
   return {
     resource,

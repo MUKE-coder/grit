@@ -97,7 +97,7 @@ func Start(root, gritVersion, generator string) (release func() error, err error
 // A missing or unreadable file clears the source rather than recording a
 // half-truth. There is no error to return into the middle of a generator run,
 // and an entry with a source nobody can hash would read as permanently drifted.
-func DerivedFrom(absPath string) {
+func DerivedFrom(absPath, shape string) {
 	recording.mu.Lock()
 	defer recording.mu.Unlock()
 	if !recording.active {
@@ -113,7 +113,7 @@ func DerivedFrom(absPath string) {
 		recording.from = nil
 		return
 	}
-	recording.from = &Source{Path: Key(rel), Hash: Hash(string(data))}
+	recording.from = &Source{Path: Key(rel), Hash: Hash(string(data)), Shape: shape}
 }
 
 // SuspendSource stops attributing writes until the returned function is

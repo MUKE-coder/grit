@@ -486,6 +486,23 @@ func RemoveResourceAt(root, name string) error {
 		if n > 0 {
 			fmt.Println("  ✗ Removed form-share dispatch")
 		}
+
+		// And the third injection into this same file: the name in
+		// RegisteredResources(), which the admin's New Share modal reads.
+		//
+		// This one had no removal at all (grit#305). It compiles either way,
+		// because what is left behind is a string in a slice and not a
+		// reference to the deleted type, so nothing complained: a resource
+		// that no longer existed simply stayed in the dropdown. Generation
+		// printed three form-share steps and removal printed two, which is
+		// the only place the asymmetry was visible.
+		//
+		// The quoted Pascal name with its trailing comma cannot match the
+		// `case "Name":` arms above, which end in a colon and are gone by now
+		// anyway.
+		if removeLinesContaining(formShareFile, fmt.Sprintf("%q,", names.Pascal)) == nil {
+			fmt.Println("  ✗ Removed resource from the New Share dropdown")
+		}
 	}
 
 	// Every switch-dispatch file keyed by the plural resource name. Adding a new
@@ -807,7 +824,11 @@ func removeStructBlock(filePath, anchor string) bool {
 	}
 
 	out := append([]string{}, lines[:start]...)
-	out = append(out, lines[end+1:]...)
+	rest := lines[end+1:]
+	if dropsTrailingBlank(out, rest) {
+		rest = rest[1:]
+	}
+	out = append(out, rest...)
 	return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644) == nil
 }
 
@@ -842,7 +863,11 @@ func removeMarkedRegion(filePath, startMarker, endMarker string) bool {
 	}
 
 	out := append([]string{}, lines[:start]...)
-	out = append(out, lines[end+1:]...)
+	rest := lines[end+1:]
+	if dropsTrailingBlank(out, rest) {
+		rest = rest[1:]
+	}
+	out = append(out, rest...)
 	return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644) == nil
 }
 
@@ -1015,6 +1040,32 @@ func pruneUnusedImports(filePath string) {
 }
 
 // removeLinesContaining removes all lines from a file that contain the given pattern.
+// dropsTrailingBlank reports whether the blank line that followed a deleted
+// entry should be deleted with it.
+//
+// Every injection into a marker-driven list leaves a blank line after the entry
+// it wrote, because injectBefore appends a newline to code that already ends in
+// one. One blank per entry is tidy and gofmt keeps it. Deleting an entry and
+// keeping its blank puts that blank against the previous entry's blank, and two
+// in a row is the one whitespace thing gofmt rewrites, so a project failed
+// `gofmt -l` on three files straight after `grit remove resource` (grit#304).
+//
+// So the blank goes only when there is already one on the other side. A list
+// written without blank separators keeps its shape, and the first entry in a
+// list keeps the blank that separates the list from whatever is above it.
+//
+// Done here rather than by running the file through codefmt on write, which was
+// the first attempt and was wrong: a removal makes several string edits to one
+// file in sequence, and reformatting between them moves the text the next edit
+// looks for. gofmt dropped the comma before a trailing /* grit:studio */
+// comment and the edit that came next stopped matching.
+func dropsTrailingBlank(kept []string, rest []string) bool {
+	if len(kept) == 0 || len(rest) == 0 {
+		return false
+	}
+	return strings.TrimSpace(kept[len(kept)-1]) == "" && strings.TrimSpace(rest[0]) == ""
+}
+
 func removeLinesContaining(filePath, pattern string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -1025,12 +1076,15 @@ func removeLinesContaining(filePath, pattern string) error {
 	var result []string
 	removed := false
 
-	for _, line := range lines {
-		if strings.Contains(line, pattern) {
+	for i := 0; i < len(lines); i++ {
+		if strings.Contains(lines[i], pattern) {
 			removed = true
+			if dropsTrailingBlank(result, lines[i+1:]) {
+				i++
+			}
 			continue
 		}
-		result = append(result, line)
+		result = append(result, lines[i])
 	}
 
 	if !removed {

@@ -102,6 +102,25 @@ type Access struct {
 	// serves anonymous requests otherwise, which is what Identify does.
 	Optional bool
 
+	// UnknownGuards are middleware in front of the route that are gates by
+	// name and that this parser does not recognise, such as a hand-written
+	// RequireProjectKey.
+	//
+	// They exist so the table can say "I could not read this" instead of
+	// "public". The accessMiddleware comment used to argue that an unknown
+	// middleware is safe to ignore because it never turns a protected route
+	// public, and that holds only while something else in the chain
+	// authenticates. On a group guarded by one hand-written gate and nothing
+	// else, the whole requirement was unknown and the summary came out as
+	// "public", which is the one answer the access package says must never be
+	// inferred (grit#308).
+	//
+	// Recognised by the Require prefix, which is the naming convention every
+	// gate in a generated project follows and no other middleware does. An
+	// unknown gate therefore reads as unknown, and a logger or a gzip
+	// middleware still reads as nothing.
+	UnknownGuards []string
+
 	// OpenReason is why a protected route deliberately requires no permission,
 	// from openToAnySignedIn("..."). Empty on a route that simply has none.
 	//
@@ -163,6 +182,12 @@ func (a Access) Summary() string {
 	}
 
 	if len(parts) == 0 {
+		// Something stands in front of this route and the parser could not
+		// read it. Saying so is the honest answer; "public" would be a guess,
+		// and the only guess here that costs anything.
+		if len(a.UnknownGuards) > 0 {
+			return "unknown (" + strings.Join(a.UnknownGuards, ", ") + ")"
+		}
 		return "public"
 	}
 	return strings.Join(parts, " + ")
@@ -233,7 +258,19 @@ type group struct {
 var (
 	// groupRe matches `x := y.Group(expr)` and `x = y.Group(expr)`, capturing
 	// the new variable, the receiver and the argument.
-	groupRe = regexp.MustCompile(`(\w+)\s*:?=\s*(?:(\w+)\.)?Group\(([^()]*)\)`)
+	//
+	// The receiver may be qualified, and the last segment is the one that
+	// names a group: a resource route file writes
+	// `g := m.Protected.Group("/widgets")`, where the group is Protected and
+	// `m` is only the Mount it arrived on. The earlier pattern allowed one
+	// optional segment, so a two-segment receiver matched nothing at all and
+	// the declaration was skipped: the routes registered on `g` then resolved
+	// against a group with no parent and no prefix, losing /widgets and
+	// landing on paths like "/" and "/:id" (grit#308). Every resource
+	// generated with --roles writes exactly this shape, so all eleven of its
+	// routes collided there, and renderRaw keeps the first entry per
+	// method-and-path.
+	groupRe = regexp.MustCompile(`(\w+)\s*:?=\s*(?:(?:\w+\.)*(\w+)\.)?Group\(([^()]*)\)`)
 	// useRe matches the start of `x.Use(middleware.Name(` or `x.Use(gin.Name(`,
 	// capturing the receiver and the middleware name. The arguments are read
 	// separately, because a Use call can span lines.
@@ -315,7 +352,14 @@ func ParseProject(routesFile string) ([]Route, error) {
 }
 
 // mountFieldRe matches one line of the Mount literal, `Staff: staff,`.
-var mountFieldRe = regexp.MustCompile(`^(V1|Public|Protected|Admin|Staff):\s*(\w+),?$`)
+//
+// Engine is in the list because a hand-written route file may mount a group on
+// the engine root rather than under /api/v1: `v1 := m.Engine.Group("/v1")` is
+// a versioned public API beside the app's own. Without Engine here that
+// declaration resolved against nothing, and because the local variable was
+// also called v1 it inherited routes.go's /api/v1 group from the seed, so the
+// route was reported at /api/v1/whoami instead of /v1/whoami (grit#308).
+var mountFieldRe = regexp.MustCompile(`^(V1|Public|Protected|Admin|Staff|Engine):\s*(\w+),?$`)
 
 // parseMountAliases reads the Mount literal in routes.go and reports which
 // local group variable each router field was handed.
@@ -371,15 +415,30 @@ func parseFile(src string, seed map[string]*group) ([]Route, map[string]*group) 
 	groups := map[string]*group{
 		"r": {}, // the engine itself, the root of every chain
 	}
+	// Which names came from routes.go rather than from this file. The seed
+	// hands over pointers, so mutating one here would change what every file
+	// parsed after this sees: a `.Use` on m.Protected in one resource file
+	// would appear in front of every other file's Protected routes. Copied on
+	// first write instead.
+	seeded := map[string]bool{}
 	for name, g := range seed {
 		groups[name] = g
+		seeded[name] = true
 	}
+	// ensure returns a group this file may write to.
 	ensure := func(name string) *group {
-		if g, ok := groups[name]; ok {
+		g, ok := groups[name]
+		if !ok {
+			g = &group{}
+			groups[name] = g
 			return g
 		}
-		g := &group{}
-		groups[name] = g
+		if seeded[name] {
+			local := *g
+			g = &local
+			groups[name] = g
+			seeded[name] = false
+		}
 		return g
 	}
 
@@ -390,9 +449,15 @@ func parseFile(src string, seed map[string]*group) ([]Route, map[string]*group) 
 		}
 
 		if m := groupRe.FindStringSubmatch(line); len(m) >= 4 {
-			g := ensure(m[1])
-			g.parent = m[2]
-			g.prefix = resolveStringExpr(m[3], consts)
+			// A fresh group, never the seeded one under the same name. A
+			// resource file that declares its own `v1` shadows routes.go's
+			// completely, so inheriting that group's middleware would claim a
+			// guard this group does not have, which is the unsafe direction.
+			groups[m[1]] = &group{
+				parent: m[2],
+				prefix: resolveStringExpr(m[3], consts),
+			}
+			seeded[m[1]] = false
 		}
 
 		// A group can take middleware on a line of its own, and the generated
@@ -523,7 +588,16 @@ func applyGuard(a *Access, call string) {
 	name, rawArgs := m[1], m[2]
 
 	kind, ok := accessMiddleware[name]
-	if !ok || kind == guardNone {
+	if !ok {
+		// Not one this parser knows. If it is named like a gate, record that
+		// rather than treating the route as having nothing in front of it.
+		if strings.HasPrefix(name, "Require") {
+			a.Guards = appendUnique(a.Guards, name)
+			a.UnknownGuards = appendUnique(a.UnknownGuards, name)
+		}
+		return
+	}
+	if kind == guardNone {
 		return
 	}
 	a.Guards = append(a.Guards, name)
@@ -617,6 +691,10 @@ func groupName(a Access) string {
 		return "api-key"
 	case a.Authenticated:
 		return "protected"
+	case len(a.UnknownGuards) > 0:
+		// Not the public bucket: a reviewer scanning for routes nobody
+		// guarded must not find this one there.
+		return "unknown"
 	default:
 		return "public"
 	}

@@ -102,6 +102,13 @@ func importAssign(f Field) (code string, needStrconv, ok bool) {
 // sortableInList mirrors the handler's list Sortable set: strings and whole
 // numbers. A bool is filterable and pointless to sort by.
 func sortableInList(f Field) bool {
+	// Same rule as the generator's own whitelists: a secret is not a sort key
+	// (grit#306). Without this, a column added later by `grit generate field`
+	// was sortable even though the same column declared at generate time was
+	// not.
+	if f.IsSecret() {
+		return false
+	}
 	switch f.GoType() {
 	case "string", "int", "uint":
 		return true
@@ -277,7 +284,7 @@ func (g *Generator) injectHandlerField(names Names, f Field) error {
 	if sortableInList(f) {
 		l.addToInlineMap(l.findPrefix(0, "Sortable:"), snake)
 	}
-	if !f.Encrypted {
+	if !f.IsSecret() {
 		l.addToInlineMap(l.findPrefix(0, "Filterable:"), snake)
 	}
 	if f.Encrypted && !l.contains("/internal/crypto\"") {
@@ -341,7 +348,7 @@ func (g *Generator) injectServiceWhitelists(names Names, f Field, patchKey strin
 	if sortableInList(f) {
 		l.addToInlineMap(l.findPrefix(0, "Sortable:"), snake)
 	}
-	if !f.Encrypted {
+	if !f.IsSecret() {
 		l.addToInlineMap(l.findPrefix(0, "Filterable:"), snake)
 	}
 	if err := l.write(path); err != nil {

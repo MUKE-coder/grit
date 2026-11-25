@@ -796,7 +796,7 @@ func adminGlobalCSS() string {
   }
 }
 
-` + adminScreenCSS()
+` + adminScreenCSS() + themeScopedTokenCSS()
 }
 
 // adminScreenCSS is the part of the admin stylesheet that is about the screens

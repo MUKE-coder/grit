@@ -49,6 +49,17 @@ func PublicFields(fields []Field) (included, excluded []Field) {
 
 // publishableByDefault decides whether one field goes out by default.
 func publishableByDefault(f Field) bool {
+	// A declared secret, before any heuristic. The rest of this function
+	// decides on the column's NAME, which caught `notes:text:encrypted` only
+	// because "notes" contains the needle "note": rename it to `remarks` and
+	// the same encrypted column was published, and a `:sensitive` column
+	// whose name matched no needle always was (grit#306). The filter lists
+	// below are built from what this returns, so this one line is also what
+	// keeps a secret out of the public query string.
+	if f.IsSecret() {
+		return false
+	}
+
 	name := strings.ToLower(toSnakeCase(f.Name))
 
 	// Never, whatever the type. Money you do not publish, notes you do not

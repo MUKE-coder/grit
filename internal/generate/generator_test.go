@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // ── Names() ───────────────────────────────────────────────────────────────────
@@ -162,6 +164,16 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	_ = protected
 }
 `)
+
+	// services/form_share_dispatch.go, from the scaffold's own template so the
+	// markers cannot drift from the ones the generator injects before.
+	//
+	// The generator injects three times into this file: the create dispatch,
+	// the public-fields lookup and the name in RegisteredResources(). Without
+	// the file here fileExists() was false, so all three were skipped in every
+	// test, and the one injection with no matching removal survived (grit#305).
+	writeTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", "form_share_dispatch.go"),
+		scaffold.FormShareDispatchGo())
 
 	// packages/shared marker files
 	writeTestFile(t, filepath.Join(root, "packages", "shared", "schemas", "index.ts"),

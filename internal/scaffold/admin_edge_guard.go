@@ -67,6 +67,12 @@ export function setAdminSession(): void {
   if (typeof document === "undefined") return;
   const secure =
     typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "";
+  // document.cookie rather than the CookieStore API on purpose: this runs in
+  // the same tick as a sign-in response, in every browser the panel
+  // supports, and CookieStore is asynchronous and not available in all of
+  // them. What is written is a marker the edge gate reads, never a
+  // credential.
+  // biome-ignore lint/suspicious/noDocumentCookie: synchronous write of a non-credential marker
   document.cookie =
     ADMIN_SESSION_COOKIE +
     "=1; Path=/; Max-Age=" +
@@ -77,6 +83,8 @@ export function setAdminSession(): void {
 
 export function clearAdminSession(): void {
   if (typeof document === "undefined") return;
+  // See setAdminSession for why this is document.cookie.
+  // biome-ignore lint/suspicious/noDocumentCookie: synchronous write of a non-credential marker
   document.cookie = ADMIN_SESSION_COOKIE + "=; Path=/; Max-Age=0; SameSite=Lax";
 }
 

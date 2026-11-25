@@ -377,7 +377,8 @@ func (g *Generator) Run() error {
 	// every resource shares rather than anything derived from this one.
 	// Cleared when Run returns, so one generator's source cannot leak into
 	// the next command's writes.
-	manifest.DerivedFrom(filepath.Join(apiRoot, "internal", "models", names.Snake+".go"))
+	generatedModel := filepath.Join(apiRoot, "internal", "models", names.Snake+".go")
+	manifest.DerivedFrom(generatedModel, ModelShape(generatedModel))
 	defer manifest.DerivedFromNothing()
 
 	if err := g.writeGoService(names); err != nil {

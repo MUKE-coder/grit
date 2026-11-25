@@ -2351,10 +2351,17 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
       <div>
+        {/* role=combobox is the role this control actually has: the
+            select-only combobox from the ARIA practices guide. It is also
+            what makes aria-activedescendant legal here, since a plain
+            button does not support it, so a screen reader was handed an
+            attribute it had no reason to honour and never announced the
+            highlighted option (grit#304). */}
         <button
           id={fieldId}
           ref={triggerRef}
           type="button"
+          role="combobox"
           onClick={() => {
             setActive(Math.max(options.findIndex((o) => o.value === value), 0));
             setOpen((o) => !o);

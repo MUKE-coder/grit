@@ -285,7 +285,6 @@ const DataTableRow = memo(function DataTableRow({
   onDelete,
   rowActions,
 }: DataTableRowProps) {
-  const t = useT();
 
   return (
     <tr

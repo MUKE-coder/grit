@@ -23,6 +23,57 @@ Also worth knowing:
 ---
 
 
+## v3.577.0 - November 25, 2026
+
+### Five things a clean project got wrong about itself
+
+Five reports from one build, and what they have in common is the direction they fail in. Each one produced a confident answer that was wrong: a route table that omitted the administrator-only routes, a secret offered as a sort key, a deleted resource still listed in a dropdown, a model reported as drifted for ever, and a lint check that failed on a project before anybody had written a line of it.
+
+#### The route table could not see its own generator's output (#308)
+
+`grit routes` and{" "} `internal/access/registry.go` are what a security review reads, and they are generated precisely because gin cannot recover a middleware chain at runtime. Two parsing gaps made them disagree with the running application, both in the unsafe direction.
+
+`grit generate resource X --roles ADMIN` emits a sub-group, `g := m.Protected.Group("/xs")`. The group pattern allowed one receiver segment and that has two, so the declaration matched nothing, and the eleven routes registered on `g` resolved against a group with no parent and no prefix. They did not vanish, which would at least have been visible: they landed on{" "} `/` and `/:id`, and since the registry keeps the first entry per method and path, a second such resource silently replaced the first. An auditor asking what is exposed saw 380 routes and none of the ones holding the most sensitive data.
+
+Separately, a group mounted on the engine root rather than under `/api/v1` was reported at the wrong path and summarised as **public** while standing behind an authentication middleware that refuses every request without a key. The local variable was called `v1`, the same name `routes.go` gives its own group, and it inherited that group's prefix from the seed. The access package's own comment says a public route gets an empty chain and never an inferred one; this was an inferred one.
+
+Group declarations now read a qualified receiver, a local group shadows a seeded one instead of inheriting it,{" "} `m.Engine` resolves to the engine root, and a gate this parser does not recognise reports as{" "} `unknown (RequireProjectKey)` rather than as public. An honest gap is safe. An inferred "public" is not.
+
+#### A :sensitive column was a sort key and a filter (#306)
+
+A column declared `:sensitive` is dropped from JSON by the model and refused by the rules engine, and the generator wrote it into the service's{" "} `Sortable` and `Filterable` maps anyway, so `?sort=key_hash` ordered rows by a secret and `?key_hash=<guess>` answered one row or none. `:encrypted` columns were correctly excluded, which is what made it visible: two markers that both mean "this is a secret", enforced in different places.
+
+There were four whitelist builders and a fifth path through{" "} `grit generate field`, agreeing on encryption and disagreeing on sensitivity. They now share one predicate, so a third marker has one place to be added. The same check went into the public endpoint's publishability rule, which decided on the column's *name* and caught{" "} `notes:text:encrypted` only because "notes" contains the needle "note".
+
+#### A removed resource stayed in the New Share dropdown (#305)
+
+`grit remove resource` reported success and left the name in `RegisteredResources()`. It compiled, because what was left behind is a string in a slice and not a reference to a deleted type, so the only symptom was a resource that no longer existed still being offered. Generation printed three form-share steps and removal printed two, and that asymmetry was the only place it showed.
+
+The reason no test found it is worth more than the fix: the generator's test fixture had no{" "} `form_share_dispatch.go`, so{" "} `fileExists` was false and all three injections into it were skipped in every test. The fixture is now built from the scaffold's own template, so it cannot fall behind the markers it is testing, and the existing "is the resource gone" round trip catches this class without anybody having to think of it again.
+
+#### A gorm tag that AutoMigrate needs marked a model drifted for ever (#307)
+
+A column that must be `numeric(18,8)` rather than double precision can only say so in a gorm tag on the model: put it in a migration instead and the next{" "} `grit migrate` runs AutoMigrate first and alters it back. So the tag is correct and necessary, and it made{" "} `grit doctor` report six files behind the model on every run, with a printed remedy that would have rewritten the model and dropped the tag, reverting a deliberate schema decision with nothing to say why.
+
+The manifest recorded the model's bytes, and the question it was being asked is whether the model says something different. It now records a *shape* as well: the definition the model rebuilds into, which is the input every downstream generator works from. A tag the rebuild keeps still counts as drift; one it discards does not. The shape is deliberately not a hand-maintained list of significant tag keys, because that list is a second opinion about what the generators read and would drift from them quietly.
+
+An entry written before this release has no shape and keeps the old byte comparison, so the check is not silenced for existing projects. Those projects get the other half: the remedy now always says that regenerating rewrites the model too, which it only said when a generated file had been edited, and a model-only tag change is exactly the case where the advice read as safe.
+
+#### A clean scaffold failed its own lint (#304)
+
+`pnpm lint` is in the documented verify sequence next to `go build`, `tsc --noEmit` and{" "} `grit doctor`. On a clean{" "} `--triple --next --multitenant` project every other step passed and lint failed in both frontends: 21 errors and 14 warnings in the web app, 5 and 10 in the admin. The build prompt tells an agent not to write `any` and the scaffold shipped eleven of them, so the first thing a developer saw was a red check they did not cause, which is how a check stops being read.
+
+Both frontends are now clean, zero errors and zero warnings:
+
+- The eleven `any` annotations were all{" "} `catch (error: any)` reading the same three fields. They go through typed helpers in the plugin's own client module instead.
+- An effect keyed on `active?.id` read thirteen columns of `active`, which is a dependency narrower than its captures: it did not fire when a column changed under the same id. Fourteen of the 21 errors were that one line.
+- A suppression that was an `eslint-disable`{" "} comment in a project that lints with biome, so it suppressed nothing. The two suppressions that remain name their rule and give a reason, and sit where the rule reports rather than at the other end of the hook.
+- An `aria-activedescendant` on a plain{" "} `button`, which does not support it, so the highlighted option in every select field was never announced. The element now carries{" "} `role="combobox"`, which is the role it actually has.
+- A `Tile` component nothing rendered, two unused icon imports, an unused translator, and a scoped theme block that now sits at the end of each stylesheet where an override belongs.
+
+And the same report's second half: a project could not pass `gofmt -l` straight after{" "} `grit remove resource`. Each injection into a marker-driven list leaves a blank line after its entry, so deleting an entry put two blanks in a row, which is the one whitespace thing gofmt rewrites. Three files failed it. The first attempt at a fix was to format every file on write, and that was wrong in an instructive way: a removal makes several string edits to one file in sequence, and reformatting between them moved the text the next edit was looking for. gofmt dropped the comma before a trailing{" "} `/* grit:studio */` comment and the edit after it stopped matching. The blank is closed where it is opened instead, and the removal round trip now asserts that every Go file it leaves behind is formatted.
+
+
 ## v3.576.0 - November 24, 2026
 
 ### Four advisories, and the list that was never going to deliver the fix

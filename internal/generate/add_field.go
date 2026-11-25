@@ -104,7 +104,8 @@ func AddField(resourceName, spec string) error {
 	// resource as drifted from a model this command has just brought it in
 	// line with: a check that fires on the state its own fix produces is
 	// worse than no check.
-	manifest.DerivedFrom(filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go"))
+	modelPath := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
+	manifest.DerivedFrom(modelPath, ModelShape(modelPath))
 	defer manifest.DerivedFromNothing()
 
 	if err := g.injectFrontendField(names, f); err != nil {

@@ -668,7 +668,7 @@ body {
 .prose-blog tr:last-child td {
   border-bottom: none;
 }
-`
+` + themeScopedTokenCSS()
 }
 
 // webRootLayout is the document and nothing else: fonts, the theme attribute and

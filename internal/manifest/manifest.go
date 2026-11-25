@@ -73,6 +73,25 @@ type Entry struct {
 type Source struct {
 	Path string `json:"path"`
 	Hash string `json:"hash"`
+
+	// Shape is the hash of what the generator actually reads out of that
+	// source, as opposed to its bytes.
+	//
+	// The two differ for a hand edit the generated files do not depend on. A
+	// gorm tag that fixes a column's type is the case that forced this:
+	//
+	//	FxRate float64 `gorm:"type:numeric(18,8)" json:"fx_rate"`
+	//
+	// is the only place that instruction can go, because AutoMigrate reads the
+	// Go type and would alter a migration's column straight back. It changes
+	// the model's bytes and changes nothing downstream, so every `grit doctor`
+	// run reported six files behind the model for good, and the remedy it
+	// printed was the one command that would undo the tag (grit#307).
+	//
+	// Absent in every entry written before this existed, and absent when the
+	// shape could not be computed. A comparison with nothing to compare falls
+	// back to the bytes, which is how it behaved before.
+	Shape string `json:"shape,omitempty"`
 }
 
 // Status describes how a file on disk relates to what Grit last wrote there.

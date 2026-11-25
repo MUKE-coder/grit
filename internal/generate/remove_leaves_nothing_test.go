@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"go/format"
 	"os"
 	"path/filepath"
 	"sort"
@@ -75,6 +76,65 @@ func TestGenerateThenRemoveLeavesNothingBehind(t *testing.T) {
 	for _, line := range survivors(t, root, names) {
 		t.Errorf("remove left this behind: %s", line)
 	}
+
+	// And what it left behind is still formatted.
+	//
+	// gofmt is the first command in the documented verify sequence, and three
+	// files failed it straight after a removal: the permission catalog, the
+	// policy registry and the form-share dispatcher (grit#304). Each injection
+	// into one of those marker-driven lists leaves a blank line after its
+	// entry, so deleting an entry put two blanks in a row, which is the one
+	// whitespace thing gofmt rewrites. Nothing caught it because every test
+	// asked whether the resource was gone and none asked whether the file was
+	// still something the project's own checks accept.
+	for _, rel := range unformattedGoFiles(t, root) {
+		t.Errorf("remove left %s failing gofmt", rel)
+	}
+}
+
+// unformattedGoFiles lists every Go file under root that gofmt would rewrite.
+func unformattedGoFiles(t *testing.T, root string) []string {
+	t.Helper()
+	var out []string
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case ".git", "node_modules", ".next", "dist":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if filepath.Ext(path) != ".go" {
+			return nil
+		}
+		src, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return nil
+		}
+		formatted, fmtErr := format.Source(src)
+		if fmtErr != nil {
+			// A file that does not parse is a different failure, and the
+			// survivors check and the generated project's own build both say
+			// so more clearly than this would.
+			return nil
+		}
+		if string(formatted) != string(src) {
+			rel, relErr := filepath.Rel(root, path)
+			if relErr != nil {
+				rel = path
+			}
+			out = append(out, filepath.ToSlash(rel))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking %s: %v", root, err)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // resourceVariants is every spelling of the resource a generated file might

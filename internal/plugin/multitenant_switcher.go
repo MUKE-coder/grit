@@ -249,9 +249,16 @@ export function OrganizationSwitcher() {
 func mtWebOrganizationPage() string {
 	return `"use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { adminLoginUrl, orgClient } from "@/lib/organization-client";
+import {
+  adminLoginUrl,
+  errorCode,
+  errorMessage,
+  errorStatus,
+  orgClient,
+} from "@/lib/organization-client";
 import { useOrganizationChoice } from "@/hooks/use-organizations";
 
 type Member = { user_id: string; email: string; first_name: string; last_name: string; role: string; created_at: string };
@@ -307,14 +314,18 @@ export default function OrganizationSettingsPage() {
       .catch(() => setSignedIn(false));
   }, []);
 
-  async function refresh() {
+  // A useCallback so the effect below can depend on it by name. It captures
+  // the active organization, which is what decides whether it has to run
+  // again, and naming the function is how the dependency rule is satisfied
+  // without restating everything the function reads (grit#304).
+  const refresh = useCallback(async () => {
     if (!active) return;
     const [memberResponse, invitationResponse] = await Promise.all([
       orgClient.get("/api/organizations/" + active.id + "/members"),
-      orgClient.get("/api/organizations/" + active.id + "/invitations").catch((error: any) => {
+      orgClient.get("/api/organizations/" + active.id + "/invitations").catch((error: unknown) => {
         // A member may read the membership but not the invitations. That is a
         // permission, not a failure to load the page.
-        if (error?.response?.status === 403) return null;
+        if (errorStatus(error) === 403) return null;
         throw error;
       }),
     ]);
@@ -322,9 +333,14 @@ export default function OrganizationSettingsPage() {
     setInvitations(invitationResponse?.data?.data ?? []);
     setCanManageInvitations(Boolean(invitationResponse));
     setLabels({ owner_label: active.owner_label || "Owner", admin_label: active.admin_label || "Admin", member_label: active.member_label || "Member" });
-  }
+  }, [active]);
 
-  useEffect(() => { refresh().catch(() => setNotice("Could not load organization settings.")); }, [active?.id, me?.id]);
+  // me?.id is a reason to reload rather than a value this effect reads: who
+  // is asking decides whether the invitations come back at all, and refresh
+  // does not mention it. The rule can only see captures, so it is declared
+  // here instead.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: me?.id is a reload trigger, not a capture
+  useEffect(() => { refresh().catch(() => setNotice("Could not load organization settings.")); }, [refresh, me?.id]);
   useEffect(() => {
     if (!active) { setProfile(EMPTY_PROFILE); setLogoURL(""); return; }
     setProfile({
@@ -336,11 +352,16 @@ export default function OrganizationSettingsPage() {
     });
     setLogoURL(active.logo_url || "");
     setSlugState({ checked: false, available: false, message: "" });
-  }, [active?.id]);
+    // The whole object, not active?.id: this body reads thirteen of its
+    // columns, and a dependency narrower than the captures is one that does
+    // not fire when a column changes under the same id. active is found in
+    // the organizations query array, so its identity is stable between
+    // fetches and this does not re-run on every render (grit#304).
+  }, [active]);
   useEffect(() => {
     if (active) return;
     orgClient.get("/api/organizations/archived").then(({ data }) => setArchived(data.data ?? [])).catch(() => {});
-  }, [active?.id]);
+  }, [active]);
 
   async function invite(event: FormEvent) {
     event.preventDefault();
@@ -349,8 +370,8 @@ export default function OrganizationSettingsPage() {
     try {
       await orgClient.post("/api/organizations/" + active.id + "/invitations", { email, role });
       setEmail(""); setNotice("Invitation sent."); await refresh();
-    } catch (error: any) {
-      setNotice(error?.response?.data?.error?.message || "Could not send invitation. Check the email or pending invitations.");
+    } catch (error) {
+      setNotice(errorMessage(error, "Could not send invitation. Check the email or pending invitations."));
     }
     finally { setBusy(false); }
   }
@@ -383,12 +404,12 @@ export default function OrganizationSettingsPage() {
       setLogoURL(data.data?.logo_url || logoURL);
       await queryClient.invalidateQueries({ queryKey: ["organizations", "mine"] });
       setNotice("Organization details saved.");
-    } catch (error: any) {
-      const code = error?.response?.data?.error?.code;
+    } catch (error) {
+      const code = errorCode(error);
       setNotice(
         code === "SLUG_TAKEN" ? "That slug is already in use."
           : code === "TAX_ID_TAKEN" ? "That tax id already belongs to another organization."
-          : error?.response?.data?.error?.message || "Could not save organization details."
+          : errorMessage(error, "Could not save organization details.")
       );
     }
     finally { setBusy(false); }
@@ -416,8 +437,8 @@ export default function OrganizationSettingsPage() {
       setLogoURL(data.data?.logo_url || "");
       await queryClient.invalidateQueries({ queryKey: ["organizations", "mine"] });
       setNotice("Logo updated.");
-    } catch (error: any) {
-      setNotice(error?.response?.data?.error?.message || "Could not upload the logo.");
+    } catch (error) {
+      setNotice(errorMessage(error, "Could not upload the logo."));
     } finally { setLogoBusy(false); }
   }
 
@@ -574,9 +595,12 @@ export default function OrganizationSettingsPage() {
 func mtWebInvitationPage() string {
 	return `"use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { orgClient } from "@/lib/organization-client";
+// errorMessage reads the API envelope message with a fallback, which is what
+// this page did with a local helper typed as any (grit#304).
+import { errorMessage as describe, errorCode, errorStatus, orgClient } from "@/lib/organization-client";
 import { setActiveOrg } from "@/lib/active-org";
 
 type Preview = { organization_name: string; email: string; role: string; status: string };
@@ -604,6 +628,12 @@ export default function AcceptOrganizationInvitationPage() {
   const [code, setCode] = useState("");
   const [useBackupCode, setUseBackupCode] = useState(false);
 
+  // Reads the token out of the URL once, on mount. load is declared below and
+  // would make this run again on every render if it were a dependency. The
+  // suppression has to be here, above the call: an eslint comment beside the
+  // dependency array is what used to be here, in a project that lints with
+  // biome, so it suppressed nothing (grit#304).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only; reads the URL once
   useEffect(() => {
     const value = new URLSearchParams(window.location.search).get("token") || "";
     setToken(value);
@@ -613,12 +643,7 @@ export default function AcceptOrganizationInvitationPage() {
       return;
     }
     void load(value);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  function describe(error: any, fallback: string) {
-    return error?.response?.data?.error?.message || fallback;
-  }
 
   async function currentUser(): Promise<Me | null> {
     try {
@@ -679,7 +704,7 @@ export default function AcceptOrganizationInvitationPage() {
       const user = await currentUser();
       setMe(user);
       decide(found, user);
-    } catch (error: any) {
+    } catch (error) {
       setMode("invalid");
       setMessage(describe(error, "This invitation is invalid."));
     }
@@ -704,7 +729,7 @@ export default function AcceptOrganizationInvitationPage() {
       setMe(user);
       setPassword("");
       decide(preview, user);
-    } catch (error: any) {
+    } catch (error) {
       setMessage(describe(error, "Could not sign in with that password."));
     } finally {
       setBusy(false);
@@ -738,7 +763,7 @@ export default function AcceptOrganizationInvitationPage() {
       setCode("");
       setPendingToken("");
       decide(preview, user);
-    } catch (error: any) {
+    } catch (error) {
       setMessage(describe(error, useBackupCode
         ? "That backup code was not accepted."
         : "That code was not accepted. Codes last 30 seconds, so try the current one."));
@@ -764,7 +789,7 @@ export default function AcceptOrganizationInvitationPage() {
       setPassword("");
       setMode("verify");
       setMessage("Account created. Check " + preview.email + " for the verification link, then come back to this page.");
-    } catch (error: any) {
+    } catch (error) {
       setMessage(describe(error, "Could not create the account."));
     } finally {
       setBusy(false);
@@ -782,9 +807,9 @@ export default function AcceptOrganizationInvitationPage() {
       queryClient.clear();
       setNotice(data.message || "Invitation accepted.");
       window.location.assign("/account/organization");
-    } catch (error: any) {
-      const code = error?.response?.data?.error?.code;
-      if (error?.response?.status === 401) {
+    } catch (error) {
+      const code = errorCode(error);
+      if (errorStatus(error) === 401) {
         setMode("signin");
         setMessage("Sign in to accept this invitation.");
       } else if (code === "EMAIL_NOT_VERIFIED") {
@@ -818,7 +843,7 @@ export default function AcceptOrganizationInvitationPage() {
     try {
       await orgClient.post("/api/auth/verify-email/send");
       setNotice("Verification email sent. Check " + (preview?.email ?? "your inbox") + ".");
-    } catch (error: any) {
+    } catch (error) {
       setNotice(describe(error, "Could not send the verification email."));
     } finally {
       setBusy(false);
@@ -1012,7 +1037,7 @@ export default function AcceptOrganizationInvitationPage() {
       queryClient.clear();
       setMessage("Invitation accepted."); router.replace("/(tabs)");
     }
-    catch (error: any) { setMessage(error?.message || "Sign in with the invited and verified email, then try again."); }
+    catch (error) { setMessage((error as { message?: string } | null)?.message || "Sign in with the invited and verified email, then try again."); }
     finally { setBusy(false); }
   }
   return <View className="flex-1 justify-center gap-5 bg-white p-6 dark:bg-slate-950"><Text className="text-3xl font-bold text-slate-950 dark:text-white">Join your team</Text><Text className="text-base text-slate-600 dark:text-slate-300">{message}</Text><Pressable disabled={busy} onPress={accept} className="items-center rounded-xl bg-blue-600 p-4">{busy ? <ActivityIndicator color="white" /> : <Text className="font-semibold text-white">Accept invitation</Text>}</Pressable></View>;
@@ -1168,5 +1193,35 @@ export const orgClient = ` + imported + `;
 // Where this stack's sign-in page is. The web app has none of its own; the
 // admin panel sets the session cookie the account area uses.
 export const adminLoginUrl = ` + adminLogin + `;
+
+// What an API error looks like once the HTTP client has wrapped it.
+//
+// Declared because a catch block receives an unknown value and these screens
+// only ever read three fields out of it. They used to annotate every catch
+// as ` + "`" + `any` + "`" + `, eleven times across two files, which is the one thing the
+// generated frontends ask you not to write (grit#304).
+export type APIErrorShape = {
+  response?: {
+    status?: number;
+    data?: { error?: { code?: string; message?: string } };
+  };
+};
+
+// errorStatus is the HTTP status a failed request came back with, if any.
+export function errorStatus(error: unknown): number | undefined {
+  return (error as APIErrorShape | null)?.response?.status;
+}
+
+// errorCode is the API's own error code, which the envelope carries so a
+// caller can branch on the reason rather than on the wording.
+export function errorCode(error: unknown): string | undefined {
+  return (error as APIErrorShape | null)?.response?.data?.error?.code;
+}
+
+// errorMessage is what to show somebody, or fallback when the response
+// carried nothing worth showing.
+export function errorMessage(error: unknown, fallback: string): string {
+  return (error as APIErrorShape | null)?.response?.data?.error?.message || fallback;
+}
 `
 }

@@ -243,6 +243,13 @@ function RevealModal({ token, onClose }: { token: string; onClose: () => void })
 
 type Shown = "active" | "inactive" | "all";
 
+// Module scope, because it reads nothing but its argument. Inside the
+// component it was a new function on every render, so the two useMemos that
+// call it could not name it as a dependency without recomputing every time,
+// and leaving it out was a missing dependency (grit#304).
+const dead = (k: APIKey) =>
+  !!k.revoked_at || (!!k.expires_at && new Date(k.expires_at) < new Date());
+
 export default function APIKeysPage() {
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"publishable" | "secret">("publishable");
@@ -288,8 +295,6 @@ export default function APIKeysPage() {
 
   const keys = (data ?? []) as APIKey[];
 
-  const dead = (k: APIKey) =>
-    !!k.revoked_at || (!!k.expires_at && new Date(k.expires_at) < new Date());
 
   // "Revoked" was the obvious name for the second filter and it would have
   // been a lie: an expired key is just as dead and is not revoked, so it

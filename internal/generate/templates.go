@@ -683,8 +683,10 @@ func (g *Generator) buildSortableSet() string {
 	}
 	for _, f := range g.Definition.Fields {
 		switch {
-		case f.Encrypted, f.IsFile(), f.IsFiles(), f.IsManyToMany(), f.IsStringArray():
-			// not a sortable scalar column (ciphertext sorts as noise)
+		case f.IsSecret(), f.IsFile(), f.IsFiles(), f.IsManyToMany(), f.IsStringArray():
+			// Not a sortable scalar column. Ciphertext sorts as noise, and
+			// ordering by a sensitive column leaks the relative order of
+			// values nothing is allowed to read (grit#306).
 			continue
 		case f.IsBelongsTo():
 			base := strings.TrimSuffix(toSnakeCase(f.Name), "_id")

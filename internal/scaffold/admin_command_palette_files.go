@@ -149,6 +149,11 @@ export function CommandPalette() {
     });
   }, [items, query]);
 
+  // The highlighted row goes back to the top whenever the query changes, so
+  // typing never leaves the selection on a row that has scrolled out of the
+  // results. query is the trigger rather than something the body reads, and
+  // the dependency rule can only see what a body reads (grit#304).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: query is the reset trigger, not a capture
   useEffect(() => {
     setCursor(0);
   }, [query]);

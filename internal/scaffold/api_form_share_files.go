@@ -155,6 +155,16 @@ func (s *FormSubmission) BeforeCreate(tx *gorm.DB) error {
 `
 }
 
+// FormShareDispatchGo is the dispatcher file, for internal/generate's tests.
+//
+// Exported for the same reason as FactoryCounterGo: so there is one copy of
+// the text rather than two that can drift. The generator injects three times
+// into this file and its test fixture did not contain it, so none of those
+// three injections was exercised by any test and the one with no matching
+// removal went unnoticed (grit#305). A fixture built from this function
+// cannot fall behind the markers it is testing.
+func FormShareDispatchGo() string { return formShareDispatchGo() }
+
 // formShareDispatchGo emits the marker-driven dispatcher. Each call to
 // grit generate resource appends a case here, so the public submit
 // handler always knows how to materialise the latest resources.

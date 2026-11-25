@@ -978,16 +978,26 @@ func (f Field) IsSortable() bool {
 	}
 }
 
+// IsSecret reports a column that must never be reachable from the query
+// string: not by `?search=`, not by `?sort=`, not by `?<col>=`, and not on a
+// public endpoint.
+//
+// Both markers mean "this is a secret" and they used to be enforced in
+// different places, which is how grit#306 happened: `:encrypted` was left out
+// of the sort and filter whitelists and `:sensitive` was not, so a column the
+// model refuses to marshal was still an equality oracle on the list endpoint.
+// They differ in why they cannot be queried and not in whether they can.
+// Ciphertext is different on every write, so no comparison can ever match it.
+// A sensitive column holds plaintext the API will not read back, and a filter
+// or a sort that confirms its value reads it back by another route.
+//
+// Every whitelist that ends up in SQL from a request calls this, so a third
+// marker only has to be added here.
+func (f Field) IsSecret() bool { return f.Encrypted || f.Sensitive }
+
 // IsSearchable returns true if this field type should be searchable by default.
 func (f Field) IsSearchable() bool {
-	// Ciphertext is different on every write, so LIKE can never match it.
-	if f.Encrypted {
-		return false
-	}
-	// A column nothing may read back is not one a `?search=` should confirm
-	// by returning the row. That is the same oracle a filter would be, with a
-	// friendlier query parameter.
-	if f.Sensitive {
+	if f.IsSecret() {
 		return false
 	}
 	switch FieldType(f.Type) {

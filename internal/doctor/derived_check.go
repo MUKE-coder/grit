@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/MUKE-coder/grit/v3/internal/generate"
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
@@ -41,6 +42,9 @@ func checkDerivedFiles(p *project) []Finding {
 	edited := map[string][]string{}
 	// Hashed once per source, not once per file: a resource has a dozen.
 	current := map[string]string{}
+	// And the shape once per source too, which costs a parse rather than a
+	// read. Only computed for a source whose bytes have already changed.
+	shapes := map[string]string{}
 
 	for _, rel := range m.Entries() {
 		entry := m.Files[rel]
@@ -67,6 +71,27 @@ func checkDerivedFiles(p *project) []Finding {
 		}
 		if now == "" || now == entry.From.Hash {
 			continue
+		}
+
+		// The bytes changed. That is not the same as the model saying
+		// something different: a gorm tag pinning a column's type, precision,
+		// collation or default is a hand edit AutoMigrate needs and no
+		// generator reads, and treating it as drift left a project that had
+		// done the right thing unable to have a clean `grit doctor` ever
+		// again (grit#307).
+		//
+		// So ask the narrower question when the entry can answer it. An entry
+		// written before Shape existed, or one whose model will not parse, has
+		// no shape to compare and falls back to the bytes as before.
+		if entry.From.Shape != "" {
+			shape, computed := shapes[src]
+			if !computed {
+				shape = generate.ModelShape(filepath.Join(p.root, filepath.FromSlash(src)))
+				shapes[src] = shape
+			}
+			if shape != "" && shape == entry.From.Shape {
+				continue
+			}
 		}
 
 		// A file nobody has touched can be regenerated. One that has been
@@ -116,6 +141,16 @@ func derivedFix(src string, hasEdits bool) string {
 	if hasEdits {
 		fix += ". Some of those files you have edited: regenerating overwrites them, " +
 			"so diff first or add the column with grit generate field instead"
+		return fix
+	}
+	// Said even when no generated file has been edited, because the command
+	// being recommended rewrites the model as well, and the model is the file
+	// most likely to carry a deliberate hand edit: a gorm tag is the only
+	// place a column's type can be pinned. The remedy used to read as safe in
+	// exactly that case and would silently revert the tag (grit#307).
+	if name != "" {
+		fix += ". That rewrites the model too, so a gorm tag you added by hand " +
+			"is lost: diff first, or add a column with grit generate field instead"
 	}
 	return fix
 }

@@ -22,14 +22,13 @@ func adminSystemHubPageV2() string {
 	return `"use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useModules } from "@/hooks/use-modules";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SYSTEM_NAV, INTERNAL_ICON } from "@/components/chrome/CollapsibleSidebar";
 import { HubTile } from "@/components/ui/hub-tile";
 import { UnderlineTabs } from "@/components/ui/tabs-underline";
 import { EmptyState } from "@/components/ui/empty-state";
-import { type PillTone } from "@/components/ui/pill";
+import type { PillTone } from "@/components/ui/pill";
 import { inputClasses } from "@/components/ui/input";
 import { useSystemHealth, stateOf } from "@/hooks/use-system-health";
 import {
@@ -101,21 +100,6 @@ const TILES: SystemTile[] = [
   // ── Settings ────────────────────────────────────────────────────────────
   { href: "/settings/dashboard",   category: "Settings", title: "Dashboard settings", description: "Configure the admin dashboard — widgets, stats, and layout.", icon: <Settings className="h-5 w-5" /> },
 ];
-
-function Tile({ href, icon, title, description }: { href: string; icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-xl border border-border bg-bg-elevated p-5 transition-colors hover:bg-bg-hover hover:border-accent/30"
-    >
-      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
-        {icon}
-      </div>
-      <p className="text-base font-semibold text-foreground group-hover:text-accent">{title}</p>
-      <p className="mt-1 text-sm text-text-secondary">{description}</p>
-    </Link>
-  );
-}
 
 export default function SystemHubPage() {
   // Hide tiles for modules that are switched off — a tile linking to a route
@@ -304,7 +288,7 @@ import {
 import { Note } from "@/components/ui/note";
 import { Pill } from "@/components/ui/pill";
 import {
-  CheckCircle, AlertCircle, AlertTriangle, RefreshCw, Database, Mail, Server,
+  CheckCircle, AlertTriangle, RefreshCw, Database, Mail, Server,
   Activity as ActivityIcon, HardDrive, Zap, FolderOpen, Webhook,
 } from "@/lib/icons";
 

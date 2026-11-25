@@ -70,7 +70,7 @@ func Sync() error {
 		// is right now. Set per file rather than once, because the loop moves
 		// between models and the last one set would otherwise be recorded
 		// against all of them.
-		manifest.DerivedFrom(filePath)
+		manifest.DerivedFrom(filePath, ModelShape(filePath))
 
 		for _, s := range structs {
 			if skipSharedType(s.Name) {
