@@ -1303,6 +1303,13 @@ func generateResourceCmd() *cobra.Command {
 				if def.Items != nil {
 					return fmt.Errorf("--items (inline line-items) isn't supported for desktop projects yet")
 				}
+				// The desktop generator never reads the flags below, and a
+				// retention window silently dropped is a privacy policy that
+				// says rows are deleted while nothing deletes them.
+				if retain != "" || def.Retain != "" {
+					return fmt.Errorf("--retain isn't supported for desktop projects yet: the desktop generator " +
+						"has no retention sweep, so the rows would never be removed. Leave it off")
+				}
 				return generate.RunDesktop(def)
 			}
 
