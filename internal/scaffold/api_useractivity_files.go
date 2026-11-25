@@ -267,13 +267,35 @@ func LogDelete(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID s
 //
 // Keys are sorted so the output is deterministic across runs (handy
 // for tests + log grep). Empty map returns "".
+// bookkeepingColumns are written on almost every update and are not a
+// change anybody made.
+//
+// version is the optimistic-concurrency counter and the timestamps are
+// GORM's. Before the History tab existed this summary was read mostly in a
+// system log, where the noise was tolerable; on a record page it is the
+// whole sentence, and "changed active, label, version" names a column the
+// person did not touch and cannot see (grit#261).
+var bookkeepingColumns = map[string]bool{
+	"version":    true,
+	"updated_at": true,
+	"created_at": true,
+}
+
 func DiffSummary(updates map[string]interface{}) string {
 	if len(updates) == 0 {
 		return ""
 	}
 	keys := make([]string, 0, len(updates))
 	for k := range updates {
+		if bookkeepingColumns[k] {
+			continue
+		}
 		keys = append(keys, k)
+	}
+	// Every column it wrote was bookkeeping, so there is nothing to say. The
+	// caller still records that the row was touched and by whom.
+	if len(keys) == 0 {
+		return ""
 	}
 	sort.Strings(keys)
 	if len(keys) == 1 {

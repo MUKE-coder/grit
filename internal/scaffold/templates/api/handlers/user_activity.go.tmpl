@@ -34,7 +34,10 @@ func (h *UserActivityHandler) List(c *gin.Context) {
 		With("user_id", c.Query("user_id")).
 		With("action", c.Query("action")).
 		With("severity", c.Query("severity")).
-		With("resource_type", c.Query("resource_type"))
+		With("resource_type", c.Query("resource_type")).
+		// One record rather than one kind of record: the History tab on an
+		// admin record page sends both (grit#261).
+		With("resource_id", c.Query("resource_id"))
 
 	res, err := h.activity().Events(c.Request.Context(), params, c.Query("q"))
 	if err != nil {

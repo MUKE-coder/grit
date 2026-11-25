@@ -91,6 +91,78 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.579.0 */}
+            <div className="mb-12" id="v3.579.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.579.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A History tab on every record</h3>
+
+                <p>
+                  An editor looking at one record could not see who changed it
+                  and when without leaving for the system activity log and
+                  filtering it by hand. Every generated record page now has a
+                  History tab beside its details: who, when, what they did and
+                  which fields changed, newest first.
+                </p>
+
+                <h4>Most of this already existed</h4>
+                <p>
+                  Worth saying, because it is the reason this is a small
+                  change rather than a subsystem. Every generated handler
+                  already emits a resource event, and an audit subscriber
+                  already turns each one into a row carrying the actor, the
+                  action, a sentence and the changed-field list. The feed
+                  could be narrowed to every supplier and not to{" "}
+                  <em>this</em> supplier: the handler never bound{" "}
+                  <code>resource_id</code> and the whitelist never named it.
+                  Either half alone looks right in review and produces a tab
+                  showing every record&apos;s history or none at all, so one
+                  test reads both files.
+                </p>
+
+                <h4>What it does not show, deliberately</h4>
+                <p>
+                  The old and new value of each field. The feed records which
+                  fields changed, never what they held, and that line is worth
+                  keeping: the activity log is readable by anybody holding{" "}
+                  <code>audit.view</code>, and copying values into it would
+                  quietly turn that permission into a way to read every value
+                  anybody ever typed, including on a resource its holder is
+                  not allowed to open. Storing them is a real feature and a
+                  real decision about retention and access, not a field to
+                  add.
+                </p>
+
+                <h4>A sentence somebody reads</h4>
+                <p>
+                  Putting the summary on a record page made one thing obvious
+                  that was tolerable in a system log: it named{" "}
+                  <code>version</code>, the optimistic-concurrency counter,
+                  among the fields a person had changed. &quot;changed active,
+                  label, version&quot; attributes to somebody a column they
+                  did not touch and cannot see. The bookkeeping columns are
+                  left out now, and an update that wrote nothing else says
+                  nothing rather than &quot;0 fields changed&quot;.
+                </p>
+
+                <p>
+                  The tab lives inside{" "}
+                  <code>resource-detail-page.tsx</code> rather than in a file
+                  of its own, which is not where a component that size would
+                  normally go. A second file is a second file{" "}
+                  <code>grit upgrade</code> has to write in the same pass, and
+                  a project that received one without the other would not
+                  build.
+                </p>
+              </div>
+            </div>
+
             {/* v3.578.0 */}
             <div className="mb-12" id="v3.578.0">
               <div className="flex items-center gap-3 mb-4">

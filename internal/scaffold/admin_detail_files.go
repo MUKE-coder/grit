@@ -166,13 +166,15 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 import type { ResourceDefinition, ColumnDefinition, FieldDefinition } from "@/lib/resource";
 import { useResource } from "@/hooks/use-resource";
 import { useResourceDetailController } from "@/hooks/use-resource-detail-controller";
 import { renderCell, getNestedValue } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
+import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText, Clock } from "@/lib/icons";
 import { useLocalizedResource } from "@/lib/i18n";
 import { detailHref } from "@/lib/detail-href";
 import { buttonClasses } from "@/components/ui/button";
@@ -195,6 +197,160 @@ function itemColumns(itemFields: FieldDefinition[]): ColumnDefinition[] {
   return itemFields.map((f) => ({ key: f.key, label: f.label }));
 }
 
+interface HistoryEntry {
+  id: string;
+  user_id: string;
+  action: string;
+  severity: "info" | "warn" | "critical";
+  summary: string;
+  created_at: string;
+}
+
+interface ActorRow {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+// The History tab: everything that happened to this record, newest first.
+//
+// It reads the semantic activity feed rather than the raw request log,
+// because the feed already carries the four things somebody wants here: who,
+// when, what they did, and which fields changed. Every generated handler
+// emits a resource event and the audit subscriber turns it into a row, so
+// this is a view onto something the project was already recording.
+//
+// What was missing was a way to ask for one record. The feed could be
+// narrowed to every supplier and not to this supplier, so an editor looking
+// at a row had to go to the system log and filter it by hand (grit#261).
+//
+// What it does not show is the old and new value of each field. The feed
+// records which fields changed, never what they held, and that is a
+// deliberate line: the activity log is readable by anybody holding
+// audit.view, and copying values into it would make that permission a way to
+// read every value anybody ever typed, including on a resource its holder is
+// not allowed to open.
+function RecordHistory({ resource, id }: { resource: ResourceDefinition; id: string }) {
+  // The feed stores the entity name lowercased, which is what LogCreate and
+  // its siblings write.
+  const type = (resource.name ?? "").toLowerCase();
+
+  const { data: entries, isLoading, isError } = useQuery<HistoryEntry[]>({
+    queryKey: ["record-history", type, id],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        resource_type: type,
+        resource_id: id,
+        page_size: "100",
+      });
+      const { data } = await apiClient.get<{ data: HistoryEntry[] }>(
+        "/api/user-activity?" + params.toString()
+      );
+      return data.data ?? [];
+    },
+  });
+
+  // One cached request for the names, not one per row. Staff who may not list
+  // users get a 403 here, and the entry falls back to the actor id, which
+  // still tells two actors apart.
+  const { data: actors } = useQuery<Record<string, string>>({
+    queryKey: ["record-history", "actors"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      try {
+        const { data } = await apiClient.get<{ data: ActorRow[] }>("/api/users?page_size=200");
+        const map: Record<string, string> = {};
+        for (const u of data.data ?? []) {
+          const name = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
+          map[u.id] = name !== "" ? name : u.email;
+        }
+        return map;
+      } catch {
+        return {};
+      }
+    },
+  });
+
+  const actorName = (userID: string) => {
+    if (userID === "") return "System";
+    return actors?.[userID] ?? userID;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-border bg-bg-elevated p-6 text-sm text-text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading history…
+      </div>
+    );
+  }
+
+  // Said rather than shown as an empty list: "no history" and "we could not
+  // fetch the history" look identical otherwise, and one of them is a bug.
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-border bg-bg-elevated p-6 text-sm text-text-muted">
+        The history could not be loaded. You may not have permission to read the
+        activity log.
+      </div>
+    );
+  }
+
+  if (!entries || entries.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-bg-elevated p-6 text-sm text-text-muted">
+        Nothing has been recorded against this record yet. Changes made from
+        here, from the API or from a job will appear as they happen.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-bg-elevated p-6">
+      <h2 className="mb-5 text-sm font-semibold text-foreground">History</h2>
+      <ol className="space-y-0">
+        {entries.map((entry, i) => (
+          <li key={entry.id} className="relative flex gap-4 pb-6 last:pb-0">
+            {/* The rail, drawn per row and stopped on the last one so the
+                line ends at the final entry rather than trailing past it. */}
+            {i < entries.length - 1 && (
+              <span
+                aria-hidden="true"
+                className="absolute left-[11px] top-6 bottom-0 w-px bg-border"
+              />
+            )}
+            <span
+              aria-hidden="true"
+              className={
+                "mt-1 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border " +
+                (entry.severity === "critical"
+                  ? "border-danger/40 bg-danger/10 text-danger"
+                  : entry.severity === "warn"
+                    ? "border-warning/40 bg-warning/10 text-warning"
+                    : "border-border bg-bg-tertiary text-text-muted")
+              }
+            >
+              <Clock className="h-3 w-3" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-foreground">{entry.summary}</p>
+              <p className="mt-0.5 text-xs text-text-muted">
+                {actorName(entry.user_id)}
+                {" · "}
+                <time dateTime={entry.created_at}>
+                  {new Date(entry.created_at).toLocaleString()}
+                </time>
+                {" · "}
+                <span className="font-mono">{entry.action}</span>
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 // v3.145.0: a thin router, the same split ResourcePage has. A DetailPage slot
 // replaces everything below, so it is checked first and unconditionally:
 // somebody who has supplied a whole page owns its header and its dialogs too.
@@ -210,6 +366,7 @@ export function ResourceDetailPage({ resource: definition, id }: ResourceDetailP
 // That is the proof the hook is complete enough to build your own on.
 function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
   const c = useResourceDetailController(resource, id);
+  const [tab, setTab] = useState<"details" | "history">("details");
 
   const CustomHeader = resource.components?.DetailHeader;
   const CustomFields = resource.components?.DetailFields;
@@ -311,6 +468,38 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
 
       )}
 
+      {/* Details or History. A strip rather than a section at the bottom of
+          the page: a record with related tables already scrolls, and a
+          history nobody scrolls to is a history nobody reads.
+
+          no-print because the printed record and the PDF are the record, not
+          the audit trail of it. */}
+      <div className="no-print flex items-center gap-1 border-b border-border">
+        {([
+          ["details", resource.label?.singular ?? resource.name],
+          ["history", "History"],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            aria-current={tab === key ? "page" : undefined}
+            className={
+              "-mb-px border-b-2 px-3 py-2 text-sm transition-colors " +
+              (tab === key
+                ? "border-accent text-foreground"
+                : "border-transparent text-text-muted hover:text-foreground")
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "history" && <RecordHistory resource={resource} id={id} />}
+
+      {tab === "details" && (
+      <>
       {/* Details */}
       {CustomFields ? (
         <CustomFields resource={resource} id={id} controller={c} />
@@ -364,6 +553,9 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
             />
           ))}
         </div>
+      )}
+
+      </>
       )}
 
       <ConfirmModal

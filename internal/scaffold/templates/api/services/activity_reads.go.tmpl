@@ -66,7 +66,11 @@ var userActivityListConfig = paginate.Config{
 		"severity":   true,
 		"action":     true,
 	},
-	Filterable:   map[string]bool{"user_id": true, "action": true, "severity": true, "resource_type": true},
+	// resource_id is here so the feed can be narrowed to one record, which
+	// is what a History tab on a record page asks for: everything that
+	// happened to THIS row. resource_type alone answers "every supplier",
+	// which is the system log with extra steps (grit#261).
+	Filterable:   map[string]bool{"user_id": true, "action": true, "severity": true, "resource_type": true, "resource_id": true},
 	DefaultSort:  "created_at",
 	DefaultOrder: "desc",
 }
