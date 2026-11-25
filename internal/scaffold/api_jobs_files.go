@@ -52,6 +52,7 @@ const (
 	TypeBackupWeekly          = "backup:weekly"           // v3.31.77 (legacy)
 	TypeBackupScheduled       = "backup:scheduled"        // settings-driven auto backup
 	TypeAuditPrune            = "audit:prune"             // activity-log retention
+	TypeRetentionSweep        = "retention:sweep"         // per-resource --retain windows
 )
 
 // Default per-task settings used when a caller doesn't override via
@@ -364,6 +365,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeSecurityAutoBan, handleSecurityAutoBan(deps))
 	mux.HandleFunc(TypeBackupWeekly, handleBackupWeekly(deps))
 	mux.HandleFunc(TypeBackupScheduled, handleBackupScheduled(deps))
+	mux.HandleFunc(TypeRetentionSweep, handleRetentionSweep(deps))
 	// grit:jobs
 
 	go func() {
@@ -542,6 +544,38 @@ func handleTrashPurgeExpired(deps WorkerDeps) func(ctx context.Context, task *as
 		}
 		for table, n := range removed {
 			log.Printf("Trash sweep: removed %d %s row(s) for good", n, table)
+		}
+		return nil
+	}
+}
+
+// handleRetentionSweep removes the rows of every resource generated with
+// --retain once they are older than its window (grit#260). The removing is
+// services.RetentionService, which goes through the Trash's purge so the files
+// are released to the orphan sweep rather than deleted twice over.
+func handleRetentionSweep(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
+	return func(ctx context.Context, task *asynq.Task) error {
+		if deps.DB == nil {
+			return fmt.Errorf("database not configured")
+		}
+		if sync.Shared == nil {
+			// The same as the Trash sweep: nothing has built a registry, so no
+			// table can be read. Tomorrow's run gets another chance.
+			log.Println("Retention sweep: no resource registry yet, nothing to do")
+			return nil
+		}
+		svc := &services.RetentionService{DB: deps.DB, Registry: sync.Shared}
+		removed, err := svc.Sweep(ctx)
+		// Logged before the error is returned: one failing resource does not
+		// stop the others, and what did go is worth a line either way.
+		for table, n := range removed {
+			log.Printf("Retention sweep: removed %d %s row(s) past their window", n, table)
+		}
+		if err != nil {
+			return fmt.Errorf("retention sweep: %w", err)
+		}
+		if len(removed) == 0 {
+			log.Println("Retention sweep: nothing past its window")
 		}
 		return nil
 	}

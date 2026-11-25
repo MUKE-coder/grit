@@ -301,6 +301,16 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "trash.go"):              apiTrashHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "feature_flag_test.go"):  apiFeatureFlagServiceTestGo(),
 
+		// Per-resource retention (grit#260). Beside trash.go because the sweep
+		// is TrashService.purge, so the two have to arrive together: a sweep
+		// newer than the purge it calls is a project that does not compile.
+		// The registry is here too, not only written by the generator, because
+		// the sweep imports it whether or not any resource has a window yet.
+		filepath.Join(apiRoot, "internal", "services", "retention.go"):       apiRetentionServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "retention_test.go"):  apiRetentionServiceTestGo(),
+		filepath.Join(apiRoot, "internal", "retention", "retention.go"):      apiRetentionGo(),
+		filepath.Join(apiRoot, "internal", "retention", "retention_test.go"): apiRetentionTestGo(),
+
 		// The one insert of a user row, which registration and the admin's
 		// Create User both call. Here because the handlers that call it are
 		// repaired in place on upgrade, and a repair that calls a function the
