@@ -99,20 +99,13 @@ func (d *ResourceDefinition) checkRetention() error {
 			"rows can never be deleted, so the retention sweep could not remove them. " +
 			"Generate the resource with one or the other")
 	}
-	// Both of these are rows that other rows point at by foreign key, which
-	// GORM creates when it migrates. A tree's parent is always older than its
-	// children, so it crosses the window first and the database refuses to
-	// delete it, every night. Line items point at their record, and the models
-	// register in file-name order, so invoice.go is swept before
-	// invoice_item.go and meets the same refusal. Refused until the sweep
-	// orders its tables by their references.
-	if d.Tree {
-		return fmt.Errorf("--retain and --tree cannot be combined yet: a parent is always " +
-			"older than its children, so the database would refuse to delete it while they remain")
-	}
-	if d.Items != nil {
-		return fmt.Errorf("--retain and --items cannot be combined yet: the record would be " +
-			"swept before its lines, and the database refuses to delete a record its lines still point at")
+	// Each works alone: a record's lines go with it, and a tree goes leaf
+	// first. Together, a tree node kept for its young children would still
+	// lose its lines, because the lines go by the node's age. Which should win
+	// is a decision of its own, so the pair is refused until it is made.
+	if d.Tree && d.Items != nil {
+		return fmt.Errorf("--retain cannot be combined with both --tree and --items yet: " +
+			"a parent kept for its younger children would still lose its lines")
 	}
 	return nil
 }
@@ -124,12 +117,36 @@ func (g *Generator) retentionModelInit(names Names) string {
 	if err != nil || window == 0 {
 		return ""
 	}
+	// What the options mean, said where somebody reading the model will see
+	// them: lines that are younger than the window still go, and a parent past
+	// it may stay.
+	var shape string
+	if g.Definition.Items != nil {
+		shape += fmt.Sprintf("\n// Its %s rows go with it, whatever their own age.", BuildNames(g.Definition.Items).Pascal)
+	}
+	if g.Definition.Tree {
+		shape += "\n// A row stays while any row below it is still inside the window."
+	}
 	return fmt.Sprintf(`
 // init keeps %[1]s rows for %[2]s after they are created (--retain %[2]s): the
 // nightly retention sweep removes older ones, and releases their files to the
-// orphan upload sweep. See internal/retention.
-func init() { retention.Register(&%[1]s{}, %[3]s) }
-`, names.Pascal, g.Definition.RetentionSpec(), retentionGoExpr(window))
+// orphan upload sweep. See internal/retention.%[5]s
+func init() { retention.Register(&%[1]s{}, %[3]s%[4]s) }
+`, names.Pascal, g.Definition.RetentionSpec(), retentionGoExpr(window), g.retentionOptions(names), shape)
+}
+
+// retentionOptions is what the resource's shape adds to its policy. Lines from
+// --items go with their record, by the foreign key the parent's has-many is
+// declared on; a --tree goes leaf first. See internal/retention.
+func (g *Generator) retentionOptions(names Names) string {
+	var opts string
+	if g.Definition.Items != nil {
+		opts += fmt.Sprintf(", retention.WithLines(&%s{}, %q)", BuildNames(g.Definition.Items).Pascal, names.Snake+"_id")
+	}
+	if g.Definition.Tree {
+		opts += ", retention.AsTree()"
+	}
+	return opts
 }
 
 // retentionGoExpr writes a window as Go a person can read back as the policy:

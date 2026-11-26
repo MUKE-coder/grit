@@ -125,6 +125,143 @@ func TestATableNotYetMigratedIsSkipped(t *testing.T) {
 	}
 }
 
+// A record and its lines, from --items: the lines point at the record by a
+// foreign key the database enforces.
+type retentionRecord struct {
+	ID        string `gorm:"primarykey;size:36"`
+	CreatedAt time.Time
+	Lines     []retentionLine `gorm:"foreignKey:RetentionRecordID"`
+}
+
+func (retentionRecord) TableName() string { return "retention_records" }
+
+type retentionLine struct {
+	ID                string `gorm:"primarykey;size:36"`
+	RetentionRecordID string `gorm:"size:36;index"`
+	Image             *files.FileRef `gorm:"type:json"`
+	CreatedAt         time.Time
+}
+
+func (retentionLine) TableName() string { return "retention_lines" }
+
+// A --tree node, pointing at its parent.
+type retentionNode struct {
+	ID        string  `gorm:"primarykey;size:36"`
+	ParentID  *string `gorm:"size:36;index"`
+	Parent    *retentionNode `gorm:"foreignKey:ParentID"`
+	CreatedAt time.Time
+}
+
+func (retentionNode) TableName() string { return "retention_nodes" }
+
+// enforcingForeignKeys migrates models with their foreign keys enforced, which
+// SQLite does not do unless asked. Without it, a sweep that deleted a record
+// before its lines would pass here and fail on Postgres every night.
+func enforcingForeignKeys(t *testing.T, db *gorm.DB, svc *RetentionService, models map[string]interface{}) {
+	t.Helper()
+	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
+		t.Fatal(err)
+	}
+	var on int
+	if err := db.Raw("PRAGMA foreign_keys").Scan(&on).Error; err != nil || on != 1 {
+		t.Fatalf("foreign keys are not enforced (%v), so this test would prove nothing", err)
+	}
+	for table, model := range models {
+		if err := db.AutoMigrate(model); err != nil {
+			t.Fatal(err)
+		}
+		svc.Registry.Register(table, model)
+	}
+}
+
+// The maintainer's answer on grit#260: a record's lines go with it, in the
+// same sweep, whatever their own age. A line is saved a moment after its
+// record, so by its own created_at it would outlive the record by a night.
+func TestARecordsLinesGoWithIt(t *testing.T) {
+	db, svc := retentionFixture(t, retention.Policy{
+		Model: &retentionRecord{}, Window: 90 * retentionDay,
+		Lines: []retention.Lines{{Model: &retentionLine{}, ForeignKey: "retention_record_id"}},
+	})
+	enforcingForeignKeys(t, db, svc, map[string]interface{}{
+		"retention_records": &retentionRecord{}, "retention_lines": &retentionLine{},
+	})
+	if err := db.Exec("INSERT INTO uploads (id, path, claimed_at) VALUES (?, ?, ?)",
+		"uploads/line.pdf", "uploads/line.pdf", time.Now()).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	old, young := time.Now().Add(-100*retentionDay), time.Now().Add(-10*retentionDay)
+	for _, r := range []retentionRecord{
+		{ID: "old", CreatedAt: old, Lines: []retentionLine{
+			// Younger than its record and younger than the window: it still goes.
+			{ID: "old-1", CreatedAt: time.Now(), Image: &files.FileRef{Key: "uploads/line.pdf"}},
+			{ID: "old-2", CreatedAt: old},
+		}},
+		{ID: "young", CreatedAt: young, Lines: []retentionLine{{ID: "young-1", CreatedAt: young}}},
+	} {
+		if err := db.Create(&r).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	out, err := svc.Sweep(context.Background())
+	if err != nil {
+		t.Fatalf("Sweep: %v", err)
+	}
+	if out["retention_records"] != 1 || out["retention_lines"] != 2 {
+		t.Errorf("removed %v, want the old record and both its lines", out)
+	}
+	var lines []string
+	db.Model(&retentionLine{}).Pluck("id", &lines)
+	if len(lines) != 1 || lines[0] != "young-1" {
+		t.Errorf("lines left: %v, want only the young record's", lines)
+	}
+	if isClaimed(t, db, "uploads/line.pdf") {
+		t.Error("a removed line's upload is still claimed, so its file is never deleted")
+	}
+}
+
+// The other answer: a tree keeps a parent until its last child expires. Taking
+// a young child with it would delete that child before its window.
+func TestATreeKeepsAParentUntilItsLastChildExpires(t *testing.T) {
+	db, svc := retentionFixture(t, retention.Policy{Model: &retentionNode{}, Window: 90 * retentionDay, Tree: true})
+	enforcingForeignKeys(t, db, svc, map[string]interface{}{"retention_nodes": &retentionNode{}})
+
+	old, young := time.Now().Add(-100*retentionDay), time.Now().Add(-10*retentionDay)
+	parent := func(id string) *string { return &id }
+	for _, n := range []retentionNode{
+		// A whole old branch, three deep: it goes, leaves first.
+		{ID: "a", CreatedAt: old},
+		{ID: "a1", ParentID: parent("a"), CreatedAt: old},
+		{ID: "a11", ParentID: parent("a1"), CreatedAt: old},
+		// An old parent with a young child: both stay.
+		{ID: "b", CreatedAt: old},
+		{ID: "b1", ParentID: parent("b"), CreatedAt: young},
+		// An old parent with one old and one young child: the old child goes,
+		// and the parent waits for the young one.
+		{ID: "c", CreatedAt: old},
+		{ID: "c1", ParentID: parent("c"), CreatedAt: old},
+		{ID: "c2", ParentID: parent("c"), CreatedAt: young},
+	} {
+		if err := db.Create(&n).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	out, err := svc.Sweep(context.Background())
+	if err != nil {
+		t.Fatalf("Sweep: %v", err)
+	}
+	if out["retention_nodes"] != 4 {
+		t.Errorf("removed %v, want a, a1, a11 and c1", out)
+	}
+	var left []string
+	db.Model(&retentionNode{}).Order("id").Pluck("id", &left)
+	if strings.Join(left, ",") != "b,b1,c,c2" {
+		t.Errorf("nodes left: %v, want b,b1,c,c2", left)
+	}
+}
+
 func retentionFixture(t *testing.T, policies ...retention.Policy) (*gorm.DB, *RetentionService) {
 	t.Helper()
 

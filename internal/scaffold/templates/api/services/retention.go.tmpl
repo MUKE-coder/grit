@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"gorm.io/gorm"
@@ -66,7 +67,33 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 			continue
 		}
 		cutoff := time.Now().Add(-p.Window)
-		n, err := trash.purge(ctx, table, "created_at < ?", cutoff)
+
+		// Lines first: they point at the record, and the database refuses the
+		// record while they remain. Picked by the record's age rather than
+		// their own, because they go with it.
+		linesFailed := false
+		for _, l := range p.Lines {
+			lineTable, err := s.lineTable(ctx, l, table)
+			if err == nil && lineTable != "" {
+				var n int64
+				n, err = trash.purge(ctx, lineTable,
+					l.ForeignKey+" IN (SELECT id FROM "+table+" WHERE created_at < ?)", cutoff)
+				if n > 0 {
+					out[lineTable] += n
+				}
+			}
+			if err != nil {
+				errs = append(errs, fmt.Errorf("sweeping the lines of %s: %w", table, err))
+				linesFailed = true
+			}
+		}
+		// A record whose lines could not go would be refused anyway, and
+		// trying anyway reports the same failure twice.
+		if linesFailed {
+			continue
+		}
+
+		n, err := s.purge(ctx, trash, table, p.Tree, cutoff)
 		if n > 0 {
 			out[table] += n
 		}
@@ -75,6 +102,61 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 		}
 	}
 	return out, errors.Join(errs...)
+}
+
+// maxTreeDepth bounds the passes a tree takes. Each pass removes the expired
+// leaves, which can make their parents leaves, so a tree needs one pass per
+// level; this is far deeper than any category tree, and only stops a loop that
+// something unforeseen keeps feeding.
+const maxTreeDepth = 1000
+
+// purge removes the rows of one table past cutoff.
+//
+// A tree goes leaf first: only a node nothing points at is removed, so a
+// parent stays while any child is younger than the window, and the paths of
+// the nodes that stay never name a node that went. Removing the leaves can
+// make their parents leaves, so it repeats until a pass removes nothing.
+func (s *RetentionService) purge(ctx context.Context, trash *TrashService, table string, tree bool, cutoff time.Time) (int64, error) {
+	if !tree {
+		return trash.purge(ctx, table, "created_at < ?", cutoff)
+	}
+	leaf := "created_at < ? AND NOT EXISTS (SELECT 1 FROM " + table +
+		" AS retention_child WHERE retention_child.parent_id = " + table + ".id)"
+	var removed int64
+	for pass := 0; pass < maxTreeDepth; pass++ {
+		n, err := trash.purge(ctx, table, leaf, cutoff)
+		removed += n
+		if err != nil || n == 0 {
+			return removed, err
+		}
+	}
+	return removed, nil
+}
+
+// retentionIdentifier is what a table or column name has to look like before
+// it goes into the SQL above. Both come from the models, not from a request,
+// and this is what keeps it that way.
+var retentionIdentifier = regexp.MustCompile("^[a-z_][a-z0-9_]*$")
+
+// lineTable resolves a record's lines to the table purge works on, or "" when
+// it has not been migrated, in which case there are no lines to remove.
+func (s *RetentionService) lineTable(ctx context.Context, l retention.Lines, record string) (string, error) {
+	stmt := &gorm.Statement{DB: s.DB}
+	if err := stmt.Parse(l.Model); err != nil {
+		return "", fmt.Errorf("resolving %T: %w", l.Model, err)
+	}
+	table := stmt.Schema.Table
+	if !retentionIdentifier.MatchString(l.ForeignKey) || stmt.Schema.LookUpField(l.ForeignKey) == nil {
+		return "", fmt.Errorf("%s has no column %q pointing at %s", table, l.ForeignKey, record)
+	}
+	if _, err := s.Registry.New(table); err != nil {
+		return "", fmt.Errorf("%s holds the lines of %s but is not in the sync registry, "+
+			"so the sweep cannot read it: register it in routes.go", table, record)
+	}
+	if !s.DB.WithContext(ctx).Migrator().HasTable(table) {
+		return "", nil
+	}
+	return table, nil
 }
 
 // table resolves a registered model to the table purge works on, or "" when
@@ -86,6 +168,9 @@ func (s *RetentionService) table(ctx context.Context, model interface{}) (string
 		return "", fmt.Errorf("resolving %T: %w", model, err)
 	}
 	table := stmt.Schema.Table
+	if !retentionIdentifier.MatchString(table) {
+		return "", fmt.Errorf("%q is not a table name the sweep will write into SQL", table)
+	}
 
 	// The window is measured from created_at. A model without one would fail
 	// as SQL every night with an error that does not say why.

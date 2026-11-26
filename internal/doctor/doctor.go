@@ -239,6 +239,8 @@ var (
 	ownerRe    = regexp.MustCompile(`func \(\w+ \*(\w+)\) GetOwnerID\(\) string \{\s*\n?\s*return \w+\.(\w+)`)
 	registerRe = regexp.MustCompile(`appendonly\.Register\(&(\w+)\{\}\)`)
 	retainRe   = regexp.MustCompile(`retention\.Register\(&(\w+)\{\}`)
+	// A record's lines are removed with it, so they are covered by its window.
+	linesRe = regexp.MustCompile(`retention\.WithLines\(&(\w+)\{\}`)
 	// outbox.Enqueue(tx, "topic", ...) and the relays that drain it.
 	enqueueRe = regexp.MustCompile(`outbox\.Enqueue\([^,]+,\s*"([^"]+)"`)
 	relayRe   = regexp.MustCompile(`(?s)outbox\.Relay\{.{0,400}?\}`)
@@ -265,10 +267,20 @@ func loadProject(root string) (*project, error) {
 	p.goMod = readFile(filepath.Join(p.apiRoot, "go.mod"))
 	p.hasTenant = dirExists(filepath.Join(internal, "tenant"))
 
-	for name, src := range goFiles(filepath.Join(internal, "models")) {
+	modelFiles := goFiles(filepath.Join(internal, "models"))
+	for name, src := range modelFiles {
 		for _, m := range parseModels(src) {
 			p.models[m.Name] = m
 			p.snake[m.Name] = strings.TrimSuffix(name, ".go")
+		}
+	}
+	// Lines are named in their record's file, not their own, so this waits
+	// until every model has been read.
+	for _, src := range modelFiles {
+		for _, l := range linesRe.FindAllStringSubmatch(src, -1) {
+			if m := p.models[l[1]]; m != nil {
+				m.Retained = true
+			}
 		}
 	}
 	// Every handler and service, keyed by its file name.

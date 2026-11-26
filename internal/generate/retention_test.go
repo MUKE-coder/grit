@@ -103,17 +103,39 @@ func TestRetentionGoExprReadsAsThePolicy(t *testing.T) {
 	}
 }
 
-// Rows other rows point at by foreign key would be refused by the database
-// every night, so the combinations are refused up front instead.
-func TestRetainRefusesRowsOtherRowsPointAt(t *testing.T) {
-	tree := &Generator{Definition: &ResourceDefinition{Name: "Category", Retain: "90d", Tree: true}, Module: "app"}
-	if err := tree.checkFlagCombinations(); err == nil || !strings.Contains(err.Error(), "--tree") {
-		t.Errorf("--retain with --tree was not refused by name: %v", err)
+// A record's lines go with it, and a tree goes leaf first, so each is accepted
+// and says so in the model. Together they are refused: a node kept for its
+// young children would still lose its lines.
+func TestRetainShapesThePolicyForRowsOtherRowsPointAt(t *testing.T) {
+	items := &Generator{Definition: &ResourceDefinition{Name: "PurchaseOrder", Retain: "90d",
+		Items: &ResourceDefinition{Name: "PurchaseOrderLine"}}, Module: "app"}
+	if err := items.checkFlagCombinations(); err != nil {
+		t.Errorf("--retain with --items was refused: %v", err)
 	}
-	items := &Generator{Definition: &ResourceDefinition{Name: "Invoice", Retain: "90d",
-		Items: &ResourceDefinition{Name: "InvoiceItem"}}, Module: "app"}
-	if err := items.checkFlagCombinations(); err == nil || !strings.Contains(err.Error(), "--items") {
-		t.Errorf("--retain with --items was not refused by name: %v", err)
+	// Two words, so the foreign key is the snake name GORM gives the
+	// has-many's PurchaseOrderID, not a lowercased "purchaseorder_id".
+	want := `retention.Register(&PurchaseOrder{}, 90*24*time.Hour, retention.WithLines(&PurchaseOrderLine{}, "purchase_order_id")) }`
+	got := items.retentionModelInit(MakeNames("PurchaseOrder"))
+	if !strings.Contains(got, want) {
+		t.Errorf("the lines are not registered with their record:\n%s", got)
+	}
+	if !strings.Contains(got, "// Its PurchaseOrderLine rows go with it, whatever their own age.") {
+		t.Errorf("the model does not say its lines go with it:\n%s", got)
+	}
+
+	tree := &Generator{Definition: &ResourceDefinition{Name: "Category", Retain: "90d", Tree: true}, Module: "app"}
+	if err := tree.checkFlagCombinations(); err != nil {
+		t.Errorf("--retain with --tree was refused: %v", err)
+	}
+	if got := tree.retentionModelInit(MakeNames("Category")); !strings.Contains(got, "retention.AsTree()) }") ||
+		!strings.Contains(got, "// A row stays while any row below it is still inside the window.") {
+		t.Errorf("the tree is not registered as one, or the model does not say what that means:\n%s", got)
+	}
+
+	both := &Generator{Definition: &ResourceDefinition{Name: "Category", Retain: "90d", Tree: true,
+		Items: &ResourceDefinition{Name: "CategoryNote"}}, Module: "app"}
+	if err := both.checkFlagCombinations(); err == nil || !strings.Contains(err.Error(), "--tree and --items") {
+		t.Errorf("--retain with --tree and --items together was not refused by name: %v", err)
 	}
 }
 

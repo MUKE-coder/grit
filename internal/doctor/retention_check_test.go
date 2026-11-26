@@ -91,3 +91,31 @@ func TestTheRetentionLineTheGeneratorWritesIsRead(t *testing.T) {
 		}
 	}
 }
+
+// An invoice's lines go with it (--items), so they are covered by its window
+// even though their own model file registers nothing. The record names them,
+// in a file the doctor reads before or after theirs.
+func TestLinesAreCoveredByTheirRecordsWindow(t *testing.T) {
+	line := "package models\n\n" +
+		"type InvoiceLine struct {\n" +
+		"\tID        string `gorm:\"primaryKey\" json:\"id\"`\n" +
+		"\tInvoiceID string `gorm:\"size:36;index\" json:\"invoice_id\"`\n" +
+		"\tUserID    string `gorm:\"size:36;index\" json:\"user_id\"`\n" +
+		"}\n\n" +
+		"func (m *InvoiceLine) GetOwnerID() string { return m.UserID }\n"
+	record := invoiceWithoutRetention(t) +
+		"\nfunc init() { retention.Register(&Invoice{}, 90*24*time.Hour, retention.WithLines(&InvoiceLine{}, \"invoice_id\")) }\n"
+	handler := "package handlers\n\ntype BulkInvoiceLineRequest struct{}\n"
+
+	report := run(t, map[string]string{
+		invoiceModel: record,
+		"apps/api/internal/models/invoice_line.go":   line,
+		"apps/api/internal/handlers/invoice_line.go": handler,
+	})
+	for _, f := range fired(report, "owned-resource-no-retention") {
+		t.Errorf("%s was asked about retention: %s", f.Resource, f.Message)
+	}
+	if len(report.Resources) != 2 {
+		t.Fatalf("the lines were not read as a resource, so this test proves nothing: %v", report.Resources)
+	}
+}

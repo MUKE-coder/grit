@@ -33,3 +33,26 @@ func TestPoliciesIsACopy(t *testing.T) {
 		t.Error("changing the returned slice changed the registry")
 	}
 }
+
+type invoice struct{ ID string }
+type invoiceItem struct{ ID string }
+
+// The options land on the policy, and a plain Register has neither.
+func TestOptionsShapeThePolicy(t *testing.T) {
+	Register(&invoice{}, 24*time.Hour, WithLines(&invoiceItem{}, "invoice_id"))
+	Register(&message{}, 24*time.Hour, AsTree())
+	var lines, tree bool
+	for _, p := range Policies() {
+		switch p.Model.(type) {
+		case *invoice:
+			lines = len(p.Lines) == 1 && p.Lines[0].ForeignKey == "invoice_id" && !p.Tree
+		case *message:
+			if p.Tree {
+				tree = true
+			}
+		}
+	}
+	if !lines || !tree {
+		t.Errorf("the options were not applied: lines=%v tree=%v", lines, tree)
+	}
+}
