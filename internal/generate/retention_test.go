@@ -104,8 +104,7 @@ func TestRetentionGoExprReadsAsThePolicy(t *testing.T) {
 }
 
 // A record's lines go with it, and a tree goes leaf first, so each is accepted
-// and says so in the model. Together they are refused: a node kept for its
-// young children would still lose its lines.
+// and says so in the model, alone or together.
 func TestRetainShapesThePolicyForRowsOtherRowsPointAt(t *testing.T) {
 	items := &Generator{Definition: &ResourceDefinition{Name: "PurchaseOrder", Retain: "90d",
 		Items: &ResourceDefinition{Name: "PurchaseOrderLine"}}, Module: "app"}
@@ -132,10 +131,16 @@ func TestRetainShapesThePolicyForRowsOtherRowsPointAt(t *testing.T) {
 		t.Errorf("the tree is not registered as one, or the model does not say what that means:\n%s", got)
 	}
 
-	both := &Generator{Definition: &ResourceDefinition{Name: "Category", Retain: "90d", Tree: true,
-		Items: &ResourceDefinition{Name: "CategoryNote"}}, Module: "app"}
-	if err := both.checkFlagCombinations(); err == nil || !strings.Contains(err.Error(), "--tree and --items") {
-		t.Errorf("--retain with --tree and --items together was not refused by name: %v", err)
+	// Both: the lines of a node go when the node goes, as on #310, so a node
+	// kept for its younger children keeps its lines too.
+	both := &Generator{Definition: &ResourceDefinition{Name: "Project", Retain: "90d", Tree: true,
+		Items: &ResourceDefinition{Name: "ProjectTask"}}, Module: "app"}
+	if err := both.checkFlagCombinations(); err != nil {
+		t.Errorf("--retain with --tree and --items together was refused: %v", err)
+	}
+	if got := both.retentionModelInit(MakeNames("Project")); !strings.Contains(got,
+		`retention.WithLines(&ProjectTask{}, "project_id"), retention.AsTree()) }`) {
+		t.Errorf("a tree with lines is not registered as both:\n%s", got)
 	}
 }
 

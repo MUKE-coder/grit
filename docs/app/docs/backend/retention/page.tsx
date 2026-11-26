@@ -147,14 +147,17 @@ Orphan upload cleanup complete, removed 1 uploads`}
                   <strong>Lines go with their record.</strong> On a resource generated with{' '}
                   <code>--items</code>, a record&apos;s lines are removed with it, first, whatever
                   their own age. A line is saved a moment after its record, so measured by itself it
-                  would outlive the record by a night.
+                  would outlive the record by a night. A record and its lines go in one
+                  transaction, so a line added while the sweep runs keeps both until the next
+                  night rather than leaving the record without its lines.
                 </li>
                 <li>
                   <strong>A tree keeps a parent for its children.</strong> On a resource generated
                   with <code>--tree</code>, a row is removed only once nothing below it is left. A
                   category past its window stays while any subcategory is still inside its own, so
                   nothing is ever removed before its window. The window starts when the whole
-                  subtree can go.
+                  subtree can go. With <code>--items</code> as well, a row&apos;s lines go when the
+                  row goes, so a row kept for its children keeps its lines too.
                 </li>
                 <li>
                   <strong>One resource at a time.</strong> If one resource cannot be swept, the
@@ -225,9 +228,7 @@ Orphan upload cleanup complete, removed 1 uploads`}
 
               <Callout type="note" title="Limits">
                 <code>--retain</code> cannot be combined with <code>--append-only</code>, whose rows
-                can never be deleted. It cannot be combined with <code>--tree</code> and{' '}
-                <code>--items</code> together yet: a parent kept for its younger children would
-                still lose its lines. A retained resource that another resource belongs to is
+                can never be deleted. A retained resource that another resource belongs to is
                 refused by the database for rows still referenced: the job reports it, and the rest
                 of the sweep carries on.
               </Callout>

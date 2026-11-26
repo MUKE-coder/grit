@@ -68,31 +68,25 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 		}
 		cutoff := time.Now().Add(-p.Window)
 
-		// Lines first: they point at the record, and the database refuses the
-		// record while they remain. Picked by the record's age rather than
-		// their own, because they go with it.
+		// This resource's tables are resolved before any of its rows are
+		// deleted. A record whose lines cannot be read would be refused by the
+		// database anyway, and trying reports the same failure twice.
+		var lines []retentionLines
 		linesFailed := false
 		for _, l := range p.Lines {
 			lineTable, err := s.lineTable(ctx, l, table)
-			if err == nil && lineTable != "" {
-				var n int64
-				n, err = trash.purge(ctx, lineTable,
-					l.ForeignKey+" IN (SELECT id FROM "+table+" WHERE created_at < ?)", cutoff)
-				if n > 0 {
-					out[lineTable] += n
-				}
-			}
 			if err != nil {
 				errs = append(errs, fmt.Errorf("sweeping the lines of %s: %w", table, err))
 				linesFailed = true
+				continue
+			}
+			if lineTable != "" {
+				lines = append(lines, retentionLines{table: lineTable, foreignKey: l.ForeignKey})
 			}
 		}
-		// A record whose lines could not go would be refused anyway, and
-		// trying anyway reports the same failure twice.
 		if linesFailed {
 			continue
 		}
-
 		// The leaf query names parent_id, the column --tree writes. A model
 		// without one would fail as SQL every night with an error that does
 		// not say why, the same as a missing created_at.
@@ -100,15 +94,16 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 			errs = append(errs, fmt.Errorf("%s is retained as a tree but has no parent_id column", table))
 			continue
 		}
-		n, err := s.purge(ctx, trash, table, p.Tree, cutoff)
-		if n > 0 {
-			out[table] += n
-		}
-		if err != nil {
+		if err := s.sweepTable(ctx, trash, table, p.Tree, lines, cutoff, out); err != nil {
 			errs = append(errs, fmt.Errorf("sweeping %s: %w", table, err))
 		}
 	}
 	return out, errors.Join(errs...)
+}
+
+// retentionLines is a record's lines, resolved to the table purge works on.
+type retentionLines struct {
+	table, foreignKey string
 }
 
 // maxTreeDepth bounds the passes a tree takes. Each pass removes the expired
@@ -117,29 +112,114 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 // something unforeseen keeps feeding.
 const maxTreeDepth = 1000
 
-// purge removes the rows of one table past cutoff.
+// retentionPage is how many rows with lines go in one transaction: the same
+// page purge reads, so a transaction holds its locks for one page at most.
+const retentionPage = 500
+
+// sweepTable removes the rows of one table that are due, with their lines,
+// and counts what went into out.
 //
-// A tree goes leaf first: only a node nothing points at is removed, so a
-// parent stays while any child is younger than the window, and the paths of
-// the nodes that stay never name a node that went. Removing the leaves can
-// make their parents leaves, so it repeats until a pass removes nothing.
-func (s *RetentionService) purge(ctx context.Context, trash *TrashService, table string, tree bool, cutoff time.Time) (int64, error) {
-	if !tree {
-		return trash.purge(ctx, table, "created_at < ?", cutoff)
+// Due is past the window, and on a tree also a leaf: only a node nothing
+// points at goes, so a parent stays while any child is younger than the
+// window, and the paths of the nodes that stay never name a node that went.
+// Removing the leaves can make their parents leaves, so a tree repeats until
+// nothing is due.
+func (s *RetentionService) sweepTable(ctx context.Context, trash *TrashService, table string, tree bool,
+	lines []retentionLines, cutoff time.Time, out map[string]int64) error {
+	due := "created_at < ?"
+	if tree {
+		due += " AND NOT EXISTS (SELECT 1 FROM " + table +
+			" AS retention_child WHERE retention_child.parent_id = " + table + ".id)"
 	}
-	leaf := "created_at < ? AND NOT EXISTS (SELECT 1 FROM " + table +
-		" AS retention_child WHERE retention_child.parent_id = " + table + ".id)"
-	var removed int64
-	for pass := 0; pass < maxTreeDepth; pass++ {
-		n, err := trash.purge(ctx, table, leaf, cutoff)
-		removed += n
+	if len(lines) > 0 {
+		return s.sweepWithLines(ctx, table, lines, due, cutoff, out)
+	}
+
+	if !tree {
+		n, err := trash.purge(ctx, table, due, cutoff)
+		retentionCount(out, table, n)
+		return err
+	}
+	for i := 0; i < maxTreeDepth; i++ {
+		n, err := trash.purge(ctx, table, due, cutoff)
+		retentionCount(out, table, n)
 		if err != nil || n == 0 {
-			return removed, err
+			return err
 		}
 	}
 	// Said rather than returned quietly: rows past their window are still
 	// there, and the policy says they are not.
-	return removed, fmt.Errorf("%s still had rows to remove after %d passes", table, maxTreeDepth)
+	return fmt.Errorf("%s still had rows to remove after %d passes", table, maxTreeDepth)
+}
+
+// sweepWithLines removes due rows and their lines a page at a time, each page
+// in one transaction: the rows are picked by id, their lines go, then exactly
+// those rows.
+//
+// A line goes when its record goes, whatever its own age: an invoice line is
+// saved a moment after its invoice and would otherwise outlive it by a night,
+// and a tree node kept for its children keeps its lines with it. The lines are
+// first because the database refuses a record while they remain.
+//
+// One transaction, so the two cannot come apart. A line or a child added to a
+// due row while the page runs makes the database refuse that row, and the
+// page's lines are put back with it rather than lost from a record that stays.
+// The page is tried again the next night. The Trash's purge runs unchanged
+// inside it, its file releases included, because it works on whatever handle
+// it is given.
+func (s *RetentionService) sweepWithLines(ctx context.Context, table string, lines []retentionLines,
+	due string, cutoff time.Time, out map[string]int64) error {
+	for {
+		removed := map[string]int64{}
+		err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			var ids []string
+			if err := tx.Table(table).Where(due, cutoff).Order("id").Limit(retentionPage).
+				Pluck("id", &ids).Error; err != nil {
+				return err
+			}
+			if len(ids) == 0 {
+				return nil
+			}
+			trash := &TrashService{DB: tx, Registry: s.Registry}
+			for _, l := range lines {
+				n, err := trash.purge(ctx, l.table, l.foreignKey+" IN ?", ids)
+				removed[l.table] += n
+				if err != nil {
+					return fmt.Errorf("the lines in %s: %w", l.table, err)
+				}
+			}
+			n, err := trash.purge(ctx, table, "id IN ?", ids)
+			removed[table] += n
+			if err != nil {
+				return err
+			}
+			// Every page has to remove something, or the loop would read the
+			// same page for ever.
+			if n == 0 {
+				return fmt.Errorf("%d rows were due and none could be removed", len(ids))
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		// Counted once committed, so a page that was rolled back is not
+		// reported as removed.
+		for name, n := range removed {
+			retentionCount(out, name, n)
+		}
+		if removed[table] == 0 {
+			return nil
+		}
+	}
+}
+
+// retentionCount adds n to what the sweep reports for a table. A table that
+// lost nothing is left out, so the job can say "nothing past its window".
+func retentionCount(out map[string]int64, table string, n int64) {
+	if n > 0 {
+		out[table] += n
+	}
 }
 
 // hasColumn reports whether model has the column, by its database name.

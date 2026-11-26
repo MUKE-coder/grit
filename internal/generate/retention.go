@@ -100,14 +100,6 @@ func (d *ResourceDefinition) checkRetention() error {
 			"rows can never be deleted, so the retention sweep could not remove them. " +
 			"Generate the resource with one or the other")
 	}
-	// Each works alone: a record's lines go with it, and a tree goes leaf
-	// first. Together, a tree node kept for its young children would still
-	// lose its lines, because the lines go by the node's age. Which should win
-	// is a decision of its own, so the pair is refused until it is made.
-	if d.Tree && d.Items != nil {
-		return fmt.Errorf("--retain cannot be combined with both --tree and --items yet: " +
-			"a parent kept for its younger children would still lose its lines")
-	}
 	return nil
 }
 
