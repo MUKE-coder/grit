@@ -1,6 +1,14 @@
 package doctor
 
-import "strings"
+import (
+	"fmt"
+	"regexp"
+	"strings"
+)
+
+// itemsRe is the has-many --items writes on a record: Items []InvoiceLine with
+// the foreign key the lines point back by.
+var itemsRe = regexp.MustCompile("Items\\s+\\[\\](\\w+)\\s+`gorm:\"foreignKey:\\w+\"")
 
 // A resource owned by a user, with no retention window.
 //
@@ -38,9 +46,24 @@ func checkOwnedRetention(p *project) []Finding {
 			Resource: name,
 			Message:  message,
 			Fix: "if the rows should go after a fixed time, add func init() { retention.Register(&" + name +
-				"{}, 90*24*time.Hour) } to its model file, which is what --retain 90d writes. " +
+				"{}, 90*24*time.Hour" + retentionOptions(p, m) + ") } to its model file, which is what --retain 90d writes. " +
 				"If they should stay as long as the account does, nothing to do.",
 		})
 	}
 	return out
+}
+
+// retentionOptions is what the suggested line needs for the resource's shape,
+// the same options --retain writes. Without them the line compiles and the
+// database refuses the sweep every night: a record cannot go before its lines,
+// nor a tree node before its children.
+func retentionOptions(p *project, m *model) string {
+	var opts string
+	if lines := itemsRe.FindStringSubmatch(m.Source); lines != nil {
+		opts += fmt.Sprintf(", retention.WithLines(&%s{}, %q)", lines[1], p.snake[m.Name]+"_id")
+	}
+	if strings.Contains(m.Source, "--- tree (grit --tree)") {
+		opts += ", retention.AsTree()"
+	}
+	return opts
 }

@@ -226,3 +226,33 @@ func TestRetainIsShownInTheAdminDefinition(t *testing.T) {
 		t.Error("a resource without --retain claims a window in the admin")
 	}
 }
+
+// A project that took --retain before lines and trees could be retained has
+// the package without the options. Generating into it would write a model that
+// does not compile, so it is refused before anything is written.
+func TestRetainRefusesAnOlderRegistryForLinesAndTrees(t *testing.T) {
+	const module = "shop/apps/api"
+	root := setupMinimalProject(t, module)
+	older := "package retention\n\nimport \"time\"\n\n" +
+		"func Register(model interface{}, window time.Duration) {}\n"
+	path := filepath.Join(root, "apps", "api", "internal", "retention", "retention.go")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(older), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	def := mustFields(t, "Invoice", "number:string")
+	def.Items = mustFields(t, "InvoiceLine", "description:string")
+	def.Retain = "90d"
+	err := newTestGenerator(root, module, def).Run()
+	if err == nil || !strings.Contains(err.Error(), "grit upgrade") {
+		t.Fatalf("an older registry was not refused with the way out: %v", err)
+	}
+	for _, model := range []string{"invoice.go", "invoice_line.go"} {
+		if _, err := os.Stat(filepath.Join(root, "apps", "api", "internal", "models", model)); err == nil {
+			t.Errorf("%s was written although the generate was refused", model)
+		}
+	}
+}

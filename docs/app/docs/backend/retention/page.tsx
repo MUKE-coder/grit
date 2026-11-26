@@ -175,7 +175,9 @@ Orphan upload cleanup complete, removed 1 uploads`}
                 It comes from <code>retention: &quot;90d&quot;</code> in the resource&apos;s admin
                 definition, which the generator writes. That line is only what the page shows. The
                 model&apos;s <code>retention.Register</code> is what removes the rows, so changing
-                the definition alone changes the sentence and not the policy.
+                the definition alone changes the sentence and not the policy. On a{' '}
+                <code>--tree</code> resource the page adds that a row stays while any row below it
+                is newer.
               </p>
 
               <h2 id="doctor">Finding resources without one</h2>
@@ -212,6 +214,13 @@ Orphan upload cleanup complete, removed 1 uploads`}
                 windows has no <code>retention</code> line in its definition: add{' '}
                 <code>retention: &quot;90d&quot;,</code> next to its <code>endpoint</code> to show
                 it.
+              </p>
+              <p>
+                A project that took <code>--retain</code> before it worked with{' '}
+                <code>--items</code> and <code>--tree</code> needs <code>grit upgrade</code> before
+                generating one of those. The generator says so and writes nothing until then,
+                because the model would call options its <code>internal/retention</code> does not
+                have yet.
               </p>
 
               <Callout type="note" title="Limits">

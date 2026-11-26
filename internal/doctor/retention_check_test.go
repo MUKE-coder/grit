@@ -119,3 +119,28 @@ func TestLinesAreCoveredByTheirRecordsWindow(t *testing.T) {
 		t.Fatalf("the lines were not read as a resource, so this test proves nothing: %v", report.Resources)
 	}
 }
+
+// The suggested line carries the options the resource's shape needs, the same
+// ones --retain writes. Without them it compiles and the database refuses the
+// sweep every night.
+func TestTheSuggestedLineFitsTheResourcesShape(t *testing.T) {
+	plain := invoiceWithoutRetention(t)
+	withLines := strings.Replace(plain, "\tUser   User",
+		"\tItems  []InvoiceLine `gorm:\"foreignKey:InvoiceID\" json:\"items\"`\n\tUser   User", 1)
+	asTree := strings.Replace(plain, "\tUser   User",
+		"\t// --- tree (grit --tree) ---------------------------------------------------\n\tUser   User", 1)
+	if withLines == plain || asTree == plain {
+		t.Fatal("the fixture's Invoice changed shape, so this test proves nothing")
+	}
+
+	for name, c := range map[string]struct{ model, want string }{
+		"lines": {withLines, `retention.Register(&Invoice{}, 90*24*time.Hour, retention.WithLines(&InvoiceLine{}, "invoice_id")) }`},
+		"tree":  {asTree, "retention.Register(&Invoice{}, 90*24*time.Hour, retention.AsTree()) }"},
+		"plain": {plain, "retention.Register(&Invoice{}, 90*24*time.Hour) }"},
+	} {
+		found := fired(run(t, map[string]string{invoiceModel: c.model}), "owned-resource-no-retention")
+		if len(found) != 1 || !strings.Contains(found[0].Fix, c.want) {
+			t.Errorf("%s: the fix does not suggest %s: %v", name, c.want, found)
+		}
+	}
+}

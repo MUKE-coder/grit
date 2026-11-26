@@ -93,6 +93,13 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 			continue
 		}
 
+		// The leaf query names parent_id, the column --tree writes. A model
+		// without one would fail as SQL every night with an error that does
+		// not say why, the same as a missing created_at.
+		if p.Tree && !s.hasColumn(p.Model, "parent_id") {
+			errs = append(errs, fmt.Errorf("%s is retained as a tree but has no parent_id column", table))
+			continue
+		}
 		n, err := s.purge(ctx, trash, table, p.Tree, cutoff)
 		if n > 0 {
 			out[table] += n
@@ -130,7 +137,15 @@ func (s *RetentionService) purge(ctx context.Context, trash *TrashService, table
 			return removed, err
 		}
 	}
-	return removed, nil
+	// Said rather than returned quietly: rows past their window are still
+	// there, and the policy says they are not.
+	return removed, fmt.Errorf("%s still had rows to remove after %d passes", table, maxTreeDepth)
+}
+
+// hasColumn reports whether model has the column, by its database name.
+func (s *RetentionService) hasColumn(model interface{}, column string) bool {
+	stmt := &gorm.Statement{DB: s.DB}
+	return stmt.Parse(model) == nil && stmt.Schema.LookUpField(column) != nil
 }
 
 // retentionIdentifier is what a table or column name has to look like before

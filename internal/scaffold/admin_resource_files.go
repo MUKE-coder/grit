@@ -1433,6 +1433,9 @@ function ResourceListView({ resource }: ResourcePageProps) {
         <p className="mb-3 text-xs text-text-muted">
           Each row is removed for good {retentionPhrase(resource.retention)} after it is
           created, with its files.
+          {/* A tree keeps a parent for its younger children, so the sentence
+              above is not the whole of it there. */}
+          {resource.tree && " A row stays while any row below it is newer."}
         </p>
       )}
 

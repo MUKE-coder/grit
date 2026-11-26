@@ -262,6 +262,16 @@ func TestATreeKeepsAParentUntilItsLastChildExpires(t *testing.T) {
 	}
 }
 
+// A tree policy on a model with no parent column is named, not left to fail
+// as SQL that does not say why.
+func TestATreeWithoutAParentColumnIsNamed(t *testing.T) {
+	_, svc := retentionFixture(t, retention.Policy{Model: &retentionRow{}, Window: retentionDay, Tree: true})
+	_, err := svc.Sweep(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "parent_id") {
+		t.Errorf("a tree with no parent column was not named: %v", err)
+	}
+}
+
 func retentionFixture(t *testing.T, policies ...retention.Policy) (*gorm.DB, *RetentionService) {
 	t.Helper()
 

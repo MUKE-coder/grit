@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -166,6 +167,32 @@ func (g *Generator) prepareRetention() error {
 	api := g.APIRoot()
 	if err := scaffold.WriteRetentionPackage(api, g.Module, false); err != nil {
 		return err
+	}
+	// A project from before --items and --tree could be retained has the
+	// package without the options, and WriteRetentionPackage leaves an
+	// existing one alone. The model would then not compile ("too many
+	// arguments in call to retention.Register"), so this refuses before
+	// anything is written, which is the one moment it is cheap to.
+	needs := map[string]bool{"WithLines": g.Definition.Items != nil, "AsTree": g.Definition.Tree}
+	read := func(rel ...string) string {
+		b, _ := os.ReadFile(filepath.Join(append([]string{api, "internal"}, rel...)...))
+		return string(b)
+	}
+	registry, sweep := read("retention", "retention.go"), read("services", "retention.go")
+	for option, needed := range needs {
+		if needed && !strings.Contains(registry, "func "+option+"(") {
+			return fmt.Errorf("--retain with --items or --tree needs retention.%s, which this "+
+				"project's internal/retention predates: run grit upgrade, then generate again", option)
+		}
+	}
+	// The registry can be new while the sweep is a copy the project edited and
+	// upgrade left alone. It compiles, and then ignores the lines and the tree,
+	// so the database refuses the delete every night.
+	if (needs["WithLines"] && !strings.Contains(sweep, "p.Lines")) || (needs["AsTree"] && !strings.Contains(sweep, "p.Tree")) {
+		if fileExists(filepath.Join(api, "internal", "services", "retention.go")) {
+			fmt.Println("  ⚠ This project's retention sweep predates --items and --tree, so it will")
+			fmt.Println("    fail on these rows every night until it is updated: see grit upgrade --diff.")
+		}
 	}
 	// The model compiles with only the package, so nothing else would notice
 	// that no job reads it. A window nobody enforces is worse than none,
