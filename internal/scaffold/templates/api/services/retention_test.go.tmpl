@@ -348,10 +348,12 @@ func TestALineAddedMidSweepPutsTheRestBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Once, just before the record's delete: the moment between the two.
+	// Just before every delete of the record: the moment between the two. On
+	// every attempt, because a line another request added is still there when
+	// the sweep tries the row again on its own.
 	added := false
 	if err := db.Callback().Delete().Before("gorm:delete").Register("test:add_line", func(tx *gorm.DB) {
-		if added || tx.Statement.Table != "retention_records" {
+		if tx.Statement.Table != "retention_records" {
 			return
 		}
 		added = true
@@ -378,6 +380,51 @@ func TestALineAddedMidSweepPutsTheRestBack(t *testing.T) {
 	db.Model(&retentionRecord{}).Count(&records)
 	if records != 1 || strings.Join(lines, ",") != "old-1" {
 		t.Errorf("records %d, lines %v: want the record kept with its original line", records, lines)
+	}
+}
+
+// A row the database refuses, one another resource still points at, keeps only
+// itself. It used to fail its whole page, which in id order kept the rows after
+// it past their window for good.
+func TestARefusedRowKeepsOnlyItself(t *testing.T) {
+	db, svc := retentionFixture(t, retention.Policy{
+		Model: &retentionRecord{}, Window: 90 * retentionDay,
+		Lines: []retention.Lines{{Model: &retentionLine{}, ForeignKey: "retention_record_id"}},
+	})
+	enforcingForeignKeys(t, db, svc, map[string]interface{}{
+		"retention_records": &retentionRecord{}, "retention_lines": &retentionLine{},
+	}, "retention_lines")
+	// Another resource that belongs to a record.
+	if err := db.Exec(`CREATE TABLE retention_refs (
+		id TEXT PRIMARY KEY, record_id TEXT REFERENCES retention_records(id)
+	)`).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	old := time.Now().Add(-100 * retentionDay)
+	// "a" sorts first, so before the fix it took "b" and "c" down with it.
+	for _, id := range []string{"a", "b", "c"} {
+		if err := db.Create(&retentionRecord{ID: id, CreatedAt: old,
+			Lines: []retentionLine{{ID: id + "-1", CreatedAt: old}}}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.Exec("INSERT INTO retention_refs (id, record_id) VALUES ('ref', 'a')").Error; err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := svc.Sweep(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "1 row(s)") {
+		t.Errorf("the refused row was not reported: %v", err)
+	}
+	if out["retention_records"] != 2 || out["retention_lines"] != 2 {
+		t.Errorf("removed %v, want b and c with their lines", out)
+	}
+	var records, lines []string
+	db.Model(&retentionRecord{}).Order("id").Pluck("id", &records)
+	db.Model(&retentionLine{}).Order("id").Pluck("id", &lines)
+	if strings.Join(records, ",") != "a" || strings.Join(lines, ",") != "a-1" {
+		t.Errorf("left records %v and lines %v, want only a with its line", records, lines)
 	}
 }
 

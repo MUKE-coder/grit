@@ -228,9 +228,9 @@ Orphan upload cleanup complete, removed 1 uploads`}
 
               <Callout type="note" title="Limits">
                 <code>--retain</code> cannot be combined with <code>--append-only</code>, whose rows
-                can never be deleted. A retained resource that another resource belongs to is
-                refused by the database for rows still referenced: the job reports it, and the rest
-                of the sweep carries on.
+                can never be deleted. On a retained resource that another resource belongs to, the
+                database refuses a row that is still referenced: that row is kept and reported, and
+                the others still go.
               </Callout>
 
               <div className="mt-16 flex items-center justify-between border-t border-border/30 pt-8">

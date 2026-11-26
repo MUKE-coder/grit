@@ -54,7 +54,6 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 		list = s.Policies
 	}
 
-	trash := &TrashService{DB: s.DB, Registry: s.Registry}
 	out := map[string]int64{}
 	var errs []error
 	for _, p := range list() {
@@ -94,7 +93,7 @@ func (s *RetentionService) Sweep(ctx context.Context) (map[string]int64, error) 
 			errs = append(errs, fmt.Errorf("%s is retained as a tree but has no parent_id column", table))
 			continue
 		}
-		if err := s.sweepTable(ctx, trash, table, p.Tree, lines, cutoff, out); err != nil {
+		if err := s.sweepTable(ctx, table, p.Tree, lines, cutoff, out); err != nil {
 			errs = append(errs, fmt.Errorf("sweeping %s: %w", table, err))
 		}
 	}
@@ -106,14 +105,8 @@ type retentionLines struct {
 	table, foreignKey string
 }
 
-// maxTreeDepth bounds the passes a tree takes. Each pass removes the expired
-// leaves, which can make their parents leaves, so a tree needs one pass per
-// level; this is far deeper than any category tree, and only stops a loop that
-// something unforeseen keeps feeding.
-const maxTreeDepth = 1000
-
-// retentionPage is how many rows with lines go in one transaction: the same
-// page purge reads, so a transaction holds its locks for one page at most.
+// retentionPage is how many rows go in one transaction: the same page purge
+// reads, so a transaction holds its locks for one page at most.
 const retentionPage = 500
 
 // sweepTable removes the rows of one table that are due, with their lines,
@@ -122,96 +115,98 @@ const retentionPage = 500
 // Due is past the window, and on a tree also a leaf: only a node nothing
 // points at goes, so a parent stays while any child is younger than the
 // window, and the paths of the nodes that stay never name a node that went.
-// Removing the leaves can make their parents leaves, so a tree repeats until
-// nothing is due.
-func (s *RetentionService) sweepTable(ctx context.Context, trash *TrashService, table string, tree bool,
+// Removing the leaves makes their parents leaves, so the next page finds them,
+// and a tree empties from the bottom up in one run.
+//
+// A row the database refuses, one another resource still points at, is kept
+// and reported, and the rest go. It used to fail its whole page, and pages are
+// read in id order, so one referenced row kept the 499 after it, and every
+// page after those, past their window for good.
+func (s *RetentionService) sweepTable(ctx context.Context, table string, tree bool,
 	lines []retentionLines, cutoff time.Time, out map[string]int64) error {
 	due := "created_at < ?"
 	if tree {
 		due += " AND NOT EXISTS (SELECT 1 FROM " + table +
 			" AS retention_child WHERE retention_child.parent_id = " + table + ".id)"
 	}
-	if len(lines) > 0 {
-		return s.sweepWithLines(ctx, table, lines, due, cutoff, out)
-	}
 
-	if !tree {
-		n, err := trash.purge(ctx, table, due, cutoff)
-		retentionCount(out, table, n)
-		return err
-	}
-	for i := 0; i < maxTreeDepth; i++ {
-		n, err := trash.purge(ctx, table, due, cutoff)
-		retentionCount(out, table, n)
-		if err != nil || n == 0 {
+	var refused []string
+	var reason error
+	for {
+		// Refused rows are left out, or the same page would come back for
+		// ever. Each round removes rows or refuses them, so this ends.
+		q := s.DB.WithContext(ctx).Table(table).Where(due, cutoff)
+		if len(refused) > 0 {
+			q = q.Where("id NOT IN ?", refused)
+		}
+		var ids []string
+		if err := q.Order("id").Limit(retentionPage).Pluck("id", &ids).Error; err != nil {
 			return err
 		}
+		if len(ids) == 0 {
+			break
+		}
+		if err := s.removeRows(ctx, table, lines, ids, out); err == nil {
+			continue
+		}
+		// The page as a whole was refused. A row at a time, so only the rows
+		// the database will not let go stay behind.
+		for _, id := range ids {
+			if err := s.removeRows(ctx, table, lines, []string{id}, out); err != nil {
+				refused = append(refused, id)
+				if reason == nil {
+					reason = err
+				}
+			}
+		}
 	}
-	// Said rather than returned quietly: rows past their window are still
-	// there, and the policy says they are not.
-	return fmt.Errorf("%s still had rows to remove after %d passes", table, maxTreeDepth)
+	if len(refused) > 0 {
+		return fmt.Errorf("%d row(s) past their window were kept, %s first, because: %w",
+			len(refused), refused[0], reason)
+	}
+	return nil
 }
 
-// sweepWithLines removes due rows and their lines a page at a time, each page
-// in one transaction: the rows are picked by id, their lines go, then exactly
-// those rows.
+// removeRows removes the rows with these ids and their lines, in one
+// transaction: the lines first, because the database refuses a record while
+// they remain, then exactly these rows.
 //
 // A line goes when its record goes, whatever its own age: an invoice line is
 // saved a moment after its invoice and would otherwise outlive it by a night,
-// and a tree node kept for its children keeps its lines with it. The lines are
-// first because the database refuses a record while they remain.
+// and a tree node kept for its children keeps its lines with it.
 //
-// One transaction, so the two cannot come apart. A line or a child added to a
-// due row while the page runs makes the database refuse that row, and the
-// page's lines are put back with it rather than lost from a record that stays.
-// The page is tried again the next night. The Trash's purge runs unchanged
-// inside it, its file releases included, because it works on whatever handle
-// it is given.
-func (s *RetentionService) sweepWithLines(ctx context.Context, table string, lines []retentionLines,
-	due string, cutoff time.Time, out map[string]int64) error {
-	for {
-		removed := map[string]int64{}
-		err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			var ids []string
-			if err := tx.Table(table).Where(due, cutoff).Order("id").Limit(retentionPage).
-				Pluck("id", &ids).Error; err != nil {
-				return err
-			}
-			if len(ids) == 0 {
-				return nil
-			}
-			trash := &TrashService{DB: tx, Registry: s.Registry}
-			for _, l := range lines {
-				n, err := trash.purge(ctx, l.table, l.foreignKey+" IN ?", ids)
-				removed[l.table] += n
-				if err != nil {
-					return fmt.Errorf("the lines in %s: %w", l.table, err)
-				}
-			}
-			n, err := trash.purge(ctx, table, "id IN ?", ids)
-			removed[table] += n
+// One transaction, so the two cannot come apart. A line or a child added to
+// one of these rows while the sweep runs makes the database refuse it, and its
+// lines are put back with it rather than lost from a record that stays. The
+// Trash's purge runs unchanged inside it, its file releases included, because
+// it works on whatever handle it is given.
+func (s *RetentionService) removeRows(ctx context.Context, table string, lines []retentionLines,
+	ids []string, out map[string]int64) error {
+	removed := map[string]int64{}
+	err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		trash := &TrashService{DB: tx, Registry: s.Registry}
+		for _, l := range lines {
+			n, err := trash.purge(ctx, l.table, l.foreignKey+" IN ?", ids)
+			removed[l.table] += n
 			if err != nil {
-				return err
+				return fmt.Errorf("the lines in %s: %w", l.table, err)
 			}
-			// Every page has to remove something, or the loop would read the
-			// same page for ever.
-			if n == 0 {
-				return fmt.Errorf("%d rows were due and none could be removed", len(ids))
-			}
-			return nil
-		})
-		if err != nil {
-			return err
 		}
-		// Counted once committed, so a page that was rolled back is not
-		// reported as removed.
-		for name, n := range removed {
-			retentionCount(out, name, n)
-		}
-		if removed[table] == 0 {
-			return nil
-		}
+		// A row deleted by somebody else since it was read is simply not
+		// counted, and not read again.
+		n, err := trash.purge(ctx, table, "id IN ?", ids)
+		removed[table] += n
+		return err
+	})
+	if err != nil {
+		return err
 	}
+	// Counted once committed, so rows that were put back are not reported
+	// as removed.
+	for name, n := range removed {
+		retentionCount(out, name, n)
+	}
+	return nil
 }
 
 // retentionCount adds n to what the sweep reports for a table. A table that
