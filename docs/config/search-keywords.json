@@ -130,7 +130,7 @@
     "title": "Append-only Records"
   },
   "/docs/backend/retention": {
-    "keywords": "retain retention delete after 90 days expire expiry purge privacy policy gdpr data minimisation minimization old rows cleanup sweep ttl",
+    "keywords": "retain retention delete after 90 days expire expiry purge privacy policy gdpr data minimisation minimization old rows cleanup sweep ttl doctor owned-resource-no-retention admin list page",
     "section": "Backend (Go API)",
     "title": "Data Retention"
   },
