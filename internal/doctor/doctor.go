@@ -75,6 +75,10 @@ var checks = []struct {
 	{"database-not-durable", checkDatabaseProvider},
 	{"tenant-sso-no-organization", checkTenantSSOProvisioning},
 	{"pii-column-not-encrypted", checkPII},
+	// A user's rows with nothing that ever removes them, short of erasing the
+	// user. Said as what the model shows, not as a verdict on the data
+	// (grit#260).
+	{"owned-resource-no-retention", checkOwnedRetention},
 	// A column named like a secret that the API returns, and that an
 	// expression can filter on. The rules engine's own denylist is a guess
 	// about names; this is the prompt to stop relying on it.
@@ -178,6 +182,9 @@ type model struct {
 	OwnerColumn string // from GetOwnerID, empty when the resource is shared
 	TenantOwned bool
 	AppendOnly  bool
+	// Retained is a retention.Register for the model, which --retain writes
+	// into the model file (grit#260).
+	Retained bool
 	// Source is the struct's own lines, tags included.
 	//
 	// Fields loses the gorm tag, and some faults live only there: a bool with
@@ -231,6 +238,7 @@ var (
 	fieldRe    = regexp.MustCompile("^\\s*(\\w+)\\s+([\\w\\.\\*\\[\\]]+)\\s+`[^`]*json:\"([a-zA-Z0-9_]+)")
 	ownerRe    = regexp.MustCompile(`func \(\w+ \*(\w+)\) GetOwnerID\(\) string \{\s*\n?\s*return \w+\.(\w+)`)
 	registerRe = regexp.MustCompile(`appendonly\.Register\(&(\w+)\{\}\)`)
+	retainRe   = regexp.MustCompile(`retention\.Register\(&(\w+)\{\}`)
 	// outbox.Enqueue(tx, "topic", ...) and the relays that drain it.
 	enqueueRe = regexp.MustCompile(`outbox\.Enqueue\([^,]+,\s*"([^"]+)"`)
 	relayRe   = regexp.MustCompile(`(?s)outbox\.Relay\{.{0,400}?\}`)
@@ -368,6 +376,13 @@ func parseModels(src string) []*model {
 		for _, m := range out {
 			if m.Name == r[1] {
 				m.AppendOnly = true
+			}
+		}
+	}
+	for _, r := range retainRe.FindAllStringSubmatch(src, -1) {
+		for _, m := range out {
+			if m.Name == r[1] {
+				m.Retained = true
 			}
 		}
 	}
