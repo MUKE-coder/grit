@@ -1568,6 +1568,12 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	if g.Definition.Tree {
 		hiddenLine += "\n  tree: true,"
 	}
+	// --retain tells the list page to say how long rows are kept. The model's
+	// retention.Register is what removes them; this is the admin saying so,
+	// so somebody deleting by hand knows the sweep would have anyway (grit#260).
+	if spec := g.Definition.RetentionSpec(); spec != "" {
+		hiddenLine += fmt.Sprintf("\n  retention: %q,", spec)
+	}
 
 	// v3.31.19: conditionally pull in the StackedCell helper. Only
 	// emitted when the column-pack heuristic actually fires — keeps

@@ -66,6 +66,20 @@ func (d *ResourceDefinition) RetentionWindow() (time.Duration, error) {
 	return ParseRetention(d.Retain)
 }
 
+// RetentionSpec is the window written the way it was asked for, tidied: " 90D"
+// and "090d" are both "90d". It is what the model comment and the admin
+// definition show, so neither repeats a typo back at the reader. Empty when
+// the resource has no window or it does not parse.
+func (d *ResourceDefinition) RetentionSpec() string {
+	window, err := d.RetentionWindow()
+	if err != nil || window == 0 {
+		return ""
+	}
+	v := strings.ToLower(strings.TrimSpace(d.Retain))
+	unit := map[byte]time.Duration{'h': time.Hour, 'd': 24 * time.Hour, 'w': 7 * 24 * time.Hour}[v[len(v)-1]]
+	return fmt.Sprintf("%d%c", window/unit, v[len(v)-1])
+}
+
 // checkRetention refuses a retention window the generated code could not keep,
 // before anything is written.
 func (d *ResourceDefinition) checkRetention() error {
@@ -115,7 +129,7 @@ func (g *Generator) retentionModelInit(names Names) string {
 // nightly retention sweep removes older ones, and releases their files to the
 // orphan upload sweep. See internal/retention.
 func init() { retention.Register(&%[1]s{}, %[3]s) }
-`, names.Pascal, g.Definition.Retain, retentionGoExpr(window))
+`, names.Pascal, g.Definition.RetentionSpec(), retentionGoExpr(window))
 }
 
 // retentionGoExpr writes a window as Go a person can read back as the policy:

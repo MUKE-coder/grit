@@ -171,3 +171,36 @@ func TestNoRetainWritesNoPolicy(t *testing.T) {
 		t.Errorf("a resource without --retain got a policy:\n%s", got)
 	}
 }
+
+// The window is shown the way it was asked for, tidied, so neither the model
+// comment nor the admin repeats a typo back.
+func TestRetentionSpecIsTheWindowTidied(t *testing.T) {
+	for in, want := range map[string]string{
+		"90d": "90d", " 90D ": "90d", "090d": "90d", "2w": "2w", "36h": "36h",
+		"": "", "soon": "", "6m": "",
+	} {
+		d := &ResourceDefinition{Name: "Message", Retain: in}
+		if got := d.RetentionSpec(); got != want {
+			t.Errorf("RetentionSpec(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// --retain reaches the admin as the window its list page reads, and a resource
+// without it says nothing there.
+func TestRetainIsShownInTheAdminDefinition(t *testing.T) {
+	const module = "chat/apps/api"
+	root := setupMinimalProject(t, module)
+
+	def := mustFields(t, "ChatMessage", "body:text")
+	def.Retain = " 90D"
+	g := newTestGenerator(root, module, def)
+	if src := g.adminDefinitionContent(g.Names()); !strings.Contains(src, "\n  retention: \"90d\",") {
+		t.Errorf("the admin definition does not carry the window:\n%s", src)
+	}
+
+	plain := newTestGenerator(root, module, mustFields(t, "ChatMessage", "body:text"))
+	if src := plain.adminDefinitionContent(plain.Names()); strings.Contains(src, "retention:") {
+		t.Error("a resource without --retain claims a window in the admin")
+	}
+}

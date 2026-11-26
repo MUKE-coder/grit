@@ -776,6 +776,11 @@ export interface ResourceDefinition {
   // /rebuild-tree), so setting it by hand on a resource that has no parent
   // column gives you a view that cannot load.
   tree?: boolean;
+  // Set by "grit generate resource --retain 90d": how long a row is kept
+  // after it is created. The list page says so. It is only what the page
+  // shows: the model's retention.Register is what removes the rows, so
+  // changing this alone changes the sentence and not the policy.
+  retention?: string;
 }
 
 // Stats cards shown above the data table on every resource page.
@@ -904,6 +909,20 @@ export function defineResource<T = Record<string, unknown>>(
       layout: config.form.layout ?? "single",
     },
   };
+}
+
+/**
+ * retentionPhrase reads a retention window back as words: "90d" is "90 days",
+ * "1w" is "1 week". A value it does not recognise comes back as it is, because
+ * a window shown oddly is still a window shown, and a blank would claim the
+ * rows are kept for ever.
+ */
+export function retentionPhrase(window: string): string {
+  const match = /^(\d+)([hdw])$/.exec(window.trim().toLowerCase());
+  if (!match) return window;
+  const n = Number(match[1]);
+  const unit = { h: "hour", d: "day", w: "week" }[match[2] as "h" | "d" | "w"];
+  return n + " " + unit + (n === 1 ? "" : "s");
 }
 `
 }
@@ -1216,6 +1235,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { ResourceDefinition } from "@/lib/resource";
+import { retentionPhrase } from "@/lib/resource";
 import { useResourceController } from "@/hooks/use-resource-controller";
 import type { ResourceController } from "@/hooks/use-resource-controller";
 import { PageHeader } from "@/components/chrome/PageHeader";
@@ -1406,6 +1426,15 @@ function ResourceListView({ resource }: ResourcePageProps) {
       <p role="status" aria-live="polite" className="sr-only">
         {c.liveMessage}
       </p>
+
+      {/* Set by --retain. Said here because this is where somebody decides
+          whether to delete a row by hand, and the sweep removes it anyway. */}
+      {resource.retention && (
+        <p className="mb-3 text-xs text-text-muted">
+          Each row is removed for good {retentionPhrase(resource.retention)} after it is
+          created, with its files.
+        </p>
+      )}
 
       {hasArchive && (
         <div className="mb-3 flex w-fit gap-1 rounded-lg border border-border bg-bg-secondary p-1">
