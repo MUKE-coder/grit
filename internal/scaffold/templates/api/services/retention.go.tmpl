@@ -115,8 +115,8 @@ const retentionPage = 500
 // Due is past the window, and on a tree also a leaf: only a node nothing
 // points at goes, so a parent stays while any child is younger than the
 // window, and the paths of the nodes that stay never name a node that went.
-// Removing the leaves makes their parents leaves, so the next page finds them,
-// and a tree empties from the bottom up in one run.
+// Removing the leaves makes their parents leaves, and the tree is read again
+// until a pass removes nothing, so it empties from the bottom up in one run.
 //
 // A row the database refuses, one another resource still points at, is kept
 // and reported, and the rest go. It used to fail its whole page, and pages are
@@ -130,41 +130,82 @@ func (s *RetentionService) sweepTable(ctx context.Context, table string, tree bo
 			" AS retention_child WHERE retention_child.parent_id = " + table + ".id)"
 	}
 
-	var refused []string
+	// Pages are read by position, after the last id seen, so a refused row is
+	// passed over rather than remembered in the query: a resource whose old
+	// rows another resource still points at can have thousands, and an
+	// "id NOT IN (...)" of thousands is slow, then past what the database
+	// accepts in one statement.
+	refused := map[string]bool{}
+	var first string
 	var reason error
 	for {
-		// Refused rows are left out, or the same page would come back for
-		// ever. Each round removes rows or refuses them, so this ends.
-		q := s.DB.WithContext(ctx).Table(table).Where(due, cutoff)
-		if len(refused) > 0 {
-			q = q.Where("id NOT IN ?", refused)
-		}
-		var ids []string
-		if err := q.Order("id").Limit(retentionPage).Pluck("id", &ids).Error; err != nil {
-			return err
-		}
-		if len(ids) == 0 {
-			break
-		}
-		if err := s.removeRows(ctx, table, lines, ids, out); err == nil {
-			continue
-		}
-		// The page as a whole was refused. A row at a time, so only the rows
-		// the database will not let go stay behind.
-		for _, id := range ids {
-			if err := s.removeRows(ctx, table, lines, []string{id}, out); err != nil {
-				refused = append(refused, id)
-				if reason == nil {
-					reason = err
+		removedThisPass := false
+		after := ""
+		for {
+			var ids []string
+			if err := s.DB.WithContext(ctx).Table(table).Where(due, cutoff).Where("id > ?", after).
+				Order("id").Limit(retentionPage).Pluck("id", &ids).Error; err != nil {
+				return err
+			}
+			if len(ids) == 0 {
+				break
+			}
+			after = ids[len(ids)-1]
+			// A tree reads itself again, and a row refused on an earlier pass
+			// would be refused again, a row at a time.
+			ids = withoutRefused(ids, refused)
+			if len(ids) == 0 {
+				continue
+			}
+			if n, err := s.removeRows(ctx, table, lines, ids, out); err == nil {
+				removedThisPass = removedThisPass || n > 0
+				continue
+			}
+			// The page as a whole was refused. A row at a time, so only the
+			// rows the database will not let go stay behind. Not when the job
+			// itself has stopped, its two hours up: every row would fail the
+			// same way, one statement each.
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			for _, id := range ids {
+				n, err := s.removeRows(ctx, table, lines, []string{id}, out)
+				if err == nil {
+					removedThisPass = removedThisPass || n > 0
+					continue
+				}
+				if !refused[id] {
+					refused[id] = true
+					if reason == nil {
+						first, reason = id, err
+					}
 				}
 			}
+		}
+		// A tree's parents become leaves once their children are gone, and
+		// they sit before the position the pass has reached, so it starts
+		// again until a pass removes nothing. Every repeat follows a pass
+		// that removed rows, so this ends.
+		if !tree || !removedThisPass {
+			break
 		}
 	}
 	if len(refused) > 0 {
 		return fmt.Errorf("%d row(s) past their window were kept, %s first, because: %w",
-			len(refused), refused[0], reason)
+			len(refused), first, reason)
 	}
 	return nil
+}
+
+// withoutRefused is ids less the ones already refused this run.
+func withoutRefused(ids []string, refused map[string]bool) []string {
+	out := ids[:0]
+	for _, id := range ids {
+		if !refused[id] {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // removeRows removes the rows with these ids and their lines, in one
@@ -181,7 +222,7 @@ func (s *RetentionService) sweepTable(ctx context.Context, table string, tree bo
 // Trash's purge runs unchanged inside it, its file releases included, because
 // it works on whatever handle it is given.
 func (s *RetentionService) removeRows(ctx context.Context, table string, lines []retentionLines,
-	ids []string, out map[string]int64) error {
+	ids []string, out map[string]int64) (int64, error) {
 	removed := map[string]int64{}
 	err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		trash := &TrashService{DB: tx, Registry: s.Registry}
@@ -199,14 +240,14 @@ func (s *RetentionService) removeRows(ctx context.Context, table string, lines [
 		return err
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
 	// Counted once committed, so rows that were put back are not reported
 	// as removed.
 	for name, n := range removed {
 		retentionCount(out, name, n)
 	}
-	return nil
+	return removed[table], nil
 }
 
 // retentionCount adds n to what the sweep reports for a table. A table that
