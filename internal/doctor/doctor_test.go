@@ -76,7 +76,10 @@ REDIS_HOST=localhost
 			"\tUserID string                 `gorm:\"size:36;index\" json:\"user_id\"`\n" +
 			"\tUser   User                   `gorm:\"foreignKey:UserID\" json:\"user,omitempty\"`\n" +
 			"}\n\n" +
-			"func (m *Invoice) GetOwnerID() string { return m.UserID }\n",
+			"func (m *Invoice) GetOwnerID() string { return m.UserID }\n\n" +
+			// An owned resource with no window is a question the doctor asks
+			// (grit#260), so the project with nothing to report has answered it.
+			"func init() { retention.Register(&Invoice{}, 90*24*time.Hour) }\n",
 		"apps/api/internal/services/invoice.go": `package services
 
 var invoiceListConfig = paginate.Config{

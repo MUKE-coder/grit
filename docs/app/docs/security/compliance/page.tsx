@@ -52,6 +52,13 @@ export default function CompliancePage() {
               admin can export anyone&apos;s. <strong>Export creates no rows</strong> — it is a
               pure read, so it never touches the journal.
             </p>
+            <p>
+              An export is what the app holds on the day it runs. A resource generated with{' '}
+              <code>--retain</code> keeps its rows only for its window, so a row past it is in no
+              export, because it no longer exists. The windows are in each resource&apos;s model and
+              on its list page in the admin, which is where to read them from when writing what a
+              privacy policy promises: see <Link href="/docs/backend/retention">Data retention</Link>.
+            </p>
 
             <h3>Erase — the only thing that writes to the journal</h3>
             <p>

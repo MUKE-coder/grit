@@ -261,7 +261,7 @@
     "title": "Data retention",
     "href": "/docs/backend/retention",
     "section": "Backend (Go API)",
-    "keywords": "retain retention delete after 90 days expire expiry purge privacy policy gdpr data minimisation minimization old rows cleanup sweep ttl grit generate resource 90d older than window removed good every night files they point promises docs backend"
+    "keywords": "retain retention delete after 90 days expire expiry purge privacy policy gdpr data minimisation minimization old rows cleanup sweep ttl doctor owned-resource-no-retention admin list page grit generate resource 90d older than window removed good every night files they point promises docs backend"
   },
   {
     "title": "Sagas",

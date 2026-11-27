@@ -1388,9 +1388,9 @@ func generateResourceCmd() *cobra.Command {
 			// Said back once, because it is the one flag whose effect is a
 			// deletion that happens later, unattended, every night. After Run,
 			// so a value Run refuses is never announced as the policy.
-			if def.Retain != "" {
+			if spec := def.RetentionSpec(); spec != "" {
 				fmt.Printf("  • --retain %s: rows are removed for good %s after they are created, with their files\n",
-					def.Retain, def.Retain)
+					spec, spec)
 			}
 
 			// --seed / --faker: also emit a seeder for this resource.

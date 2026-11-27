@@ -20,6 +20,42 @@ import (
 type Policy struct {
 	Model  interface{}
 	Window time.Duration
+
+	// Lines are rows that belong to a record and go with it, whatever their
+	// own age: an invoice's lines, from --items. A line is saved a moment
+	// after its record, so measuring it by its own created_at would leave it
+	// a night behind, a row nobody can reach that the policy did not mean to
+	// keep. They are removed first, because they point at the record by
+	// foreign key and the database refuses the record while they remain.
+	Lines []Lines
+
+	// Tree is a resource whose rows point at a parent row of their own, from
+	// --tree. A node goes only once nothing points at it any more, so a parent
+	// is kept until its last child has expired: the window starts when the
+	// subtree can go. Taking young children with it would delete them before
+	// their window, which is the one way a retention promise must not be
+	// wrong.
+	Tree bool
+}
+
+// Lines names the model whose rows belong to a retained record, and the column
+// on it that points at the record.
+type Lines struct {
+	Model      interface{}
+	ForeignKey string
+}
+
+// Option adds to a policy what its resource's shape needs.
+type Option func(*Policy)
+
+// WithLines removes model's rows with the record they point at by foreignKey.
+func WithLines(model interface{}, foreignKey string) Option {
+	return func(p *Policy) { p.Lines = append(p.Lines, Lines{Model: model, ForeignKey: foreignKey}) }
+}
+
+// AsTree keeps a row while any row still points at it as its parent.
+func AsTree() Option {
+	return func(p *Policy) { p.Tree = true }
 }
 
 var (
@@ -32,18 +68,26 @@ var (
 //
 //	func init() { retention.Register(&Message{}, 90*24*time.Hour) }
 //
+// with WithLines for a record that has --items, or AsTree for a --tree:
+//
+//	retention.Register(&Invoice{}, 90*24*time.Hour, retention.WithLines(&InvoiceItem{}, "invoice_id"))
+//
 // A window that is not positive panics, so the app refuses to start. Zero
 // would put the cutoff at now and the next sweep would delete every row in the
 // table, which is never what somebody editing this line meant.
-func Register(model interface{}, window time.Duration) {
+func Register(model interface{}, window time.Duration, opts ...Option) {
 	if window <= 0 {
 		panic(fmt.Sprintf("retention: %T registered with a window of %v; "+
 			"a window must be positive, or remove the Register call to keep rows forever",
 			model, window))
 	}
+	p := Policy{Model: model, Window: window}
+	for _, opt := range opts {
+		opt(&p)
+	}
 	mu.Lock()
 	defer mu.Unlock()
-	policies = append(policies, Policy{Model: model, Window: window})
+	policies = append(policies, p)
 }
 
 // Policies is every registered window. A copy, so the sweep reading it cannot

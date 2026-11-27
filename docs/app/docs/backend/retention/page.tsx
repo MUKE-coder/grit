@@ -144,10 +144,66 @@ Orphan upload cleanup complete, removed 1 uploads`}
                   is the case that cannot wait, and it deletes files immediately.
                 </li>
                 <li>
+                  <strong>Lines go with their record.</strong> On a resource generated with{' '}
+                  <code>--items</code>, a record&apos;s lines are removed with it, first, whatever
+                  their own age. A line is saved a moment after its record, so measured by itself it
+                  would outlive the record by a night. A record and its lines go in one
+                  transaction, so a line added while the sweep runs keeps both until the next
+                  night rather than leaving the record without its lines.
+                </li>
+                <li>
+                  <strong>A tree keeps a parent for its children.</strong> On a resource generated
+                  with <code>--tree</code>, a row is removed only once nothing below it is left. A
+                  category past its window stays while any subcategory is still inside its own, so
+                  nothing is ever removed before its window. The window starts when the whole
+                  subtree can go. With <code>--items</code> as well, a row&apos;s lines go when the
+                  row goes, so a row kept for its children keeps its lines too.
+                </li>
+                <li>
                   <strong>One resource at a time.</strong> If one resource cannot be swept, the
                   others still are, and the job reports the failure so it shows on the jobs page.
                 </li>
               </ul>
+
+              <h2 id="admin">In the admin</h2>
+              <p>
+                The resource&apos;s list page says how long rows are kept, between the header and
+                the table:
+              </p>
+              <CodeBlock
+                language="text"
+                code={`Each row is removed for good 90 days after it is created, with its files.`}
+              />
+              <p>
+                It comes from <code>retention: &quot;90d&quot;</code> in the resource&apos;s admin
+                definition, which the generator writes. That line is only what the page shows. The
+                model&apos;s <code>retention.Register</code> is what removes the rows, so changing
+                the definition alone changes the sentence and not the policy. On a{' '}
+                <code>--tree</code> resource the page adds that a row stays while any row below it
+                is newer.
+              </p>
+
+              <h2 id="doctor">Finding resources without one</h2>
+              <p>
+                <Link href="/docs/security/doctor">
+                  <code>grit doctor</code>
+                </Link>{' '}
+                warns about every resource that is owned by a user and has no window, under the
+                check <code>owned-resource-no-retention</code>:
+              </p>
+              <CodeBlock
+                terminal
+                code={`⚠ Document is owned by a user and has no retention window: its rows stay until they are deleted or the user is erased
+    if the rows should go after a fixed time, add func init() { retention.Register(&Document{}, 90*24*time.Hour) } to its model file, which is what --retain 90d writes. If they should stay as long as the account does, nothing to do.
+    (owned-resource-no-retention)`}
+              />
+              <p>
+                It says what the model shows, not whether the data is personal: only you know
+                that. Plenty of owned resources should be kept for as long as the account exists,
+                and for those there is nothing to do. A resource generated with{' '}
+                <code>--confidential</code> is named as such in the warning. An append-only resource
+                is never reported, because its rows cannot be removed.
+              </p>
 
               <h2 id="existing-projects">Existing projects</h2>
               <p>
@@ -155,14 +211,26 @@ Orphan upload cleanup complete, removed 1 uploads`}
                 <code>--retain</code> to a project that has not been upgraded yet, the generator
                 says that nothing will remove the rows until you run it.
               </p>
+              <p>
+                The upgrade also brings the list page that shows the window, unless you have edited
+                that page. A resource generated with <code>--retain</code> before the admin showed
+                windows has no <code>retention</code> line in its definition: add{' '}
+                <code>retention: &quot;90d&quot;,</code> next to its <code>endpoint</code> to show
+                it.
+              </p>
+              <p>
+                A project that took <code>--retain</code> before it worked with{' '}
+                <code>--items</code> and <code>--tree</code> needs <code>grit upgrade</code> before
+                generating one of those. The generator says so and writes nothing until then,
+                because the model would call options its <code>internal/retention</code> does not
+                have yet.
+              </p>
 
               <Callout type="note" title="Limits">
                 <code>--retain</code> cannot be combined with <code>--append-only</code>, whose rows
-                can never be deleted. It cannot be combined with <code>--tree</code> or{' '}
-                <code>--items</code> yet either: the database refuses to delete a row that other
-                rows still point at, and a tree&apos;s parent is always older than its children. The
-                same applies to a retained resource that another resource belongs to: a row still
-                referenced is refused, the job reports it, and the rest of the sweep carries on.
+                can never be deleted. On a retained resource that another resource belongs to, the
+                database refuses a row that is still referenced: that row is kept and reported, and
+                the others still go.
               </Callout>
 
               <div className="mt-16 flex items-center justify-between border-t border-border/30 pt-8">
