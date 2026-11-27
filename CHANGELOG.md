@@ -23,6 +23,31 @@ Also worth knowing:
 ---
 
 
+## v3.582.0 - November 27, 2026
+
+### Retention, part two, and a row that was being kept for ever
+
+A resource's list page in the admin now says how long its rows are kept. `grit doctor` asks about resources owned by a user that have no window, stating what the model shows rather than calling the data personal, and saying plainly that "nothing to do" is often the right answer. And `--retain` now works with{" "} `--items` and `--tree`. From{" "} [#312](https://github.com/MUKE-coder/grit/pull/312) , which closes #260.
+
+#### The two shapes, and the rule they follow
+
+**A record's lines go with it, whatever their own age.** An invoice line is saved a moment after its invoice, so measuring it by its own age would leave it a night behind as a row nobody can reach.
+
+**A tree keeps a parent until its last child expires.** Of the three things a sweep could do with a node whose children are younger than the window, this is the only one that never deletes anything early. Taking the children along removes rows before their window, and reparenting invents a structure nobody asked for. Deleting early is the one direction a retention promise must not be wrong in, which is the same reason{" "} `--retain` refuses months and years.
+
+#### And the part that was already shipped and wrong
+
+v3.580.0 said a resource whose sweep breaks should not keep every other resource's data past its promise, and it was not true within a table. A row another resource still points at is refused by the database, that refusal failed the whole page of 500, and pages are read in id order. So one referenced invoice kept the 499 behind it, and every page after those, past their window, every night, for ever.
+
+A refused page is now retried a row at a time: only the rows the database will not release stay, they are named in the job's report, and the rest go. Pages are read by position rather than with a growing list of exclusions, so a resource with thousands of referenced rows does not slow to a stop. Reverting the fix makes two tests fail, one of which leaves 602 rows where 600 were expected.
+
+Each page is now one transaction, lines then rows, so a line added while the sweep runs puts the record and its lines back together rather than leaving a record whose lines are already gone.
+
+#### One reader for a shape the generator writes
+
+The doctor's suggestion has to know whether a resource has lines or is a tree, and the only record of that is the model's own source, so it reads it back. It did that with its own copy of the patterns, in a different package from the code that writes them, with nothing making the two agree. Both now live beside the generator as{" "} `ItemsChildModel` and `IsTreeModel`, and one test runs the real generator and then the readers. A test on either side alone passes while the pair is broken, and the symptom would have been a suggested line that compiles and then fails on a foreign key every night.
+
+
 ## v3.581.0 - November 25, 2026
 
 ### The field builder says what each field produces
