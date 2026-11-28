@@ -49,6 +49,11 @@ const checks: { name: string; level: string; what: string }[] = [
     what: 'A resource owned by a user has no retention window, so its rows stay until someone deletes them or the user is erased. Often that is right, and then there is nothing to do. When a privacy policy promises they go after a fixed time, generate it with --retain.',
   },
   {
+    name: 'owned-files-outlive-erasure',
+    level: 'error',
+    what: 'A resource owned by a user has a file column, and its erasure registration has no cleanup, so erasing the user deletes the row and leaves the file. Their own uploads already go with them; what survives is a file somebody else uploaded onto one of their rows, an administrator above all, because that uploads row is not theirs and the orphan sweep cannot see a file whose record has been deleted. Regenerating the resource writes the cleanup.',
+  },
+  {
     name: 'secret-column-not-declared',
     level: 'warning',
     what: 'A column named like a secret (anything ending in _token, _secret, _password, _api_key, a recovery phrase, a security answer) is sent in every response and can be filtered on. Declare it sensitive and the API stops returning it, the admin stops listing it, the export stops carrying it and an expression stops resolving it.',
@@ -204,7 +209,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  34 checks over 0 resource(s)
+  35 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -223,7 +228,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  34 checks over 10 resource(s)
+  35 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment

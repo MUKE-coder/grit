@@ -91,6 +91,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.583.0 */}
+            <div className="mb-12" id="v3.583.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.583.0
+                </span>
+                <span className="text-sm text-muted-foreground">November 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An erasure deleted the row and left the file</h3>
+
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/311">#311</a>,
+                  reported with a failing test. Erasing a user deletes every
+                  row they own in a resource generated with{" "}
+                  <code>--owned-by</code>, and a file column is not in the
+                  database: the row names an object in storage. Their own
+                  uploads already went, with every object each one owned. What
+                  did not go was a file <em>somebody else</em> uploaded onto
+                  one of their rows.
+                </p>
+
+                <h4>Why that one survived</h4>
+                <p>
+                  An administrator may attach a document to somebody
+                  else&apos;s record, which is exactly what the owner check
+                  allows an administrator to do. That uploads row belongs to
+                  the administrator, so the erasure never touched it, and the
+                  record that claimed it was hard-deleted, so the orphan sweep
+                  could not consider it either: the sweep only looks at
+                  unclaimed rows, and the one event that made the file an
+                  orphan was also the one that hid it from the collector. The
+                  file, its renditions and the original kept for reprocessing
+                  stayed in the bucket for good with nothing pointing at them,
+                  while the deletion journal recorded the erasure as complete.
+                </p>
+                <p>
+                  If the person had uploaded the file themselves it did go,
+                  which is why the gap was easy to miss. Same shape as{" "}
+                  <a href="https://github.com/MUKE-coder/grit/issues/222">#222</a>{" "}
+                  for a Trash purge, and the same broken promise as{" "}
+                  <a href="https://github.com/MUKE-coder/grit/issues/202">#202</a>.
+                </p>
+
+                <h4>What a generated resource writes now</h4>
+                <p>
+                  A resource generated with <code>--owned-by</code> that has a
+                  file column registers{" "}
+                  <code>erasure.RegisterWithCleanup</code> rather than{" "}
+                  <code>erasure.Register</code>, with a cleanup in its own
+                  model file that calls the new{" "}
+                  <code>files.EraseOwnedFiles</code>. That reads the rows a
+                  page at a time before the DELETE, because the file column
+                  lives on the row, deletes every object each one owns, and
+                  releases the uploads rows so the nightly sweep tidies the
+                  table.
+                </p>
+                <p>
+                  The objects go <strong>inside the erasure</strong> rather
+                  than on the sweep&apos;s next pass. A Trash purge releases
+                  and lets the sweep do the deleting, deliberately, because the
+                  sweep re-checks every key against the project&apos;s own
+                  tables first. An erasure cannot afford that latency: the
+                  journal says the erasure is done, and that has to be true
+                  when it is written.
+                </p>
+
+                <h4>And for the resources already generated</h4>
+                <p>
+                  The registration lives in the resource&apos;s own model file,
+                  which <code>grit upgrade</code> does not rewrite, so it
+                  cannot fix this for you. <code>grit doctor</code> reports it
+                  instead, as an error:{" "}
+                  <code>owned-files-outlive-erasure</code>, with the edit to
+                  make. Regenerating the resource writes it.
+                </p>
+                <p>
+                  <code>grit generate</code> also brings{" "}
+                  <code>internal/files</code> up to date first when the
+                  manifest proves nobody has edited it, and says so when it
+                  cannot: the resource is then generated registering for
+                  erasure without the cleanup, which is what every version
+                  before this one did. A resource that does not compile would
+                  be worse than the leak.
+                </p>
+              </div>
+            </div>
+
             {/* v3.582.0 */}
             <div className="mb-12" id="v3.582.0">
               <div className="flex items-center gap-3 mb-4">

@@ -87,8 +87,12 @@ func init() {
 	// (grit#202), and the objects are unreferenced afterwards, so nothing can
 	// find them to clean up later either.
 	//
-	// This covers Grit's own uploads table. A file column on one of YOUR
-	// models is yours to register the same way: see the GDPR docs.
+	// This covers Grit's own uploads table. A resource generated with
+	// --owned-by that has a file column registers its own cleanup from its
+	// model file, through files.EraseOwnedFiles: erasing the owner takes the
+	// files on those rows too, whoever uploaded them (grit#311). A file column
+	// on a model you wrote by hand is yours to register the same way: see the
+	// GDPR docs.
 	erasure.RegisterWithCleanup(&Upload{}, "user_id", deleteUploadObjects)
 }
 

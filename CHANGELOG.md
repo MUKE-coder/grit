@@ -23,6 +23,31 @@ Also worth knowing:
 ---
 
 
+## v3.583.0 - November 28, 2026
+
+### An erasure deleted the row and left the file
+
+[#311](https://github.com/MUKE-coder/grit/issues/311), reported with a failing test. Erasing a user deletes every row they own in a resource generated with{" "} `--owned-by`, and a file column is not in the database: the row names an object in storage. Their own uploads already went, with every object each one owned. What did not go was a file *somebody else* uploaded onto one of their rows.
+
+#### Why that one survived
+
+An administrator may attach a document to somebody else's record, which is exactly what the owner check allows an administrator to do. That uploads row belongs to the administrator, so the erasure never touched it, and the record that claimed it was hard-deleted, so the orphan sweep could not consider it either: the sweep only looks at unclaimed rows, and the one event that made the file an orphan was also the one that hid it from the collector. The file, its renditions and the original kept for reprocessing stayed in the bucket for good with nothing pointing at them, while the deletion journal recorded the erasure as complete.
+
+If the person had uploaded the file themselves it did go, which is why the gap was easy to miss. Same shape as{" "} [#222](https://github.com/MUKE-coder/grit/issues/222){" "} for a Trash purge, and the same broken promise as{" "} [#202](https://github.com/MUKE-coder/grit/issues/202).
+
+#### What a generated resource writes now
+
+A resource generated with `--owned-by` that has a file column registers{" "} `erasure.RegisterWithCleanup` rather than{" "} `erasure.Register`, with a cleanup in its own model file that calls the new{" "} `files.EraseOwnedFiles`. That reads the rows a page at a time before the DELETE, because the file column lives on the row, deletes every object each one owns, and releases the uploads rows so the nightly sweep tidies the table.
+
+The objects go **inside the erasure** rather than on the sweep's next pass. A Trash purge releases and lets the sweep do the deleting, deliberately, because the sweep re-checks every key against the project's own tables first. An erasure cannot afford that latency: the journal says the erasure is done, and that has to be true when it is written.
+
+#### And for the resources already generated
+
+The registration lives in the resource's own model file, which `grit upgrade` does not rewrite, so it cannot fix this for you. `grit doctor` reports it instead, as an error:{" "} `owned-files-outlive-erasure`, with the edit to make. Regenerating the resource writes it.
+
+`grit generate` also brings{" "} `internal/files` up to date first when the manifest proves nobody has edited it, and says so when it cannot: the resource is then generated registering for erasure without the cleanup, which is what every version before this one did. A resource that does not compile would be worse than the leak.
+
+
 ## v3.582.0 - November 27, 2026
 
 ### Retention, part two, and a row that was being kept for ever

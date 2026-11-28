@@ -113,6 +113,12 @@ func (g *Generator) writeGoModel(names Names) error {
 		}
 	}
 	std := []string{`"time"`}
+	// An owned resource with a file column carries an erasure cleanup, which
+	// calls into internal/files with a context of its own: it runs inside the
+	// erasure transaction and not inside a request.
+	if g.erasesOwnedFiles() {
+		std = append(std, `"context"`)
+	}
 	// A model with a sensitive column carries a MarshalJSON that drops the
 	// key. "encoding/json" sorts before everything else here, and sort.Strings
 	// below puts it there.
@@ -186,6 +192,11 @@ func (g *Generator) writeGoModel(names Names) error {
 	}
 	if hasAuto {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
+	}
+	// storage carries the disk the erasure cleanup deletes from, and sorts
+	// after sequence and before tenant.
+	if g.erasesOwnedFiles() {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/storage\"", g.Module))
 	}
 	// tenant sorts after sequence, so the block stays gofmt-clean.
 	if g.Definition.TenantOwned {

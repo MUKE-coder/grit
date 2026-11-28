@@ -90,6 +90,20 @@ export default function CompliancePage() {
               </li>
             </ul>
             <p>
+              <strong>The files go with the rows.</strong> A DELETE removes a row, and a file is
+              not in the database: the row names an object in storage. So the erasure deletes the
+              user&apos;s own uploads and every object each one owns, its renditions and the
+              original kept for reprocessing included, and a resource generated with{' '}
+              <code>--owned-by</code> that has a file column deletes the files on its rows too,
+              whoever uploaded them. That last part is the case that is easy to miss: an
+              administrator may attach a document to somebody else&apos;s record, and that uploads
+              row is the administrator&apos;s, so the erasure does not touch it. Once the record is
+              hard-deleted nothing points at the object and the orphan sweep cannot consider it
+              either, so it would stay in the bucket for good. A resource generated before
+              v3.583.0 keeps the old behaviour until it is regenerated, and{' '}
+              <code>grit doctor</code> reports it as <code>owned-files-outlive-erasure</code>.
+            </p>
+            <p>
               So the deletion journal is populated <strong>one row per erasure</strong> — never by
               export, never automatically, never by a seeder. The user&apos;s{' '}
               <Link href="/docs/batteries/security" className="text-accent hover:underline">

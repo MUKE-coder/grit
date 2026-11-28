@@ -79,6 +79,10 @@ var checks = []struct {
 	// user. Said as what the model shows, not as a verdict on the data
 	// (grit#260).
 	{"owned-resource-no-retention", checkOwnedRetention},
+	// An owned row with a file column that is erased without its files. The
+	// file somebody else uploaded onto it survives the erasure, and nothing
+	// can find it afterwards either (grit#311).
+	{"owned-files-outlive-erasure", checkOwnedFileErasure},
 	// A column named like a secret that the API returns, and that an
 	// expression can filter on. The rules engine's own denylist is a guess
 	// about names; this is the prompt to stop relying on it.
@@ -185,6 +189,11 @@ type model struct {
 	// Retained is a retention.Register for the model, which --retain writes
 	// into the model file (grit#260).
 	Retained bool
+	// Erased is an erasure registration, and ErasesFiles is one that carries
+	// a cleanup. --owned-by writes the first, and the second for a resource
+	// with file columns (grit#311).
+	Erased      bool
+	ErasesFiles bool
 	// Source is the struct's own lines, tags included.
 	//
 	// Fields loses the gorm tag, and some faults live only there: a bool with
@@ -201,6 +210,15 @@ func (m *model) encrypted() []string {
 		}
 	}
 	return out
+}
+
+// hasFileColumn reports whether any column of the model points at a stored
+// object, which is what makes erasing one of its rows more than a DELETE.
+//
+// Read from Source rather than from Fields, because both shapes a file column
+// takes are the same word: *files.FileRef for one and files.FileRefs for many.
+func (m *model) hasFileColumn() bool {
+	return strings.Contains(m.Source, "files.FileRef")
 }
 
 // hasUserRelation reports whether the model points at a user, which is what
@@ -239,6 +257,12 @@ var (
 	ownerRe    = regexp.MustCompile(`func \(\w+ \*(\w+)\) GetOwnerID\(\) string \{\s*\n?\s*return \w+\.(\w+)`)
 	registerRe = regexp.MustCompile(`appendonly\.Register\(&(\w+)\{\}\)`)
 	retainRe   = regexp.MustCompile(`retention\.Register\(&(\w+)\{\}`)
+	// The erasure registration, and whether it carries a cleanup. The two
+	// are told apart because a row with a file column needs the cleanup:
+	// without one the row goes and the file stays (grit#311). Register(&
+	// cannot match RegisterWithCleanup(&.
+	erasureRe      = regexp.MustCompile(`erasure\.Register\(&(\w+)\{\}`)
+	erasureFilesRe = regexp.MustCompile(`erasure\.RegisterWithCleanup\(&(\w+)\{\}`)
 	// A record's lines are removed with it, so they are covered by its window.
 	linesRe = regexp.MustCompile(`retention\.WithLines\(&(\w+)\{\}`)
 	// outbox.Enqueue(tx, "topic", ...) and the relays that drain it.
@@ -395,6 +419,20 @@ func parseModels(src string) []*model {
 		for _, m := range out {
 			if m.Name == r[1] {
 				m.Retained = true
+			}
+		}
+	}
+	for _, r := range erasureRe.FindAllStringSubmatch(src, -1) {
+		for _, m := range out {
+			if m.Name == r[1] {
+				m.Erased = true
+			}
+		}
+	}
+	for _, r := range erasureFilesRe.FindAllStringSubmatch(src, -1) {
+		for _, m := range out {
+			if m.Name == r[1] {
+				m.Erased, m.ErasesFiles = true, true
 			}
 		}
 	}

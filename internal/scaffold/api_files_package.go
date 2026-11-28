@@ -639,6 +639,157 @@ func TestTheSweepStillRunsBeforeTheDerivedColumnExists(t *testing.T) {
 	}
 }
 
+// eraseDoc is a resource generated with --owned-by that has a file column.
+type eraseDoc struct {
+	ID         string
+	UserID     string
+	Attachment *FileRef ` + "`" + `gorm:"type:json"` + "`" + `
+}
+
+func (eraseDoc) TableName() string { return "documents" }
+
+// Erasing a user takes the files on the rows erased with them, whoever
+// uploaded the file.
+//
+// The case that was lost: an administrator uploads a document onto somebody
+// else's record, which is what the owner check allows an administrator to do.
+// That uploads row belongs to the administrator, so erasing the owner never
+// touched it, and the record that claimed it was hard-deleted, so the orphan
+// sweep could not consider it either. The file, its renditions and the kept
+// original stayed in storage for good with nothing pointing at them, while the
+// deletion journal recorded the erasure as complete (grit#311).
+func TestErasingAnOwnerTakesAFileSomebodyElseUploaded(t *testing.T) {
+	db := sweepDBWithDerived(t)
+	if err := db.AutoMigrate(&eraseDoc{}); err != nil {
+		t.Fatal(err)
+	}
+
+	// The administrator's upload, claimed when the record was saved.
+	old := time.Now().Add(-48 * time.Hour)
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, derived, claimed_at, created_at) VALUES (?, ?, ?, ?, ?)",
+		"u-admin", "uploads/contract.pdf", "[]", old, old).Error; err != nil {
+		t.Fatal(err)
+	}
+	ref := &FileRef{
+		Key:         "uploads/contract.pdf",
+		OriginalKey: "originals/contract.pdf",
+		Renditions:  map[string]Rendition{"thumb": {Key: "uploads/contract-thumb.webp"}},
+	}
+	if err := db.Create(&eraseDoc{ID: "d1", UserID: "u1", Attachment: ref}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&eraseDoc{ID: "d2", UserID: "u2",
+		Attachment: &FileRef{Key: "uploads/someone-elses.pdf"}}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	store := &recordingStore{}
+	ctx := context.Background()
+	if err := EraseOwnedFiles(ctx, db, store, &eraseDoc{}, "user_id", "u1"); err != nil {
+		t.Fatalf("EraseOwnedFiles: %v", err)
+	}
+
+	for _, want := range ref.OwnedKeys() {
+		if !contains(store.deleted, want) {
+			t.Errorf("the erasure left %s in storage, and nothing else will look for it", want)
+		}
+	}
+	if contains(store.deleted, "uploads/someone-elses.pdf") {
+		t.Error("the erasure deleted a file on another user's row")
+	}
+
+	// And the uploads row is released, so the sweep removes what the erasure
+	// left behind in the table rather than keeping a claim on a deleted object.
+	var claimed int64
+	if err := db.Table("uploads").
+		Where("id = ? AND claimed_at IS NOT NULL", "u-admin").
+		Count(&claimed).Error; err != nil {
+		t.Fatal(err)
+	}
+	if claimed != 0 {
+		t.Error("the uploads row is still claimed, so no sweep will ever remove it")
+	}
+}
+
+// The end of the same story, which is the assertion the report made: with the
+// record gone and the row released, the next sweep takes the row.
+func TestTheSweepTakesWhatAnErasureReleased(t *testing.T) {
+	db := sweepDBWithDerived(t)
+	if err := db.AutoMigrate(&eraseDoc{}); err != nil {
+		t.Fatal(err)
+	}
+
+	old := time.Now().Add(-48 * time.Hour)
+	if err := db.Exec(
+		"INSERT INTO uploads (id, path, derived, claimed_at, created_at) VALUES (?, ?, ?, ?, ?)",
+		"u-admin", "uploads/contract.pdf", "[]", old, old).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&eraseDoc{ID: "d1", UserID: "u1",
+		Attachment: &FileRef{Key: "uploads/contract.pdf"}}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if err := EraseOwnedFiles(ctx, db, &recordingStore{}, &eraseDoc{}, "user_id", "u1"); err != nil {
+		t.Fatalf("EraseOwnedFiles: %v", err)
+	}
+	// Scrub's own DELETE, which follows the cleanup.
+	if err := db.Unscoped().Where("user_id = ?", "u1").Delete(&eraseDoc{}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	store := &recordingStore{}
+	n, err := RunOrphanCleanup(ctx, db, store, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("RunOrphanCleanup: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("the sweep removed %d rows, want the upload the erasure released", n)
+	}
+}
+
+// A model with no file columns is not a failure, and a store that is not
+// configured is not either: an erasure must not be refused because an object
+// store nobody set up cannot be reached.
+func TestEraseOwnedFilesWithoutFilesOrAStore(t *testing.T) {
+	db := sweepDBWithDerived(t)
+	if err := db.AutoMigrate(&eraseDoc{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&eraseDoc{ID: "d1", UserID: "u1"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	if err := EraseOwnedFiles(ctx, db, nil, &eraseDoc{}, "user_id", "u1"); err != nil {
+		t.Errorf("EraseOwnedFiles with no store: %v", err)
+	}
+	if err := EraseOwnedFiles(ctx, db, &recordingStore{}, &eraseDoc{}, "user_id", "nobody"); err != nil {
+		t.Errorf("EraseOwnedFiles with no rows: %v", err)
+	}
+}
+
+// AllOwnedKeys is every object the record's columns own, not the primaries
+// RefKeys answers with. Deleting by RefKeys is what left the renditions and
+// the kept original in the bucket (grit#221).
+func TestAllOwnedKeysCoversTheDerivedObjectsToo(t *testing.T) {
+	doc := &eraseDoc{Attachment: &FileRef{
+		Key:         "uploads/a.webp",
+		OriginalKey: "originals/a.jpg",
+		Renditions:  map[string]Rendition{"thumb": {Key: "uploads/a-thumb.webp"}},
+	}}
+	got := AllOwnedKeys(doc)
+	for _, want := range []string{"uploads/a.webp", "originals/a.jpg", "uploads/a-thumb.webp"} {
+		if !contains(got, want) {
+			t.Errorf("AllOwnedKeys returned %v, missing %s", got, want)
+		}
+	}
+	if keys := RefKeys(doc); len(keys) != 1 {
+		t.Errorf("RefKeys returned %v, want the primary alone: that is what an uploads row is keyed by", keys)
+	}
+}
+
 // sweepDBWithDerived is sweepDB plus the column v3.544.0 added.
 func sweepDBWithDerived(t *testing.T) *gorm.DB {
 	t.Helper()
@@ -1198,7 +1349,17 @@ func ClaimRefs(ctx context.Context, db *gorm.DB, record interface{}) {
 // is the case that cannot wait, and that path deletes immediately and always
 // did.
 func ReleaseRefs(ctx context.Context, db *gorm.DB, record interface{}) {
-	keys := RefKeys(record)
+	ReleaseKeys(ctx, db, RefKeys(record))
+}
+
+// ReleaseKeys is ReleaseRefs for keys that have already been collected, so a
+// caller releasing a page of records pays one statement rather than one per
+// record. An erasure over an account with ten thousand of them is inside a
+// transaction, where that difference is the whole cost.
+//
+// Primaries, as RefKeys returns them: a rendition has no uploads row to
+// release.
+func ReleaseKeys(ctx context.Context, db *gorm.DB, keys []string) {
 	if db == nil || len(keys) == 0 {
 		return
 	}
@@ -1252,6 +1413,134 @@ func RefKeys(record interface{}) []string {
 		}
 	}
 	return keys
+}
+
+// AllOwnedKeys is every object in storage a record's file columns own: for
+// each *FileRef and FileRefs column, the stored file, the original kept for
+// reprocessing and every rendition. Deduplicated, in column order.
+//
+// RefKeys is the counterpart for bookkeeping and returns the primaries only,
+// because that is what an uploads row is keyed by. This is the list for
+// deleting: everything the record is the last pointer to.
+func AllOwnedKeys(record interface{}) []string {
+	if record == nil {
+		return nil
+	}
+	v := derefPtr(reflect.ValueOf(record))
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return nil
+	}
+
+	var keys []string
+	seen := map[string]bool{}
+	add := func(owned []string) {
+		for _, key := range owned {
+			if key == "" || seen[key] {
+				continue
+			}
+			seen[key] = true
+			keys = append(keys, key)
+		}
+	}
+
+	t := v.Type()
+	for i := 0; i < t.NumField(); i++ {
+		f := v.Field(i)
+		if f.Kind() == reflect.Ptr && f.Type() == reflect.TypeOf((*FileRef)(nil)) {
+			if !f.IsNil() {
+				add(f.Interface().(*FileRef).OwnedKeys())
+			}
+			continue
+		}
+		if f.Type() == reflect.TypeOf(FileRefs{}) {
+			add(f.Interface().(FileRefs).OwnedKeys())
+			continue
+		}
+	}
+	return keys
+}
+
+// erasePage is how many rows one pass of EraseOwnedFiles reads.
+const erasePage = 200
+
+// EraseOwnedFiles deletes the stored objects on the rows of model that belong
+// to userID, and releases the uploads rows that named them.
+//
+// It is an erasure.Cleanup, for a resource generated with --owned-by that has
+// file columns. It runs inside the erasure transaction and before those rows
+// are deleted, because a file column lives on the row and after the DELETE
+// there is nothing left to ask what the record pointed at.
+//
+// Erasing a user already took their own uploads and every object those owned
+// (grit#202, grit#221). What that could not see is a file somebody else
+// uploaded onto a record of theirs, an administrator above all: the uploads
+// row belongs to the administrator, so the erasure leaves it alone, and the
+// record that claimed it is hard-deleted, so the orphan sweep can never
+// consider it either. The file, its renditions and the kept original stayed in
+// the bucket for good with no row pointing at them, while the deletion journal
+// recorded the erasure as complete (grit#311).
+//
+// The objects go now rather than on the sweep's next pass. Purging from the
+// Trash releases and lets the sweep delete, deliberately (see ReleaseRefs),
+// and a right-to-erasure request is the one case that cannot wait: the journal
+// says the erasure is done, and that has to be true when it is written.
+//
+// The uploads rows are released rather than deleted, because a row here may
+// belong to somebody else entirely and the sweep already knows how to decide
+// what to do with it: it re-checks every key against the project's own tables
+// first. What is not deferred is the object, which is the personal data.
+//
+// Rows are read a page at a time. An account with ten thousand records should
+// not be a ten-thousand-row slice held inside a transaction.
+func EraseOwnedFiles(ctx context.Context, tx *gorm.DB, st Storage, model interface{}, ownerColumn, userID string) error {
+	if tx == nil || model == nil {
+		return nil
+	}
+	t := reflect.TypeOf(model)
+	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("EraseOwnedFiles: model must be a pointer to a struct, got %T", model)
+	}
+	// A slice of the model's own type, because FindInBatches pages by reading
+	// the primary key off the last element of the destination. A destination
+	// without that field panics there, which is how the uploads cleanup worked
+	// for an account with up to one page of files and crashed above it.
+	rows := reflect.New(reflect.SliceOf(t.Elem()))
+	return tx.Unscoped().Model(model).
+		Where(ownerColumn+" = ?", userID).
+		FindInBatches(rows.Interface(), erasePage, func(*gorm.DB, int) error {
+			// The destination slice, not the callback's tx: that carries no
+			// query of its own in here.
+			batch := rows.Elem()
+			keys := make([]string, 0, batch.Len())
+			claimed := make([]string, 0, batch.Len())
+			for i := 0; i < batch.Len(); i++ {
+				record := batch.Index(i).Addr().Interface()
+				keys = append(keys, AllOwnedKeys(record)...)
+				claimed = append(claimed, RefKeys(record)...)
+			}
+			// One statement for the page rather than one per record: this is
+			// inside the erasure transaction.
+			ReleaseKeys(ctx, tx, claimed)
+			return DeleteKeys(ctx, st, keys)
+		}).Error
+}
+
+// DeleteKeys removes objects from storage, in one request where the store
+// supports it. A store that is not configured, or an empty list, is not an
+// error: there is no bucket the keys could be in.
+func DeleteKeys(ctx context.Context, st Storage, keys []string) error {
+	if st == nil || len(keys) == 0 {
+		return nil
+	}
+	if many, ok := st.(batchDeleter); ok {
+		return many.DeleteMany(ctx, keys)
+	}
+	for _, key := range keys {
+		if err := st.Delete(ctx, key); err != nil {
+			return fmt.Errorf("deleting %s: %w", key, err)
+		}
+	}
+	return nil
 }
 
 // orphan is one candidate row: the id to delete, the key to look for, and
@@ -1875,3 +2164,13 @@ func TestCleanupRemovedNilStorage(t *testing.T) {
 }
 `
 }
+
+// FilesFileRefGo and FilesLifecycleGo are exported so the generator can bring
+// an older project's internal/files up to date. A resource generated with
+// --owned-by and a file column registers an erasure cleanup that calls
+// files.EraseOwnedFiles, through FileRef.OwnedKeys, and a copy of the package
+// from before those existed would not compile against the model.
+func FilesFileRefGo() string { return filesFileRefGo() }
+
+// FilesLifecycleGo is FilesFileRefGo for the lifecycle half of the package.
+func FilesLifecycleGo() string { return filesLifecycleGo() }
