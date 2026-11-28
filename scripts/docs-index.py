@@ -401,11 +401,29 @@ def cli_command_pages():
             if len(text) >= 40:
                 prose.append(text)
 
+        # The flags, as headings.
+        #
+        # score() weighs a heading far above body text, and a flag was only
+        # ever in the body: the command's prose mentions --saas, so searching
+        # for it scored one point per mention and lost to every page with the
+        # word in its title. A flag is the most specific thing a command has,
+        # and it belongs where the scorer can see it.
+        #
+        # Both spellings, because somebody types --saas and somebody types
+        # saas. Deduplicated and ordered, so the heading count stays stable
+        # and headingWeight does not drift with it.
+        flags = []
+        for raw in re.findall(r"\bflag:\s*'((?:[^'\\]|\\.)*)'", block):
+            for token in re.findall(r"--[a-z0-9-]+", raw):
+                for form in (token, token.lstrip("-")):
+                    if form not in flags:
+                        flags.append(form)
+
         pages.append({
             "url": "/docs/cli#%s" % slug,
             "title": name,
             "description": field("summary"),
-            "headings": [name, field("example")],
+            "headings": [name, field("example")] + flags,
             "text": " ".join(prose)[:6000],
             "kind": "docs",
         })

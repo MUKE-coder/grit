@@ -1,0 +1,93 @@
+# Flags the binary accepts that the Command Explorer does not list.
+#
+# A budget, not a permission: this file may shrink and must never grow.
+# TestEveryFlagIsDocumented fails on a flag that is missing and not listed
+# here, and on a line here whose flag is now documented, so the list cannot
+# be padded and cannot go stale.
+#
+# To clear one: add it to that command's flags array in
+# docs/config/cli-commands.ts and delete its line below. The Command
+# Explorer renders that config and both search indexes read it, so an
+# undocumented flag is also an unfindable one.
+
+grit add i18n --force
+grit add offline --models
+grit add web-auth --force
+grit backup --output
+grit deploy --app-port
+grit deploy --domain
+grit deploy --dry-run
+grit deploy --env-file
+grit deploy --environment
+grit deploy --health-path
+grit deploy --host
+grit deploy --k8s
+grit deploy --k8s-admin-image
+grit deploy --k8s-image
+grit deploy --k8s-namespace
+grit deploy --k8s-out
+grit deploy --k8s-replicas
+grit deploy --k8s-web-image
+grit deploy --keep
+grit deploy --key
+grit deploy --no-domain
+grit deploy --port
+grit deploy --provision
+grit deploy --railway
+grit deploy --rollback
+grit deploy --service
+grit doctor --env
+grit doctor --json
+grit doctor --no-docker
+grit doctor --no-node
+grit doctor --queries
+grit generate migration --index
+grit generate migration --index-name
+grit generate migration --unique
+grit generate perf --duration
+grit generate perf --resource
+grit generate perf --target
+grit generate perf --vus
+grit generate sequence --prefix
+grit generate sequence --reset
+grit generate sequence --width
+grit index --all-sortable
+grit index --only
+grit index --write
+grit init --force
+grit logs --errors
+grit logs --grep
+grit logs --json
+grit logs --lines
+grit migrate --yes
+grit own --all
+grit package --clean
+grit package --no-installer
+grit package --platform
+grit port --dry-run
+grit port --force
+grit port --to
+grit remove resource --force
+grit restore --no-migrate
+grit routes --check
+grit routes --strict
+grit routes --write
+grit scale --api
+grit scale --json
+grit scale --token
+grit seed --count
+grit swap --force
+grit swap --list
+grit swap --revert
+grit swap --skip-check
+grit sync --check
+grit test --cover
+grit test --e2e
+grit test --go
+grit test --node
+grit test --race
+grit update --allow-downgrade
+grit update --channel
+grit update --from-release
+grit update --version
+grit versions --json

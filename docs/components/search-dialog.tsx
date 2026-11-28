@@ -251,13 +251,30 @@ function sectionWeight(section: string) {
   return 1
 }
 
+/**
+ * The leading dashes off a flag, so "--saas" finds what "saas" finds.
+ *
+ * Somebody hunting a CLI flag types it the way they would type it in a shell.
+ * The index cannot hold that spelling: keywords are split on non-alphanumerics
+ * when they are generated, so "--saas" is stored as "saas" and a query with
+ * the dashes matched nothing at all. Stripping here rather than storing both
+ * spellings keeps one word per concept in a budget that is capped at sixty.
+ *
+ * Only leading dashes, and only when something is left: "-" and "--" are not
+ * searches for every page that happens to contain a hyphen.
+ */
+function withoutFlagDashes(term: string): string {
+  const bare = term.replace(/^-+/, '')
+  return bare.length > 0 ? bare : term
+}
+
 export function scoreItem(title: string, keywords: string, search: string, section = '') {
   const query = search.trim().toLowerCase()
   if (!query) return 1
 
   const haystackTitle = title.toLowerCase()
   const haystackKeywords = keywords.toLowerCase()
-  const terms = query.split(/\s+/).filter(Boolean)
+  const terms = query.split(/\s+/).filter(Boolean).map(withoutFlagDashes)
 
   let total = 0
   for (const term of terms) {

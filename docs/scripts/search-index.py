@@ -145,6 +145,76 @@ def dynamic():
     return out
 
 
+# Every command in config/cli-commands.ts, as a row of its own.
+#
+# A flag was unfindable. The index held one row for /docs/cli, titled
+# "Command Explorer", whose keywords came from a page description: not a
+# single "--" appeared anywhere in the whole index, so searching --saas, or
+# saas hoping to find the flag, returned the tutorial with that word in its
+# title and nothing else. The flags are the most specific thing the docs
+# know, and they were the one thing search could not see.
+#
+# The explorer deep-links on the id (/docs/cli#new selects that command), so
+# a result lands on the command rather than at the top of a page listing
+# forty of them.
+#
+# Both spellings go in the keywords: somebody types "--saas" and somebody
+# types "saas", and only one of those two contains the dashes.
+CLI_CONFIG = os.path.join(DOCS, "config", "cli-commands.ts")
+CLI_ENTRY = re.compile(r"^    id: '([a-z0-9-]+)',$", re.M)
+CLI_FLAG = re.compile(r"\bflag:\s*'((?:[^'\\]|\\.)*)'")
+
+
+def cli_commands():
+    """(href, title, prose, section, flags) for each documented command."""
+    if not os.path.isfile(CLI_CONFIG):
+        raise SystemExit(
+            "config/cli-commands.ts is gone, so every grit command just left "
+            "the search index. Fix the reader in scripts/search-index.py."
+        )
+    src = open(CLI_CONFIG, encoding="utf-8").read()
+    starts = [m.start() for m in CLI_ENTRY.finditer(src)]
+    out = []
+    for i, start in enumerate(starts):
+        block = src[start: starts[i + 1] if i + 1 < len(starts) else len(src)]
+
+        def field(key):
+            m = re.search(r"\b%s:\s*'((?:[^'\\\n]|\\.)*)'" % key, block)
+            return m.group(1).replace("\\'", "'") if m else ""
+
+        slug, name = field("id"), field("name")
+        if not slug or not name:
+            continue
+
+        # The flags, hyphens intact.
+        #
+        # They are returned apart from the prose because keywords_from splits
+        # on every non-alphanumeric: pass "owned-by" through it and the index
+        # stores "owned" and "by", so a search for --owned-by matches nothing.
+        # These go in verbatim, the way the curated blobs do.
+        #
+        # Without the leading dashes, because the matcher anchors each term on
+        # a word boundary and there is no boundary before a dash. The dialog
+        # strips them off the query to meet this spelling.
+        flags = []
+        for raw in CLI_FLAG.findall(block):
+            # "--db string" and "--single / --double" each carry more than one.
+            for token in re.findall(r"--[a-z0-9-]+", raw):
+                bare = token.lstrip("-")
+                if bare and bare not in flags:
+                    flags.append(bare)
+        prose = re.sub(r"\s+", " ", " ".join(
+            [name, field("summary"), field("example"), "cli command flag flags"])).strip()
+        out.append(("/docs/cli#" + slug, name, prose, "CLI", " ".join(flags)))
+    if len(out) < 30:
+        raise SystemExit(
+            "read only %d commands from cli-commands.ts, which is fewer than "
+            "the file has had for a year: the reader has stopped matching and "
+            "every flag is about to go missing from search." % len(out)
+        )
+    return out
+
+
 # The 41 standalone course pages under app/courses: Stripe payments, GORM
 # mastery, the Grit Web / Desktop / Mobile series. Real pages with their own
 # files, and none of them was in search, because routes() walks app/docs and
@@ -378,9 +448,13 @@ def main():
     items = []
     missing_meta = []
 
-    def add(href, title, description, section):
+    def add(href, title, description, section, raw=""):
         entry = hand.get(href, {})
         words = keywords_from(description, title, href)
+        if raw:
+            # Words that must survive verbatim, because keywords_from would
+            # split them: a CLI flag keeps its hyphen or it is not that flag.
+            words = raw + " " + words
         if entry.get("keywords"):
             # The curated blob first: it is what people actually type.
             words = entry["keywords"] + " " + words
@@ -414,13 +488,19 @@ def main():
 
     shadowed = []
     seen_href = {i["href"] for i in items}
-    for href, name, tagline, section in dynamic() + standalone_courses() + standalone_guides() + standalone_errors():
+    for href, name, tagline, section in (
+        dynamic() + standalone_courses() + standalone_guides() + standalone_errors()
+    ):
         if href in seen_href:
             # A static page of the same path, which is what Next serves: the
             # [param] template never renders this slug. One entry, not two.
             shadowed.append(href)
             continue
         add(href, name, tagline, section)
+
+    # The CLI commands carry their flags unsplit, so they take the long form.
+    for href, name, prose, section, flags in cli_commands():
+        add(href, name, prose, section, raw=flags)
 
     # Anchors and non-/docs entries the hand-written list carried, which are
     # not pages on disk and would otherwise be dropped.
@@ -468,10 +548,10 @@ export const SEARCH_INDEX: SearchItem[] = entries
     open(OUT, "w", encoding="utf-8", newline="").write(out)
 
     print("indexed %d pages (%d static routes, %d config-driven, %d course "
-          "pages, %d guides, %d errors, %d curated kept)"
+          "pages, %d guides, %d errors, %d cli commands, %d curated kept)"
           % (len(items), len(routes()), len(dynamic()),
              len(standalone_courses()), len(standalone_guides()),
-             len(standalone_errors()), len(hand)))
+             len(standalone_errors()), len(cli_commands()), len(hand)))
     if shadowed:
         print("a static page of the same path wins, so the config entry is skipped:")
         for href in shadowed:

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -35,17 +36,93 @@ func docsCmd() *cobra.Command {
 	return cmd
 }
 
+// wantsHelp reports whether the arguments are asking for the usage text.
+//
+// DisableFlagParsing turns off cobra's own handling of -h, so the command has
+// to notice it. Without this, `grit docs search --help` searches for the word
+// help.
+func wantsHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" {
+			return true
+		}
+	}
+	return false
+}
+
+// parseSearchArgs splits the arguments into this command's own options and
+// the query, and takes the dashes off anything flag-shaped.
+//
+// The dashes come off because the index cannot hold them: its keywords are
+// split on every non-alphanumeric when they are built, so --owned-by is
+// stored as owned-by with nothing in front. Stripping here is what makes the
+// two spellings meet.
+//
+// Only the leading dashes, and only when a word is left: a bare "-" stays as
+// it is rather than becoming a search for every page containing a hyphen.
+func parseSearchArgs(args []string, limit int, asJSON bool) (string, int, bool, error) {
+	terms := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--json":
+			asJSON = true
+		case arg == "--limit":
+			if i+1 >= len(args) {
+				return "", 0, false, fmt.Errorf("--limit needs a number, e.g. --limit 3")
+			}
+			i++
+			n, err := strconv.Atoi(args[i])
+			if err != nil {
+				return "", 0, false, fmt.Errorf("--limit takes a number, not %q", args[i])
+			}
+			limit = n
+		case strings.HasPrefix(arg, "--limit="):
+			n, err := strconv.Atoi(strings.TrimPrefix(arg, "--limit="))
+			if err != nil {
+				return "", 0, false, fmt.Errorf("--limit takes a number, not %q", strings.TrimPrefix(arg, "--limit="))
+			}
+			limit = n
+		default:
+			if bare := strings.TrimLeft(arg, "-"); bare != "" {
+				terms = append(terms, bare)
+			} else {
+				terms = append(terms, arg)
+			}
+		}
+	}
+	return strings.Join(terms, " "), limit, asJSON, nil
+}
+
 func docsSearchCmd() *cobra.Command {
 	var limit int
 	var asJSON bool
 
 	cmd := &cobra.Command{
-		Use:     "search <query>",
-		Short:   "Find the pages that answer a question",
-		Args:    cobra.MinimumNArgs(1),
-		Example: "  grit docs search field types\n  grit docs search owned by user --limit 3",
+		Use:   "search <query>",
+		Short: "Find the pages that answer a question",
+		Example: "  grit docs search field types\n" +
+			"  grit docs search --owned-by\n" +
+			"  grit docs search owned by user --limit 3",
+		// The query may itself be a flag, and that is the whole point.
+		//
+		// "What does --owned-by do" is asked by typing --owned-by, and cobra
+		// answered "unknown flag" and exited 1: the one search most likely to
+		// be a flag was the one search that could not be run. So this command
+		// parses its own two options and treats everything else, dashes and
+		// all, as the query.
+		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			query := strings.Join(args, " ")
+			if wantsHelp(args) {
+				return cmd.Help()
+			}
+			query, limit, asJSON, err := parseSearchArgs(args, limit, asJSON)
+			if err != nil {
+				return err
+			}
+			if query == "" {
+				return fmt.Errorf("what should I search for? e.g. grit docs search field types")
+			}
 			hits, err := docs.Search(query, limit)
 			if err != nil {
 				return err

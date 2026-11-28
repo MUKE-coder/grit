@@ -23,8 +23,14 @@ export default function TutorialSaaSPage() {
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Build a complete project management tool with projects, tasks,
                 comments, status workflows, email notifications, role-based
-                access, and a dashboard with live task stats. This tutorial
-                covers relationships, background jobs, the mailer, middleware
+                access, and a dashboard with live task stats. It starts with{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                  grit new taskflow --saas
+                </code>
+                , the flag that says this app has customers rather than only
+                operators, so the signed-in customer area, organisations and
+                billing are in place before step two. This tutorial covers
+                relationships, background jobs, the mailer, middleware
                 customization, and admin panel badges.
               </p>
               <LaneFlow
@@ -78,15 +84,78 @@ export default function TutorialSaaSPage() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">
-                  Create the project
+                  Create the project, with <code>--saas</code>
                 </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Scaffold a new Grit project called <code>taskflow</code>. This
                   generates the complete monorepo with Go API, Next.js web app,
                   admin panel, shared packages, and Docker configuration.
                 </p>
+                <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
+                  <strong className="text-foreground">
+                    <code>--saas</code> is what makes this a product rather than
+                    an internal tool.
+                  </strong>{' '}
+                  Without it you get the operator&apos;s half: an admin panel,
+                  and a React Query hook for every resource. With it you also
+                  get the signed-in customer area at{' '}
+                  <code>apps/web/app/(app)</code>, and a resource generated with{' '}
+                  <code>--owned-by</code> or <code>--tenant-owned</code> gets a
+                  customer screen as well as an admin one. It is recorded as{' '}
+                  <code>&quot;saas&quot;: true</code> in <code>grit.json</code>,
+                  so every later <code>grit generate resource</code> knows.
+                </p>
 
-                <CodeBlock terminal code={`grit new taskflow\ncd taskflow`} className="glow-purple-sm" />
+                <CodeBlock terminal code={`grit new taskflow --saas\ncd taskflow`} className="glow-purple-sm" />
+
+                <p className="text-[13px] text-muted-foreground/70 leading-relaxed mt-4 mb-2">
+                  The flag asks two follow-up questions. Both are plugins that
+                  already exist, so answering here only saves you running them
+                  later:
+                </p>
+                <div className="overflow-x-auto mb-4">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="border-b border-border text-left">
+                        <th className="py-2 pr-4 font-semibold">Question</th>
+                        <th className="py-2 font-semibold">Answer yes and you get</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      <tr className="border-b border-border/50">
+                        <td className="py-2.5 pr-4">
+                          Do customers belong to organisations?
+                        </td>
+                        <td className="py-2.5">
+                          The multitenant plugin: teams, invitations,
+                          per-organisation roles, and query scoping so one
+                          organisation cannot read another&apos;s rows. An{' '}
+                          <code>/organization</code> screen in the customer area
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 pr-4">Do you charge them?</td>
+                        <td className="py-2.5">
+                          The Stripe plugin: server-priced checkout, the hosted
+                          billing portal, webhooks that settle it, and a{' '}
+                          <code>/billing</code> screen. With organisations
+                          installed, billing belongs to the organisation
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                  To skip the questions, pass the answers:{' '}
+                  <code>--saas-organizations</code> and{' '}
+                  <code>--saas-billing</code>. For this tutorial say yes to
+                  organisations and no to billing; TaskFlow has teams and we are
+                  not charging anybody yet. See{' '}
+                  <Link href="/docs/frontend/portal" className="text-accent hover:underline">
+                    the customer portal
+                  </Link>{' '}
+                  for what the three levels write.
+                </p>
               </div>
             </div>
 

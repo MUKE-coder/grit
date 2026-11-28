@@ -1992,6 +1992,306 @@
     "keywords": "port grit project needs taken something else find has free move already"
   },
   {
+    "title": "grit new",
+    "href": "/docs/cli#new",
+    "section": "CLI",
+    "keywords": "arch frontend single double triple api mobile next vite full desktop expo i18n db storage admin multitenant saas saas-organizations saas-billing style theme here force grit scaffold project go js frontends panel myapp cli command flag flags docs"
+  },
+  {
+    "title": "grit new-desktop",
+    "href": "/docs/cli#new-desktop",
+    "section": "CLI",
+    "keywords": "grit desktop create wails application shares monorepo api cli command flag flags docs"
+  },
+  {
+    "title": "grit init",
+    "href": "/docs/cli#init",
+    "section": "CLI",
+    "keywords": "grit init write claude md agents convention docs existing project cli command flag flags"
+  },
+  {
+    "title": "grit generate resource",
+    "href": "/docs/cli#generate-resource",
+    "section": "CLI",
+    "keywords": "fields from interactive public tree items roles owned-by tenant-owned confidential append-only audit-reads retain unique seed faker count portal force grit generate resource full stack crud model service handler schemas types hooks admin page product name string slug price float stock int images files active bool cli command flag flags docs"
+  },
+  {
+    "title": "grit generate field",
+    "href": "/docs/cli#generate-field",
+    "section": "CLI",
+    "keywords": "grit generate field add one column resource already exists place product weight float cli command flag flags docs"
+  },
+  {
+    "title": "grit generate seeder",
+    "href": "/docs/cli#generate-seeder",
+    "section": "CLI",
+    "keywords": "faker count grit generate seeder existing resource one example row many faked ones product 40 cli command flag flags docs"
+  },
+  {
+    "title": "grit generate sequence",
+    "href": "/docs/cli#generate-sequence",
+    "section": "CLI",
+    "keywords": "grit generate sequence gap free sequential number inv 202605 0001 invoice cli command flag flags docs"
+  },
+  {
+    "title": "grit generate migration",
+    "href": "/docs/cli#generate-migration",
+    "section": "CLI",
+    "keywords": "grit generate migration versioned sql pair automigrate cannot do rename company organisation cli command flag flags docs"
+  },
+  {
+    "title": "grit generate perf",
+    "href": "/docs/cli#generate-perf",
+    "section": "CLI",
+    "keywords": "grit generate perf k6 load test api cli command flag flags docs"
+  },
+  {
+    "title": "grit remove resource",
+    "href": "/docs/cli#remove-resource",
+    "section": "CLI",
+    "keywords": "grit remove resource delete unpick every injection made product cli command flag flags docs"
+  },
+  {
+    "title": "grit add variants",
+    "href": "/docs/cli#add-variants",
+    "section": "CLI",
+    "keywords": "resource grit add variants product options values combination matrix attached one cli command flag flags docs"
+  },
+  {
+    "title": "grit add web-auth",
+    "href": "/docs/cli#add-web-auth",
+    "section": "CLI",
+    "keywords": "grit add web auth login register password reset pages apps plus route protection cli command flag flags docs"
+  },
+  {
+    "title": "grit add role",
+    "href": "/docs/cli#add-role",
+    "section": "CLI",
+    "keywords": "grit add role across go enum zod schema types constants manager cli command flag flags docs"
+  },
+  {
+    "title": "grit add i18n",
+    "href": "/docs/cli#add-i18n",
+    "section": "CLI",
+    "keywords": "grit add i18n next intl both frontends translated api messages en es fr sw cli command flag flags docs"
+  },
+  {
+    "title": "grit add offline",
+    "href": "/docs/cli#add-offline",
+    "section": "CLI",
+    "keywords": "grit add offline first sync local mirror outbox version checked conflicts cli command flag flags docs"
+  },
+  {
+    "title": "grit index",
+    "href": "/docs/cli#index",
+    "section": "CLI",
+    "keywords": "grit index indexes list queries need sql apply write db cli command flag flags docs"
+  },
+  {
+    "title": "grit skills",
+    "href": "/docs/cli#skills",
+    "section": "CLI",
+    "keywords": "grit skills install expert build see installed all cli command flag flags docs"
+  },
+  {
+    "title": "grit own",
+    "href": "/docs/cli#own",
+    "section": "CLI",
+    "keywords": "grit own whose file upgrade do changes nothing apps admin components tables data table tsx cli command flag flags docs"
+  },
+  {
+    "title": "grit versions",
+    "href": "/docs/cli#versions",
+    "section": "CLI",
+    "keywords": "grit versions project runs against cli ships changes nothing command flag flags docs"
+  },
+  {
+    "title": "grit explain",
+    "href": "/docs/cli#explain",
+    "section": "CLI",
+    "keywords": "grit explain file who wrote whether upgrade rewrite apps api internal models product go cli command flag flags docs"
+  },
+  {
+    "title": "grit doctor",
+    "href": "/docs/cli#doctor",
+    "section": "CLI",
+    "keywords": "grit doctor finds mistakes do not announce themselves exits non zero so ci run cli command flag flags docs"
+  },
+  {
+    "title": "grit scale",
+    "href": "/docs/cli#scale",
+    "section": "CLI",
+    "keywords": "grit scale asks running api percentiles names next scaling step url https example com cli command flag flags docs"
+  },
+  {
+    "title": "grit logs",
+    "href": "/docs/cli#logs",
+    "section": "CLI",
+    "keywords": "grit logs dev log start errors pulled out cli command flag flags docs"
+  },
+  {
+    "title": "grit docs",
+    "href": "/docs/cli#docs-cmd",
+    "section": "CLI",
+    "keywords": "grit docs documentation embedded binary pinned version search pagination cli command flag flags cmd"
+  },
+  {
+    "title": "grit port",
+    "href": "/docs/cli#port",
+    "section": "CLI",
+    "keywords": "grit port copy admin component everything imports another app table apps web cli command flag flags docs"
+  },
+  {
+    "title": "grit expose form",
+    "href": "/docs/cli#expose-form",
+    "section": "CLI",
+    "keywords": "to public-share token force grit expose form public page carrying resource path choose product apps web app submit tsx cli command flag flags docs"
+  },
+  {
+    "title": "grit expose table",
+    "href": "/docs/cli#expose-table",
+    "section": "CLI",
+    "keywords": "to force grit expose table public page carrying resource product apps web app catalogue tsx cli command flag flags docs"
+  },
+  {
+    "title": "grit start",
+    "href": "/docs/cli#start",
+    "section": "CLI",
+    "keywords": "grit start run every service project one them cli command flag flags docs"
+  },
+  {
+    "title": "grit studio",
+    "href": "/docs/cli#studio",
+    "section": "CLI",
+    "keywords": "grit studio open gorm database browser cli command flag flags docs"
+  },
+  {
+    "title": "grit routes",
+    "href": "/docs/cli#routes",
+    "section": "CLI",
+    "keywords": "grit routes list every registered api route handler group cli command flag flags docs"
+  },
+  {
+    "title": "grit test",
+    "href": "/docs/cli#test",
+    "section": "CLI",
+    "keywords": "grit test run every suite project cli command flag flags docs"
+  },
+  {
+    "title": "grit ui",
+    "href": "/docs/cli#ui",
+    "section": "CLI",
+    "keywords": "grit ui browse install components blocks add ecommerce product grids grid ratings cli command flag flags docs"
+  },
+  {
+    "title": "grit swap",
+    "href": "/docs/cli#swap",
+    "section": "CLI",
+    "keywords": "grit swap replace admin component everywhere once button cli command flag flags docs"
+  },
+  {
+    "title": "grit mcp",
+    "href": "/docs/cli#mcp",
+    "section": "CLI",
+    "keywords": "grit mcp expose project ai coding agents serve cli command flag flags docs"
+  },
+  {
+    "title": "grit migrate",
+    "href": "/docs/cli#migrate",
+    "section": "CLI",
+    "keywords": "fresh grit migrate create alter database tables go models cli command flag flags docs"
+  },
+  {
+    "title": "grit migrate plan",
+    "href": "/docs/cli#migrate-plan",
+    "section": "CLI",
+    "keywords": "strict grit migrate plan show migration would change nothing cli command flag flags docs"
+  },
+  {
+    "title": "grit env",
+    "href": "/docs/cli#env",
+    "section": "CLI",
+    "keywords": "grit env create example fresh secrets project cloned cli command flag flags docs"
+  },
+  {
+    "title": "grit seed",
+    "href": "/docs/cli#seed",
+    "section": "CLI",
+    "keywords": "grit seed run every registered seeder cli command flag flags docs"
+  },
+  {
+    "title": "grit sync",
+    "href": "/docs/cli#sync",
+    "section": "CLI",
+    "keywords": "grit sync regenerate typescript types zod schemas go models cli command flag flags docs"
+  },
+  {
+    "title": "grit backup",
+    "href": "/docs/cli#backup",
+    "section": "CLI",
+    "keywords": "grit backup back up entire database archive cli command flag flags docs"
+  },
+  {
+    "title": "grit restore",
+    "href": "/docs/cli#restore",
+    "section": "CLI",
+    "keywords": "grit restore database backup archive backups 2026 08 20 093000 tar gz cli command flag flags docs"
+  },
+  {
+    "title": "grit deploy",
+    "href": "/docs/cli#deploy",
+    "section": "CLI",
+    "keywords": "grit deploy cross compile upload configure systemd caddy tls host example com cli command flag flags docs"
+  },
+  {
+    "title": "grit compile",
+    "href": "/docs/cli#compile",
+    "section": "CLI",
+    "keywords": "grit compile build desktop application executable cli command flag flags docs"
+  },
+  {
+    "title": "grit package",
+    "href": "/docs/cli#package",
+    "section": "CLI",
+    "keywords": "grit package build distributable desktop installer cli command flag flags docs"
+  },
+  {
+    "title": "grit down",
+    "href": "/docs/cli#down",
+    "section": "CLI",
+    "keywords": "grit down put application maintenance mode cli command flag flags docs"
+  },
+  {
+    "title": "grit up",
+    "href": "/docs/cli#up",
+    "section": "CLI",
+    "keywords": "grit up bring application back online cli command flag flags docs"
+  },
+  {
+    "title": "grit upgrade",
+    "href": "/docs/cli#upgrade",
+    "section": "CLI",
+    "keywords": "diff dry-run force plan to grit upgrade bring project scaffold files up current version cli command flag flags docs"
+  },
+  {
+    "title": "grit update",
+    "href": "/docs/cli#update",
+    "section": "CLI",
+    "keywords": "grit update cli itself latest release command flag flags docs"
+  },
+  {
+    "title": "grit plugin",
+    "href": "/docs/cli#plugin",
+    "section": "CLI",
+    "keywords": "grit plugin install manage plugins add webhooks cli command flag flags docs"
+  },
+  {
+    "title": "grit version",
+    "href": "/docs/cli#version",
+    "section": "CLI",
+    "keywords": "grit version print cli command flag flags docs"
+  },
+  {
     "title": "Blueprints",
     "href": "/blueprints",
     "section": "Blueprints",
