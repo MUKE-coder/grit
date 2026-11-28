@@ -585,6 +585,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Generated React Query hooks in Grit: useList, useGet, useCreate, useUpdate, useDelete for every resource with type safety.',
   },
+  '/docs/frontend/portal': {
+    title: 'Customer Portal',
+    description:
+      'The signed-in customer area in Grit: generated screens for an owned resource, the headless descriptor, and the organization and billing pages.',
+  },
   '/docs/frontend/shared-package': {
     title: 'Shared Package',
     description:

@@ -157,6 +157,23 @@ grit start                       # run everything
 > few questions, installs the dependencies and starts the app. And if you run plain
 > `grit new myapp`, accepting the defaults gives you the setup above.
 
+**Building something with customers?** Add `--saas`. It writes the signed-in customer
+area, asks whether customers belong to organizations and whether you charge them, and
+records the answer. From then on a resource generated with `--owned-by user` gets a
+customer screen as well as an admin one: a list, a detail page, a form and an entry in
+the customer sidebar, with every row scoped to whoever is signed in.
+
+```bash
+grit new keep --saas
+grit generate resource Note --fields "title:string,body:text" --owned-by user
+# apps/admin/...              the operator's screen, as always
+# apps/web/app/(app)/notes/   the customer's
+```
+
+Writing that screen yourself? `--portal headless` gives you the resource as data and the
+hooks, and no JSX to delete first. See
+[the customer portal](https://gritframework.dev/docs/frontend/portal).
+
 ### 4. What you get
 
 | Open | What it is |

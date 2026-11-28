@@ -62,6 +62,20 @@ type Options struct {
 	Force          bool // Allow scaffolding into non-empty directory (--force)
 	IncludeDesktop bool // Add apps/desktop (Wails client that shares the monorepo API)
 
+	// SaaS says the app being built has customers, not only operators.
+	//
+	// It turns on the signed-in customer area, offers organizations and
+	// billing, and is recorded in grit.json, where the generator reads it: a
+	// resource that belongs to somebody then gets a customer screen as well
+	// as an admin one. Without it Grit behaves exactly as it always has.
+	SaaS bool
+	// SaaSOrganizations and SaaSBilling are the two follow-up answers. They
+	// travel together more often than not, and billing without organizations
+	// is still a real shape (a single-player product with a subscription), so
+	// they are two questions rather than one.
+	SaaSOrganizations bool
+	SaaSBilling       bool
+
 	// AdminOnly is the single shape with no customer-facing site: the Go API
 	// and the admin, in one binary, with the admin at / rather than /admin.
 	//
@@ -109,7 +123,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.583.0"
+const DefaultVersion = "3.584.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.

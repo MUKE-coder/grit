@@ -26,7 +26,7 @@ const (
 func frames(t *testing.T, presized bool) (first, after int) {
 	t.Helper()
 	opts := &scaffold.Options{}
-	form := newProjectForm(opts, new(string), new(string), new(string), new(string), new(string)).
+	form := newProjectForm(opts, new(string), new(string), new(string), new(string), new(string), new(bool), new(bool), new(bool)).
 		WithTheme(ui.PromptTheme())
 
 	size := tea.WindowSizeMsg{Width: testCols, Height: testRows}
@@ -74,7 +74,7 @@ func TestWithoutPreSizingTheFrameChangesHeight(t *testing.T) {
 // the size away the fix would do nothing, silently.
 func TestInitKeepsTheSizeItWasGivenFirst(t *testing.T) {
 	opts := &scaffold.Options{}
-	form := newProjectForm(opts, new(string), new(string), new(string), new(string), new(string)).
+	form := newProjectForm(opts, new(string), new(string), new(string), new(string), new(string), new(bool), new(bool), new(bool)).
 		WithTheme(ui.PromptTheme())
 
 	var sized *huh.Form = form

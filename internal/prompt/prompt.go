@@ -77,7 +77,9 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	// submit, so this is what makes Enter mean the documented project.
 	preselect(&arch, &frontend, &theme, &db, &storage)
 
-	form := newProjectForm(opts, &arch, &frontend, &theme, &db, &storage)
+	saas, orgs, billing := opts.SaaS, opts.SaaSOrganizations, opts.SaaSBilling
+
+	form := newProjectForm(opts, &arch, &frontend, &theme, &db, &storage, &saas, &orgs, &billing)
 
 	// One theme for every picker, from internal/ui: huh's default draws a
 	// coloured border down the whole form and paints the options in its own
@@ -89,6 +91,13 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	}
 
 	applyAnswers(opts, arch, frontend, theme, db, storage)
+	opts.SaaS, opts.SaaSOrganizations, opts.SaaSBilling = saas, orgs, billing
+	// Neither follow-up means anything on its own: a project that said no to
+	// customers is not getting an organizations plugin because the cursor
+	// happened to pass over the question.
+	if !saas {
+		opts.SaaSOrganizations, opts.SaaSBilling = false, false
+	}
 	return nil
 }
 
@@ -136,6 +145,7 @@ func applyAnswers(opts *scaffold.Options, arch, frontend, theme, db, storage str
 func newProjectForm(
 	opts *scaffold.Options,
 	arch, frontend, theme, db, storage *string,
+	saas, orgs, billing *bool,
 ) *huh.Form {
 	// "full" is a sentinel, not an Architecture enum: it maps to opts.Full,
 	// which Normalize() expands to triple + web + admin + docs + expo + desktop.
@@ -244,6 +254,46 @@ func newProjectForm(
 				Options(storageOptions()...).
 				Value(storage),
 		).WithHideFunc(func() bool { return opts.StorageDriver != "" }),
+
+		// Who the app is for.
+		//
+		// Asked last, because it is the only question whose answer is about
+		// the product rather than the stack, and because the two that follow
+		// it only make sense once it has been answered.
+		//
+		// Hidden for a shape with no browser to sign into. An API or a mobile
+		// backend can have customers, but the customer area this turns on is
+		// apps/web, and offering it where it cannot be written is a promise
+		// the scaffold then breaks.
+		huh.NewGroup(
+			huh.NewConfirm().
+				Key("saas").
+				Title("Does this app have customers?").
+				Description("Yes adds the signed-in customer area, and a resource owned by a user\nthen gets a customer screen as well as an admin one.").
+				Affirmative("Yes, customers sign in").
+				Negative("No, operators only").
+				Value(saas),
+		).WithHideFunc(func() bool { return !needsFrontend() }),
+
+		huh.NewGroup(
+			huh.NewConfirm().
+				Key("saas-organizations").
+				Title("Do customers belong to organizations?").
+				Description("Teams, invitations, per-organization roles, and query scoping so one\norganization cannot read another's rows. The multitenant plugin.").
+				Affirmative("Yes, organizations").
+				Negative("No, one account each").
+				Value(orgs),
+		).WithHideFunc(func() bool { return !*saas || !needsFrontend() }),
+
+		huh.NewGroup(
+			huh.NewConfirm().
+				Key("saas-billing").
+				Title("Do you charge them?").
+				Description("Stripe: server-priced checkout, the hosted billing portal, and webhooks\nthat settle it. Billing belongs to the organization when there is one.").
+				Affirmative("Yes, take payments").
+				Negative("Not yet").
+				Value(billing),
+		).WithHideFunc(func() bool { return !*saas || !needsFrontend() }),
 	)
 }
 

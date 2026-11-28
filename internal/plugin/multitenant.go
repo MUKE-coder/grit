@@ -144,7 +144,19 @@ func multitenantFiles(ctx Context) map[string]string {
 			files["apps/web/components/OrganizationSwitcher.tsx"] = mtWebOrganizationSwitcher()
 			files["apps/web/lib/organization-client.ts"] = mtOrganizationClient("apiClient", "(process.env.NEXT_PUBLIC_ADMIN_URL || \"http://localhost:3001\") + \"/login\"")
 			files["apps/web/app/invitations/accept/page.tsx"] = mtWebInvitationPage()
-			files["apps/web/app/account/organization/page.tsx"] = mtWebOrganizationPage()
+			// Inside the signed-in customer area when the project has one.
+			//
+			// app/account/organization is a sibling of app/(app)/account, not
+			// a child of it, so the organization screen rendered with no
+			// sidebar, no header and none of the layout's guard: a page that
+			// looked like it belonged to a different application, reached
+			// from a URL the shell never linked to. The group is the only
+			// difference; the URL is /organization either way.
+			if mtHasCustomerArea(ctx) {
+				files["apps/web/app/(app)/organization/page.tsx"] = mtWebOrganizationPage()
+			} else {
+				files["apps/web/app/account/organization/page.tsx"] = mtWebOrganizationPage()
+			}
 		} else {
 			// A Vite app keeps code under src/, exports `api` rather than
 			// `apiClient`, and has no framework active-org module, so the client
@@ -175,6 +187,17 @@ export const Route = createFileRoute("/account/organization")({ component: Page 
 	}
 
 	return files
+}
+
+// mtHasCustomerArea reports whether this project has the signed-in customer
+// area that grit add web-auth writes. The organization screens belong inside
+// it: they are a customer's own settings, not an operator's.
+func mtHasCustomerArea(ctx Context) bool {
+	if ctx.Root == "" {
+		return false
+	}
+	info, err := os.Stat(filepath.Join(ctx.Root, "apps", "web", "app", "(app)"))
+	return err == nil && info.IsDir()
 }
 
 func multitenantInjections(ctx Context) []Injection {
@@ -362,6 +385,29 @@ func multitenantInjections(ctx Context) []Injection {
     if (activeOrganizationID) headers["X-Organization-ID"] = activeOrganizationID;`},
 			)
 		}
+	}
+
+	// The customer sidebar, when there is one. Optional: a project with no
+	// customer area has no marker, and that is not a failed install.
+	//
+	// Both halves together, because an entry naming an icon the layout does
+	// not import does not compile, and that file is the one every signed-in
+	// page renders through.
+	if mtHasCustomerArea(ctx) {
+		injections = append(injections,
+			Injection{
+				File:     "apps/web/app/(app)/layout.tsx",
+				Marker:   "// grit:nav-icons",
+				Code:     "import { Building2 } from \"lucide-react\";",
+				Optional: true,
+			},
+			Injection{
+				File:     "apps/web/app/(app)/layout.tsx",
+				Marker:   "// grit:nav",
+				Code:     "  { href: \"/organization\", label: \"Organization\", icon: Building2 },",
+				Optional: true,
+			},
+		)
 	}
 
 	return injections

@@ -1,0 +1,197 @@
+"use client";
+
+import {
+  useBillingPortal,
+  useCancelSubscription,
+  useResumeSubscription,
+  useStartSubscription,
+  useSubscription,
+} from "@/hooks/use-subscription";
+
+// The customer's billing screen.
+//
+// What is here is what a customer actually needs: what they are on, whether it
+// is paid up, when it renews, and a way out. What is deliberately NOT here is
+// an invoice table. Stripe's billing portal already lists every invoice, lets
+// them download a PDF and lets them change the card, and it is the one place
+// where that is always right. Rebuilding it would be a copy that drifts.
+//
+// The plan to sell is a Stripe price id. Set NEXT_PUBLIC_STRIPE_PRICE_ID in
+// apps/web/.env.local for a single-plan product; for several, replace PLANS
+// below with your own list. Nothing else in this file changes.
+const PLANS: { id: string; name: string; blurb: string }[] = [
+  {
+    id: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID ?? "",
+    name: "Pro",
+    blurb: "Everything in the product, billed monthly.",
+  },
+].filter((plan) => plan.id !== "");
+
+function statusLabel(status: string, cancelAtPeriodEnd: boolean): string {
+  if (cancelAtPeriodEnd) return "Ends at the end of this period";
+  switch (status) {
+    case "trialing":
+      return "On trial";
+    case "active":
+      return "Active";
+    case "past_due":
+      // Entitled, deliberately: Stripe is still retrying the card, and cutting
+      // access off at the first failed charge loses customers to a bank's
+      // fraud check.
+      return "Payment failed, retrying";
+    case "unpaid":
+      return "Unpaid";
+    case "canceled":
+      return "Cancelled";
+    case "paused":
+      return "Paused";
+    default:
+      return status;
+  }
+}
+
+function when(value?: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString();
+}
+
+export default function BillingPage() {
+  const { data, isLoading, error } = useSubscription();
+  const start = useStartSubscription();
+  const portal = useBillingPortal();
+  const cancel = useCancelSubscription();
+  const resume = useResumeSubscription();
+
+  const subscription = data?.subscription;
+  const entitled = data?.entitled ?? false;
+  const live = Boolean(subscription?.id) && subscription?.status !== "canceled";
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          Your plan, and the card it is charged to.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="h-32 animate-pulse rounded-xl border border-border bg-bg-secondary" />
+      ) : null}
+
+      {error ? (
+        <div className="rounded-xl border border-danger/30 bg-danger/5 p-6 text-sm text-danger">
+          Your billing details did not load. Try again in a moment.
+        </div>
+      ) : null}
+
+      {!isLoading && !error ? (
+        <div className="rounded-xl border border-border bg-background p-6">
+          {live && subscription ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-text-secondary">Current plan</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">
+                    {statusLabel(subscription.status, subscription.cancel_at_period_end)}
+                  </p>
+                  {subscription.current_period_end ? (
+                    <p className="mt-1 text-sm text-text-secondary">
+                      {subscription.cancel_at_period_end ? "Access until " : "Renews on "}
+                      {when(subscription.current_period_end)}
+                    </p>
+                  ) : null}
+                </div>
+                <span
+                  className={
+                    "rounded-full px-3 py-1 text-xs font-medium " +
+                    (entitled
+                      ? "bg-success/10 text-success"
+                      : "bg-danger/10 text-danger")
+                  }
+                >
+                  {entitled ? "Active" : "No access"}
+                </span>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={portal.isPending}
+                  onClick={() => portal.mutate("/billing")}
+                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                >
+                  {portal.isPending ? "Opening..." : "Manage billing"}
+                </button>
+                {subscription.cancel_at_period_end ? (
+                  <button
+                    type="button"
+                    disabled={resume.isPending}
+                    onClick={() => resume.mutate()}
+                    className="rounded-lg border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-bg-hover disabled:opacity-60"
+                  >
+                    Keep my subscription
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={cancel.isPending}
+                    onClick={() => {
+                      if (!confirm("Cancel at the end of this billing period?")) return;
+                      cancel.mutate();
+                    }}
+                    className="rounded-lg px-4 py-2 text-sm text-text-secondary transition-colors hover:text-danger disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+              <p className="mt-4 text-xs text-text-secondary">
+                Invoices, receipts and the card itself are in the billing portal.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-text-secondary">You are not subscribed.</p>
+              {PLANS.length === 0 ? (
+                <p className="mt-4 text-sm text-text-secondary">
+                  No plan is configured yet. Create a recurring price in the Stripe
+                  dashboard and set NEXT_PUBLIC_STRIPE_PRICE_ID in apps/web/.env.local.
+                </p>
+              ) : (
+                <ul className="mt-4 space-y-3">
+                  {PLANS.map((plan) => (
+                    <li
+                      key={plan.id}
+                      className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border p-4"
+                    >
+                      <div>
+                        <p className="font-medium text-foreground">{plan.name}</p>
+                        <p className="text-sm text-text-secondary">{plan.blurb}</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={start.isPending}
+                        onClick={() =>
+                          start.mutate({
+                            price_id: plan.id,
+                            success_path: "/billing",
+                            cancel_path: "/billing",
+                          })
+                        }
+                        className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                      >
+                        {start.isPending ? "Opening..." : "Subscribe"}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}

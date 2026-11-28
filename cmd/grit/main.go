@@ -37,7 +37,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.583.0"
+var version = "3.584.0"
 
 // usageError marks the errors where showing usage is the helpful thing: an
 // unknown flag, a missing argument. Everything else is a runtime failure, and
@@ -193,6 +193,7 @@ func newCmd() *cobra.Command {
 	// New architecture/frontend flags
 	var archFlag, frontendFlag, style, theme, dbProvider, storageDriver string
 	var inPlace, force, includeDesktop, withI18n, withMultitenant bool
+	var saas, saasOrgs, saasBilling bool
 
 	// Legacy flags (backward compatibility)
 	var apiOnly, includeExpo, mobileOnly, full, adminOnly bool
@@ -231,6 +232,7 @@ func newCmd() *cobra.Command {
 				InPlace:        inPlace,
 				Force:          force,
 				IncludeDesktop: includeDesktop,
+				SaaS:           saas,
 				Version:        version, // inject the current CLI version into scaffolded files
 				// Legacy flags
 				APIOnly:     apiOnly,
@@ -398,16 +400,47 @@ func newCmd() *cobra.Command {
 					len(res.Written), len(res.Wired))
 			}
 
+			// --saas, in three steps that have to happen in this order.
+			//
+			// Every piece is a command that already exists and is already
+			// tested: --saas is the question, not a second implementation.
+			//
+			// The customer area comes first, and that is not a preference.
+			// The organization screen and the billing screen are pages inside
+			// app/(app), and each plugin decides where to put its page by
+			// looking for that directory. Installed the other way round, both
+			// land outside the shell: no sidebar, no header, and no link from
+			// anywhere, which is where the organization screen has been since
+			// the customer area was added.
+			saasRoot := projectName
+			if inPlace {
+				saasRoot = "."
+			}
+			if saas {
+				if err := installCustomerArea(saasRoot, opts); err != nil {
+					color.Red("\n  Error adding the customer area: %v\n", err)
+					return err
+				}
+			}
+
 			// Multi-tenancy, by the same route `grit plugin add multitenant`
 			// takes. Before the access table is read, so the organization
 			// routes are in it on a brand new project (grit#62).
-			if withMultitenant {
-				root := projectName
-				if inPlace {
-					root = "."
-				}
-				if err := installMultitenantAt(root); err != nil {
+			//
+			// --saas asks the same question its own way, and either answer
+			// arrives here: one install, not two that can drift.
+			if withMultitenant || saasOrgs {
+				if err := installMultitenantAt(saasRoot); err != nil {
 					color.Red("\n  Error adding multi-tenancy: %v\n", err)
+					return err
+				}
+			}
+
+			// And what a customer pays with, last, so its screen lands inside
+			// the area and beside the organization it belongs to.
+			if saas && saasBilling {
+				if err := installPluginAt(saasRoot, "stripe"); err != nil {
+					color.Red("\n  Error adding billing: %v\n", err)
 					return err
 				}
 			}
@@ -450,6 +483,16 @@ func newCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app")
 	cmd.Flags().BoolVar(&includeDesktop, "desktop", false, "Include a Wails desktop app that shares the monorepo API")
 	cmd.Flags().BoolVar(&withI18n, "i18n", false, "Add internationalisation (next-intl, translated API messages, en/es/fr/sw)")
+	cmd.Flags().BoolVar(&saas, "saas", false,
+		"The app has customers, not only operators: adds the signed-in customer area "+
+			"(apps/web/app/(app), sign-in, guards), records saas in grit.json so a resource "+
+			"generated with --owned-by gets a customer screen as well as an admin one, and asks "+
+			"whether you need organizations and billing")
+	cmd.Flags().BoolVar(&saasOrgs, "saas-organizations", false,
+		"With --saas: customers belong to organizations. Installs the multitenant plugin "+
+			"and skips the question")
+	cmd.Flags().BoolVar(&saasBilling, "saas-billing", false,
+		"With --saas: you charge them. Installs the stripe plugin and skips the question")
 	cmd.Flags().BoolVar(&withMultitenant, "multitenant", false,
 		"Add multi-tenancy: organizations, memberships, per-organization roles, "+
 			"and query scoping for the models you mark tenant.Owned. The same as "+
@@ -1210,6 +1253,7 @@ func generateResourceCmd() *cobra.Command {
 	var publicRead bool
 	var tree bool
 	var ownedBy string
+	var portal string
 	var tenantOwned bool
 	var appendOnly bool
 	var auditReads bool
@@ -1335,6 +1379,13 @@ func generateResourceCmd() *cobra.Command {
 			// to do instead.
 			cmd.SilenceUsage = true
 			gen.Force = force
+			// How much of the customer's half to write. Empty means the
+			// project decides, which is what --saas recorded in grit.json.
+			level, perr := generate.ValidPortalLevel(portal)
+			if perr != nil {
+				return perr
+			}
+			gen.Portal = level
 			// Merged, not assigned: a flag left at its default must not erase
 			// what a --from file declared.
 			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly, auditReads, confidential, retain)
@@ -1416,6 +1467,12 @@ func generateResourceCmd() *cobra.Command {
 		"Make the resource hierarchical: a self-referential parent, a materialized path, depth and sibling order, plus the tree queries and a move endpoint")
 	cmd.Flags().BoolVar(&tenantOwned, "tenant-owned", false,
 		"Scope the resource to an organization (requires the multitenant plugin): embeds tenant.Owned, so queries are filtered by the active org and OrgID is stamped on insert")
+	cmd.Flags().StringVar(&portal, "portal", "",
+		"How much of the customer-facing half to write into apps/web/app/(app): "+
+			"screens (pages, a form and a sidebar entry), headless (the descriptor and the "+
+			"hooks, no JSX, for a screen you are writing yourself), or off. "+
+			"Defaults to screens in a project created with --saas when the resource is "+
+			"owned, and to off everywhere else")
 	cmd.Flags().StringVar(&ownedBy, "owned-by", "",
 		"Scope the resource to its owner: the named belongs_to-User field decides who may read or write each row (e.g. --owned-by user). Adds the field if absent. ADMIN is exempt")
 	cmd.Flags().StringVar(&unique, "unique", "",

@@ -196,12 +196,14 @@ func mtHandler(ctx Context) string {
 	src := `package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -217,9 +219,46 @@ import (
 )
 
 // OrganizationHandler serves organization + membership endpoints.
+// OrganizationHooks is what the application wants to happen around the
+// organization lifecycle, without editing this file.
+//
+// The problem they solve: every real product has something that must happen
+// when an organization is created (a default workspace, a welcome email, a
+// row in another system) or when somebody joins or leaves. Without a hook the
+// only way in is to edit the handler, and an edited handler is one grit
+// upgrade cannot maintain for you.
+//
+// Each runs INSIDE the same transaction as the write it belongs to, so a hook
+// that returns an error rolls the whole thing back and nothing half-happened.
+// That is the point: a default workspace that failed to save must not leave
+// an organization that claims to have one.
+//
+// Set them in routes.go, beside the handler:
+//
+//	orgHandler.Hooks.AfterCreate = func(ctx context.Context, tx *gorm.DB, org *models.Organization) error {
+//	    return tx.Create(&models.Workspace{OrgID: org.ID, Name: "General"}).Error
+//	}
+//
+// A nil hook is not called. Adding a field here is not a breaking change.
+type OrganizationHooks struct {
+	// BeforeCreate runs with the organization filled in and not yet written.
+	// Change it, or refuse it by returning an error.
+	BeforeCreate func(ctx context.Context, tx *gorm.DB, org *models.Organization) error
+	// AfterCreate runs once the organization and its owner's membership are
+	// both written, in the same transaction.
+	AfterCreate func(ctx context.Context, tx *gorm.DB, org *models.Organization) error
+	// AfterMemberAdded runs when somebody joins, however they joined: added
+	// by an admin, or by accepting an invitation.
+	AfterMemberAdded func(ctx context.Context, tx *gorm.DB, orgID, userID, role string) error
+	// AfterMemberRemoved runs when somebody is removed or leaves.
+	AfterMemberRemoved func(ctx context.Context, tx *gorm.DB, orgID, userID string) error
+}
+
 type OrganizationHandler struct {
 	DB      *gorm.DB
 	Storage *storage.Storage
+	// Hooks are the application's, set in routes.go. See OrganizationHooks.
+	Hooks OrganizationHooks
 }
 
 func NewOrganizationHandler(db *gorm.DB, storageService *storage.Storage) *OrganizationHandler {
@@ -312,6 +351,11 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 	// Both writes in one transaction: an organization with no members is
 	// unreachable, because every read goes through membership.
 	err := h.DB.Transaction(func(tx *gorm.DB) error {
+		if h.Hooks.BeforeCreate != nil {
+			if err := h.Hooks.BeforeCreate(c.Request.Context(), tx, &org); err != nil {
+				return err
+			}
+		}
 		if err := tenant.Unscoped(tx).Create(&org).Error; err != nil {
 			return err
 		}
@@ -326,11 +370,25 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 		// is what GHSA-4j45-98gm-mv9v describes about a membership role
 		// holding a platform grant, and the plugin was doing it by default.
 		// See grit#130.
-		return tenant.Unscoped(tx).Create(&models.OrganizationMember{
+		if err := tenant.Unscoped(tx).Create(&models.OrganizationMember{
 			UserID:         uid,
 			OrganizationID: org.ID,
 			Role:           "owner",
-		}).Error
+		}).Error; err != nil {
+			return err
+		}
+		// After both writes and still inside the transaction: whatever the
+		// application sets up here either lands with the organization or
+		// takes it down with it.
+		if h.Hooks.AfterCreate != nil {
+			if err := h.Hooks.AfterCreate(c.Request.Context(), tx, &org); err != nil {
+				return err
+			}
+		}
+		if h.Hooks.AfterMemberAdded != nil {
+			return h.Hooks.AfterMemberAdded(c.Request.Context(), tx, org.ID, uid, "owner")
+		}
+		return nil
 	})
 	if err != nil {
 		// availableSlug picked a free one, and a concurrent create took it
@@ -738,10 +796,45 @@ func (h *OrganizationHandler) dropLogoObject(c *gin.Context, key, keep string) {
 }
 
 // Members lists an organization's members. Callers must belong to it.
+// memberSortColumns is what a client may order by, by name.
+//
+// A map rather than the string from the query, because the value goes into
+// ORDER BY as text. Anything not in here is ignored and the default applies.
+var memberSortColumns = map[string]string{
+	"created_at": "organization_members.created_at",
+	"email":      "users.email",
+	"name":       "users.first_name",
+	"role":       "role",
+}
+
+// Members lists an organization's people, a page at a time.
+//
+// It used to return every row. That is fine for the five-person organization
+// everybody tests with and wrong for the thousand-person one: the whole table
+// over the wire, into a page that renders all of it. The default page is 100,
+// which is what the screens show, so nothing that worked before changed shape.
+//
+// q searches the name and the email. sort takes created_at, email, name or
+// role, and order takes asc or desc.
 func (h *OrganizationHandler) Members(c *gin.Context) {
 	if !h.isMember(c, c.Param("id")) {
 		return
 	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "100"))
+	if pageSize < 1 {
+		pageSize = 100
+	}
+	// A ceiling rather than an error: a client asking for ten thousand gets
+	// two hundred and a meta block that says there are more.
+	if pageSize > 200 {
+		pageSize = 200
+	}
+
 	var members []struct {
 		UserID    string    ~gorm:"column:user_id" json:"user_id"~
 		Email     string    ~gorm:"column:email" json:"email"~
@@ -751,15 +844,50 @@ func (h *OrganizationHandler) Members(c *gin.Context) {
 		RoleID    string    ~gorm:"column:role_id" json:"role_id,omitempty"~
 		CreatedAt time.Time ~gorm:"column:created_at" json:"created_at"~
 	}
-	if err := tenant.Unscoped(h.DB).Table("organization_members").
-		Select("organization_members.user_id, users.email, users.first_name, users.last_name, CASE WHEN organizations.owner_id = organization_members.user_id THEN 'owner' WHEN organization_members.role = '' THEN 'member' ELSE organization_members.role END AS role, organization_members.role_id, organization_members.created_at").
+	query := tenant.Unscoped(h.DB).Table("organization_members").
 		Joins("JOIN users ON users.id = organization_members.user_id").
 		Joins("JOIN organizations ON organizations.id = organization_members.organization_id").
-		Where("organization_members.organization_id = ?", c.Param("id")).Find(&members).Error; err != nil {
+		Where("organization_members.organization_id = ?", c.Param("id"))
+
+	if q := strings.TrimSpace(c.Query("q")); q != "" {
+		like := "%" + strings.ToLower(q) + "%"
+		query = query.Where(
+			"LOWER(users.email) LIKE ? OR LOWER(users.first_name) LIKE ? OR LOWER(users.last_name) LIKE ?",
+			like, like, like)
+	}
+
+	// Counted before the page is taken, and on the same conditions, so the
+	// total answers "how many match" rather than "how many came back".
+	var total int64
+	if err := query.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not load members"}})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": members})
+
+	order := "organization_members.created_at"
+	if column, ok := memberSortColumns[c.Query("sort")]; ok {
+		order = column
+	}
+	if strings.EqualFold(c.Query("order"), "asc") {
+		order += " ASC"
+	} else {
+		order += " DESC"
+	}
+
+	if err := query.
+		Select("organization_members.user_id, users.email, users.first_name, users.last_name, CASE WHEN organizations.owner_id = organization_members.user_id THEN 'owner' WHEN organization_members.role = '' THEN 'member' ELSE organization_members.role END AS role, organization_members.role_id, organization_members.created_at").
+		Order(order).
+		Limit(pageSize).
+		Offset((page - 1) * pageSize).
+		Find(&members).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not load members"}})
+		return
+	}
+
+	pages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	c.JSON(http.StatusOK, gin.H{"data": members, "meta": gin.H{
+		"total": total, "page": page, "page_size": pageSize, "pages": pages,
+	}})
 }
 
 type addMemberInput struct {
@@ -824,6 +952,14 @@ func (h *OrganizationHandler) AddMember(c *gin.Context) {
 		}
 		member.CreatedAt = existing.CreatedAt
 	}
+	// Outside the branches, so it fires for a new member and for one whose
+	// role changed. Not fatal: the membership is written, and refusing the
+	// response now would say the add failed when it did not.
+	if h.Hooks.AfterMemberAdded != nil {
+		if err := h.Hooks.AfterMemberAdded(c.Request.Context(), h.DB, orgID, in.UserID, memberRole); err != nil {
+			log.Printf("organization: AfterMemberAdded hook failed for %s in %s: %v", in.UserID, orgID, err)
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": member, "message": "Member added"})
 }
 
@@ -849,6 +985,11 @@ func (h *OrganizationHandler) RemoveMember(c *gin.Context) {
 		Delete(&models.OrganizationMember{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not remove member"}})
 		return
+	}
+	if h.Hooks.AfterMemberRemoved != nil {
+		if err := h.Hooks.AfterMemberRemoved(c.Request.Context(), h.DB, orgID, c.Param("userId")); err != nil {
+			log.Printf("organization: AfterMemberRemoved hook failed for %s in %s: %v", c.Param("userId"), orgID, err)
+		}
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Member removed"})
 }

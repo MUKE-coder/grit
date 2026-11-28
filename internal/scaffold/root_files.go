@@ -1516,17 +1516,22 @@ func gritJSON(opts Options) string {
 	if opts.Architecture == ArchSingle && !opts.SingleUsesNext() {
 		frontend = FrontendTanStack
 	}
+	// saas is one bit with a large consequence: it is what makes
+	// `grit generate resource --owned-by user` write the customer's screens
+	// as well as the operator's. Recorded in the project rather than asked on
+	// every generate, because a project either has customers or it does not.
 	return fmt.Sprintf(`{
   "architecture": "%s",
   "frontend": "%s",
   "version": "%s",
+  "saas": %t,
   "apps": {
     "expo": %t,
     "desktop": %t,
     "docs": %t
   }
 }
-`, string(opts.Architecture), string(frontend), opts.Version,
+`, string(opts.Architecture), string(frontend), opts.Version, opts.SaaS,
 		opts.ShouldIncludeExpo(), opts.ShouldIncludeDesktop(), opts.ShouldIncludeDocs())
 }
 

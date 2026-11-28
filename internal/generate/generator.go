@@ -26,6 +26,9 @@ type Generator struct {
 	Roles        []string // optional: restrict routes to these roles
 	// Force skips the checks that refuse to overwrite framework files.
 	Force bool
+	// Portal is how much of the customer's half to write: screens, headless
+	// or off. Empty means the project decides, which is what --saas sets up.
+	Portal PortalLevel
 }
 
 // SharedRoot is where the shared Zod schemas and TypeScript types live.
@@ -563,6 +566,14 @@ func (g *Generator) Run() error {
 			return fmt.Errorf("writing web hooks: %w", err)
 		}
 		fmt.Printf("  ✓ apps/web/src/hooks/use-%s.ts\n", names.PluralKebab)
+	}
+
+	// The customer's half: the pages, the form and the sidebar entry in
+	// apps/web/app/(app), or the descriptor alone at the headless level.
+	// Nothing at all outside a SaaS project, which is what every version
+	// before v3.584.0 wrote for every project.
+	if err := g.writePortalFiles(names); err != nil {
+		return fmt.Errorf("writing the customer screens: %w", err)
 	}
 
 	// The read layer for --public: /public/<plural> with the API key on every

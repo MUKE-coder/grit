@@ -176,6 +176,13 @@ func RemoveResourceAt(root, name string) error {
 			emptied[filepath.Dir(f)] = true
 		}
 	}
+
+	// The customer's half: the pages, the form, the descriptor and the entry
+	// in the customer sidebar. A directory and an injection rather than a flat
+	// list, so it cannot live in filesToDelete above.
+	for _, gone := range gen.removePortalFiles(names) {
+		fmt.Printf("  ✗ %s\n", gone)
+	}
 	// And the folder, when the resource had one of its own and it is now
 	// empty. Left behind it still reads as "the blog is sort of here", which
 	// is the thing a removal exists to settle.

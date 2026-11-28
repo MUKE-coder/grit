@@ -29,7 +29,7 @@ func enterThrough(t *testing.T) scaffold.Options {
 	arch, frontend, theme, db, storage := "", "", "", "", ""
 	preselect(&arch, &frontend, &theme, &db, &storage)
 
-	form := newProjectForm(opts, &arch, &frontend, &theme, &db, &storage).
+	form := newProjectForm(opts, &arch, &frontend, &theme, &db, &storage, new(bool), new(bool), new(bool)).
 		WithTheme(ui.PromptTheme())
 	form.Update(tea.WindowSizeMsg{Width: testCols, Height: testRows})
 	form.Init()

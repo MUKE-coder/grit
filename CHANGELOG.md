@@ -23,6 +23,45 @@ Also worth knowing:
 ---
 
 
+## v3.584.0 - November 28, 2026
+
+### The customer's half of a resource
+
+Grit has always generated a complete screen for the operator and a React Query hook for the customer. That asymmetry is the whole of what building a SaaS on it felt like: the admin was declarative and generated, the product was hand-written, and the product is the part people pay for.
+
+It was also the odd one out *inside* Grit rather than a missing idea. The Expo generator already writes a list screen, a detail screen, a form and a create and an edit screen, and injects a link into the app's navigation. The Wails client does the same. Only the browser, where almost every Grit app actually sells something, got the hook and nothing else.
+
+#### grit new --saas
+
+One question at scaffold time: does this app have customers? Yes writes the signed-in customer area, asks whether they belong to organizations and whether you charge them, and records `saas` in `grit.json`. Nothing here is new machinery: the customer area is what{" "} `grit add web-auth` writes, organizations are the multitenant plugin and charging is the Stripe plugin. What is new is being asked, once, at the point where you know.
+
+The order the three install in is load-bearing, which is how one of the faults below was found.
+
+#### What a generated resource writes now
+
+In a SaaS project, a resource generated with{" "} `--owned-by` or `--tenant-owned` gets a customer screen as well as an admin one:{" "} `app/(app)/notes` with a list, a detail page, a create page, a form and an entry in the customer sidebar. Cards rather than a data table, deliberately: an operator is auditing every row of a shared dataset, a customer is looking at their own handful of things.
+
+Three levels, set per project and overridable per resource with `--portal`:
+
+- **screens**: the pages, the form and the sidebar entry. The default in a SaaS.
+- **headless**: the resource as data, in{" "} `lib/portal/<resource>.ts`, with the fields, their kinds and who the rows belong to, and no JSX. For the screen you are writing yourself, which for the product's own surface is most of them. Nobody's note grid is a generated table.
+- **off**: the hook alone, which is what every version before this wrote for every project.
+
+The pages are never overwritten. They are the first files anybody edits, and a field added later reaches the form through the descriptor, which is generated.
+
+#### Three faults found while building it
+
+**The organization screen was outside the shell.**{" "} The multitenant plugin writes it to{" "} `app/account/organization`, which is a sibling of{" "} `app/(app)/account` and not a child of it. So it rendered with no sidebar, no header and none of the layout's guard, reached from a URL nothing linked to. It now lands inside the customer area when the project has one, with a sidebar entry.
+
+**Billing had hooks and no page.** The Stripe plugin shipped `use-subscription` and left the one screen every paying product needs to be written by hand. There is now a billing screen: the plan, whether it is paid up, when it renews, cancel and resume, and the portal button. Deliberately no invoice table, because Stripe's portal already has one and a copy would drift.
+
+**The member list returned every row.** Fine for the five-person organization everybody tests with, wrong for the thousand-person one. It now takes a page, searches name and email, sorts by a column from a fixed map, and answers with a `meta` block. The default page is 100, so nothing that worked before changed shape.
+
+#### And organization lifecycle hooks
+
+`orgHandler.Hooks`, set in{" "} `routes.go`: `BeforeCreate`,{" "} `AfterCreate`, `AfterMemberAdded` and{" "} `AfterMemberRemoved`. The create hooks run inside the same transaction as the write, so a default workspace that failed to save takes the organization down with it rather than leaving one that claims to have it. Every real product has something to do on create, and without a hook the only way in was editing the handler, which is the file{" "} `grit upgrade` maintains for you.
+
+
 ## v3.583.0 - November 28, 2026
 
 ### An erasure deleted the row and left the file

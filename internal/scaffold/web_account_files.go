@@ -33,6 +33,7 @@ func webAccountLayout(opts Options) string {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, LogOut, User as UserIcon } from "lucide-react";
+// grit:nav-icons
 import { ProtectedWebRoute } from "@/components/ProtectedWebRoute";
 import { useMe, useLogout } from "@/hooks/use-auth";
 
@@ -44,9 +45,15 @@ import { useMe, useLogout } from "@/hooks/use-auth";
 //
 // Add a section by adding a line here and a page under app/(app)/. Orders,
 // addresses, invoices, whatever the product has: the shell does not change.
+//
+// The two markers are where grit generate resource --portal screens writes:
+// the icon on the import above, the entry below. Keep them, or a generated
+// screen will have no way in from the sidebar. Everything you add by hand can
+// go anywhere in the array.
 const NAV = [
   { href: "/account", label: "Overview", icon: LayoutDashboard },
   { href: "/account/profile", label: "Profile", icon: UserIcon },
+  // grit:nav
 ];
 
 function initials(first?: string | null, last?: string | null, email?: string | null) {
@@ -418,3 +425,12 @@ export default function AccountProfilePage() {
 }
 `
 }
+
+// WebAccountLayout is exported so the generator's tests can build a fixture
+// out of the real template rather than a hand-written stand-in.
+//
+// The portal writes into this file, at two markers. A fixture that spelled the
+// layout by hand would keep passing after somebody edited the template and
+// took a marker with them, which is the one failure these tests exist to
+// catch.
+func WebAccountLayout(opts Options) string { return webAccountLayout(opts) }

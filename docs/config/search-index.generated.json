@@ -714,6 +714,12 @@
     "keywords": "grit i18n add translate project locale cookie api web app admin share next intl catalogues english spanish french swahili language switcher translating through key fallback resources labels slug adding upgrade repairs projects before v3 222 docs frontend internationalisation one"
   },
   {
+    "title": "Customer Portal",
+    "href": "/docs/frontend/portal",
+    "section": "Frontend (Next.js)",
+    "keywords": "signed customer area grit generated screens owned resource headless descriptor organization billing pages docs frontend portal"
+  },
+  {
     "title": "Shared Package",
     "href": "/docs/frontend/shared-package",
     "section": "Frontend (Next.js)",

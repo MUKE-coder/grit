@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"embed"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -98,6 +100,17 @@ func stripeTemplate(ctx Context, name string) string {
 	return strings.ReplaceAll(string(raw), "{{MODULE}}", ctx.Module)
 }
 
+// stripeHasCustomerArea reports whether this project has the signed-in
+// customer area that grit add web-auth writes, which is where a billing
+// screen belongs: it is the customer's own, not the operator's.
+func stripeHasCustomerArea(ctx Context) bool {
+	if ctx.Root == "" || !hasNextWeb(ctx) {
+		return false
+	}
+	info, err := os.Stat(filepath.Join(ctx.Root, "apps", "web", "app", "(app)"))
+	return err == nil && info.IsDir()
+}
+
 // hasNextWeb is a Next.js web app, the one frontend the payment form is
 // written for: a Vite app's production CSP is in nginx.conf instead.
 func hasNextWeb(ctx Context) bool {
@@ -130,6 +143,13 @@ func stripeFiles(ctx Context) map[string]string {
 		files["apps/web/components/stripe-checkout.tsx"] = stripeTemplate(ctx, "web_stripe_checkout.tsx.tmpl")
 		files["apps/web/lib/subscription.ts"] = stripeTemplate(ctx, "web_subscription.ts.tmpl")
 		files["apps/web/hooks/use-subscription.ts"] = stripeTemplate(ctx, "web_use_subscription.ts.tmpl")
+		// The customer's billing screen, inside the signed-in area when the
+		// project has one. Until now the plugin shipped the hooks and left
+		// the page to be written, which for the one screen every paying
+		// product needs is the wrong place to stop.
+		if stripeHasCustomerArea(ctx) {
+			files["apps/web/app/(app)/billing/page.tsx"] = stripeTemplate(ctx, "web_billing_page.tsx.tmpl")
+		}
 	}
 	return files
 }
@@ -199,5 +219,26 @@ func stripeInjections(ctx Context) []Injection {
 			Optional: true,
 		})
 	}
+
+	// Billing in the customer sidebar. Both halves together: an entry naming
+	// an icon the layout does not import does not compile, and that file is
+	// the one every signed-in page renders through.
+	if stripeHasCustomerArea(ctx) {
+		injections = append(injections,
+			Injection{
+				File:     "apps/web/app/(app)/layout.tsx",
+				Marker:   "// grit:nav-icons",
+				Code:     "import { CreditCard } from \"lucide-react\";",
+				Optional: true,
+			},
+			Injection{
+				File:     "apps/web/app/(app)/layout.tsx",
+				Marker:   "// grit:nav",
+				Code:     "  { href: \"/billing\", label: \"Billing\", icon: CreditCard },",
+				Optional: true,
+			},
+		)
+	}
+
 	return injections
 }
