@@ -253,7 +253,7 @@ export default function AccountOverviewPage() {
         <div className="border-t border-border px-6 py-4">
           <Link
             href="/account/profile"
-            className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+            className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover"
           >
             Edit profile
           </Link>
@@ -407,7 +407,7 @@ export default function AccountProfilePage() {
           <button
             type="submit"
             disabled={save.isPending}
-            className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
+            className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-60"
           >
             {save.isPending ? "Saving..." : "Save changes"}
           </button>

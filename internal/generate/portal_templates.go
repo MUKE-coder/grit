@@ -146,31 +146,40 @@ func (g *Generator) portalSubtitleField() string {
 	return ""
 }
 
+// portalFieldRow is one line of the descriptor's field list.
+//
+// One function, because two callers write these lines: the full write below,
+// and the single-line injection grit generate field makes. Two spellings of
+// the same row would diverge on the first field type somebody added.
+func portalFieldRow(f portalFormField) string {
+	parts := []string{
+		fmt.Sprintf("name: %q", f.JSON),
+		fmt.Sprintf("label: %q", f.Label),
+		fmt.Sprintf("kind: %q", f.Kind),
+	}
+	if f.Required {
+		parts = append(parts, "required: true")
+	}
+	if len(f.Options) > 0 {
+		quoted := make([]string, 0, len(f.Options))
+		for _, o := range f.Options {
+			quoted = append(quoted, fmt.Sprintf("%q", o))
+		}
+		parts = append(parts, "options: ["+strings.Join(quoted, ", ")+"]")
+	}
+	if f.Relation != "" {
+		parts = append(parts, fmt.Sprintf("relation: %q", f.Relation))
+	}
+	return "  { " + strings.Join(parts, ", ") + " },"
+}
+
 // writePortalDescriptor writes what the headless level is for: the shape of
 // the resource as data, with no React in it.
 func (g *Generator) writePortalDescriptor(names Names) error {
 	fields := g.portalFields()
 	var rows []string
 	for _, f := range fields {
-		parts := []string{
-			fmt.Sprintf("name: %q", f.JSON),
-			fmt.Sprintf("label: %q", f.Label),
-			fmt.Sprintf("kind: %q", f.Kind),
-		}
-		if f.Required {
-			parts = append(parts, "required: true")
-		}
-		if len(f.Options) > 0 {
-			quoted := make([]string, 0, len(f.Options))
-			for _, o := range f.Options {
-				quoted = append(quoted, fmt.Sprintf("%q", o))
-			}
-			parts = append(parts, "options: ["+strings.Join(quoted, ", ")+"]")
-		}
-		if f.Relation != "" {
-			parts = append(parts, fmt.Sprintf("relation: %q", f.Relation))
-		}
-		rows = append(rows, "  { "+strings.Join(parts, ", ")+" },")
+		rows = append(rows, portalFieldRow(f))
 	}
 
 	scope := "user"
@@ -343,7 +352,7 @@ export function PortalEmpty({
       {href && cta ? (
         <Link
           href={href}
-          className="mt-6 inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+          className="mt-6 inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:opacity-90"
         >
           {cta}
         </Link>

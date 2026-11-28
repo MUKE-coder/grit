@@ -14,8 +14,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "November 23 to 29, 2026",
-    count: 13,
+    count: 14,
     entries: [
+      { version: "3.584.1", title: "The portal descriptor was not keeping up with the model" },
       { version: "3.584.0", title: "The customer's half of a resource" },
       { version: "3.583.0", title: "An erasure deleted the row and left the file" },
       { version: "3.582.0", title: "Retention, part two, and a row that was being kept for ever" },

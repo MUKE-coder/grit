@@ -23,6 +23,25 @@ Also worth knowing:
 ---
 
 
+## v3.584.1 - November 28, 2026
+
+### The portal descriptor was not keeping up with the model
+
+Every generated descriptor says at the top of itself that a column added with `grit generate field` turns up there without an edit. It did not. The file was written by{" "} `grit generate resource` and never touched again, so a customer screen built against it went on rendering yesterday's fields. A generated file whose own comment is wrong about it is worse than no file, because the comment is why somebody trusted it.
+
+Found an hour after v3.584.0 shipped, while adding{" "} `remind_at` to a note-taking app built with it.
+
+#### And the fix that was wrong first
+
+The obvious repair is to rebuild the descriptor from the model, which is where it came from. That is what the first attempt did, and it changed three fields nobody had touched: a `text` column came back as a string, a required column came back optional, and `scope` flipped from `organization` to `user`, which is a lie about who the rows belong to.
+
+The definition a rebuild works from is read back out of the Go model, and that round trip is lossy. So the descriptor is injected into, one row at a time, which is exactly what the TypeScript type and the Zod schemas beside it have always done. The row is built by the same function that writes the file, so the two spellings cannot diverge.
+
+#### Also
+
+`text-white` on an accent button is wrong on half the themes. The design system has{" "} `--accent-fg` for exactly this, described in its own comment as "the label on an accent button: dark on the light-blue themes". Seven buttons in the portal, the billing screen and the customer account pages now use it.
+
+
 ## v3.584.0 - November 28, 2026
 
 ### The customer's half of a resource

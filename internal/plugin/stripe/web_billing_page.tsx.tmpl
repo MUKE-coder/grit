@@ -120,7 +120,7 @@ export default function BillingPage() {
                   type="button"
                   disabled={portal.isPending}
                   onClick={() => portal.mutate("/billing")}
-                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:opacity-90 disabled:opacity-60"
                 >
                   {portal.isPending ? "Opening..." : "Manage billing"}
                 </button>
@@ -180,7 +180,7 @@ export default function BillingPage() {
                             cancel_path: "/billing",
                           })
                         }
-                        className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                        className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:opacity-90 disabled:opacity-60"
                       >
                         {start.isPending ? "Opening..." : "Subscribe"}
                       </button>

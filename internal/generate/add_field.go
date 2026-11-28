@@ -132,6 +132,19 @@ func AddField(resourceName, spec string) error {
 	// when nobody has edited it. Reported either way: a field that is in the
 	// API and absent from a screen is the thing somebody needs to be told.
 	reportFieldScreens(names, g.updateFieldScreens(names, f))
+
+	// The portal descriptor, last, because it is rebuilt from the model
+	// rather than injected into.
+	//
+	// Every descriptor says at the top of itself that a column added with
+	// grit generate field turns up here without an edit. It did not: the file
+	// was written by generate resource and never touched again, so a customer
+	// screen built against it went on rendering yesterday's fields. A
+	// generated file whose own comment is wrong about it is worse than no
+	// file, because the comment is why somebody trusted it.
+	if err := g.refreshPortalDescriptor(names, f); err != nil {
+		fmt.Printf("  - the portal descriptor was not updated: %v\n", err)
+	}
 	return nil
 }
 

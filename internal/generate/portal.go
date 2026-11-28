@@ -236,6 +236,60 @@ func (g *Generator) injectPortalNav(names Names) error {
 	return nil
 }
 
+// refreshPortalDescriptor rewrites lib/portal/<resource>.ts after a column
+// was added to the model.
+//
+// Only for a resource that already has one. A resource generated with
+// --portal off does not acquire a descriptor by having a field added: that
+// would be a new file nobody asked for, in a project that may have no web app
+// at all.
+//
+// One row injected, not the file rewritten.
+//
+// Rewriting it looked simpler and was wrong. The definition a rebuild works
+// from is read back out of the Go model, and that round trip is lossy: a
+// text column comes back as a string, a required column comes back optional,
+// and tenant ownership comes back as nothing at all. A rewrite therefore
+// changed three fields that nobody had touched and flipped the scope of the
+// resource from organization to user, which is a lie about who the rows
+// belong to. The TypeScript type and the Zod schemas beside it are injected
+// into for the same reason.
+func (g *Generator) refreshPortalDescriptor(names Names, added Field) error {
+	path := filepath.Join(g.Root, "apps", "web", "lib", "portal", names.PluralKebab+".ts")
+	if !fileExists(path) {
+		return nil
+	}
+
+	row := portalFieldRow(portalFormField{
+		Name:     toPascalCase(added.Name),
+		JSON:     toSnakeCase(added.Name),
+		Label:    humanLabel(added.Name),
+		Kind:     portalKind(added),
+		Required: added.Required,
+		Options:  portalOptions(added),
+		Relation: portalRelation(added),
+	})
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	content := string(data)
+	if strings.Contains(content, fmt.Sprintf("name: %q", toSnakeCase(added.Name))) {
+		return nil // already there, so a repeat run changes nothing
+	}
+	const closer = "  ] satisfies PortalField[],"
+	if !strings.Contains(content, closer) {
+		return fmt.Errorf("the field list in %s does not end the way it was written", relativeToRoot(g.Root, path))
+	}
+	content = strings.Replace(content, closer, row+"\n"+closer, 1)
+	if err := writeFileWithDirs(path, content); err != nil {
+		return err
+	}
+	fmt.Printf("  + apps/web/lib/portal/%s.ts\n", names.PluralKebab)
+	return nil
+}
+
 // removePortalFiles takes the customer's half away with the resource.
 func (g *Generator) removePortalFiles(names Names) []string {
 	var removed []string

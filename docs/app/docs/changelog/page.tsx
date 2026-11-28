@@ -91,6 +91,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.584.1 */}
+            <div className="mb-12" id="v3.584.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.584.1
+                </span>
+                <span className="text-sm text-muted-foreground">November 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The portal descriptor was not keeping up with the model</h3>
+
+                <p>
+                  Every generated descriptor says at the top of itself that a
+                  column added with <code>grit generate field</code> turns up
+                  there without an edit. It did not. The file was written by{" "}
+                  <code>grit generate resource</code> and never touched again,
+                  so a customer screen built against it went on rendering
+                  yesterday&apos;s fields. A generated file whose own comment
+                  is wrong about it is worse than no file, because the comment
+                  is why somebody trusted it.
+                </p>
+                <p>
+                  Found an hour after v3.584.0 shipped, while adding{" "}
+                  <code>remind_at</code> to a note-taking app built with it.
+                </p>
+
+                <h4>And the fix that was wrong first</h4>
+                <p>
+                  The obvious repair is to rebuild the descriptor from the
+                  model, which is where it came from. That is what the first
+                  attempt did, and it changed three fields nobody had touched:
+                  a <code>text</code> column came back as a string, a required
+                  column came back optional, and <code>scope</code> flipped
+                  from <code>organization</code> to <code>user</code>, which is
+                  a lie about who the rows belong to.
+                </p>
+                <p>
+                  The definition a rebuild works from is read back out of the
+                  Go model, and that round trip is lossy. So the descriptor is
+                  injected into, one row at a time, which is exactly what the
+                  TypeScript type and the Zod schemas beside it have always
+                  done. The row is built by the same function that writes the
+                  file, so the two spellings cannot diverge.
+                </p>
+
+                <h4>Also</h4>
+                <p>
+                  <code>text-white</code> on an accent button is wrong on half
+                  the themes. The design system has{" "}
+                  <code>--accent-fg</code> for exactly this, described in its
+                  own comment as &quot;the label on an accent button: dark on
+                  the light-blue themes&quot;. Seven buttons in the portal, the
+                  billing screen and the customer account pages now use it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.584.0 */}
             <div className="mb-12" id="v3.584.0">
               <div className="flex items-center gap-3 mb-4">

@@ -77,7 +77,7 @@ export function %[3]sForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:opacity-90 disabled:opacity-60"
         >
           {submitting ? "Saving..." : submitLabel}
         </button>
@@ -131,7 +131,7 @@ export default function %[5]sPage() {
       action={
         <Link
           href="/%[2]s/new"
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:opacity-90"
         >
           New
         </Link>
