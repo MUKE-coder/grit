@@ -436,10 +436,15 @@ grit plugin add device-pairing    # sign in a browser by scanning a QR from a si
 
 The [`grit-plugins`](https://github.com/MUKE-coder/grit-plugins) Go packages are a
 different thing: ordinary modules you import and wire yourself, *not* installed by
-`grit plugin add`. They are early (v0.3.0): they build, vet and carry contract tests, but
-several still store `user_id` as `uint` while a Grit `User.ID` is a UUID string. Check core
-first, since `grit-websockets` duplicates the realtime module every app already ships.
-[Plugin docs](https://gritframework.dev/docs/plugins/overview).
+`grit plugin add`. They are early (v0.4.1), and all ten build, vet and carry contract
+tests. Every `user_id` they store is a UUID string that matches a Grit `User.ID`; this
+note said otherwise for four months after it stopped being true, which is how grit#244
+came to be filed.
+
+One trap is left, in `grit-websockets`: `WSAuthMiddleware` takes a validator returning a
+numeric id and `WSAuthMiddlewareString` takes one returning a string. A Grit project wants
+the second. Check core first anyway, since that module duplicates the realtime one every
+app already ships. [Plugin docs](https://gritframework.dev/docs/plugins/overview).
 
 </details>
 

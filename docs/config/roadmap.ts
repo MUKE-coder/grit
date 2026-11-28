@@ -269,13 +269,6 @@ export const ROADMAP: RoadmapItem[] = [
     bucket: 'later',
     note: 'A field report rather than a feature. Several of its proposals have already shipped under their own issues.',
   },
-  {
-    issue: 244,
-    title: 'grit-plugins modules store user_id as uint, core uses a UUID',
-    bucket: 'later',
-    note: 'A tracking issue against the separate plugins repository, not against this one.',
-  },
-
   // ── Waiting on a decision ───────────────────────────────────────────────
   {
     issue: 47,
